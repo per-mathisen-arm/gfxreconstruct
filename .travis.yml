@@ -2,7 +2,8 @@ dist: focal
 
 jobs:
   include:
-    - os: linux
+    - name: "x86 32bit linux cross-compile"
+      os: linux
       arch: amd64
       language: cpp
       compiler: g++
@@ -22,7 +23,8 @@ jobs:
         - cd build_x32
         - cmake .. -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain/linux_x86_32.cmake
         - make
-    - os: linux
+    - name: "x86 64bit linux native and arm linux cross-compiles"
+      os: linux
       arch: amd64
       language: cpp
       compiler: g++
@@ -37,7 +39,7 @@ jobs:
             - liblz4-dev
             - libzstd-dev
             - g++-aarch64-linux-gnu
-            - g++-arm-linux-gnueabi
+            - g++-arm-linux-gnueabihf
       script:
         - mkdir build_x64
         - cd build_x64
