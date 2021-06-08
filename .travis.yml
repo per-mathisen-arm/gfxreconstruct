@@ -3,25 +3,6 @@ dist: focal
 jobs:
   include:
     - os: linux
-      arch: arm64
-      language: cpp
-      compiler: g++
-      addons:
-        apt:
-          packages:
-            - libx11-xcb-dev
-            - libxcb-keysyms1-dev  
-            - libwayland-dev
-            - libxrandr-dev
-            - zlib1g-dev
-            - liblz4-dev
-            - libzstd-dev
-      script:
-        - mkdir build
-        - cd build
-        - cmake ..
-        - make
-    - os: linux
       arch: amd64
       language: cpp
       compiler: g++
@@ -48,7 +29,7 @@ jobs:
         - cmake .. -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain/linux_arm64.cmake
         - make
         - cd ..
-        - mdir build_x32
+        - mkdir build_x32
         - cd build_x32
         - cmake .. -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain/linux_x86_32.cmake
         - make
