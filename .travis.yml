@@ -35,8 +35,8 @@ jobs:
             - zlib1g-dev
             - liblz4-dev
             - libzstd-dev
-            - g++-aarch64-linux-gnu
-            - gcc-multilib
+            - g++-9-aarch64-linux-gnu
+            - g++-9-multilib
       script:
         - mkdir build_x64
         - cd build_x64
