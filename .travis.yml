@@ -16,12 +16,8 @@ jobs:
             - zlib1g-dev
             - liblz4-dev
             - libzstd-dev
-            - gcc-9-aarch64-linux-gnu
             - g++-9-aarch64-linux-gnu
-            - gcc-9-multilib
-            - g++-9-multilib
-            - gcc-9-multilib-arm-linux-gnueabihf
-            - g++-9-multilib-arm-linux-gnueabihf
+            - g++-9-arm-linux-gnueabihf 
       script:
         - mkdir build_x64
         - cd build_x64
@@ -31,11 +27,6 @@ jobs:
         - mkdir build_arm64
         - cd build_arm64
         - cmake .. -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain/linux_arm64.cmake
-        - make
-        - cd ..
-        - mkdir build_x32
-        - cd build_x32
-        - cmake .. -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain/linux_x86_32.cmake
         - make
         - cd ..
         - mkdir build_arm32
