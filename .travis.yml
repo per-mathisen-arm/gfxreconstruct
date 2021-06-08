@@ -1,0 +1,33 @@
+language: cpp
+
+sudo: false
+
+arch:
+  - amd64
+  
+compiler:
+  - g++
+  
+install: skip
+
+script:
+  - mkdir build
+  - cd build
+  - cmake ..
+  - make
+
+matrix:
+  include:
+    - os: linux
+      addons:
+        packages:
+          - git
+          - cmake
+          - build-essential
+          - libx11-xcb-dev
+          - libxcb-keysyms1-dev  
+          - libwayland-dev
+          - libxrandr-dev
+          - zlib1g-dev
+          - liblz4-dev
+          - libzstd-dev
