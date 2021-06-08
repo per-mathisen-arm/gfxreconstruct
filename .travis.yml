@@ -1,45 +1,50 @@
-language: cpp
-
 dist: focal
 
-sudo: false
+addons:
+  artifacts: true
 
-arch:
-  - amd64
-  - arm64
-  
-compiler:
-  - g++
-  
-install: skip
-
-script:
-  - mkdir build
-  - cd build
-  - cmake ..
-  - make
-
-matrix:
+jobs:
   include:
     - os: linux
       arch: arm64
+      language: cpp
+      compiler: g++
       addons:
-        packages:
-          - git
-          - build-essential
-          - zlib1g-dev
-          - liblz4-dev
-          - libzstd-dev
+        apt:
+          packages:
+            - libx11-xcb-dev
+            - libxcb-keysyms1-dev  
+            - libwayland-dev
+            - libxrandr-dev
+            - zlib1g-dev
+            - liblz4-dev
+            - libzstd-dev
+      script:
+        - mkdir build
+        - cd build
+        - cmake ..
+        - make
     - os: linux
       arch: amd64
+      language: cpp
+      compiler: g++
       addons:
-        packages:
-          - git
-          - build-essential
-          - libx11-xcb-dev
-          - libxcb-keysyms1-dev  
-          - libwayland-dev
-          - libxrandr-dev
-          - zlib1g-dev
-          - liblz4-dev
-          - libzstd-dev
+        apt:
+          packages:
+            - libx11-xcb-dev
+            - libxcb-keysyms1-dev  
+            - libwayland-dev
+            - libxrandr-dev
+            - zlib1g-dev
+            - liblz4-dev
+            - libzstd-dev
+            - g++-aarch64-linux-gnu
+      script:
+        - mkdir build_amd64
+        - cd build_amd64
+        - cmake ..
+        - make
+        - cd ..
+        - mkdir build_arm64
+        - cd build_arm64
+        - cmake .. -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain/linux_arm64.cmake
