@@ -4,6 +4,7 @@ sudo: false
 
 arch:
   - amd64
+  - arm64
   
 compiler:
   - g++
@@ -19,6 +20,17 @@ script:
 matrix:
   include:
     - os: linux
+      arch: arm64
+      addons:
+        packages:
+          - git
+          - cmake
+          - build-essential
+          - zlib1g-dev
+          - liblz4-dev
+          - libzstd-dev
+    - os: linux
+      arch: amd64
       addons:
         packages:
           - git
