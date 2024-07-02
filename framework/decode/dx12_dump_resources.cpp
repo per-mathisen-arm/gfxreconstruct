@@ -1595,7 +1595,7 @@ void Dx12DumpResources::WriteBlockEnd()
     // Dominates profiling (2/2):
     const std::string block =
         json_data_.dump(json_options_.format == util::JsonFormat::JSONL ? -1 : util::kJsonIndentWidth);
-    util::platform::FileWriteNoLock(block.data(), sizeof(std::string::value_type), block.length(), json_file_handle_);
+    util::platform::FileWriteNoLock(block.data(), block.length() * sizeof(std::string::value_type), json_file_handle_);
     util::platform::FileFlush(json_file_handle_); /// @todo Implement a FileFlushNoLock() for all platforms.
 }
 
@@ -1607,9 +1607,9 @@ bool Dx12DumpResources::WriteBinaryFile(const std::string&          filename,
     FILE* file_output = nullptr;
     if (util::platform::FileOpen(&file_output, filename.c_str(), "wb") == 0)
     {
-        util::platform::FileWrite(data.data() + offset, size, 1, file_output);
+        bool success = util::platform::FileWrite(data.data() + offset, size, file_output);
         util::platform::FileClose(file_output);
-        return true;
+        return success;
     }
     return false;
 }
