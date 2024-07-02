@@ -67,6 +67,45 @@ def usage_message():
     message.append('                          <program> [<program_args>]')
     return '\n'.join(message)
 
+# See https://github.com/ARM-software/tracetooltests/blob/main/doc/BenchmarkingStandard.md for details
+def DetectCBS(args):
+    program = args.programAndArgs[0]
+    tail, base = os.path.split(program)
+    cap_file = None
+    if program.startswith('/usr/bin/'):
+        cap_file = '/usr/share/benchmarking/' + base + ".bench"
+    else:
+        cap_file = program + '.bench'
+
+    if not cap_file or not os.path.exists(cap_file):
+        print('No capabilities file found') # TBD remove too spammy
+        return # No capabilities file
+
+    if not os.path.isfile(cap_file) or not os.access(cap_file, os.R_OK):
+        print('Capabilities file %s is not a readable' % cap_file)
+        return
+
+    if 'BENCHMARKING_ENABLE_JSON' in os.environ or 'BENCHMARKING_ENABLE_PATH' in os.environ:
+        print('Existing benchmarking environment found - not overwriting')
+        return
+
+        cap_fp = open(cap_file, 'r') # should always load now
+        cap_data = json.load(cap_fp)
+        if not cap_data:
+            print('%s is not a valid JSON file' % cap_file)
+            return
+
+        enable_file = {}
+        enable_file['target'] = base
+        if 'capabilities' in cap_data and args.automate:
+            if 'non_interactive' in cap_data['capabilities'] and cap_data['capabilities']['non_interactive'] == 'option':
+                enable_file['capabilities'] = { 'non_interactive': true }
+                if 'fixed_framerate' in cap_data['capabilities'] and cap_data['capabilities']['fixed_framerate'] == 'option':
+                    enable_file['capabilities'] = { 'fixed_framerate': 0 }
+                if 'gpu_frame_deterministic' in cap_data['capabilities'] and cap_data['capabilities']['gpu_frame_deterministic'] == 'option':
+                    enable_file['capabilities'] = { 'gpu_frame_deterministic': true }
+
+        os.environ['BENCHMARKING_ENABLE_JSON'] = json.dumps(enable_file, sort_keys=True, separators=(',', ':'))
 
 class SmartFormatter(argparse.HelpFormatter):
     '''Used by the argument parser to assist in breaking argument help text
@@ -313,6 +352,7 @@ def PrintLayerEnv():
     print_env_var('GFXRECON_MEMORY_TRACKING_MODE')
     print_env_var('VK_INSTANCE_LAYERS')
     print_env_var('VK_LAYER_PATH')
+    print_env_var('BENCHMARKING_ENABLE_JSON')
 
 
 if '__main__' == __name__:
@@ -332,6 +372,8 @@ if '__main__' == __name__:
     set_env_vars(args)
     if 'debug' == args.log_level:
         PrintLayerEnv()    # For debugging
+
+    DetectCBS(args)
 
     # If working_dir was specified, make it the cwd
     if args.working_dir is not None:
