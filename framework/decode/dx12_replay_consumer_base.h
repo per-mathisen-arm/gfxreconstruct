@@ -1058,6 +1058,20 @@ class Dx12ReplayConsumerBase : public Dx12Consumer
 
     SIZE_T OverrideGetBufferSize(DxObjectInfo* replay_object, UINT64 original_result);
 
+    HRESULT OverrideD3D12CreateVersionedRootSignatureDeserializerFromSubobjectInLibrary(
+        HRESULT                          return_value,
+        PointerDecoder<uint8_t>*         pSrcData,
+        SIZE_T                           SrcDataSizeInBytes,
+        WStringDecoder*                  RootSignatureSubobjectName,
+        Decoded_GUID                     pRootSignatureDeserializerInterface,
+        PointerDecoder<uint64_t, void*>* ppRootSignatureDeserializer);
+
+    void OverrideSetProgram(DxObjectInfo*                                         replay_object_info,
+                            StructPointerDecoder<Decoded_D3D12_SET_PROGRAM_DESC>* pDesc);
+
+    void OverrideDispatchGraph(DxObjectInfo*                                            replay_object_info,
+                               StructPointerDecoder<Decoded_D3D12_DISPATCH_GRAPH_DESC>* pDesc);
+
     const Dx12ObjectInfoTable& GetObjectInfoTable() const
     {
         return object_info_table_;
