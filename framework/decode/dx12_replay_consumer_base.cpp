@@ -1358,6 +1358,10 @@ void Dx12ReplayConsumerBase::InitializeResourceAllocator(const IUnknown*        
                                                          HandlePointerDecoder<void*>* decoder)
 {
     auto allocator = options_.create_resource_allocator();
+    if (adapter == nullptr)
+    {
+        adapter = GetAdapter();
+    }
 
     HRESULT result = allocator->Initialize(adapter, device);
 
@@ -4031,9 +4035,17 @@ void Dx12ReplayConsumerBase::OverrideGetResourceTiling(
     auto device         = static_cast<ID3D12Device*>(device_object_info->object);
     auto pTiledResource = static_cast<ID3D12Resource*>(in_pTiledResource->object);
 
-    auto capture_NumTilesForEntireResource = *pNumTilesForEntireResource->GetPointer();
-    auto capture_NumSubresourceTilings     = *pNumSubresourceTilings->GetPointer();
-    auto replay_NumSubresourceTilings      = capture_NumSubresourceTilings;
+    UINT capture_NumTilesForEntireResource = 0;
+    if (pNumTilesForEntireResource->GetPointer())
+    {
+        capture_NumTilesForEntireResource = *pNumTilesForEntireResource->GetPointer();
+    }
+    UINT capture_NumSubresourceTilings = 0;
+    if (pNumSubresourceTilings->GetPointer())
+    {
+        capture_NumSubresourceTilings = *pNumSubresourceTilings->GetPointer();
+    }
+    auto replay_NumSubresourceTilings = capture_NumSubresourceTilings;
 
     auto device_info = GetExtraInfo<D3D12DeviceInfo>(device_object_info);
     auto allocator   = device_info->allocator.get();
@@ -4049,10 +4061,25 @@ void Dx12ReplayConsumerBase::OverrideGetResourceTiling(
     auto replay_NumTilesForEntireResource = *pNumTilesForEntireResource->GetOutputPointer();
 
     if (capture_NumTilesForEntireResource != replay_NumTilesForEntireResource ||
-        capture_NumSubresourceTilings != replay_NumSubresourceTilings || !IsEqualD3D12PackedMipInfo(pPackedMipDesc) ||
-        !IsEqualD3D12TileShape(pStandardTileShapeForNonPackedMips))
+        capture_NumSubresourceTilings != replay_NumSubresourceTilings)
     {
         GFXRECON_LOG_WARNING("Replay resource tiling is different with captured resource tiling!");
+    }
+
+    if (pPackedMipDesc->GetPointer())
+    {
+        if (!IsEqualD3D12PackedMipInfo(pPackedMipDesc))
+        {
+            GFXRECON_LOG_WARNING("Replay resource tiling is different with captured resource tiling!");
+        }
+    }
+
+    if (pStandardTileShapeForNonPackedMips->GetPointer())
+    {
+        if (!IsEqualD3D12TileShape(pStandardTileShapeForNonPackedMips))
+        {
+            GFXRECON_LOG_WARNING("Replay resource tiling is different with captured resource tiling!");
+        }
     }
 }
 
