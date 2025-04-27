@@ -643,6 +643,12 @@ class Dx12ReplayConsumerBase : public Dx12Consumer
                                           Decoded_GUID                 riid,
                                           HandlePointerDecoder<void*>* library);
 
+    HRESULT OverrideSetResidencyPriority(DxObjectInfo*                             replay_object_info,
+                                         HRESULT                                   original_result,
+                                         UINT                                      NumObjects,
+                                         HandlePointerDecoder<ID3D12Pageable*>*    ppObjects,
+                                         PointerDecoder<D3D12_RESIDENCY_PRIORITY>* pPriorities);
+
     HRESULT OverrideEnqueueMakeResident(DxObjectInfo*                          replay_object_info,
                                         HRESULT                                original_result,
                                         D3D12_RESIDENCY_FLAGS                  flags,
@@ -1107,6 +1113,9 @@ class Dx12ReplayConsumerBase : public Dx12Consumer
 
     void InitializeResourceAllocator(const IUnknown* adapter, const void* device, HandlePointerDecoder<void*>* decoder);
 
+    const Dx12AccelerationStructureBuilder*
+    Dx12ReplayConsumerBase::GetAccelerationStructureBuilder(ID3D12Device5* device5);
+
     void DetectAdapters();
 
     void AddAdapterLuid(const LUID& capture_luid, const LUID& replay_luid);
@@ -1234,6 +1243,9 @@ class Dx12ReplayConsumerBase : public Dx12Consumer
 #ifdef GFXRECON_AGS_SUPPORT
     graphics::Dx12AgsMarkerInjector* ags_marker_injector_{ nullptr };
 #endif
+    // map dx12 acceleration structure builders for each device
+    std::unordered_map<ID3D12Device5*, std::unique_ptr<Dx12AccelerationStructureBuilder>>
+        acceleration_structure_builders_;
 };
 
 GFXRECON_END_NAMESPACE(decode)
