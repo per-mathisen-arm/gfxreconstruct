@@ -2526,6 +2526,13 @@ class VulkanExportJsonConsumer : public VulkanExportJsonConsumerBase
         StructPointerDecoder<Decoded_VkImageSubresource2>* pSubresource,
         StructPointerDecoder<Decoded_VkSubresourceLayout2>* pLayout) override;
 
+    virtual void Process_vkWaitForPresent2KHR(
+        const ApiCallInfo&                          call_info,
+        VkResult                                    returnValue,
+        format::HandleId                            device,
+        format::HandleId                            swapchain,
+        StructPointerDecoder<Decoded_VkPresentWait2InfoKHR>* pPresentWait2Info) override;
+
     virtual void Process_vkCreatePipelineBinariesKHR(
         const ApiCallInfo&                          call_info,
         VkResult                                    returnValue,
@@ -2562,6 +2569,12 @@ class VulkanExportJsonConsumer : public VulkanExportJsonConsumerBase
         format::HandleId                            device,
         StructPointerDecoder<Decoded_VkReleaseCapturedPipelineDataInfoKHR>* pInfo,
         StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator) override;
+
+    virtual void Process_vkReleaseSwapchainImagesKHR(
+        const ApiCallInfo&                          call_info,
+        VkResult                                    returnValue,
+        format::HandleId                            device,
+        StructPointerDecoder<Decoded_VkReleaseSwapchainImagesInfoKHR>* pReleaseInfo) override;
 
     virtual void Process_vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR(
         const ApiCallInfo&                          call_info,
@@ -3554,7 +3567,7 @@ class VulkanExportJsonConsumer : public VulkanExportJsonConsumerBase
         const ApiCallInfo&                          call_info,
         VkResult                                    returnValue,
         format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkReleaseSwapchainImagesInfoEXT>* pReleaseInfo) override;
+        StructPointerDecoder<Decoded_VkReleaseSwapchainImagesInfoKHR>* pReleaseInfo) override;
 
     virtual void Process_vkGetGeneratedCommandsMemoryRequirementsNV(
         const ApiCallInfo&                          call_info,
@@ -3644,6 +3657,21 @@ class VulkanExportJsonConsumer : public VulkanExportJsonConsumerBase
         uint64_t                                    objectHandle,
         format::HandleId                            privateDataSlot,
         PointerDecoder<uint64_t>*                   pData) override;
+
+    virtual void Process_vkCmdDispatchTileQCOM(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        StructPointerDecoder<Decoded_VkDispatchTileInfoQCOM>* pDispatchTileInfo) override;
+
+    virtual void Process_vkCmdBeginPerTileExecutionQCOM(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        StructPointerDecoder<Decoded_VkPerTileBeginInfoQCOM>* pPerTileBeginInfo) override;
+
+    virtual void Process_vkCmdEndPerTileExecutionQCOM(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        StructPointerDecoder<Decoded_VkPerTileEndInfoQCOM>* pPerTileEndInfo) override;
 
     virtual void Process_vkCmdSetFragmentShadingRateEnumNV(
         const ApiCallInfo&                          call_info,
@@ -4273,6 +4301,11 @@ class VulkanExportJsonConsumer : public VulkanExportJsonConsumerBase
         format::HandleId                            commandBuffer,
         VkImageAspectFlags                          aspectMask) override;
 
+    virtual void Process_vkCmdBindTileMemoryQCOM(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        StructPointerDecoder<Decoded_VkTileMemoryBindInfoQCOM>* pTileMemoryBindInfo) override;
+
     virtual void Process_vkGetPartitionedAccelerationStructuresBuildSizesNV(
         const ApiCallInfo&                          call_info,
         format::HandleId                            device,
@@ -4365,6 +4398,11 @@ class VulkanExportJsonConsumer : public VulkanExportJsonConsumerBase
         VkExternalMemoryHandleTypeFlagBits          handleType,
         uint64_t                                    pHandle,
         StructPointerDecoder<Decoded_VkMemoryMetalHandlePropertiesEXT>* pMemoryMetalHandleProperties) override;
+
+    virtual void Process_vkCmdEndRendering2EXT(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        StructPointerDecoder<Decoded_VkRenderingEndInfoEXT>* pRenderingEndInfo) override;
 
     virtual void Process_vkCreateAccelerationStructureKHR(
         const ApiCallInfo&                          call_info,

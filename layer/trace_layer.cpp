@@ -33,6 +33,10 @@
 #include "util/platform.h"
 
 #include "vulkan/vk_layer.h"
+#include "vulkan/vulkan_ohos.h"
+#if ENABLE_OPENXR_SUPPORT
+#include "openxr/openxr_loader_negotiation.h"
+#endif
 
 #include <array>
 #include <cstring>
@@ -92,6 +96,8 @@ const std::vector<struct LayerExtensionProps> kDeviceExtensionProps = {
 /// An alphabetical list of device extensions which we do not report upstream if
 /// other layers or ICDs expose them to us.
 const char* const kUnsupportedDeviceExtensions[] = { VK_AMDX_SHADER_ENQUEUE_EXTENSION_NAME,
+                                                     VK_ARM_TENSORS_EXTENSION_NAME,
+                                                     VK_ARM_DATA_GRAPH_EXTENSION_NAME,
                                                      VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME,
                                                      VK_EXT_PIPELINE_PROPERTIES_EXTENSION_NAME,
                                                      VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME,
@@ -103,7 +109,9 @@ const char* const kUnsupportedDeviceExtensions[] = { VK_AMDX_SHADER_ENQUEUE_EXTE
                                                      VK_NV_MEMORY_DECOMPRESSION_EXTENSION_NAME,
                                                      VK_VALVE_DESCRIPTOR_SET_HOST_MAPPING_EXTENSION_NAME,
                                                      VK_NV_CUDA_KERNEL_LAUNCH_EXTENSION_NAME,
-                                                     VK_NV_CLUSTER_ACCELERATION_STRUCTURE_EXTENSION_NAME };
+                                                     VK_NV_CLUSTER_ACCELERATION_STRUCTURE_EXTENSION_NAME,
+                                                     VK_NV_EXTERNAL_COMPUTE_QUEUE_EXTENSION_NAME,
+                                                     VK_OHOS_SURFACE_EXTENSION_NAME };
 
 static void RemoveExtensions(std::vector<VkExtensionProperties>& extensionProps,
                              const char* const                   screenedExtensions[],
