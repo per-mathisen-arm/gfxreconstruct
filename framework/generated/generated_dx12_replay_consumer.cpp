@@ -14179,13 +14179,18 @@ void Dx12ReplayConsumer::Process_IDXGISwapChain_GetContainingOutput(
             call_info,
             replay_object,
             ppOutput);
-        if(!ppOutput->IsNull()) ppOutput->SetHandleLength(1);
-        auto out_p_ppOutput    = ppOutput->GetPointer();
-        auto out_hp_ppOutput   = ppOutput->GetHandlePointer();
-        auto replay_result = reinterpret_cast<IDXGISwapChain*>(replay_object->object)->GetContainingOutput(out_hp_ppOutput);
+        DxObjectInfo object_info_ppOutput{};
+        if(!ppOutput->IsNull())
+        {
+            ppOutput->SetHandleLength(1);
+            ppOutput->SetConsumerData(0, &object_info_ppOutput);
+        }
+        auto replay_result = OverrideGetContainingOutput(replay_object,
+                                                         return_value,
+                                                         ppOutput);
         if (SUCCEEDED(replay_result))
         {
-            AddObject(out_p_ppOutput, out_hp_ppOutput, format::ApiCall_IDXGISwapChain_GetContainingOutput);
+            AddObject(ppOutput->GetPointer(), ppOutput->GetHandlePointer(), std::move(object_info_ppOutput), format::ApiCall_IDXGISwapChain_GetContainingOutput);
         }
         CheckReplayResult("IDXGISwapChain_GetContainingOutput", return_value, replay_result);
         CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGISwapChain_GetContainingOutput>::Dispatch(
@@ -15367,7 +15372,9 @@ void Dx12ReplayConsumer::Process_IDXGISwapChain1_GetFullscreenDesc(
         {
             pDesc->AllocateOutputData(1);
         }
-        auto replay_result = reinterpret_cast<IDXGISwapChain1*>(replay_object->object)->GetFullscreenDesc(pDesc->GetOutputPointer());
+        auto replay_result = OverrideGetFullscreenDesc(replay_object,
+                                                       return_value,
+                                                       pDesc);
         CheckReplayResult("IDXGISwapChain1_GetFullscreenDesc", return_value, replay_result);
         CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGISwapChain1_GetFullscreenDesc>::Dispatch(
             this,
@@ -15397,9 +15404,9 @@ void Dx12ReplayConsumer::Process_IDXGISwapChain1_GetHwnd(
         {
             pHwnd->AllocateOutputData(1);
         }
-        auto out_p_pHwnd    = pHwnd->GetPointer();
-        auto out_op_pHwnd   = reinterpret_cast<HWND*>(pHwnd->GetOutputPointer());
-        auto replay_result = reinterpret_cast<IDXGISwapChain1*>(replay_object->object)->GetHwnd(out_op_pHwnd);
+        auto replay_result = OverrideGetHwnd(replay_object,
+                                             return_value,
+                                             pHwnd);
         CheckReplayResult("IDXGISwapChain1_GetHwnd", return_value, replay_result);
         CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGISwapChain1_GetHwnd>::Dispatch(
             this,
@@ -15408,7 +15415,6 @@ void Dx12ReplayConsumer::Process_IDXGISwapChain1_GetHwnd(
             return_value,
             replay_result,
             pHwnd);
-        PostProcessExternalObject(replay_result, out_op_pHwnd, out_p_pHwnd, format::ApiCallId::ApiCall_IDXGISwapChain1_GetHwnd, "IDXGISwapChain1_GetHwnd");
     }
 }
 
