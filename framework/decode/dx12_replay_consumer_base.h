@@ -1219,8 +1219,7 @@ class Dx12ReplayConsumerBase : public Dx12Consumer
 
     void InitializeResourceAllocator(const IUnknown* adapter, const void* device, HandlePointerDecoder<void*>* decoder);
 
-    const Dx12AccelerationStructureBuilder*
-    Dx12ReplayConsumerBase::GetAccelerationStructureBuilder(ID3D12Device5* device5);
+    Dx12AccelerationStructureBuilder* GetAccelerationStructureBuilder(const DxObjectInfo* device_info);
 
     void DetectAdapters();
 
@@ -1309,7 +1308,8 @@ class Dx12ReplayConsumerBase : public Dx12Consumer
                                   const format::InitSubresourceCommandHeader& command_header,
                                   const uint8_t*                              data);
 
-    void SetResourceReplayRequiredSize(StructPointerDecoder<Decoded_D3D12_RESOURCE_DESC>*  pDesc,
+    void SetResourceReplayRequiredSize(DxObjectInfo*                                       replay_object_info,
+                                       StructPointerDecoder<Decoded_D3D12_RESOURCE_DESC>*  pDesc,
                                        StructPointerDecoder<Decoded_D3D12_RESOURCE_DESC1>* pDesc1,
                                        D3D12_RESOURCE_STATES                               InitialResourceState);
 
@@ -1355,7 +1355,7 @@ class Dx12ReplayConsumerBase : public Dx12Consumer
 #endif
     std::optional<std::pair<uint64_t, std::vector<uint8_t>>> latest_root_signature_blob_datas_;
     // map dx12 acceleration structure builders for each device
-    std::unordered_map<ID3D12Device5*, std::unique_ptr<Dx12AccelerationStructureBuilder>>
+    std::unordered_map<const ID3D12Device*, std::unique_ptr<Dx12AccelerationStructureBuilder>>
         acceleration_structure_builders_;
 };
 

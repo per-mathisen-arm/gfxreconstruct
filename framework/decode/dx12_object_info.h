@@ -44,6 +44,7 @@
 #include <map>
 #include <set>
 #include <unordered_map>
+#include <optional>
 
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(decode)
