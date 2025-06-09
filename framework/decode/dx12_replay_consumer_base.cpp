@@ -25,6 +25,7 @@
 
 #include "decode/dx12_enum_util.h"
 #include "decode/custom_dx12_struct_object_mappers.h"
+#include "generated/generated_dx12_enum_to_string.h"
 #include "generated/generated_dx12_call_id_to_string.h"
 #include "graphics/dx12_util.h"
 #include "graphics/dx12_image_renderer.h"
@@ -1075,6 +1076,16 @@ HRESULT Dx12ReplayConsumerBase::OverrideCreateSwapChainForHwnd(
     DxObjectInfo*                                                  restrict_to_output_info,
     HandlePointerDecoder<IDXGISwapChain1*>*                        swapchain)
 {
+    DXGI_FORMAT format = desc->GetPointer()->Format;
+
+    if (format != DXGI_FORMAT_R8G8B8A8_UNORM && format != DXGI_FORMAT_R10G10B10A2_UNORM &&
+        format != DXGI_FORMAT_R16G16B16A16_FLOAT)
+    {
+        GFXRECON_LOG_ERROR(
+            "SwapChain uses uncommon DXGI_FORMAT: %s. This may affect image capture or display fidelity.",
+            gfxrecon::util::ToString(format).c_str());
+    }
+
     return CreateSwapChainForHwnd(replay_object_info,
                                   original_result,
                                   device_info,
@@ -1099,6 +1110,16 @@ Dx12ReplayConsumerBase::OverrideCreateSwapChain(DxObjectInfo*                   
     Window* window         = nullptr;
     auto    wsi_context    = application_ ? application_->GetWsiContext("", true) : nullptr;
     auto    window_factory = wsi_context ? wsi_context->GetWindowFactory() : nullptr;
+
+    DXGI_FORMAT format = desc_pointer->BufferDesc.Format;
+
+    if (format != DXGI_FORMAT_R8G8B8A8_UNORM && format != DXGI_FORMAT_R10G10B10A2_UNORM &&
+        format != DXGI_FORMAT_R16G16B16A16_FLOAT)
+    {
+        GFXRECON_LOG_ERROR(
+            "SwapChain uses uncommon DXGI_FORMAT: %s. This may affect image capture or display fidelity.",
+            gfxrecon::util::ToString(format).c_str());
+    }
 
     if (window_factory != nullptr && desc_pointer != nullptr)
     {
@@ -1178,6 +1199,16 @@ Dx12ReplayConsumerBase::OverrideCreateSwapChainForCoreWindow(DxObjectInfo* repla
 {
     GFXRECON_UNREFERENCED_PARAMETER(window_info);
 
+    DXGI_FORMAT format = desc->GetPointer()->Format;
+
+    if (format != DXGI_FORMAT_R8G8B8A8_UNORM && format != DXGI_FORMAT_R10G10B10A2_UNORM &&
+        format != DXGI_FORMAT_R16G16B16A16_FLOAT)
+    {
+        GFXRECON_LOG_ERROR(
+            "SwapChain uses uncommon DXGI_FORMAT: %s. This may affect image capture or display fidelity.",
+            gfxrecon::util::ToString(format).c_str());
+    }
+
     return CreateSwapChainForHwnd(
         replay_object_info, original_result, device_info, 0, desc, nullptr, restrict_to_output_info, swapchain);
 }
@@ -1190,6 +1221,16 @@ Dx12ReplayConsumerBase::OverrideCreateSwapChainForComposition(DxObjectInfo* repl
                                                               DxObjectInfo* restrict_to_output_info,
                                                               HandlePointerDecoder<IDXGISwapChain1*>* swapchain)
 {
+    DXGI_FORMAT format = desc->GetPointer()->Format;
+
+    if (format != DXGI_FORMAT_R8G8B8A8_UNORM && format != DXGI_FORMAT_R10G10B10A2_UNORM &&
+        format != DXGI_FORMAT_R16G16B16A16_FLOAT)
+    {
+        GFXRECON_LOG_ERROR(
+            "SwapChain uses uncommon DXGI_FORMAT: %s. This may affect image capture or display fidelity.",
+            gfxrecon::util::ToString(format).c_str());
+    }
+
     return CreateSwapChainForHwnd(
         replay_object_info, original_result, device_info, 0, desc, nullptr, restrict_to_output_info, swapchain);
 }

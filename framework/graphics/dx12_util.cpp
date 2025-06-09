@@ -187,9 +187,46 @@ uint32_t Dx12DumpResourcePosToArrayIndex(Dx12DumpResourcePos pos)
     }
 }
 
-UINT GetTexturePitch(UINT64 width)
+static util::imagewriter::DataFormats
+DxgiFormatToImageWriterDataFormat(DXGI_FORMAT format, gfxrecon::util::ScreenshotFormat screenshot_format)
 {
-    return (width * graphics::BytesPerPixel + D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1) /
+    switch (format)
+    {
+        case DXGI_FORMAT_R8_UNORM:
+            return util::imagewriter::DataFormats::kFormat_R8;
+
+        case DXGI_FORMAT_R8G8B8A8_UNORM:
+            return (screenshot_format == gfxrecon::util::ScreenshotFormat::kBmp)
+                       ? util::imagewriter::DataFormats::kFormat_BGRA
+                       : util::imagewriter::DataFormats::kFormat_RGBA;
+
+        case DXGI_FORMAT_B8G8R8A8_UNORM:
+            return (screenshot_format == gfxrecon::util::ScreenshotFormat::kBmp)
+                       ? util::imagewriter::DataFormats::kFormat_BGRA
+                       : util::imagewriter::DataFormats::kFormat_RGBA;
+
+        case DXGI_FORMAT_B8G8R8X8_UNORM:
+            return (screenshot_format == gfxrecon::util::ScreenshotFormat::kBmp)
+                       ? util::imagewriter::DataFormats::kFormat_BGR
+                       : util::imagewriter::DataFormats::kFormat_RGB;
+
+        case DXGI_FORMAT_R16G16B16A16_FLOAT:
+            return util::imagewriter::DataFormats::kFormat_R16G16B16A16_SFLOAT;
+
+        case DXGI_FORMAT_R10G10B10A2_UNORM:
+            return (screenshot_format == gfxrecon::util::ScreenshotFormat::kBmp)
+                       ? util::imagewriter::DataFormats::kFormat_BGRA
+                       : util::imagewriter::DataFormats::kFormat_RGBA;
+
+        default:
+            GFXRECON_LOG_ERROR("%d isn't supported in DxgiFormatToImageWriterDataFormat", static_cast<int>(format));
+            return util::imagewriter::DataFormats::kFormat_UNSPECIFIED;
+    }
+}
+
+UINT GetTexturePitch(UINT64 width, DXGI_FORMAT format)
+{
+    return (width * GetPixelByteSize(format) + D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1) /
            D3D12_TEXTURE_DATA_PITCH_ALIGNMENT * D3D12_TEXTURE_DATA_PITCH_ALIGNMENT;
 }
 
@@ -237,7 +274,7 @@ void TakeScreenshot(std::unique_ptr<graphics::DX12ImageRenderer>& image_renderer
                 {
                     D3D12_RESOURCE_DESC fb_desc = frame_buffer_resource->GetDesc();
 
-                    auto pitch = GetTexturePitch(fb_desc.Width);
+                    auto pitch = GetTexturePitch(fb_desc.Width, fb_desc.Format);
 
                     graphics::CpuImage captured_image = {};
 
@@ -273,24 +310,33 @@ void TakeScreenshot(std::unique_ptr<graphics::DX12ImageRenderer>& image_renderer
                                         "Screenshot format invalid!  Expected BMP or PNG, falling back to BMP.");
                                     // Intentional fall-through
                                 case gfxrecon::util::ScreenshotFormat::kBmp:
+                                {
+                                    auto format = DxgiFormatToImageWriterDataFormat(
+                                        fb_desc.Format, gfxrecon::util::ScreenshotFormat::kBmp);
+
                                     if (!util::imagewriter::WriteBmpImage(filename + ".bmp",
                                                                           static_cast<unsigned int>(fb_desc.Width),
                                                                           static_cast<unsigned int>(fb_desc.Height),
                                                                           std::data(captured_image.data),
-                                                                          static_cast<unsigned int>(pitch)))
+                                                                          static_cast<unsigned int>(pitch),
+                                                                          format))
                                     {
                                         GFXRECON_LOG_ERROR(
                                             "Screenshot could not be created: failed to write BMP file %s",
                                             filename.c_str());
                                     }
                                     break;
+                                }
+
                                 case gfxrecon::util::ScreenshotFormat::kPng:
+                                    auto format = DxgiFormatToImageWriterDataFormat(
+                                        fb_desc.Format, gfxrecon::util::ScreenshotFormat::kPng);
                                     if (!util::imagewriter::WritePngImage(filename + ".png",
                                                                           static_cast<unsigned int>(fb_desc.Width),
                                                                           static_cast<unsigned int>(fb_desc.Height),
                                                                           std::data(captured_image.data),
                                                                           static_cast<unsigned int>(pitch),
-                                                                          util::imagewriter::kFormat_RGBA))
+                                                                          format))
                                     {
                                         GFXRECON_LOG_ERROR(
                                             "Screenshot could not be created: failed to write PNG file %s",
