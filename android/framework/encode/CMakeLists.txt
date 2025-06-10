@@ -5,7 +5,7 @@ target_sources(gfxrecon_encode
                    ${GFXRECON_SOURCE_DIR}/framework/encode/api_capture_manager.h
                    ${GFXRECON_SOURCE_DIR}/framework/encode/api_capture_manager.cpp
                    ${GFXRECON_SOURCE_DIR}/framework/encode/capture_manager.h
-                   ${GFXRECON_SOURCE_DIR}/framework/encode/capture_manager.cpp               
+                   ${GFXRECON_SOURCE_DIR}/framework/encode/capture_manager.cpp
                    ${GFXRECON_SOURCE_DIR}/framework/encode/capture_settings.h
                    ${GFXRECON_SOURCE_DIR}/framework/encode/capture_settings.cpp
                    ${GFXRECON_SOURCE_DIR}/framework/encode/command_writer.h
@@ -19,6 +19,7 @@ target_sources(gfxrecon_encode
                    ${GFXRECON_SOURCE_DIR}/framework/encode/custom_vulkan_struct_encoders.cpp
                    ${GFXRECON_SOURCE_DIR}/framework/encode/custom_vulkan_struct_handle_wrappers.h
                    ${GFXRECON_SOURCE_DIR}/framework/encode/custom_vulkan_struct_handle_wrappers.cpp
+                   ${GFXRECON_SOURCE_DIR}/framework/encode/custom_vulkan_wrapper_handlers.h
                    ${GFXRECON_SOURCE_DIR}/framework/encode/descriptor_update_template_info.h
                    ${GFXRECON_SOURCE_DIR}/framework/encode/handle_unwrap_memory.h
                    ${GFXRECON_SOURCE_DIR}/framework/encode/parameter_buffer.h
@@ -52,6 +53,8 @@ target_sources(gfxrecon_encode
                    ${GFXRECON_SOURCE_DIR}/framework/generated/generated_vulkan_struct_encoders.cpp
                    ${GFXRECON_SOURCE_DIR}/framework/generated/generated_vulkan_struct_handle_wrappers.h
                    ${GFXRECON_SOURCE_DIR}/framework/generated/generated_vulkan_struct_handle_wrappers.cpp
+                   ${GFXRECON_SOURCE_DIR}/framework/generated/generated_vulkan_struct_trackers.h
+                   ${GFXRECON_SOURCE_DIR}/framework/generated/generated_vulkan_struct_trackers.cpp
                    ${GFXRECON_SOURCE_DIR}/framework/generated/generated_vulkan_state_table.h
               )
 

@@ -85,7 +85,6 @@ struct DebugUtilsMessengerEXTWrapper                  : public HandleWrapper<VkD
 struct ValidationCacheEXTWrapper                      : public HandleWrapper<VkValidationCacheEXT> {};
 struct IndirectCommandsLayoutNVWrapper                : public HandleWrapper<VkIndirectCommandsLayoutNV> {};
 struct PerformanceConfigurationINTELWrapper           : public HandleWrapper<VkPerformanceConfigurationINTEL> {};
-struct MicromapEXTWrapper                             : public HandleWrapper<VkMicromapEXT> {};
 struct OpticalFlowSessionNVWrapper                    : public HandleWrapper<VkOpticalFlowSessionNV> {};
 struct VideoSessionKHRWrapper                         : public HandleWrapper<VkVideoSessionKHR> {};
 struct VideoSessionParametersKHRWrapper               : public HandleWrapper<VkVideoSessionParametersKHR> {};
@@ -142,9 +141,8 @@ struct PhysicalDeviceWrapper : public HandleWrapper<VkPhysicalDevice>
     std::unique_ptr<VkQueueFamilyProperties2[]> queue_family_properties2;
     std::vector<std::unique_ptr<VkQueueFamilyCheckpointPropertiesNV>> queue_family_checkpoint_properties;
 
-    // Track RayTracingPipeline / AccelerationStructure properties
-    std::optional<VkPhysicalDeviceRayTracingPipelinePropertiesKHR>    ray_tracing_pipeline_properties;
-    std::optional<VkPhysicalDeviceAccelerationStructurePropertiesKHR> acceleration_structure_properties;
+    // Track RayTracingPipelinePropertiesKHR
+    std::optional<VkPhysicalDeviceRayTracingPipelinePropertiesKHR> ray_tracing_pipeline_properties;
 };
 
 struct InstanceWrapper : public HandleWrapper<VkInstance>
@@ -177,6 +175,13 @@ struct FenceWrapper : public HandleWrapper<VkFence>
     // create parameters will need to be modified to reflect the state at snapshot write.
     bool           created_signaled{ false };
     DeviceWrapper* device{ nullptr };
+
+    // The fence cannot be "validated" until a certain number of queries (that might correspond to a number of frames)
+    // to the fence have been called. So if query_delay is not zero but the fence is validated by Vulkan,
+    // vkGetFenceStatus will still return VK_NOT_READY.
+    uint32_t query_delay{ 0 };
+    // Limits the number of times a validated vkGetFenceStatus can return VK_NOT_READY
+    uint32_t query_delay_limit{ UINT32_MAX };
 };
 
 struct EventWrapper : public HandleWrapper<VkEvent>
@@ -215,16 +220,16 @@ struct BufferWrapper : public HandleWrapper<VkBuffer>, AssetWrapperBase
 struct ImageViewWrapper;
 struct ImageWrapper : public HandleWrapper<VkImage>, AssetWrapperBase
 {
-    VkImageType              image_type{ VK_IMAGE_TYPE_2D };
-    VkFormat                 format{ VK_FORMAT_UNDEFINED };
-    bool                     external_format{ false };
-    VkExtent3D               extent{ 0, 0, 0 };
-    uint32_t                 mip_levels{ 0 };
-    uint32_t                 array_layers{ 0 };
-    VkSampleCountFlagBits    samples{};
-    VkImageTiling            tiling{};
-    VkImageLayout            current_layout{ VK_IMAGE_LAYOUT_UNDEFINED };
-    bool                     is_swapchain_image{ false };
+    VkImageType           image_type{ VK_IMAGE_TYPE_2D };
+    VkFormat              format{ VK_FORMAT_UNDEFINED };
+    bool                  external_format{ false };
+    VkExtent3D            extent{ 0, 0, 0 };
+    uint32_t              mip_levels{ 0 };
+    uint32_t              array_layers{ 0 };
+    VkSampleCountFlagBits samples{};
+    VkImageTiling         tiling{};
+    VkImageLayout         current_layout{ VK_IMAGE_LAYOUT_UNDEFINED };
+    bool                  is_swapchain_image{ false };
 
     std::set<ImageViewWrapper*> image_views;
 };
@@ -255,8 +260,7 @@ struct DeviceMemoryWrapper : public HandleWrapper<VkDeviceMemory>
     int              imported_fd{ -1 };
 
     // State tracking info for memory with device addresses.
-    format::HandleId device_id{ format::kNullHandleId };
-    VkDeviceAddress  address{ 0 };
+    VkDeviceAddress address{ 0 };
 
     std::unordered_set<AssetWrapperBase*> bound_assets;
     std::mutex                            asset_map_lock;
@@ -388,6 +392,7 @@ struct PipelineWrapper : public HandleWrapper<VkPipeline>
 };
 
 struct AccelerationStructureKHRWrapper;
+struct MicromapEXTWrapper;
 struct CommandPoolWrapper;
 struct CommandBufferWrapper : public HandleWrapper<VkCommandBuffer>
 {
@@ -440,6 +445,16 @@ struct CommandBufferWrapper : public HandleWrapper<VkCommandBuffer>
 
     std::unordered_map<uint32_t, const DescriptorSetWrapper*>
         bound_descriptors[vulkan_state_info::PipelineBindPoints::kBindPoint_count];
+
+    // Ray tracing pipeline's shader group handle data
+    DeviceWrapper*                          device;
+    format::HandleId                        device_id{ format::kNullHandleId };
+    std::vector<uint8_t>                    shader_group_handle_data;
+    vulkan_state_info::CreateDependencyInfo deferred_operation;
+    uint32_t                                group_count;
+
+    // TODO: Base pipeline
+    // TODO: Pipeline cache
 
     std::unordered_set<AssetWrapperBase*> modified_assets;
     std::vector<CommandBufferWrapper*>    secondaries;
@@ -544,6 +559,28 @@ struct SwapchainKHRWrapper : public HandleWrapper<VkSwapchainKHR>
     VkBool32                                          local_dimming_enable_AMD{ false };
 };
 
+struct ASInputBuffer
+{
+    // Required data to correctly create a buffer
+    VkBuffer           handle{ VK_NULL_HANDLE };
+    format::HandleId   handle_id{ format::kNullHandleId };
+    DeviceWrapper*     bind_device{ nullptr };
+    uint32_t           queue_family_index{ 0 };
+    VkDeviceSize       size{ 0 };
+    VkBufferUsageFlags usage{ 0 };
+
+    bool destroyed{ false };
+
+    VkDeviceAddress capture_address{ 0 };
+    VkDeviceAddress actual_address{ 0 };
+
+    std::vector<uint8_t> bytes;
+
+    VkMemoryRequirements memory_requirements{};
+    format::HandleId     bind_memory{};
+    VkDeviceMemory       bind_memory_handle{ VK_NULL_HANDLE };
+};
+
 struct AccelerationStructureKHRWrapper : public HandleWrapper<VkAccelerationStructureKHR>
 {
     // State tracking info for buffers with device addresses.
@@ -555,35 +592,12 @@ struct AccelerationStructureKHRWrapper : public HandleWrapper<VkAccelerationStru
 
     VkAccelerationStructureTypeKHR type;
     // Only used when tracking
-
-    struct ASInputBuffer
-    {
-        // Required data to correctly create a buffer
-        VkBuffer           handle{ VK_NULL_HANDLE };
-        format::HandleId   handle_id{ format::kNullHandleId };
-        DeviceWrapper*     bind_device{ nullptr };
-        uint32_t           queue_family_index{ 0 };
-        VkDeviceSize       created_size{ 0 };
-        VkBufferUsageFlags usage{ 0 };
-
-        bool destroyed{ false };
-
-        VkDeviceAddress capture_address{ 0 };
-        VkDeviceAddress actual_address{ 0 };
-
-        std::vector<uint8_t> bytes;
-
-        VkMemoryRequirements memory_requirements{};
-        format::HandleId     bind_memory{};
-        VkDeviceMemory       bind_memory_handle{ VK_NULL_HANDLE };
-    };
-
     struct AccelerationStructureKHRBuildCommandData
     {
         VkAccelerationStructureBuildGeometryInfoKHR           geometry_info;
         std::unique_ptr<uint8_t[]>                            geometry_info_memory;
         std::vector<VkAccelerationStructureBuildRangeInfoKHR> build_range_infos;
-        std::unordered_map<format::HandleId, ASInputBuffer>   input_buffers;
+        std::vector<ASInputBuffer>                            input_buffers;
     };
     std::optional<AccelerationStructureKHRBuildCommandData> latest_update_command_{ std::nullopt };
     std::optional<AccelerationStructureKHRBuildCommandData> latest_build_command_{ std::nullopt };
@@ -612,12 +626,52 @@ struct AccelerationStructureNVWrapper : public HandleWrapper<VkAccelerationStruc
     // TODO: Determine what additional state tracking is needed.
 };
 
+struct MicromapEXTWrapper : public HandleWrapper<VkMicromapEXT>
+{
+    // State tracking info for buffers with device addresses.
+    DeviceWrapper*   device;
+    format::HandleId device_id{ format::kNullHandleId };
+    VkDeviceAddress  address{ 0 };
+
+    VkMicromapTypeEXT type_;
+
+    struct MicromapBuildCommandData
+    {
+        VkMicromapBuildInfoEXT     micromap_build_info;
+        std::unique_ptr<uint8_t[]> micromap_usage_counts_memory;
+        std::vector<ASInputBuffer> input_buffers;
+    };
+
+    std::unique_ptr<MicromapBuildCommandData> latest_build_command_{};
+
+    struct MicromapCopyCommandData
+    {
+        VkCopyMicromapInfoEXT info;
+    };
+    std::unique_ptr<MicromapCopyCommandData> latest_copy_command_{};
+
+    struct MicromapWritePropertiesCommandData
+    {
+        VkQueryType query_type;
+    };
+    std::unique_ptr<MicromapWritePropertiesCommandData> latest_write_properties_command_{};
+};
+
 struct PrivateDataSlotWrapper : public HandleWrapper<VkPrivateDataSlot>
 {
     DeviceWrapper* device{ nullptr };
     VkObjectType   object_type{ VK_OBJECT_TYPE_UNKNOWN };
     uint64_t       object_handle{ 0 };
     uint64_t       data{ 0 };
+};
+
+struct DebugUtilsObjectNameInfoWrapper
+{
+    format::HandleId wrapper_handle;
+    VkDevice         device;
+    format::HandleId object_handle;
+    VkObjectType     object_type;
+    std::string      name;
 };
 
 struct PipelineCacheWrapper : public HandleWrapper<VkPipelineCache>

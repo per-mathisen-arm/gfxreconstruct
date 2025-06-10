@@ -125,6 +125,16 @@ The following command would be executed from the command line to set the
 export VK_INSTANCE_LAYERS=VK_LAYER_LUNARG_gfxreconstruct
 ```
 
+#### Capture specific app
+
+##### Capture specific app for Windows
+
+set GFXRECON_CAPTURE_PACKAGE_NAME=your_app_name
+
+##### Capture specific app for Linux
+
+export GFXRECON_CAPTURE_PACKAGE_NAME=your_app_name
+
 #### Understanding GFXReconstruct Layer Memory Capture
 
 The Vulkan API allows Vulkan memory objects to be mapped by an application
@@ -276,6 +286,7 @@ option values.
 | ---------------------------------------------- | ------------------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Capture File Name                              | GFXRECON_CAPTURE_FILE                                   | STRING  | Path to use when creating the capture file.  Default is: `gfxrecon_capture.gfxr`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | Capture Specific Frames                        | GFXRECON_CAPTURE_FRAMES                                 | STRING  | Specify one or more comma-separated frame ranges to capture.  Each range will be written to its own file.  A frame range can be specified as a single value, to specify a single frame to capture, or as two hyphenated values, to specify the first and last frame to capture.  Frame ranges should be specified in ascending order and cannot overlap. Note that frame numbering is 1-based (i.e. the first frame is frame 1). Example: `200,301-305` will create two capture files, one containing a single frame and one containing five frames.  Default is: Empty string (all frames are captured).                                                                                                                                                                                                                                                                                                                                                                   |
+| Capture specific app                           | GFXRECON_CAPTURE_PACKAGE_NAME                           | STRING  | Specify one app name to be captured. Default is: ""                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | Quit after capturing frame ranges              | GFXRECON_QUIT_AFTER_CAPTURE_FRAMES                      | BOOL    | Setting it to `true` will force the application to terminate once all frame ranges specified by `GFXRECON_CAPTURE_FRAMES` have been captured. Default is: `false`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | Hotkey Capture Trigger                         | GFXRECON_CAPTURE_TRIGGER                                | STRING  | Specify a hotkey (any one of F1-F12, TAB, CONTROL) that will be used to start/stop capture.  Example: `F3` will set the capture trigger to F3 hotkey. One capture file will be generated for each pair of start/stop hotkey presses. Default is: Empty string (hotkey capture trigger is disabled).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | Hotkey Capture Trigger Frames                  | GFXRECON_CAPTURE_TRIGGER_FRAMES                         | STRING  | Specify a limit on the number of frames to be captured via hotkey.  Example: `1` will capture exactly one frame when the trigger key is pressed. Default is: Empty string (no limit)                                                                                                                                                                                                                                                      |
@@ -306,6 +317,11 @@ option values.
 | Force Command Serialization                    | GFXRECON_FORCE_COMMAND_SERIALIZATION                    | BOOL    | Sets exclusive locks(unique_lock) for every ApiCall. It can avoid external multi-thread to cause captured issue.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | Queue Zero Only                                | GFXRECON_QUEUE_ZERO_ONLY                                | BOOL    | Forces to using only QueueFamilyIndex: 0 and queueCount: 1 on capturing to avoid replay error for unavailble VkQueue.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | Allow Pipeline Compile Required                | GFXRECON_ALLOW_PIPELINE_COMPILE_REQUIRED                | BOOL    | The default behaviour forces VK_PIPELINE_COMPILE_REQUIRED to be returned from Create*Pipelines calls which have VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT set, and skips dispatching and recording the calls. This forces applications to fallback to recompiling pipelines without caching, the Vulkan calls for which will be captured. Enabling this option causes capture to record the application's calls and implementation's return values unmodified, but the resulting captures are fragile to changes in Vulkan implementations if they use pipeline caching.                                                                                                                                                                                                                                                                                                                                                                                     |
+| Delay fence queries                            | GFXRECON_FENCE_QUERY_DELAY                              | INTEGER | Fences queried using `vkGetFenceStatus` and `vkWaitForFences` won't return `VK_SUCCESS` before a number of such queries and will instead return `VK_NOT_READY` and `VK_TIMEOUT`. Default is `0`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Fence Query Delay unit                         | GFXRECON_FENCE_QUERY_DELAY_UNIT                         | STRING  | Specify the "unit of time" used for the delay fence queries option. If set to `calls` then fence query delay is the number of calls to `vkGetFenceStatus`/`vkWaitForFences` that will be delayed. If set to `frames` then fence query delay is the number of frames for which called will be delayed. Default is `calls`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Fence Query Delay Timeout Threshold            | GFXRECON_FENCE_QUERY_DELAY_TIMEOUT_THRESHOLD            | INTEGER | Specify a timeout threshold (in nanoseconds) as to what is considered a "fence query" when calling `vkWaitForFences`. Calls to `vkWaitForFences` can either be understood as a synchronization step where you actually want to wait for the underlying command to complete and reaching the timeout is a failure in the command, or as a "delayed query" where you just want to query the fence for a certain amount of time and will try again later if timeout is reached. This option sets the threshold of the timeout value to differentiate these two usages.                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Fence Query Delay Limit                        | GFXRECON_FENCE_QUERY_DELAY_LIMIT                        | INTEGER | Allows to limit the number of times each fence can be delayed when fence_query_delay is used in 'frames' mode.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+
 #### Memory Tracking Known Issues
 
 ### Capture Limitations
@@ -546,11 +562,14 @@ The `gfxrecon-replay` tool for desktop accepts the following command line
 arguments:
 
 ```text
-gfxrecon-replay         [-h | --help] [--version] [--gpu <index>]
+gfxrecon-replay         [-h | --help] [--version] [--cpu-mask <binary-mask>] [--gpu <index>]
                         [--pause-frame <N>] [--paused] [--sync] [--screenshot-all]
                         [--screenshots <N1(-N2),...>] [--screenshot-format <format>]
                         [--screenshot-dir <dir>] [--screenshot-prefix <file-prefix>]
                         [--screenshot-scale SCALE] [--screenshot-size WIDTHxHEIGHT]
+                        [--screenshot-interval <N>]
+                        [--tsp <script-file> | --trigger-script-path <script-file>]
+                        [--tsf <frame-ranges> | --trigger-script-frame <frame-ranges>]
                         [--sfa | --skip-failed-allocations] [--replace-shaders <dir>]
                         [--opcd | --omit-pipeline-cache-data] [--wsi <platform>]
                         [--surface-index <N>] [--remove-unsupported] [--validate]
@@ -561,6 +580,8 @@ gfxrecon-replay         [-h | --help] [--version] [--gpu <index>]
                         [--measurement-file <file>] [--quit-after-measurement-range]
                         [--flush-measurement-range]
                         [--log-level <level>] [--log-file <file>] [--log-debugview]
+                        [--api <api>]
+                        [--preload-measurement-range]
                         [--no-debug-popup] [--use-colorspace-fallback]
                         [--wait-before-present]
                         [--dump-resources <submit-index,command-index,draw-call-index>]
@@ -575,9 +596,11 @@ gfxrecon-replay         [-h | --help] [--version] [--gpu <index>]
                         [--dump-resources-dump-vertex-index-buffers]
                         [--dump-resources-json-output-per-command]
                         [--dump-resources-dump-immutable-resources]
-                        [--dump-resources-dump-all-image-subresources] <file>
+                        [--dump-resources-dump-all-image-subresources]
+                        [--dump-resources-dump-raw-images]
                         [--pbi-all] [--pbis <index1,index2>]
                         [--pipeline-creation-jobs | --pcj <num_jobs>]
+                        <file>
 
 
 Required arguments:
@@ -591,6 +614,13 @@ Optional arguments:
   --log-file <file>     Write log messages to a file at the specified path.
                         Default is: Empty string (file logging disabled).
   --log-debugview       Log messages with OutputDebugStringA. Windows only.
+  --cpu-mask <binary-mask>
+                        Set of CPU cores used by the replayer.
+                        `binary-mask` is a succession of '0' and '1' that specifies
+                        used/unused cores. For example '1010' activates the first and
+                        third cores and deactivate all other cores.
+                        If the option is not set, all cores can be used. If the option
+                        is set only for some cores, the other cores are not used.
   --gpu <index>         Use the specified device for replay, where index
                         is the zero-based index to the array of physical devices
                         returned by vkEnumeratePhysicalDevices.  Replay may fail
@@ -617,6 +647,12 @@ Optional arguments:
                         ascending order and cannot overlap.  Note that frame
                         numbering is 1-based (i.e. the first frame is frame 1).
                         Example: 200,301-305 will generate six screenshots.
+  --screenshot-interval <N>
+                        Specifies the number of frames between two screenshots
+                        within a screenshot range.
+                        Example: If screenshot range is 10-15 and interval is 2,
+                        screenshot will be generated for frames 10, 12 and 14.
+                        Default is 1.
   --screenshot-format <format>
                         Image file format to use for screenshot generation.
                         Available formats are:
@@ -639,6 +675,11 @@ Optional arguments:
                         unspecified screenshots will use the swapchain images
                         dimensions. If --screenshot-scale is also specified then
                         this option is ignored.
+  --tsp <script-file>, --trigger-script-path <script-file>
+                        Path to script file.
+  --tsf <frame-ranges>, --trigger-script-frame <frame-ranges>
+                        Trigger script for the specified frames.Target frames are
+                        specified as a comma separated list of frame ranges.
   --sfa                 Skip vkAllocateMemory, vkAllocateCommandBuffers, and
                         vkAllocateDescriptorSets calls that failed during
                         capture (same as --skip-failed-allocations).
@@ -651,7 +692,7 @@ Optional arguments:
                         vkGetPipelineCacheData (same as
                         --omit-pipeline-cache-data).
   --wsi <platform>      Force replay to use the specified wsi platform.
-                        Available platforms are: auto,win32,xlib,xcb,wayland
+                        Available platforms are: auto,win32,xlib,xcb,wayland,headless
   --surface-index <N>   Restrict rendering to the Nth surface object created.
                         Used with captures that include multiple surfaces.  Default
                         is -1 (render to all surfaces).
@@ -696,33 +737,51 @@ Optional arguments:
   --use-captured-swapchain-indices
                         Same as "--swapchain captured". Ignored if the "--swapchain" option is used.
   --measurement-frame-range <start_frame>-<end_frame>
-              Custom framerange to measure FPS for.
-              This range will include the start frame but not the end frame.
-              The measurement frame range defaults to all frames except the loading
-              frame but can be configured for any range. If the end frame is past the
-              last frame in the trace it will be clamped to the frame after the last
-              (so in that case the results would include the last frame).
+                        Custom framerange to measure FPS for.
+                        This range will include the start frame but not the end frame.
+                        The measurement frame range defaults to all frames except the loading
+                        frame but can be configured for any range. If the end frame is past the
+                        last frame in the trace it will be clamped to the frame after the last
+                        (so in that case the results would include the last frame).
   --measurement-file <file>
-              Write measurements to a file at the specified path.
-              Default is: '/sdcard/gfxrecon-measurements.json' on android and
-              './gfxrecon-measurements.json' on desktop.
+                        File in which measurements are written.
+                        Default is: '/sdcard/gfxrecon-measurements.json' on android and
+                        './gfxrecon-measurements.json' on desktop.
   --quit-after-measurement-range
-              If this is specified the replayer will abort
-              when it reaches the <end_frame> specified in
-              the --measurement-frame-range argument.
+                        If this is specified the replayer will abort
+                        when it reaches the <end_frame> specified in
+                        the --measurement-frame-range argument.
   --flush-measurement-range
-              If this is specified the replayer will flush
-              and wait for all current GPU work to finish at the
-              start and end of the measurement range.
+                        If this is specified the replayer will flush
+                        and wait for all current GPU work to finish at the
+                        start and end of the measurement range.
+  --vssb
+                        Skip blit to real swapchain to gain performance during replay.
+  --use-ext-frame-boundary
+                        Convert all offscreen frame boundaries to `VK_EXT_frame_boundary`
+                        frame boundaries.
   --flush-inside-measurement-range
-              If this is specified the replayer will flush and wait
-              for all current GPU work to finish at the end of each
-              frame inside the measurement range.
+                        If this is specified the replayer will flush and wait
+                        for all current GPU work to finish at the end of each
+                        frame inside the measurement range.
   --use-colorspace-fallback
-              Swap the swapchain color space if unsupported by replay device.
-              Check if color space is not supported by replay device and
-              fallback to VK_COLOR_SPACE_SRGB_NONLINEAR_KHR.
+                        Swap the swapchain color space if unsupported by replay device.
+                        Check if color space is not supported by replay device and
+                        fallback to VK_COLOR_SPACE_SRGB_NONLINEAR_KHR.
   --offscreen-swapchain-frame-boundary
+                        Should only be used with offscreen swapchain.
+                        Activates the extension VK_EXT_frame_boundary (always supported if
+                        trimming, checks for driver support otherwise) and inserts command
+                        buffer submission with VkFrameBoundaryEXT where vkQueuePresentKHR
+                        was called in the original capture.
+                        This allows preserving frames when capturing a replay that uses.
+                        offscreen swapchain.
+  --preload-measurement-range
+                        Preloads a frame range specified with --measurement-frame-range
+                        from the trace file into a continuous, expandable buffer,
+                        in order to mitigate the impact of read file commands on
+                        performance measurements.
+
               Should only be used with offscreen swapchain.
               Activates the extension VK_EXT_frame_boundary (always supported if
               trimming, checks for driver support otherwise) and inserts command

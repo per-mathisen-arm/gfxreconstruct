@@ -36,6 +36,7 @@
 #include "util/argument_parser.h"
 #include "util/logging.h"
 #include "util/platform.h"
+#include "decode/replay_options_annotation.h"
 #include "parse_dump_resources_cli.h"
 
 #include <android_native_app_glue.h>
@@ -119,7 +120,8 @@ extern "C"
 
 void android_main(struct android_app* app)
 {
-    gfxrecon::util::Log::Init();
+    gfxrecon::util::Log::Init(gfxrecon::decode::kDefaultLogLevel);
+    PrintVersion(kApplicationName);
 
     // Keep screen on while window is active.
     ANativeActivity_setWindowFlags(app->activity, AWINDOW_FLAG_KEEP_SCREEN_ON, 0);
@@ -132,7 +134,7 @@ void android_main(struct android_app* app)
 
     bool run = true;
 
-    if (CheckOptionPrintUsage(kApplicationName, arg_parser) || CheckOptionPrintVersion(kApplicationName, arg_parser))
+    if (CheckOptionPrintUsage(kApplicationName, arg_parser) || arg_parser.IsOptionSet(kVersionOption))
     {
         run = false;
     }
@@ -157,6 +159,7 @@ void android_main(struct android_app* app)
             const std::vector<std::string>& positional_arguments = arg_parser.GetPositionalArguments();
             filename                                             = positional_arguments[0];
         }
+        arg_parser.AddArguments(gfxrecon::decode::GetTraceReplayOptions(filename));
 
         try
         {
@@ -170,9 +173,8 @@ void android_main(struct android_app* app)
             }
             else
             {
-                auto application =
-                    std::make_shared<gfxrecon::application::Application>(kApplicationName, file_processor.get());
-                application->InitializeWsiContext(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME, app);
+                auto application = std::make_shared<gfxrecon::application::Application>(
+                    kApplicationName, file_processor.get(), VK_KHR_ANDROID_SURFACE_EXTENSION_NAME, app);
 
                 gfxrecon::decode::VulkanTrackedObjectInfoTable tracked_object_info_table;
                 gfxrecon::decode::VulkanReplayOptions          replay_options =
@@ -187,14 +189,12 @@ void android_main(struct android_app* app)
 
                 RunVulkanPreProcessConsumer(filename, replay_options, vulkan_replay_consumer);
 
-                uint32_t                               start_frame, end_frame;
-                bool        has_mfr = GetMeasurementFrameRange(arg_parser, start_frame, end_frame);
-                std::string measurement_file_name;
+                uint32_t measurement_start_frame;
+                uint32_t measurement_end_frame;
+                GetMeasurementFrameRange(arg_parser, measurement_start_frame, measurement_end_frame);
 
-                if (has_mfr)
-                {
-                    GetMeasurementFilename(arg_parser, measurement_file_name);
-                }
+                std::string measurement_file_name;
+                GetMeasurementFilename(arg_parser, measurement_file_name);
 
                 bool     quit_after_frame = false;
                 uint32_t quit_frame;
@@ -205,9 +205,8 @@ void android_main(struct android_app* app)
                     GetQuitAfterFrame(arg_parser, quit_frame);
                 }
 
-                gfxrecon::graphics::FpsInfo fps_info(static_cast<uint64_t>(start_frame),
-                                                     static_cast<uint64_t>(end_frame),
-                                                     has_mfr,
+                gfxrecon::graphics::FpsInfo fps_info(static_cast<uint64_t>(measurement_start_frame),
+                                                     static_cast<uint64_t>(measurement_end_frame),
                                                      replay_options.quit_after_measurement_frame_range,
                                                      replay_options.flush_measurement_frame_range,
                                                      replay_options.flush_inside_measurement_range,
@@ -225,6 +224,8 @@ void android_main(struct android_app* app)
                 file_processor->AddDecoder(&vulkan_decoder);
 
                 application->SetPauseFrame(GetPauseFrame(arg_parser));
+                application->SetTriggerScriptName(GetTriggerScriptName(arg_parser));
+                application->SetTriggerScriptFrame(GetTriggerScriptRanges(arg_parser));
 
                 // Warn if the capture layer is active.
                 CheckActiveLayers(kLayerProperty);
@@ -246,17 +247,17 @@ void android_main(struct android_app* app)
                 if ((file_processor->GetCurrentFrameNumber() > 0) &&
                     (file_processor->GetErrorState() == gfxrecon::decode::FileProcessor::kErrorNone))
                 {
-                    if (file_processor->GetCurrentFrameNumber() < start_frame)
+                    if (file_processor->GetCurrentFrameNumber() < measurement_start_frame)
                     {
                         GFXRECON_LOG_WARNING(
                             "Measurement range start frame (%u) is greater than the last replayed frame (%u). "
                             "Measurements were never started, cannot calculate measurement range FPS.",
-                            start_frame,
+                            measurement_start_frame,
                             file_processor->GetCurrentFrameNumber());
                     }
                     else
                     {
-                        fps_info.LogToConsole();
+                        fps_info.LogMeasurements();
                     }
                 }
                 else if (file_processor->GetErrorState() != gfxrecon::decode::FileProcessor::kErrorNone)

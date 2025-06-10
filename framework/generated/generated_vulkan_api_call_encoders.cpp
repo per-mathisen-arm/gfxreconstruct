@@ -465,8 +465,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyDevice(
         manager->EndDestroyApiCallCapture<vulkan_wrappers::DeviceWrapper>(device);
     }
 
-    ScopedDestroyLock exclusive_scoped_lock;
-    vulkan_wrappers::GetDeviceTable(device)->DestroyDevice(device, pAllocator);
+    manager->OverrideDestroyDevice(device, pAllocator);
 
     CustomEncoderPostCall<format::ApiCallId::ApiCall_vkDestroyDevice>::Dispatch(manager, device, pAllocator);
 
@@ -699,8 +698,7 @@ VKAPI_ATTR void VKAPI_CALL FreeMemory(
         manager->EndDestroyApiCallCapture<vulkan_wrappers::DeviceMemoryWrapper>(memory);
     }
 
-    ScopedDestroyLock exclusive_scoped_lock;
-    vulkan_wrappers::GetDeviceTable(device)->FreeMemory(device, memory, pAllocator);
+    manager->OverrideFreeMemory(device, memory, pAllocator);
 
     CustomEncoderPostCall<format::ApiCallId::ApiCall_vkFreeMemory>::Dispatch(manager, device, memory, pAllocator);
 
@@ -1329,7 +1327,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetFenceStatus(
 
     CustomEncoderPreCall<format::ApiCallId::ApiCall_vkGetFenceStatus>::Dispatch(manager, device, fence);
 
-    VkResult result = vulkan_wrappers::GetDeviceTable(device)->GetFenceStatus(device, fence);
+    VkResult result = manager->OverrideGetFenceStatus(device, fence);
 
     auto encoder = manager->BeginApiCallCapture(format::ApiCallId::ApiCall_vkGetFenceStatus);
     if (encoder)
@@ -1368,7 +1366,7 @@ VKAPI_ATTR VkResult VKAPI_CALL WaitForFences(
 
     CustomEncoderPreCall<format::ApiCallId::ApiCall_vkWaitForFences>::Dispatch(manager, device, fenceCount, pFences, waitAll, timeout);
 
-    VkResult result = vulkan_wrappers::GetDeviceTable(device)->WaitForFences(device, fenceCount, pFences, waitAll, timeout);
+    VkResult result = manager->OverrideWaitForFences(device, fenceCount, pFences, waitAll, timeout);
 
     auto encoder = manager->BeginApiCallCapture(format::ApiCallId::ApiCall_vkWaitForFences);
     if (encoder)
@@ -2068,8 +2066,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyImage(
         manager->EndDestroyApiCallCapture<vulkan_wrappers::ImageWrapper>(image);
     }
 
-    ScopedDestroyLock exclusive_scoped_lock;
-    vulkan_wrappers::GetDeviceTable(device)->DestroyImage(device, image, pAllocator);
+    manager->OverrideDestroyImage(device, image, pAllocator);
 
     CustomEncoderPostCall<format::ApiCallId::ApiCall_vkDestroyImage>::Dispatch(manager, device, image, pAllocator);
 
@@ -2137,16 +2134,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateImageView(
 
     CustomEncoderPreCall<format::ApiCallId::ApiCall_vkCreateImageView>::Dispatch(manager, device, pCreateInfo, pAllocator, pView);
 
-    auto handle_unwrap_memory = manager->GetHandleUnwrapMemory();
-    const VkImageViewCreateInfo* pCreateInfo_unwrapped = vulkan_wrappers::UnwrapStructPtrHandles(pCreateInfo, handle_unwrap_memory);
-
-    VkResult result = vulkan_wrappers::GetDeviceTable(device)->CreateImageView(device, pCreateInfo_unwrapped, pAllocator, pView);
-
-    if (result >= 0)
-    {
-        vulkan_wrappers::CreateWrappedHandle<vulkan_wrappers::DeviceWrapper, vulkan_wrappers::NoParentWrapper, vulkan_wrappers::ImageViewWrapper>(device, vulkan_wrappers::NoParentWrapper::kHandleValue, pView, VulkanCaptureManager::GetUniqueId);
-    }
-    else
+    VkResult result = manager->OverrideCreateImageView(device, pCreateInfo, pAllocator, pView);
+    if (result < 0)
     {
         omit_output_data = true;
     }
@@ -2626,16 +2615,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSampler(
 
     CustomEncoderPreCall<format::ApiCallId::ApiCall_vkCreateSampler>::Dispatch(manager, device, pCreateInfo, pAllocator, pSampler);
 
-    auto handle_unwrap_memory = manager->GetHandleUnwrapMemory();
-    const VkSamplerCreateInfo* pCreateInfo_unwrapped = vulkan_wrappers::UnwrapStructPtrHandles(pCreateInfo, handle_unwrap_memory);
-
-    VkResult result = vulkan_wrappers::GetDeviceTable(device)->CreateSampler(device, pCreateInfo_unwrapped, pAllocator, pSampler);
-
-    if (result >= 0)
-    {
-        vulkan_wrappers::CreateWrappedHandle<vulkan_wrappers::DeviceWrapper, vulkan_wrappers::NoParentWrapper, vulkan_wrappers::SamplerWrapper>(device, vulkan_wrappers::NoParentWrapper::kHandleValue, pSampler, VulkanCaptureManager::GetUniqueId);
-    }
-    else
+    VkResult result = manager->OverrideCreateSampler(device, pCreateInfo, pAllocator, pSampler);
+    if (result < 0)
     {
         omit_output_data = true;
     }
@@ -17305,12 +17286,7 @@ VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectNameEXT(
 
     CustomEncoderPreCall<format::ApiCallId::ApiCall_vkSetDebugUtilsObjectNameEXT>::Dispatch(manager, device, pNameInfo);
 
-    auto handle_unwrap_memory = manager->GetHandleUnwrapMemory();
-    const VkDebugUtilsObjectNameInfoEXT* pNameInfo_unwrapped = vulkan_wrappers::UnwrapStructPtrHandles(pNameInfo, handle_unwrap_memory);
-
-    auto device_wrapper = vulkan_wrappers::GetWrapper<vulkan_wrappers::DeviceWrapper>(device);
-    auto physical_device = device_wrapper->physical_device->handle;
-    VkResult result = vulkan_wrappers::GetInstanceTable(physical_device)->SetDebugUtilsObjectNameEXT(device, pNameInfo_unwrapped);
+    VkResult result = manager->OverrideSetDebugUtilsObjectNameEXT(device, pNameInfo);
 
     auto encoder = manager->BeginTrackedApiCallCapture(format::ApiCallId::ApiCall_vkSetDebugUtilsObjectNameEXT);
     if (encoder)
@@ -17346,12 +17322,7 @@ VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectTagEXT(
 
     CustomEncoderPreCall<format::ApiCallId::ApiCall_vkSetDebugUtilsObjectTagEXT>::Dispatch(manager, device, pTagInfo);
 
-    auto handle_unwrap_memory = manager->GetHandleUnwrapMemory();
-    const VkDebugUtilsObjectTagInfoEXT* pTagInfo_unwrapped = vulkan_wrappers::UnwrapStructPtrHandles(pTagInfo, handle_unwrap_memory);
-
-    auto device_wrapper = vulkan_wrappers::GetWrapper<vulkan_wrappers::DeviceWrapper>(device);
-    auto physical_device = device_wrapper->physical_device->handle;
-    VkResult result = vulkan_wrappers::GetInstanceTable(physical_device)->SetDebugUtilsObjectTagEXT(device, pTagInfo_unwrapped);
+    VkResult result = manager->OverrideSetDebugUtilsObjectTagEXT(device, pTagInfo);
 
     auto encoder = manager->BeginTrackedApiCallCapture(format::ApiCallId::ApiCall_vkSetDebugUtilsObjectTagEXT);
     if (encoder)
@@ -17395,7 +17366,7 @@ VKAPI_ATTR void VKAPI_CALL QueueBeginDebugUtilsLabelEXT(
         manager->EndApiCallCapture();
     }
 
-    vulkan_wrappers::GetDeviceTable(queue)->QueueBeginDebugUtilsLabelEXT(queue, pLabelInfo);
+    manager->OverrideQueueBeginDebugUtilsLabelEXT(queue, pLabelInfo);
 
     CustomEncoderPostCall<format::ApiCallId::ApiCall_vkQueueBeginDebugUtilsLabelEXT>::Dispatch(manager, queue, pLabelInfo);
 }
@@ -17426,7 +17397,7 @@ VKAPI_ATTR void VKAPI_CALL QueueEndDebugUtilsLabelEXT(
         manager->EndApiCallCapture();
     }
 
-    vulkan_wrappers::GetDeviceTable(queue)->QueueEndDebugUtilsLabelEXT(queue);
+    manager->OverrideQueueEndDebugUtilsLabelEXT(queue);
 
     CustomEncoderPostCall<format::ApiCallId::ApiCall_vkQueueEndDebugUtilsLabelEXT>::Dispatch(manager, queue);
 }
@@ -17459,7 +17430,7 @@ VKAPI_ATTR void VKAPI_CALL QueueInsertDebugUtilsLabelEXT(
         manager->EndApiCallCapture();
     }
 
-    vulkan_wrappers::GetDeviceTable(queue)->QueueInsertDebugUtilsLabelEXT(queue, pLabelInfo);
+    manager->OverrideQueueInsertDebugUtilsLabelEXT(queue, pLabelInfo);
 
     CustomEncoderPostCall<format::ApiCallId::ApiCall_vkQueueInsertDebugUtilsLabelEXT>::Dispatch(manager, queue, pLabelInfo);
 }
@@ -17492,7 +17463,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginDebugUtilsLabelEXT(
         manager->EndCommandApiCallCapture(commandBuffer);
     }
 
-    vulkan_wrappers::GetDeviceTable(commandBuffer)->CmdBeginDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
+    manager->OverrideCmdBeginDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
 
     CustomEncoderPostCall<format::ApiCallId::ApiCall_vkCmdBeginDebugUtilsLabelEXT>::Dispatch(manager, commandBuffer, pLabelInfo);
 }
@@ -17523,7 +17494,7 @@ VKAPI_ATTR void VKAPI_CALL CmdEndDebugUtilsLabelEXT(
         manager->EndCommandApiCallCapture(commandBuffer);
     }
 
-    vulkan_wrappers::GetDeviceTable(commandBuffer)->CmdEndDebugUtilsLabelEXT(commandBuffer);
+    manager->OverrideCmdEndDebugUtilsLabelEXT(commandBuffer);
 
     CustomEncoderPostCall<format::ApiCallId::ApiCall_vkCmdEndDebugUtilsLabelEXT>::Dispatch(manager, commandBuffer);
 }
@@ -17556,7 +17527,7 @@ VKAPI_ATTR void VKAPI_CALL CmdInsertDebugUtilsLabelEXT(
         manager->EndCommandApiCallCapture(commandBuffer);
     }
 
-    vulkan_wrappers::GetDeviceTable(commandBuffer)->CmdInsertDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
+    manager->OverrideCmdInsertDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
 
     CustomEncoderPostCall<format::ApiCallId::ApiCall_vkCmdInsertDebugUtilsLabelEXT>::Dispatch(manager, commandBuffer, pLabelInfo);
 }
@@ -17585,13 +17556,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDebugUtilsMessengerEXT(
 
     CustomEncoderPreCall<format::ApiCallId::ApiCall_vkCreateDebugUtilsMessengerEXT>::Dispatch(manager, instance, pCreateInfo, pAllocator, pMessenger);
 
-    VkResult result = vulkan_wrappers::GetInstanceTable(instance)->CreateDebugUtilsMessengerEXT(instance, pCreateInfo, pAllocator, pMessenger);
-
-    if (result >= 0)
-    {
-        vulkan_wrappers::CreateWrappedHandle<vulkan_wrappers::InstanceWrapper, vulkan_wrappers::NoParentWrapper, vulkan_wrappers::DebugUtilsMessengerEXTWrapper>(instance, vulkan_wrappers::NoParentWrapper::kHandleValue, pMessenger, VulkanCaptureManager::GetUniqueId);
-    }
-    else
+    VkResult result = manager->OverrideCreateDebugUtilsMessengerEXT(instance, pCreateInfo, pAllocator, pMessenger);
+    if (result < 0)
     {
         omit_output_data = true;
     }
@@ -17642,8 +17608,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyDebugUtilsMessengerEXT(
         manager->EndDestroyApiCallCapture<vulkan_wrappers::DebugUtilsMessengerEXTWrapper>(messenger);
     }
 
-    ScopedDestroyLock exclusive_scoped_lock;
-    vulkan_wrappers::GetInstanceTable(instance)->DestroyDebugUtilsMessengerEXT(instance, messenger, pAllocator);
+    manager->OverrideDestroyDebugUtilsMessengerEXT(instance, messenger, pAllocator);
 
     CustomEncoderPostCall<format::ApiCallId::ApiCall_vkDestroyDebugUtilsMessengerEXT>::Dispatch(manager, instance, messenger, pAllocator);
 
@@ -17682,7 +17647,7 @@ VKAPI_ATTR void VKAPI_CALL SubmitDebugUtilsMessageEXT(
         manager->EndApiCallCapture();
     }
 
-    vulkan_wrappers::GetInstanceTable(instance)->SubmitDebugUtilsMessageEXT(instance, messageSeverity, messageTypes, pCallbackData);
+    manager->OverrideSubmitDebugUtilsMessageEXT(instance, messageSeverity, messageTypes, pCallbackData);
 
     CustomEncoderPostCall<format::ApiCallId::ApiCall_vkSubmitDebugUtilsMessageEXT>::Dispatch(manager, instance, messageSeverity, messageTypes, pCallbackData);
 }
@@ -22303,16 +22268,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateMicromapEXT(
 
     CustomEncoderPreCall<format::ApiCallId::ApiCall_vkCreateMicromapEXT>::Dispatch(manager, device, pCreateInfo, pAllocator, pMicromap);
 
-    auto handle_unwrap_memory = manager->GetHandleUnwrapMemory();
-    const VkMicromapCreateInfoEXT* pCreateInfo_unwrapped = vulkan_wrappers::UnwrapStructPtrHandles(pCreateInfo, handle_unwrap_memory);
-
-    VkResult result = vulkan_wrappers::GetDeviceTable(device)->CreateMicromapEXT(device, pCreateInfo_unwrapped, pAllocator, pMicromap);
-
-    if (result >= 0)
-    {
-        vulkan_wrappers::CreateWrappedHandle<vulkan_wrappers::DeviceWrapper, vulkan_wrappers::NoParentWrapper, vulkan_wrappers::MicromapEXTWrapper>(device, vulkan_wrappers::NoParentWrapper::kHandleValue, pMicromap, VulkanCaptureManager::GetUniqueId);
-    }
-    else
+    VkResult result = manager->OverrideCreateMicromapEXT(device, pCreateInfo, pAllocator, pMicromap);
+    if (result < 0)
     {
         omit_output_data = true;
     }
@@ -22401,10 +22358,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBuildMicromapsEXT(
         manager->EndCommandApiCallCapture(commandBuffer, TrackCmdBuildMicromapsEXTHandles, infoCount, pInfos);
     }
 
-    auto handle_unwrap_memory = manager->GetHandleUnwrapMemory();
-    const VkMicromapBuildInfoEXT* pInfos_unwrapped = vulkan_wrappers::UnwrapStructArrayHandles(pInfos, infoCount, handle_unwrap_memory);
-
-    vulkan_wrappers::GetDeviceTable(commandBuffer)->CmdBuildMicromapsEXT(commandBuffer, infoCount, pInfos_unwrapped);
+    manager->OverrideCmdBuildMicromapsEXT(commandBuffer, infoCount, pInfos);
 
     CustomEncoderPostCall<format::ApiCallId::ApiCall_vkCmdBuildMicromapsEXT>::Dispatch(manager, commandBuffer, infoCount, pInfos);
 }
@@ -22655,10 +22609,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyMicromapEXT(
         manager->EndCommandApiCallCapture(commandBuffer, TrackCmdCopyMicromapEXTHandles, pInfo);
     }
 
-    auto handle_unwrap_memory = manager->GetHandleUnwrapMemory();
-    const VkCopyMicromapInfoEXT* pInfo_unwrapped = vulkan_wrappers::UnwrapStructPtrHandles(pInfo, handle_unwrap_memory);
-
-    vulkan_wrappers::GetDeviceTable(commandBuffer)->CmdCopyMicromapEXT(commandBuffer, pInfo_unwrapped);
+    manager->OverrideCmdCopyMicromapEXT(commandBuffer, pInfo);
 
     CustomEncoderPostCall<format::ApiCallId::ApiCall_vkCmdCopyMicromapEXT>::Dispatch(manager, commandBuffer, pInfo);
 }
@@ -22771,7 +22722,7 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteMicromapsPropertiesEXT(
         manager->EndCommandApiCallCapture(commandBuffer, TrackCmdWriteMicromapsPropertiesEXTHandles, micromapCount, pMicromaps, queryPool);
     }
 
-    vulkan_wrappers::GetDeviceTable(commandBuffer)->CmdWriteMicromapsPropertiesEXT(commandBuffer, micromapCount, pMicromaps, queryType, queryPool, firstQuery);
+    manager->OverrideCmdWriteMicromapsPropertiesEXT(commandBuffer, micromapCount, pMicromaps, queryType, queryPool, firstQuery);
 
     CustomEncoderPostCall<format::ApiCallId::ApiCall_vkCmdWriteMicromapsPropertiesEXT>::Dispatch(manager, commandBuffer, micromapCount, pMicromaps, queryType, queryPool, firstQuery);
 }

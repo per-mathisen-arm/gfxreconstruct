@@ -233,6 +233,13 @@ class VulkanReferencedResourceConsumerBase : public VulkanConsumer
     virtual void ProcessSetTlasToBlasRelationCommand(format::HandleId                     tlas,
                                                      const std::vector<format::HandleId>& blases) override;
 
+    virtual void ProcessMicromapCompactionDependencyCommand(format::HandleId                     parent,
+                                                            const std::vector<format::HandleId>& children) override;
+
+    virtual void
+    ProcessAccelerationStructureCompactionDependencyCommand(format::HandleId                     parent,
+                                                            const std::vector<format::HandleId>& children) override;
+
     virtual void Process_vkCmdTraceRaysKHR(
         const ApiCallInfo&                                             call_info,
         format::HandleId                                               commandBuffer,
@@ -253,6 +260,34 @@ class VulkanReferencedResourceConsumerBase : public VulkanConsumer
                                             format::HandleId   buffer,
                                             format::HandleId   memory,
                                             VkDeviceSize       memoryOffset) override;
+    virtual void
+    Process_vkGetBufferDeviceAddressKHR(const ApiCallInfo&                                       call_info,
+                                        VkDeviceAddress                                          returnValue,
+                                        format::HandleId                                         device,
+                                        StructPointerDecoder<Decoded_VkBufferDeviceAddressInfo>* pInfo) override;
+    virtual void
+    Process_vkGetBufferDeviceAddress(const ApiCallInfo&                                       call_info,
+                                     VkDeviceAddress                                          returnValue,
+                                     format::HandleId                                         device,
+                                     StructPointerDecoder<Decoded_VkBufferDeviceAddressInfo>* pInfo) override;
+
+    virtual void
+    Process_vkGetBufferDeviceAddressEXT(const ApiCallInfo&                                       call_info,
+                                        VkDeviceAddress                                          returnValue,
+                                        format::HandleId                                         device,
+                                        StructPointerDecoder<Decoded_VkBufferDeviceAddressInfo>* pInfo) override;
+
+    virtual void Process_vkCmdBuildMicromapsEXT(const ApiCallInfo&                                    call_info,
+                                                format::HandleId                                      commandBuffer,
+                                                uint32_t                                              infoCount,
+                                                StructPointerDecoder<Decoded_VkMicromapBuildInfoEXT>* pInfos) override;
+
+    virtual void ProcessBuildVulkanAccelerationStructuresMetaCommand(
+        format::HandleId                                                           device_id,
+        uint32_t                                                                   info_count,
+        StructPointerDecoder<Decoded_VkAccelerationStructureBuildGeometryInfoKHR>* geometry_infos,
+        StructPointerDecoder<Decoded_VkAccelerationStructureBuildRangeInfoKHR*>*   range_infos,
+        std::vector<std::vector<VkAccelerationStructureInstanceKHR>>&              instance_buffers_data) override;
 
     bool IsComplete(uint64_t current_block_index) override { return not_optimizable_; }
 
@@ -337,6 +372,11 @@ class VulkanReferencedResourceConsumerBase : public VulkanConsumer
     void PushDescriptorSetWithTemplate(format::HandleId                       user_id,
                                        format::HandleId                       template_id,
                                        const DescriptorUpdateTemplateDecoder* decoder);
+
+    void ProcessGetBufferDeviceAddress(const ApiCallInfo&                                       call_info,
+                                       VkDeviceAddress                                          returnValue,
+                                       format::HandleId                                         device,
+                                       StructPointerDecoder<Decoded_VkBufferDeviceAddressInfo>* pInfo);
 
   private:
     bool                    loading_state_;

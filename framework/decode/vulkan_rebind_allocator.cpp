@@ -56,7 +56,7 @@
 #include "decode/vulkan_enum_util.h"
 #include "format/format.h"
 #include "format/format_util.h"
-#include "util/alignment_utils.h"
+#include "util/logging.h"
 #include "util/platform.h"
 #include "graphics/vulkan_struct_get_pnext.h"
 
@@ -255,9 +255,7 @@ VkResult VulkanRebindAllocator::CreateBuffer(const VkBufferCreateInfo*    create
 
     if ((create_info != nullptr) && (buffer != nullptr) && (allocator_data != nullptr))
     {
-        auto modified_info = *create_info;
-        modified_info.size = util::aligned_value(create_info->size, min_buffer_alignment_);
-        result             = functions_.create_buffer(device_, &modified_info, nullptr, buffer);
+        result = functions_.create_buffer(device_, create_info, nullptr, buffer);
 
         if (result >= 0)
         {
@@ -326,6 +324,7 @@ VkResult VulkanRebindAllocator::CreateImage(const VkImageCreateInfo*     create_
             resource_alloc_info->usage       = create_info->usage;
             resource_alloc_info->tiling      = create_info->tiling;
             resource_alloc_info->height      = create_info->extent.height;
+            resource_alloc_info->format      = create_info->format;
             resource_alloc_info->object_type = ObjectType::image;
             (*allocator_data)                = reinterpret_cast<uintptr_t>(resource_alloc_info);
 
@@ -355,6 +354,7 @@ void VulkanRebindAllocator::DestroyImage(VkImage                      image,
         if (memory_alloc_info != nullptr)
         {
             memory_alloc_info->original_images.erase(image);
+            memory_alloc_info->original_ahardwarebuffers.erase(image);
         }
 
         if (resource_alloc_info->mapped_pointer != nullptr)
@@ -442,6 +442,32 @@ void VulkanRebindAllocator::DestroyVideoSession(VkVideoSessionKHR            ses
     functions_.destroy_video_session(allocator_->m_hDevice, session, allocator_->GetAllocationCallbacks());
 }
 
+void VulkanRebindAllocator::GetBufferMemoryRequirements(VkBuffer              buffer,
+                                                        VkMemoryRequirements* memory_requirements,
+                                                        ResourceData          allocator_data)
+{
+    if (allocator_data != 0)
+    {
+        auto resource_alloc_info           = reinterpret_cast<ResourceAllocInfo*>(allocator_data);
+        resource_alloc_info->original_size = memory_requirements->size;
+    }
+
+    functions_.get_buffer_memory_requirements(device_, buffer, memory_requirements);
+}
+
+void VulkanRebindAllocator::GetBufferMemoryRequirements2(const VkBufferMemoryRequirementsInfo2* info,
+                                                         VkMemoryRequirements2*                 memory_requirements,
+                                                         ResourceData                           allocator_data)
+{
+    if (allocator_data != 0)
+    {
+        auto resource_alloc_info           = reinterpret_cast<ResourceAllocInfo*>(allocator_data);
+        resource_alloc_info->original_size = memory_requirements->memoryRequirements.size;
+    }
+
+    functions_.get_buffer_memory_requirements2(device_, info, memory_requirements);
+}
+
 void VulkanRebindAllocator::GetImageSubresourceLayout(VkImage                    image,
                                                       const VkImageSubresource*  subresource,
                                                       VkSubresourceLayout*       layout,
@@ -473,6 +499,55 @@ void VulkanRebindAllocator::GetImageSubresourceLayout(VkImage                   
             resource_alloc_info->layouts.emplace_back(std::move(layouts));
         }
     }
+}
+
+void VulkanRebindAllocator::GetImageMemoryRequirements(VkImage               image,
+                                                       VkMemoryRequirements* memory_requirements,
+                                                       ResourceData          allocator_data)
+{
+    if (allocator_data != 0)
+    {
+        auto resource_alloc_info           = reinterpret_cast<ResourceAllocInfo*>(allocator_data);
+        resource_alloc_info->original_size = memory_requirements->size;
+    }
+
+    functions_.get_image_memory_requirements(device_, image, memory_requirements);
+}
+
+void VulkanRebindAllocator::GetImageMemoryRequirements2(const VkImageMemoryRequirementsInfo2* info,
+                                                        VkMemoryRequirements2*                memory_requirements,
+                                                        ResourceData                          allocator_data)
+{
+    if (allocator_data != 0)
+    {
+        auto resource_alloc_info           = reinterpret_cast<ResourceAllocInfo*>(allocator_data);
+        resource_alloc_info->original_size = memory_requirements->memoryRequirements.size;
+    }
+
+    functions_.get_image_memory_requirements2(device_, info, memory_requirements);
+}
+
+VkResult
+VulkanRebindAllocator::GetVideoSessionMemoryRequirementsKHR(VkVideoSessionKHR video_session,
+                                                            uint32_t*         memory_requirements_count,
+                                                            VkVideoSessionMemoryRequirementsKHR* memory_requirements,
+                                                            std::vector<ResourceData>            allocator_datas)
+{
+    if (memory_requirements != nullptr)
+    {
+        GFXRECON_ASSERT(*memory_requirements_count == allocator_datas.size());
+        for (uint32_t i = 0; i < *memory_requirements_count; ++i)
+        {
+            if (allocator_datas[i] != 0)
+            {
+                auto resource_alloc_info           = reinterpret_cast<ResourceAllocInfo*>(allocator_datas[i]);
+                resource_alloc_info->original_size = memory_requirements[i].memoryRequirements.size;
+            }
+        }
+    }
+
+    return functions_.get_video_session_memory_requirements(
+        device_, video_session, memory_requirements_count, memory_requirements);
 }
 
 VkResult VulkanRebindAllocator::AllocateMemory(const VkMemoryAllocateInfo*  allocate_info,
@@ -578,7 +653,6 @@ VkResult VulkanRebindAllocator::BindBufferMemory(VkBuffer                       
 
         VkMemoryRequirements requirements;
         functions_.get_buffer_memory_requirements(device_, buffer, &requirements);
-        requirements.alignment = std::max<VkDeviceSize>(requirements.alignment, min_buffer_alignment_);
 
         VmaAllocationCreateInfo create_info;
         create_info.flags = 0;
@@ -606,7 +680,7 @@ VkResult VulkanRebindAllocator::BindBufferMemory(VkBuffer                       
                 resource_alloc_info->memory_info     = memory_alloc_info;
                 resource_alloc_info->original_offset = memory_offset;
                 resource_alloc_info->rebind_offset   = allocation_info.offset;
-                resource_alloc_info->size            = allocation_info.size;
+                resource_alloc_info->rebind_size     = allocation_info.size;
 
                 VkMemoryPropertyFlags property_flags =
                     replay_memory_properties_.memoryTypes[allocation_info.memoryType].propertyFlags;
@@ -622,11 +696,14 @@ VkResult VulkanRebindAllocator::BindBufferMemory(VkBuffer                       
                 {
                     // Memory has been mapped and written prior to bind.  Copy the original content to the new
                     // allocation to ensure it contains the correct data.
-                    WriteBoundResource(resource_alloc_info,
-                                       memory_offset,
-                                       0,
-                                       allocation_info.size,
-                                       memory_alloc_info->original_content.get());
+
+                    // If the buffer is bigger at replay time than at capture time, you don't want to read
+                    // memory_alloc_info->original_content out of bounds
+                    VkDeviceSize copy_size =
+                        std::min(allocation_info.size, memory_alloc_info->allocation_size - memory_offset);
+
+                    WriteBoundResource(
+                        resource_alloc_info, memory_offset, 0, copy_size, memory_alloc_info->original_content.get());
                 }
 
                 (*bind_memory_properties) = property_flags;
@@ -668,7 +745,6 @@ VkResult VulkanRebindAllocator::BindBufferMemory2(uint32_t                      
 
                 VkMemoryRequirements requirements;
                 functions_.get_buffer_memory_requirements(device_, buffer, &requirements);
-                requirements.alignment = std::max<VkDeviceSize>(requirements.alignment, min_buffer_alignment_);
 
                 VmaAllocationCreateInfo create_info;
                 create_info.flags = 0;
@@ -698,7 +774,7 @@ VkResult VulkanRebindAllocator::BindBufferMemory2(uint32_t                      
                         resource_alloc_info->memory_info     = memory_alloc_info;
                         resource_alloc_info->original_offset = bind_info->memoryOffset;
                         resource_alloc_info->rebind_offset   = allocation_info.offset;
-                        resource_alloc_info->size            = allocation_info.size;
+                        resource_alloc_info->rebind_size     = allocation_info.size;
 
                         VkMemoryPropertyFlags property_flags =
                             replay_memory_properties_.memoryTypes[allocation_info.memoryType].propertyFlags;
@@ -713,10 +789,16 @@ VkResult VulkanRebindAllocator::BindBufferMemory2(uint32_t                      
                         {
                             // Memory has been mapped and written prior to bind.  Copy the original content to the new
                             // allocation to ensure it contains the correct data.
+
+                            // If the buffer is bigger at replay time than at capture time, you don't want to read
+                            // memory_alloc_info->original_content out of bounds
+                            VkDeviceSize copy_size = std::min(
+                                allocation_info.size, memory_alloc_info->allocation_size - bind_info->memoryOffset);
+
                             WriteBoundResource(resource_alloc_info,
                                                bind_info->memoryOffset,
                                                0,
-                                               allocation_info.size,
+                                               copy_size,
                                                memory_alloc_info->original_content.get());
                         }
 
@@ -756,7 +838,7 @@ VkResult VulkanRebindAllocator::AllocateAHBMemory(MemoryAllocInfo* memory_alloc_
     VkMemoryAllocateInfo allocate_info{};
     allocate_info.sType           = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocate_info.pNext           = &dedicatedAllocateInfo;
-    allocate_info.allocationSize  = memory_alloc_info->allocation_size;
+    allocate_info.allocationSize  = memoryRequirements.size;
     allocate_info.memoryTypeIndex = replay_memory_properties_.memoryTypeCount;
     for (uint32_t i = 0; i < replay_memory_properties_.memoryTypeCount; ++i)
     {
@@ -833,7 +915,7 @@ VkResult VulkanRebindAllocator::BindImageMemory(VkImage                         
                     resource_alloc_info->memory_info     = memory_alloc_info;
                     resource_alloc_info->original_offset = memory_offset;
                     resource_alloc_info->rebind_offset   = allocation_info.offset;
-                    resource_alloc_info->size            = allocation_info.size;
+                    resource_alloc_info->rebind_size     = allocation_info.size;
 
                     VkMemoryPropertyFlags property_flags =
                         replay_memory_properties_.memoryTypes[allocation_info.memoryType].propertyFlags;
@@ -847,12 +929,45 @@ VkResult VulkanRebindAllocator::BindImageMemory(VkImage                         
 
                     if (memory_alloc_info->original_content != nullptr)
                     {
+                        // adjust the size
+                        for (const std::pair<const VkImage, VulkanRebindAllocator::ResourceAllocInfo*>& elt :
+                             resource_alloc_info->memory_info->original_images)
+                        {
+                            VkImage original_image{};
+                            if (elt.second == resource_alloc_info)
+                            {
+                                original_image = elt.first;
+
+                                auto entry =
+                                    resource_alloc_info->memory_info->original_ahardwarebuffers.find(original_image);
+                                if (entry != resource_alloc_info->memory_info->original_ahardwarebuffers.end())
+                                {
+                                    if (auto ahb_info = entry->second)
+                                    {
+                                        auto plane_info = ahb_info->plane_info;
+                                        // TODO: multi-plane image format support
+                                        if (plane_info.size() == 1)
+                                        {
+                                            allocation_info.size =
+                                                plane_info[0].replay_row_pitch * plane_info[0].height;
+                                        }
+                                    }
+                                    resource_alloc_info->use_ahb = true;
+                                }
+                            }
+                        }
                         // Memory has been mapped and written prior to bind.  Copy the original content to the new
                         // allocation to ensure it contains the correct data.
+
+                        // If the image is bigger at replay time than at capture time, you don't want to read
+                        // memory_alloc_info->original_content out of bounds
+                        VkDeviceSize copy_size =
+                            std::min(allocation_info.size, memory_alloc_info->allocation_size - memory_offset);
+
                         WriteBoundResource(resource_alloc_info,
                                            memory_offset,
                                            0,
-                                           allocation_info.size,
+                                           copy_size,
                                            memory_alloc_info->original_content.get());
                     }
 
@@ -945,7 +1060,7 @@ VkResult VulkanRebindAllocator::BindImageMemory2(uint32_t                     bi
                             resource_alloc_info->memory_info     = memory_alloc_info;
                             resource_alloc_info->original_offset = bind_info->memoryOffset;
                             resource_alloc_info->rebind_offset   = allocation_info.offset;
-                            resource_alloc_info->size            = allocation_info.size;
+                            resource_alloc_info->rebind_size     = allocation_info.size;
 
                             VkMemoryPropertyFlags property_flags =
                                 replay_memory_properties_.memoryTypes[allocation_info.memoryType].propertyFlags;
@@ -956,18 +1071,52 @@ VkResult VulkanRebindAllocator::BindImageMemory2(uint32_t                     bi
                                 resource_alloc_info->is_host_visible = true;
                             }
 
+                            memory_alloc_info->original_images.insert(std::make_pair(image, resource_alloc_info));
+
                             if (memory_alloc_info->original_content != nullptr)
                             {
+                                // adjust the size
+                                for (const std::pair<const VkImage, VulkanRebindAllocator::ResourceAllocInfo*>& elt :
+                                     resource_alloc_info->memory_info->original_images)
+                                {
+                                    VkImage original_image{};
+                                    if (elt.second == resource_alloc_info)
+                                    {
+                                        original_image = elt.first;
+
+                                        auto entry = resource_alloc_info->memory_info->original_ahardwarebuffers.find(
+                                            original_image);
+                                        if (entry != resource_alloc_info->memory_info->original_ahardwarebuffers.end())
+                                        {
+                                            if (auto ahb_info = entry->second)
+                                            {
+                                                auto plane_info = ahb_info->plane_info;
+                                                // TODO: multi-plane image format support
+                                                if (plane_info.size() == 1)
+                                                {
+                                                    allocation_info.size =
+                                                        plane_info[0].replay_row_pitch * plane_info[0].height;
+                                                }
+                                            }
+                                            resource_alloc_info->use_ahb = true;
+                                        }
+                                    }
+                                }
+
                                 // Memory has been mapped and written prior to bind.  Copy the original content to the
                                 // new allocation to ensure it contains the correct data.
+
+                                // If the image is bigger at replay time than at capture time, you don't want to read
+                                // memory_alloc_info->original_content out of bounds
+                                VkDeviceSize copy_size = std::min(
+                                    allocation_info.size, memory_alloc_info->allocation_size - bind_info->memoryOffset);
+
                                 WriteBoundResource(resource_alloc_info,
                                                    bind_info->memoryOffset,
                                                    0,
-                                                   allocation_info.size,
+                                                   copy_size,
                                                    memory_alloc_info->original_content.get());
                             }
-
-                            memory_alloc_info->original_images.insert(std::make_pair(image, resource_alloc_info));
 
                             bind_memory_properties[i] = property_flags;
 
@@ -1024,7 +1173,8 @@ VkResult VulkanRebindAllocator::BindVideoSessionMemory(VkVideoSessionKHR        
                 MemoryAllocInfo* memory_alloc_info = (allocator_memory_data == 0)
                                                          ? new MemoryAllocInfo
                                                          : reinterpret_cast<MemoryAllocInfo*>(allocator_memory_data);
-                auto             requirements      = session_requirements[mem_index].memoryRequirements;
+
+                auto requirements = session_requirements[mem_index].memoryRequirements;
                 if (allocator_memory_data == 0)
                 {
                     memory_alloc_info->allocation_size = requirements.size;
@@ -1114,7 +1264,7 @@ VkResult VulkanRebindAllocator::BindVideoSessionMemory(VkVideoSessionKHR        
 
                         resource_alloc_info->original_offset = src_offset;
                         resource_alloc_info->rebind_offset   = allocation_info.offset;
-                        resource_alloc_info->size            = allocation_info.size;
+                        resource_alloc_info->rebind_size     = allocation_info.size;
 
                         VkMemoryPropertyFlags property_flags =
                             replay_memory_properties_.memoryTypes[allocation_info.memoryType].propertyFlags;
@@ -1127,12 +1277,18 @@ VkResult VulkanRebindAllocator::BindVideoSessionMemory(VkVideoSessionKHR        
 
                         if (memory_alloc_info->original_content != nullptr)
                         {
-                            // Memory has been mapped and written prior to bind.  Copy the original content to the new
+                            // Memory has been mapped and written prior to bind. Copy the original content to the new
                             // allocation to ensure it contains the correct data.
+
+                            // If the session is bigger at replay time than at capture time, you don't want to read
+                            // memory_alloc_info->original_content out of bounds
+                            VkDeviceSize copy_size =
+                                std::min(allocation_info.size, memory_alloc_info->allocation_size - src_offset);
+
                             WriteBoundResource(resource_alloc_info,
                                                src_offset,
                                                0,
-                                               allocation_info.size,
+                                               copy_size,
                                                memory_alloc_info->original_content.get());
                         }
 
@@ -1574,22 +1730,65 @@ void VulkanRebindAllocator::WriteBoundResourceStaging(
 
             if (original_image)
             {
-                // TODO: handle mip maps/array layers
-                GFXRECON_LOG_WARNING(
-                    "Ignoring potential mip maps/array layers in staging buffer to image copy: support "
-                    "not yet implemented");
+                auto entry = resource_alloc_info->memory_info->original_ahardwarebuffers.find(original_image);
+                if (entry != resource_alloc_info->memory_info->original_ahardwarebuffers.end())
+                {
+                    if (auto ahb_info = entry->second)
+                    {
+                        auto plane_info = ahb_info->plane_info;
+                        // TODO: multi-plane image format support
+                        if (plane_info.size() == 1)
+                        {
+                            VkBufferImageCopy region{};
+                            region.bufferOffset      = 0;
+                            region.bufferRowLength   = 0;
+                            region.bufferImageHeight = 0;
+                            region.imageSubresource  = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+                            region.imageOffset       = { 0, 0, 0 };
+                            region.imageExtent       = { ahb_info->width, plane_info[0].height, 1 };
+                            functions_.cmd_copy_buffer_to_image(
+                                cmd_buffer_, staging_buf, original_image, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+                        }
+                    }
+                }
+                else
+                {
+                    // TODO: handle mip maps/array layers
+                    GFXRECON_LOG_WARNING(
+                        "Ignoring potential mip maps/array layers in staging buffer to image copy: support "
+                        "not yet implemented");
 
-                VkBufferImageCopy region{};
-                region.bufferOffset      = 0;
-                region.bufferRowLength   = 0;
-                region.bufferImageHeight = 0;
-                region.imageSubresource  = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
-                region.imageOffset       = { 0, 0, 0 };
-                region.imageExtent       = { 1, 1, 1 };
+                    VkImageAspectFlags aspect{};
+                    switch (resource_alloc_info->format)
+                    {
+                        case VK_FORMAT_D16_UNORM:
+                        case VK_FORMAT_X8_D24_UNORM_PACK32:
+                        case VK_FORMAT_D32_SFLOAT:
+                            aspect = VK_IMAGE_ASPECT_DEPTH_BIT;
+                            break;
+                        case VK_FORMAT_S8_UINT:
+                            aspect = VK_IMAGE_ASPECT_STENCIL_BIT;
+                            break;
+                        case VK_FORMAT_D16_UNORM_S8_UINT:
+                        case VK_FORMAT_D24_UNORM_S8_UINT:
+                        case VK_FORMAT_D32_SFLOAT_S8_UINT:
+                            aspect = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+                            break;
+                        default:
+                            aspect = VK_IMAGE_ASPECT_COLOR_BIT;
+                            break;
+                    }
+                    VkBufferImageCopy region{};
+                    region.bufferOffset      = 0;
+                    region.bufferRowLength   = 0;
+                    region.bufferImageHeight = 0;
+                    region.imageSubresource  = { aspect, 0, 0, 1 };
+                    region.imageOffset       = { 0, 0, 0 };
+                    region.imageExtent       = { 1, 1, 1 };
 
-                functions_.cmd_copy_buffer_to_image(
-                    cmd_buffer_, staging_buf, original_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
-                result = functions_.end_command_buffer(cmd_buffer_);
+                    functions_.cmd_copy_buffer_to_image(
+                        cmd_buffer_, staging_buf, original_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+                }
             }
         }
         else if (resource_alloc_info->object_type == ObjectType::buffer)
@@ -1613,9 +1812,13 @@ void VulkanRebindAllocator::WriteBoundResourceStaging(
                 copy_region.size      = data_size;
 
                 functions_.cmd_copy_buffer(cmd_buffer_, staging_buf, original_buffer, 1, &copy_region);
-                result = functions_.end_command_buffer(cmd_buffer_);
             }
         }
+    }
+
+    if (result == VK_SUCCESS)
+    {
+        result = functions_.end_command_buffer(cmd_buffer_);
     }
 
     if (result == VK_SUCCESS)
@@ -1657,7 +1860,7 @@ void VulkanRebindAllocator::WriteBoundResource(ResourceAllocInfo* resource_alloc
     size_t copy_dst_offset = static_cast<size_t>(dst_offset);
     size_t copy_size       = static_cast<size_t>(data_size);
 
-    if (resource_alloc_info->is_host_visible)
+    if (resource_alloc_info->is_host_visible && !resource_alloc_info->use_ahb)
     {
         VkResult result = VK_SUCCESS;
 
@@ -1693,7 +1896,9 @@ bool VulkanRebindAllocator::TranslateMemoryRange(const ResourceAllocInfo* resour
     assert((src_offset != nullptr) && (dst_offset != nullptr) && (data_size));
 
     VkDeviceSize resource_start = resource_alloc_info->original_offset;
-    VkDeviceSize resource_end   = resource_start + resource_alloc_info->size;
+    VkDeviceSize resource_end =
+        resource_start + (resource_alloc_info->original_size != 0 ? resource_alloc_info->original_size
+                                                                  : resource_alloc_info->rebind_size);
 
     // Range ends are exclusive.
     if ((resource_end <= original_start) || (original_end <= resource_start))
@@ -1752,7 +1957,7 @@ void VulkanRebindAllocator::UpdateBoundResource(ResourceAllocInfo* resource_allo
 
 VkResult VulkanRebindAllocator::UpdateMappedMemoryRange(
     ResourceAllocInfo* resource_alloc_info,
-    VkDeviceSize       oiriginal_start,
+    VkDeviceSize       original_start,
     VkDeviceSize       original_end,
     VkResult (*update_func)(VmaAllocator, VmaAllocation, VkDeviceSize, VkDeviceSize))
 {
@@ -1761,7 +1966,7 @@ VkResult VulkanRebindAllocator::UpdateMappedMemoryRange(
     VkDeviceSize dst_offset = 0;
     VkDeviceSize data_size  = 0;
 
-    if (TranslateMemoryRange(resource_alloc_info, oiriginal_start, original_end, &src_offset, &dst_offset, &data_size))
+    if (TranslateMemoryRange(resource_alloc_info, original_start, original_end, &src_offset, &dst_offset, &data_size))
     {
         if (resource_alloc_info->mapped_pointer == nullptr)
         {
@@ -2073,6 +2278,15 @@ void VulkanRebindAllocator::ReportBindIncompatibility(const ResourceData* alloca
             }
         }
     }
+}
+
+void VulkanRebindAllocator::BindMemoryImageAHardwareBuffer(MemoryData* allocator_memory_data,
+                                                           VkImage     image,
+                                                           void*       ahardwarebuffer_info)
+{
+    auto memory_alloc_info = reinterpret_cast<MemoryAllocInfo*>(*allocator_memory_data);
+    memory_alloc_info->original_ahardwarebuffers.insert(
+        std::make_pair(image, reinterpret_cast<VulkanAndroidHardwareBufferInfo*>(ahardwarebuffer_info)));
 }
 
 VkResult VulkanRebindAllocator::MapResourceMemoryDirect(VkDeviceSize     size,

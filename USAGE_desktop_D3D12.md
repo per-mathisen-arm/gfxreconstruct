@@ -25,22 +25,32 @@ to one of these other documents:
 
 ## Index
 
-1. [Capturing API calls](#capturing-api-calls)
-    1. [Enabling D3D12 Capture](#enabling-d3d12-capture)
-    2. [Capture Options](#capture-options)
-    3. [Capture Files](#capture-files)
-2. [Replaying API Calls](#replaying-api-calls)
-    1. [Command Line Arguments](#command-line-arguments)
-    2. [Keyboard Controls](#keyboard-controls)
-    3. [Capturing Replay (Recapture)](#capturing-replay-recapture)
-3. [Other Capture File Processing Tools](#other-capture-file-processing-tools)
-    1. [Capture File Info](#capture-file-info)
-    2. [Capture File Compression](#capture-file-compression)
-    3. [Capture File Optimizer](#capture-file-optimizer)
-    4. [Renaming Scripts](#renaming-scripts)
-4. [AMD GPU Services Support](#ags-support)
-    1. [How to Capture AGS](#how-to-capture-ags)
-    2. [How to Process AGS Capture Files](#how-to-process-ags-capture-files)
+- [GFXReconstruct API Capture and Replay - D3D12](#gfxreconstruct-api-capture-and-replay---d3d12)
+  - [Index](#index)
+  - [Capturing API calls](#capturing-api-calls)
+    - [Enabling D3D12 Capture](#enabling-d3d12-capture)
+    - [Capture Options](#capture-options)
+        - [Supported Options](#supported-options)
+    - [Capture Files](#capture-files)
+      - [Specifying Capture File Location](#specifying-capture-file-location)
+      - [Timestamps](#timestamps)
+    - [Trimmed Captures](#trimmed-captures)
+  - [Replaying API Calls](#replaying-api-calls)
+    - [Command Line Arguments](#command-line-arguments)
+    - [Keyboard Controls](#keyboard-controls)
+    - [Capturing Replay (Recapture)](#capturing-replay-recapture)
+  - [Other Capture File Processing Tools](#other-capture-file-processing-tools)
+    - [Capture File Info](#capture-file-info)
+    - [Capture File Compression](#capture-file-compression)
+    - [Capture File Optimizer](#capture-file-optimizer)
+      - [DXR Optimization](#dxr-optimization)
+      - [Redundant PSO Removal](#redundant-pso-removal)
+    - [Renaming Scripts](#renaming-scripts)
+      - [gfxrecon-replay-renamed.py](#gfxrecon-replay-renamedpy)
+      - [gfxrecon-optimize-renamed.py](#gfxrecon-optimize-renamedpy)
+  - [AMD GPU Services Support](#amd-gpu-services-support)
+    - [How to Capture AGS](#how-to-capture-ags)
+    - [How to Process AGS Files](#how-to-process-ags-files)
 
 
 
@@ -197,11 +207,12 @@ The `gfxrecon-replay` tool accepts the following command line arguments:
 gfxrecon-replay.exe - A tool to replay GFXReconstruct capture files.
 
 Usage:
-  gfxrecon-replay.exe   [-h | --help] [--version] [--gpu <index>]
+  gfxrecon-replay.exe   [-h | --help] [--version] [--cpu-mask <binary-mask>] [--gpu <index>]
                         [--pause-frame <N>] [--paused] [--sync] [--screenshot-all]
                         [--screenshots <N1(-N2),...>] [--screenshot-format <format>]
                         [--screenshot-dir <dir>] [--screenshot-prefix <file-prefix>]
                         [--screenshot-scale SCALE] [--screenshot-size WIDTHxHEIGHT]
+                        [--screenshot-interval <N>]
                         [--sfa | --skip-failed-allocations] [--replace-shaders <dir>]
                         [--opcd | --omit-pipeline-cache-data] [--wsi <platform>]
                         [--use-cached-psos] [--surface-index <N>]
@@ -244,6 +255,12 @@ Optional arguments:
                         ascending order and cannot overlap.  Note that frame
                         numbering is 1-based (i.e. the first frame is frame 1).
                         Example: 200,301-305 will generate six screenshots.
+  --screenshot-interval <N>
+                        Specifies the number of frames between two screenshots
+                        within a screenshot range.
+                        Example: If screenshot range is 10-15 and interval is 2,
+                        screenshot will be generated for frames 10, 12 and 14.
+                        Default is 1.
   --screenshot-format <format>
                         Image file format to use for screenshot generation.
                         Available formats are:
@@ -269,6 +286,13 @@ Optional arguments:
   --validate            Enables the Khronos Vulkan validation layer when replaying a
                         Vulkan capture or the Direct3D debug layer when replaying a
                         Direct3D 12 capture.
+  --cpu-mask <binary-mask>
+                        Set of CPU cores used by the replayer.
+                        `binary-mask` is a succession of '0' and '1' that specifies
+                        used/unused cores. For example '1010' activates the first and
+                        third cores and deactivate all other cores.
+                        If the option is not set, all cores can be used. If the option
+                        is set only for some cores, the other cores are not used.
   --gpu <index>         Use the specified device for replay, where index
                         is the zero-based index to the array of physical devices
                         returned by vkEnumeratePhysicalDevices or IDXGIFactory1::EnumAdapters1.

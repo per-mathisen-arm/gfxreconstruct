@@ -41,7 +41,7 @@ valid_commands = [
 
 # Application info
 app_name = 'com.lunarg.gfxreconstruct.replay'
-app_activity = '"com.lunarg.gfxreconstruct.replay/android.app.NativeActivity"'
+app_activity = '"com.lunarg.gfxreconstruct.replay/.ReplayActivity"'
 app_action = 'android.intent.action.MAIN'
 app_category = 'android.intent.category.LAUNCHER'
 
@@ -95,8 +95,12 @@ def CreateReplayParser():
     parser.add_argument('--log-file', metavar='DEVICE_FILE', help='Write log messages to a file at the specified path instead of logcat (forwarded to replay tool)')
     parser.add_argument('--pause-frame', metavar='N', help='Pause after replaying frame number N (forwarded to replay tool)')
     parser.add_argument('--paused', action='store_true', default=False, help='Pause after replaying the first frame (same as "--pause-frame 1"; forwarded to replay tool)')
+    parser.add_argument('--cpu-mask', metavar='binary_mask', help='Set of CPU cores used by the replayer. `binary-mask` is a succession of "0" and "1" that specifies used/unused cores. For example "1010" activates the first and third cores and deactivate all other cores. If the option is not set, all cores can be used. If the option is set only for some cores, the other cores are not used. (forwarded to replay tool)')
+    parser.add_argument('--trigger-script-path', metavar='DEVICE_FILE', help='Path to the script needed to trigger)')
+    parser.add_argument('--trigger-script-frame', metavar='RANGES', help='Frame ranges to trigger the script.)')
     parser.add_argument('--screenshot-all', action='store_true', default=False, help='Generate screenshots for all frames.  When this option is specified, --screenshots is ignored (forwarded to replay tool)')
     parser.add_argument('--screenshots', metavar='RANGES', help='Generate screenshots for the specified frames.  Target frames are specified as a comma separated list of frame ranges.  A frame range can be specified as a single value, to specify a single frame, or as two hyphenated values, to specify the first and last frames to process.  Frame ranges should be specified in ascending order and cannot overlap.  Note that frame numbering is 1-based (i.e. the first frame is frame 1).  Example: 200,301-305 will generate six screenshots (forwarded to replay tool)')
+    parser.add_argument('--screenshot-interval', metavar='INTERVAL', help='Specifies the number of frames between two screenshots within a screenshot range. Example: If screenshot range is 10-15 and interval is 2, screenshot will be generated for frames 10, 12 and 14. Default is 1. (forwarded to replay tool)')
     parser.add_argument('--screenshot-format', metavar='FORMAT', choices=['bmp', 'png'], help='Image file format to use for screenshot generation.  Available formats are: bmp, png (forwarded to replay tool)')
     parser.add_argument('--screenshot-dir', metavar='DIR', help='Directory to write screenshots. Default is "/sdcard" (forwarded to replay tool)')
     parser.add_argument('--screenshot-prefix', metavar='PREFIX', help='Prefix to apply to the screenshot file name.  Default is "screenshot" (forwarded to replay tool)')
@@ -109,20 +113,25 @@ def CreateReplayParser():
     parser.add_argument('--remove-unsupported', action='store_true', default=False, help='Remove unsupported extensions and features from instance and device creation parameters (forwarded to replay tool)')
     parser.add_argument('--validate', action='store_true', default=False, help='Enables the Khronos Vulkan validation layer (forwarded to replay tool)')
     parser.add_argument('--onhb', '--omit-null-hardware-buffers', action='store_true', default=False, help='Omit Vulkan calls that would pass a NULL AHardwareBuffer* (forwarded to replay tool)')
-    parser.add_argument('--use-colorspace-fallback', action='store_true', default=False, help='Swap the swapchain color space if unsupported by replay device. Check if color space is not supported by replay device and swap to VK_COLOR_SPACE_SRGB_NONLINEAR_KHR. (forwarded to replay tool).')
-    parser.add_argument('--offscreen-swapchain-frame-boundary', action='store_true', default=False, help='Should only be used with offscreen swapchain. Activates the extension VK_EXT_frame_boundary (always supported if trimming, checks for driver support otherwise) and inserts command buffer submission with VkFrameBoundaryEXT where vkQueuePresentKHR was called in the original capture. This allows preserving frames when capturing a replay that uses. offscreen swapchain. (forwarded to replay tool)')
-    parser.add_argument('--mfr', '--measurement-frame-range', metavar='START-END', help='Custom framerange to measure FPS for. This range will include the start frame but not the end frame. The measurement frame range defaults to all frames except the loading frame but can be configured for any range. If the end frame is past the last frame in the trace it will be clamped to the frame after the last (so in that case the results would include the last frame). (forwarded to replay tool)')
-    parser.add_argument('--measurement-file', metavar='DEVICE_FILE', help='Write measurements to a file at the specified path. Default is: \'/sdcard/gfxrecon-measurements.json\' on android and \'./gfxrecon-measurements.json\' on desktop. (forwarded to replay tool)')
-    parser.add_argument('--quit-after-measurement-range', action='store_true', default=False, help='If this is specified the replayer will abort when it reaches the <end_frame> specified in the --measurement-frame-range argument. (forwarded to replay tool)')
-    parser.add_argument('--flush-measurement-range', action='store_true', default=False, help='If this is specified the replayer will flush and wait for all current GPU work to finish at the start and end of the measurement range. (forwarded to replay tool)')
-    parser.add_argument('--flush-inside-measurement-range', action='store_true', default=False, help='If this is specified the replayer will flush and wait for all current GPU work to finish at end of each frame inside the measurement range. (forwarded to replay tool)')
+    parser.add_argument('--use-ext-frame-boundary', action='store_true', default=False, help='Convert all offscreen frame boundaries to `VK_EXT_frame_boundary` frame boundaries. (forwarded to replay tool)')
     parser.add_argument('--sgfs', '--skip-get-fence-status', metavar='STATUS', default=0, help='Specify behaviour to skip calls to vkWaitForFences and vkGetFenceStatus. Default is 0 - No skip (forwarded to replay tool)')
     parser.add_argument('--sgfr', '--skip-get-fence-ranges', metavar='FRAME-RANGES', default='', help='Frame ranges where --sgfs applies. Default is all frames (forwarded to replay tool)')
+    parser.add_argument('--use-colorspace-fallback', '--colorspace-fallback', action='store_true', default=False, help='Swap the swapchain color space if unsupported by replay device. Check if color space is not supported by replay device and swap to VK_COLOR_SPACE_SRGB_NONLINEAR_KHR. (forwarded to replay tool).')
+    parser.add_argument('--offscreen-swapchain-frame-boundary', action='store_true', default=False, help='Should only be used with offscreen swapchain. Activates the extension VK_EXT_frame_boundary (always supported if trimming, checks for driver support otherwise) and inserts command buffer submission with VkFrameBoundaryEXT where vkQueuePresentKHR was called in the original capture. This allows preserving frames when capturing a replay that uses. offscreen swapchain. (forwarded to replay tool)')
+    parser.add_argument('--mfr', '--measurement-frame-range', metavar='START-END', help='Custom framerange to measure FPS for. This range will include the start frame but not the end frame. The measurement frame range defaults to all frames except the loading frame but can be configured for any range. If the end frame is past the last frame in the trace it will be clamped to the frame after the last (so in that case the results would include the last frame). (forwarded to replay tool)')
+    parser.add_argument('--measurement-file', metavar='DEVICE_FILE', help='File in which measurements are written. Default is: \'/sdcard/gfxrecon-measurements.json\' on android and \'./gfxrecon-measurements.json\' on desktop. (forwarded to replay tool)')
+    parser.add_argument('--quit-after-measurement-range', action='store_true', default=False, help='If this is specified the replayer will abort when it reaches the <end_frame> specified in the --measurement-frame-range argument. (forwarded to replay tool)')
+    parser.add_argument('--flush-measurement-range', action='store_true', default=False, help='If this is specified the replayer will flush and wait for all current GPU work to finish at the start and end of the measurement range. (forwarded to replay tool)')
+    parser.add_argument('--preload-measurement-range', action='store_true', default=False, help='Preloads a frame range specified with --measurement-frame-range from the trace file into a continuous, expandable buffer, in order to mitigate the impact of read file commands on performance measurements.')
+    parser.add_argument('--dsf','--disable-subpass-fusion', action='store_true', default=False, help='Force disable subpass fusion. Try to nudge the driver to "fuse" subpasses of the render pass into 1 pass, by using on-chip storage instead of using RAM for data transfer (forwarded to replay tool).')
     parser.add_argument('--wait-before-present', action='store_true', default=False, help='Force wait on completion of queue operations for all queues before calling Present. This is needed for accurate acquisition of instrumentation data on some platforms.')
     parser.add_argument('-m', '--memory-translation', metavar='MODE', choices=['none', 'remap', 'realign', 'rebind'], help='Enable memory translation for replay on GPUs with memory types that are not compatible with the capture GPU\'s memory types.  Available modes are: none, remap, realign, rebind (forwarded to replay tool)')
     parser.add_argument('--swapchain', metavar='MODE', choices=['virtual', 'captured', 'offscreen'], help='Choose a swapchain mode to replay. Available modes are: virtual, captured, offscreen (forwarded to replay tool)')
     parser.add_argument('--vssb', '--virtual-swapchain-skip-blit', action='store_true', default=False, help='Skip blit to real swapchain to gain performance during replay.')
     parser.add_argument('--use-captured-swapchain-indices', action='store_true', default=False, help='Same as "--swapchain captured". Ignored if the "--swapchain" option is used.')
+    parser.add_argument('--flush-inside-measurement-range', action='store_true', default=False,
+                        help='If this is specified the replayer will flush and wait for all current GPU work to finish at the end of each frame inside the measurement range')
+    parser.add_argument('--marking-layers', metavar='names', help='Specify the names of the api call marking layers to be used')
     parser.add_argument('file', nargs='?', help='File on device to play (forwarded to replay tool)')
     parser.add_argument('--dump-resources', metavar='DUMP_RESOURCES', help='The capture file will be examined, and <submit-index,command-index,draw-call-index> will be converted to <arg> as used in --dump-resources <arg>.  The converted args will be used used as the args for dump resources.')
     parser.add_argument('--dump-resources-before-draw', action='store_true', default=False, help= 'In addition to dumping gpu resources after the Vulkan draw calls specified by the --dump-resources argument, also dump resources before the draw calls.')
@@ -168,11 +177,19 @@ def MakeExtrasString(args):
     if args.paused:
         arg_list.append('--paused')
 
+    if args.cpu_mask:
+        arg_list.append('--cpu-mask')
+        arg_list.append('{}'.format(args.cpu_mask))
+
     if args.screenshot_all:
         arg_list.append('--screenshot-all')
     elif args.screenshots:
         arg_list.append('--screenshots')
         arg_list.append('{}'.format(args.screenshots))
+    
+    if args.screenshot_interval:
+        arg_list.append('--screenshot-interval')
+        arg_list.append('{}'.format(args.screenshot_interval))
 
     if args.screenshot_format:
         arg_list.append('--screenshot-format')
@@ -181,6 +198,14 @@ def MakeExtrasString(args):
     if args.screenshot_dir:
         arg_list.append('--screenshot-dir')
         arg_list.append('{}'.format(args.screenshot_dir))
+
+    if args.trigger_script_frame:
+        arg_list.append('--trigger-script-frame')
+        arg_list.append('{}'.format(args.trigger_script_frame))
+
+    if args.trigger_script_path:
+        arg_list.append('--trigger-script-path')
+        arg_list.append('{}'.format(args.trigger_script_path))
 
     if args.screenshot_prefix:
         arg_list.append('--screenshot-prefix')
@@ -249,6 +274,9 @@ def MakeExtrasString(args):
     if args.vssb:
         arg_list.append('--vssb')
 
+    if args.use_ext_frame_boundary:
+        arg_list.append('--use-ext-frame-boundary')
+
     if args.sgfs:
         arg_list.append('--sgfs')
         arg_list.append('{}'.format(args.sgfs))
@@ -257,9 +285,15 @@ def MakeExtrasString(args):
         arg_list.append('--sgfr')
         arg_list.append('{}'.format(args.sgfr))
 
+    if args.preload_measurement_range:
+        arg_list.append('--preload-measurement-range')
+
     if args.memory_translation:
         arg_list.append('-m')
         arg_list.append('{}'.format(args.memory_translation))
+
+    if args.dsf:
+        arg_list.append('--dsf')
 
     if args.wait_before_present:
         arg_list.append('--wait-before-present')
@@ -301,10 +335,14 @@ def MakeExtrasString(args):
 
     if args.dump_resources_dump_all_image_subresources:
         arg_list.append('--dump-resources-dump-all-image-subresources')
-
+        
     if args.dump_resources_dump_raw_images:
         arg_list.append('--dump-resources-dump-raw-images')
 
+    if args.marking_layers:
+        arg_list.append('--marking-layers')
+        arg_list.append('{}'.format(args.marking_layers))
+        
     if args.dump_resources_dump_separate_alpha:
         arg_list.append('--dump-resources-dump-separate-alpha')
 

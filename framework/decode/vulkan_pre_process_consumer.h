@@ -93,7 +93,10 @@ class VulkanPreProcessConsumer : public VulkanConsumer
   public:
     VulkanPreProcessConsumer() {}
 
-    bool WasVulkanAPIDetected() { return vulkan_consumer_usage_; }
+    bool WasVulkanAPIDetected()
+    {
+        return vulkan_consumer_usage_;
+    }
 
     virtual void Process_vkCreateDevice(const ApiCallInfo&         call_info,
                                         VkResult                   returnValue,

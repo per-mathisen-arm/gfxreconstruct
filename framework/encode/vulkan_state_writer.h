@@ -160,11 +160,36 @@ class VulkanStateWriter
 
     void WriteDeviceMemoryState(const VulkanStateTable& state_table);
 
-    void WriteRayTracingPropertiesState(const VulkanStateTable& state_table);
+    void WriteRayTracingPipelinePropertiesState(const VulkanStateTable& state_table);
 
     void WriteRayTracingShaderGroupHandlesState(const VulkanStateTable& state_table);
 
     void WriteAccelerationStructureKHRState(const VulkanStateTable& state_table);
+
+    void WriteMicromapEXTState(const VulkanStateTable& state_table);
+
+    struct MicromapsCallInjectionUtilitiesHandles
+    {
+        format::HandleId                 command_pool_id;
+        format::HandleId                 command_buffer_id;
+        format::HandleId                 queue_id;
+        std::vector<MicromapEXTWrapper*> wrappers_build;
+        std::vector<MicromapEXTWrapper*> wrappers_copy;
+        std::vector<MicromapEXTWrapper*> wrappers_write_prop;
+    };
+
+    void WriteMicromapEXTBuild(DeviceWrapper*                          device_wrapper,
+                               MicromapsCallInjectionUtilitiesHandles& omm_inject_utilities);
+
+    void WriteMicromapEXTWriteProperties(DeviceWrapper*                          device_wrapper,
+                                         MicromapsCallInjectionUtilitiesHandles& omm_inject_utilities);
+
+    void WriteMicromapEXTCopy(DeviceWrapper*                          device_wrapper,
+                              MicromapsCallInjectionUtilitiesHandles& omm_inject_utilities);
+
+    void InjectResetBeginCommandBuffer(format::HandleId& command_buffer_id);
+
+    void InjectEndCommandBufferSubmitWaitQueue(format::HandleId& command_buffer_id, format::HandleId& queue_id);
 
     void WriteDeferredOperationJoinCommand(format::HandleId device_id, format::HandleId deferred_operation_id);
 
@@ -384,6 +409,8 @@ class VulkanStateWriter
     bool IsFramebufferValid(const vulkan_wrappers::FramebufferWrapper* framebuffer_wrapper,
                             const VulkanStateTable&                    state_table);
 
+    void WriteBufferDeviceAddressCalls(const VulkanStateTable& state_table);
+
     void WriteTlasToBlasDependenciesMetadata(const VulkanStateTable& state_table);
 
     void WriteAccelerationStructureStateMetaCommands(const VulkanStateTable& state_table);
@@ -397,8 +424,12 @@ class VulkanStateWriter
     void EncodeAccelerationStructureBuildMetaCommand(format::HandleId                             device_id,
                                                      const AccelerationStructureBuildCommandData& command);
 
-    void EncodeAccelerationStructuresCopyMetaCommand(format::HandleId                                       device_id,
-                                                     const std::vector<VkCopyAccelerationStructureInfoKHR>& infos);
+    struct AccelerationStructureCopyCommandData
+    {
+        std::vector<VkCopyAccelerationStructureInfoKHR> infos;
+    };
+    void EncodeAccelerationStructureCopyMetaCommand(format::HandleId                            device_id,
+                                                    const AccelerationStructureCopyCommandData& command);
 
     struct AccelerationStructureWritePropertiesCommandData
     {
@@ -415,7 +446,7 @@ class VulkanStateWriter
 
     static void UpdateAddresses(AccelerationStructureBuildCommandData& command);
 
-    using ASInputBuffer = vulkan_wrappers::AccelerationStructureKHRWrapper::ASInputBuffer;
+    using ASInputBuffer = vulkan_wrappers::ASInputBuffer;
     void BeginAccelerationStructuresSection(format::HandleId device_id, uint64_t max_resource_size);
     void WriteASInputBufferState(ASInputBuffer& buffer);
     void WriteASInputMemoryState(ASInputBuffer& buffer);
@@ -435,6 +466,7 @@ class VulkanStateWriter
     util::MemoryOutputStream parameter_stream_;
     ParameterEncoder         encoder_;
     uint64_t                 blocks_written_{ 0 };
+    VkDeviceAddress          mock_address_counter_;
 
     // helper to retrieve a unique id, e.g. from a CaptureManager
     std::function<format::HandleId()> get_unique_id_;

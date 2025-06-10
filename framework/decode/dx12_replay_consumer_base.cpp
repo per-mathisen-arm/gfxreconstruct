@@ -75,10 +75,11 @@ void InitialResourceExtraInfo(HandlePointerDecoder<void*>* resource_decoder,
 
 Dx12ReplayConsumerBase::Dx12ReplayConsumerBase(std::shared_ptr<application::Application> application,
                                                const DxReplayOptions&                    options) :
-    application_(application), options_(options), current_message_length_(0), info_queue_(nullptr),
-    resource_data_util_(nullptr), frame_buffer_renderer_(nullptr), debug_layer_enabled_(false),
-    set_auto_breadcrumbs_enablement_(false), set_breadcrumb_context_enablement_(false),
-    set_page_fault_enablement_(false), loading_trim_state_(false), fps_info_(nullptr), frame_end_marker_count_(0)
+    application_(application),
+    options_(options), current_message_length_(0), info_queue_(nullptr), resource_data_util_(nullptr),
+    frame_buffer_renderer_(nullptr), debug_layer_enabled_(false), set_auto_breadcrumbs_enablement_(false),
+    set_breadcrumb_context_enablement_(false), set_page_fault_enablement_(false), loading_trim_state_(false),
+    fps_info_(nullptr), frame_end_marker_count_(0)
 {
     if (options_.enable_validation_layer)
     {
@@ -2627,6 +2628,7 @@ HRESULT Dx12ReplayConsumerBase::OverrideGetBuffer(DxObjectInfo*                r
             if (swapchain_info->image_ids[buffer] == format::kNullHandleId)
             {
                 auto object_info = static_cast<DxObjectInfo*>(surface->GetConsumerData(0));
+                InitialResourceExtraInfo(surface, D3D12_RESOURCE_STATE_PRESENT, false);
 
                 // Ensure that the retrieved buffer is a D3D12 resource prior to casting to ID3D12Resource.
                 const auto& buffer_iid = *riid.decoded_value;
@@ -3429,8 +3431,8 @@ void Dx12ReplayConsumerBase::InitializeScreenshotHandler()
     {
         screenshot_file_prefix_ = util::filepath::Join(options_.screenshot_dir, screenshot_file_prefix_);
     }
-    screenshot_handler_ =
-        std::make_unique<ScreenshotHandlerBase>(options_.screenshot_format, options_.screenshot_ranges);
+    screenshot_handler_ = std::make_unique<ScreenshotHandlerBase>(
+        options_.screenshot_format, options_.screenshot_ranges, options_.screenshot_interval);
 }
 
 void Dx12ReplayConsumerBase::Process_ID3D12Device_CheckFeatureSupport(format::HandleId object_id,

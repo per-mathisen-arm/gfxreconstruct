@@ -77,6 +77,12 @@ class CaptureSettings
         kDrawCalls,
     };
 
+    enum class FenceQueryDelayUnit
+    {
+        kCalls,
+        kFrames
+    };
+
     const static char kDefaultCaptureFileName[];
 
     struct TrimDrawCalls
@@ -106,6 +112,7 @@ class CaptureSettings
         MemoryTrackingMode           memory_tracking_mode{ kPageGuard };
         std::string                  screenshot_dir;
         std::vector<util::UintRange> screenshot_ranges;
+        uint32_t                     screenshot_interval{ 1 };
         util::ScreenshotFormat       screenshot_format;
         TrimBoundary                 trim_boundary{ TrimBoundary::kUnknown };
         std::vector<util::UintRange> trim_ranges;
@@ -114,6 +121,7 @@ class CaptureSettings
         uint32_t                     trim_key_frames{ 0 };
         RuntimeTriggerState          runtime_capture_trigger{ kNotUsed };
         bool                         runtime_write_assets{ false };
+        std::string                  capture_package_name{ "" };
         int                          page_guard_signal_handler_watcher_max_restores{ 1 };
         bool                         page_guard_copy_on_map{ util::PageGuardManager::kDefaultEnableCopyOnMap };
         bool                         page_guard_separate_read{ util::PageGuardManager::kDefaultEnableSeparateRead };
@@ -124,9 +132,14 @@ class CaptureSettings
         bool                         page_guard_signal_handler_watcher{ false };
         bool                         debug_layer{ false };
         bool                         debug_device_lost{ false };
+        bool                         debug_set_objects_name{ false };
         bool                         disable_dxr{ false };
         uint32_t                     accel_struct_padding{ 0 };
         bool                         force_command_serialization{ false };
+        uint32_t                     fence_query_delay{ 0 };
+        FenceQueryDelayUnit          fence_query_delay_unit{ FenceQueryDelayUnit::kCalls };
+        uint64_t                     fence_query_delay_timeout_threshold{ 0 };
+        uint32_t                     fence_query_delay_limit{ UINT32_MAX };
         bool                         queue_zero_only{ false };
         bool                         allow_pipeline_compile_required{ false };
         bool                         quit_after_frame_ranges{ false };
@@ -143,6 +156,8 @@ class CaptureSettings
         bool iunknown_wrapping{ false };
 
         ResourveValueAnnotationInfo rv_anotation_info{};
+
+        std::vector<uint64_t> buffer_usages_to_ignore{};
     };
 
   public:
@@ -210,6 +225,11 @@ class CaptureSettings
 
     static util::ScreenshotFormat ParseScreenshotFormatString(const std::string&     value_string,
                                                               util::ScreenshotFormat default_value);
+
+    static std::vector<uint64_t> ParseBufferUsages(const std::string& value_string);
+
+    static FenceQueryDelayUnit ParseFenceQueryDelayUnit(const std::string&  value_string,
+                                                        FenceQueryDelayUnit default_value);
 
   private:
     TraceSettings       trace_settings_;

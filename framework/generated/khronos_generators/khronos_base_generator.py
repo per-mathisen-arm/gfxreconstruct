@@ -61,7 +61,6 @@ def make_re_string(list, default=None):
     else:
         return default
 
-
 class ApiData():
     """ApiData - Class to store various Khronos API data.
 

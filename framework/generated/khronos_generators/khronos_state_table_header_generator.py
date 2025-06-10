@@ -69,8 +69,11 @@ class KhronosStateTableHeaderGenerator():
         self.api_const_get_code += 'template<> inline const {0}* {3}StateHandleTable::GetWrapper<{0}>({1} handle) const {{ return {3}StateTableBase::GetWrapper(handle, {2}); }}\n'.format(
             handle_wrapper_type, name, handle_map, api_data.api_class_prefix
         )
-        self.api_map_code += '    std::unordered_map<{}, {}*> {};\n'.format(
+        self.api_map_code += '    UnorderedStateMap<{}, {}*> {};\n'.format(
             name, handle_wrapper_type, handle_map
+        )
+        self.api_get_map_lock_code += 'template<> inline std::recursive_mutex& {2}StateHandleTable::GetMapMutex<{0}>(){{ return {1}.mutex; }}\n'.format(
+            handle_wrapper_type, handle_map, api_data.api_class_prefix
         )
 
     def generate_state_table_content(self):
@@ -87,6 +90,7 @@ class KhronosStateTableHeaderGenerator():
         self.api_const_get_code = ''
         self.api_get_code = ''
         self.api_map_code = ''
+        self.api_get_map_lock_code = ''
 
         api_data = self.get_api_data()
 
@@ -122,6 +126,10 @@ class KhronosStateTableHeaderGenerator():
         code += '\n'
         code += self.visit_code
         code += '\n'
+        code += '    Custom{}StateTable customStateTable;\n'.format(
+            api_data.api_class_prefix
+        )
+        code += '\n'
         code += '  private:\n'
         code += self.map_code
         code += '};\n'
@@ -142,9 +150,13 @@ class KhronosStateTableHeaderGenerator():
         code += '\n'
         code += self.api_remove_code
         code += '\n'
+        code += self.visit_code
+        code += '\n'
         code += '    template<typename Wrapper> const Wrapper* GetWrapper(typename Wrapper::HandleType handle) const { return nullptr; }\n'
         code += '\n'
         code += '    template<typename Wrapper> Wrapper* GetWrapper(typename Wrapper::HandleType handle) { return nullptr; }\n'
+        code += '\n'
+        code += '    template<typename Wrapper> std::recursive_mutex& GetMapMutex();\n'
         code += '\n'
         code += '  private:\n'
         code += self.api_map_code
@@ -153,4 +165,6 @@ class KhronosStateTableHeaderGenerator():
         code += self.api_const_get_code
         code += '\n'
         code += self.api_get_code
+        code += '\n'
+        code += self.api_get_map_lock_code
         write(code, file=self.outFile)

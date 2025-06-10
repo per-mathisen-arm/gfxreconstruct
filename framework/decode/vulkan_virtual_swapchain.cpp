@@ -24,7 +24,9 @@
 
 #include "decode/vulkan_resource_allocator.h"
 #include "decode/decoder_util.h"
-#include "decode/mark_injected_commands.h"
+
+#include "util/marking_layers.h"
+
 #include "vulkan/vulkan_core.h"
 #include <array>
 
@@ -65,9 +67,11 @@ VkResult VulkanVirtualSwapchain::CreateSwapchainKHR(VkResult                    
     modified_create_info.imageUsage =
         modified_create_info.imageUsage | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
+    util::MarkingLayersUtil::instance().BeginInjected(device_info);
     VkResult result = instance_table_->GetPhysicalDeviceSurfaceCapabilitiesKHR(
         physical_device, create_info->surface, &surfCapabilities);
     GFXRECON_ASSERT(result == VK_SUCCESS);
+    util::MarkingLayersUtil::instance().EndInjected(device_info);
 
     if (modified_create_info.minImageCount < surfCapabilities.minImageCount)
     {
@@ -100,29 +104,32 @@ void VulkanVirtualSwapchain::CleanSwapchainResourceData(const VulkanDeviceInfo* 
 
     if ((device_info != nullptr) && (swapchain_info != nullptr))
     {
+        util::MarkingLayersUtil::instance().BeginInjected(device_info);
         device    = device_info->handle;
         swapchain = swapchain_info->handle;
 
         auto allocator = device_info->allocator.get();
         assert(allocator != nullptr);
 
-        for (const VulkanImageInfo& image_info : swapchain_info->image_infos)
-        {
-            allocator->DestroyImageDirect(image_info.handle, nullptr, image_info.allocator_data);
-            allocator->FreeMemoryDirect(image_info.memory, nullptr, image_info.memory_allocator_data);
-        }
-
         // Delete the virtual swapchain-specific swapchain resource data
         if (swapchain_resources_.find(swapchain) != swapchain_resources_.end())
         {
-            auto& swapchain_resources = swapchain_resources_[swapchain];
+            const auto& swapchain_resources = swapchain_resources_[swapchain];
+            for (const auto& copy_cmd_data : swapchain_resources->copy_cmd_data)
+            {
+                for (const auto& fence : copy_cmd_data.second.fences)
+                {
+                    device_table_->WaitForFences(device, 1, &fence, VK_TRUE, ~0UL);
+                }
+            }
+
             for (const VirtualImage& image_info : swapchain_resources->virtual_swapchain_images)
             {
                 allocator->DestroyImageDirect(image_info.image, nullptr, image_info.resource_allocator_data);
                 allocator->FreeMemoryDirect(image_info.memory, nullptr, image_info.memory_allocator_data);
             }
 
-            for (auto& copy_cmd_data : swapchain_resources->copy_cmd_data)
+            for (const auto& copy_cmd_data : swapchain_resources->copy_cmd_data)
             {
                 if (copy_cmd_data.second.command_pool != VK_NULL_HANDLE)
                 {
@@ -133,11 +140,11 @@ void VulkanVirtualSwapchain::CleanSwapchainResourceData(const VulkanDeviceInfo* 
                         copy_cmd_data.second.command_buffers.data());
                     device_table_->DestroyCommandPool(device, copy_cmd_data.second.command_pool, nullptr);
                 }
-                for (auto& semaphore : copy_cmd_data.second.semaphores)
+                for (const auto& semaphore : copy_cmd_data.second.semaphores)
                 {
                     device_table_->DestroySemaphore(device, semaphore, nullptr);
                 }
-                for (auto& fence : copy_cmd_data.second.fences)
+                for (const auto& fence : copy_cmd_data.second.fences)
                 {
                     device_table_->DestroyFence(device, fence, nullptr);
                 }
@@ -145,6 +152,13 @@ void VulkanVirtualSwapchain::CleanSwapchainResourceData(const VulkanDeviceInfo* 
 
             swapchain_resources_.erase(swapchain);
         }
+
+        for (const VulkanImageInfo& image_info : swapchain_info->image_infos)
+        {
+            allocator->DestroyImageDirect(image_info.handle, nullptr, image_info.allocator_data);
+            allocator->FreeMemoryDirect(image_info.memory, nullptr, image_info.memory_allocator_data);
+        }
+        util::MarkingLayersUtil::instance().EndInjected(device_info);
     }
 }
 
@@ -157,11 +171,8 @@ void VulkanVirtualSwapchain::DestroySwapchainKHR(PFN_vkDestroySwapchainKHR     f
     {
         // CleanSwapchainResourceData() makes Vulkan API calls that are not in the capture file.
         // Notify any layers by calling the provided pointer to their ReportReplayGeneratedVulkanCommands
-        decode::BeginInjectedCommands();
 
         CleanSwapchainResourceData(device_info, swapchain_info);
-
-        decode::EndInjectedCommands();
 
         VkDevice       device    = device_info->handle;
         VkSwapchainKHR swapchain = swapchain_info->handle;
@@ -200,9 +211,11 @@ VkResult VulkanVirtualSwapchain::CreateSwapchainResourceData(const VulkanDeviceI
     uint32_t                             property_count     = 0;
     std::vector<VkQueueFamilyProperties> props;
 
+    util::MarkingLayersUtil::instance().BeginInjected(device_info);
     instance_table_->GetPhysicalDeviceQueueFamilyProperties(device_info->parent, &property_count, nullptr);
     props.resize(property_count);
     instance_table_->GetPhysicalDeviceQueueFamilyProperties(device_info->parent, &property_count, props.data());
+    util::MarkingLayersUtil::instance().EndInjected(device_info);
 
     for (uint32_t queue_family_index = 0; queue_family_index < property_count; ++queue_family_index)
     {
@@ -249,7 +262,10 @@ VkResult VulkanVirtualSwapchain::CreateSwapchainResourceData(const VulkanDeviceI
                           swapchain_info->capture_id);
     }
 
+    util::MarkingLayersUtil::instance().BeginInjected(device_info);
     initial_copy_queue = GetDeviceQueue(device_table_, device_info, copy_queue_family_index, 0);
+    util::MarkingLayersUtil::instance().EndInjected(device_info);
+
     if (initial_copy_queue == VK_NULL_HANDLE)
     {
         GFXRECON_LOG_ERROR("Virtual swapchain failed getting device queue %d to create initial virtual swapchain "
@@ -262,6 +278,7 @@ VkResult VulkanVirtualSwapchain::CreateSwapchainResourceData(const VulkanDeviceI
     auto& swapchain_resources = swapchain_resources_[swapchain];
     if (!offscreen)
     {
+        util::MarkingLayersUtil::instance().BeginInjected(device_info);
         for (uint32_t queue_family_index = 0; queue_family_index < property_count; ++queue_family_index)
         {
             if (swapchain_resources->copy_cmd_data.find(queue_family_index) == swapchain_resources->copy_cmd_data.end())
@@ -402,6 +419,7 @@ VkResult VulkanVirtualSwapchain::CreateSwapchainResourceData(const VulkanDeviceI
                 }
             }
         }
+        util::MarkingLayersUtil::instance().EndInjected(device_info);
     }
 
     uint32_t virtual_swapchain_count = static_cast<uint32_t>(swapchain_resources->virtual_swapchain_images.size());
@@ -463,6 +481,7 @@ VkResult VulkanVirtualSwapchain::CreateSwapchainResourceData(const VulkanDeviceI
 
         if (!offscreen)
         {
+            util::MarkingLayersUtil::instance().BeginInjected(device_info);
             VkCommandBufferBeginInfo begin_info = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
             begin_info.pNext                    = nullptr;
             begin_info.flags                    = 0;
@@ -567,6 +586,7 @@ VkResult VulkanVirtualSwapchain::CreateSwapchainResourceData(const VulkanDeviceI
                     swapchain_info->capture_id);
                 return result;
             }
+            util::MarkingLayersUtil::instance().EndInjected(device_info);
         }
     }
 
@@ -636,12 +656,9 @@ VkResult VulkanVirtualSwapchain::GetSwapchainImagesKHR(VkResult                 
 
         // CreateSwapchainResourceData() makes Vulkan API calls that are not in the capture file.
         // Notify any layers by calling the provided pointer to their ReportReplayGeneratedVulkanCommands
-        decode::BeginInjectedCommands();
 
         result = CreateSwapchainResourceData(
             device_info, swapchain_info, capture_image_count, replay_image_count, images, false);
-
-        decode::EndInjectedCommands();
     }
 
     return result;
@@ -730,7 +747,6 @@ VkResult VulkanVirtualSwapchain::QueuePresentKHR(VkResult                       
 
     // Below Vulkan API calls are made that are not in the capture file.
     // Notify any layers by calling the provided pointer to their ReportReplayGeneratedVulkanCommands
-    decode::BeginInjectedCommands();
 
     VkDevice device             = queue_info->parent;
     VkQueue  queue              = queue_info->handle;
@@ -793,6 +809,8 @@ VkResult VulkanVirtualSwapchain::QueuePresentKHR(VkResult                       
     // start and signaling another semaphore (SemB) when it is done.  Then, we need to add the
     // QueuePresent to QueueX, but waiting on SemB before it executes.  And that is assuming that
     // the buffer image is even accessible on both Queues!
+
+    util::MarkingLayersUtil::instance().BeginInjected(queue_info);
 
     for (uint32_t i = 0; i < swapchainCount; ++i)
     {
@@ -863,14 +881,11 @@ VkResult VulkanVirtualSwapchain::QueuePresentKHR(VkResult                       
         result = device_table_->ResetCommandBuffer(command_buffer, 0);
         if (result != VK_SUCCESS)
         {
-            decode::EndInjectedCommands();
-
             return result;
         }
         result = device_table_->BeginCommandBuffer(command_buffer, &begin_info);
         if (result != VK_SUCCESS)
         {
-            decode::EndInjectedCommands();
             return result;
         }
 
@@ -907,15 +922,18 @@ VkResult VulkanVirtualSwapchain::QueuePresentKHR(VkResult                       
                                      1 };
         VkImageCopy image_copy   = { subresource, offset, subresource, offset, image_extent };
 
-        // NOTE: vkCmdCopyImage works on Queues of types including Graphics, Compute
-        //       and Transfer.  So should work on any queues we get a vkQueuePresentKHR from.
-        device_table_->CmdCopyImage(command_buffer,
-                                    virtual_image.image,
-                                    VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                                    replay_image,
-                                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                    1,
-                                    &image_copy);
+        if (!swapchain_options_.virtual_swapchain_skip_blit)
+        {
+            // NOTE: vkCmdCopyImage works on Queues of types including Graphics, Compute
+            //       and Transfer.  So should work on any queues we get a vkQueuePresentKHR from.
+            device_table_->CmdCopyImage(command_buffer,
+                                        virtual_image.image,
+                                        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                        replay_image,
+                                        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                        1,
+                                        &image_copy);
+        }
 
         final_barrier_virtual_image.image                         = virtual_image.image;
         final_barrier_virtual_image.subresourceRange.layerCount   = swapchain_info->image_array_layers;
@@ -947,8 +965,6 @@ VkResult VulkanVirtualSwapchain::QueuePresentKHR(VkResult                       
         result = device_table_->EndCommandBuffer(command_buffer);
         if (result != VK_SUCCESS)
         {
-            decode::EndInjectedCommands();
-
             return result;
         }
 
@@ -974,13 +990,11 @@ VkResult VulkanVirtualSwapchain::QueuePresentKHR(VkResult                       
 
         if (result != VK_SUCCESS)
         {
-            decode::EndInjectedCommands();
-
             return result;
         }
     }
 
-    decode::EndInjectedCommands();
+    util::MarkingLayersUtil::instance().EndInjected(queue_info);
 
     VkPresentInfoKHR modified_present_info   = *present_info;
     modified_present_info.waitSemaphoreCount = static_cast<uint32_t>(present_wait_semaphores.size());
@@ -1074,7 +1088,7 @@ VkResult VulkanVirtualSwapchain::CreateVirtualSwapchainImage(const VulkanDeviceI
 {
     // TODO: This is the same code used in VulkanReplayConsumerBase::CreateSwapchainImage, which
     // should be moved to a shared graphics utility function.
-
+    util::MarkingLayersUtil::instance().BeginInjected(device_info);
     VulkanResourceAllocator* allocator = device_info->allocator.get();
     assert(allocator != nullptr);
 
@@ -1135,6 +1149,7 @@ VkResult VulkanVirtualSwapchain::CreateVirtualSwapchainImage(const VulkanDeviceI
             image.image = VK_NULL_HANDLE;
         }
     }
+    util::MarkingLayersUtil::instance().EndInjected(device_info);
     return result;
 }
 

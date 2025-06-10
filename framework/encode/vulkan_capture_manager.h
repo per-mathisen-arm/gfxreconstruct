@@ -40,6 +40,7 @@
 #include "generated/generated_vulkan_dispatch_table.h"
 #include "generated/generated_vulkan_command_buffer_util.h"
 #include "util/defines.h"
+#include "util/ahardwarebuffer_format_converter.h"
 
 #include "vulkan/vulkan.h"
 #include "vulkan/vulkan_core.h"
@@ -73,7 +74,9 @@ class VulkanCaptureManager : public ApiCaptureManager
 
     // Register special layer provided functions, which perform layer specific initialization.
     // These must be set before the application calls vkCreateInstance.
-    static void SetLayerFuncs(PFN_vkCreateInstance create_instance, PFN_vkCreateDevice create_device);
+    static void SetLayerFuncs(PFN_vkCreateInstance                       create_instance,
+                              PFN_vkCreateDevice                         create_device,
+                              PFN_vkEnumerateInstanceExtensionProperties enum_instance_ext);
 
     // Called by the layer's vkCreateInstance function, after the driver's vkCreateInstance function has been called, to
     // check for failure.  If vkCreateInstance failed, the reference count will be decremented and resources will be
@@ -287,10 +290,31 @@ class VulkanCaptureManager : public ApiCaptureManager
                                  const VkAllocationCallbacks* pAllocator,
                                  VkImage*                     pImage);
 
+    void OverrideDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks* pAllocator);
+
+    VkResult OverrideCreateImageView(VkDevice                     device,
+                                     const VkImageViewCreateInfo* pCreateInfo,
+                                     const VkAllocationCallbacks* pAllocator,
+                                     VkImageView*                 pView);
+
+    void OverrideFreeMemory(VkDevice device, VkDeviceMemory& memory, const VkAllocationCallbacks* pAllocator);
+
+    VkResult OverrideCreateSampler(VkDevice                     device,
+                                   const VkSamplerCreateInfo*   pCreateInfo,
+                                   const VkAllocationCallbacks* pAllocator,
+                                   VkSampler*                   pSampler);
+
+    void OverrideDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator);
+
     VkResult OverrideCreateAccelerationStructureKHR(VkDevice                                    device,
                                                     const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                     const VkAllocationCallbacks*                pAllocator,
                                                     VkAccelerationStructureKHR* pAccelerationStructureKHR);
+
+    VkResult OverrideCreateMicromapEXT(VkDevice                       device,
+                                       const VkMicromapCreateInfoEXT* pCreateInfo,
+                                       const VkAllocationCallbacks*   pAllocator,
+                                       VkMicromapEXT*                 pMicromap);
 
     void
     OverrideCmdBuildAccelerationStructuresKHR(VkCommandBuffer                                        commandBuffer,
@@ -298,15 +322,9 @@ class VulkanCaptureManager : public ApiCaptureManager
                                               const VkAccelerationStructureBuildGeometryInfoKHR*     pInfos,
                                               const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos);
 
-    void OverrideCmdCopyAccelerationStructureKHR(VkCommandBuffer                           command_buffer,
-                                                 const VkCopyAccelerationStructureInfoKHR* pInfo);
-
-    void OverrideCmdWriteAccelerationStructuresPropertiesKHR(VkCommandBuffer commandBuffer,
-                                                             uint32_t        accelerationStructureCount,
-                                                             const VkAccelerationStructureKHR* pAccelerationStructures,
-                                                             VkQueryType                       queryType,
-                                                             VkQueryPool                       queryPool,
-                                                             uint32_t                          firstQuery);
+    void OverrideCmdBuildMicromapsEXT(VkCommandBuffer               commandBuffer,
+                                      uint32_t                      infoCount,
+                                      const VkMicromapBuildInfoEXT* pInfos);
 
     VkResult OverrideAllocateMemory(VkDevice                     device,
                                     const VkMemoryAllocateInfo*  pAllocateInfo,
@@ -347,6 +365,58 @@ class VulkanCaptureManager : public ApiCaptureManager
     void OverrideGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice          physicalDevice,
                                                             uint32_t*                 pQueueFamilyPropertyCount,
                                                             VkQueueFamilyProperties2* pQueueFamilyProperties);
+
+    VkResult OverrideWaitForFences(
+        VkDevice device, uint32_t fenceCount, const VkFence* pFences, VkBool32 waitAll, uint64_t timeout);
+
+    VkResult OverrideGetFenceStatus(VkDevice device, VkFence fence);
+
+    void OverrideCmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo);
+
+    void OverrideCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer);
+
+    void OverrideCmdInsertDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo);
+
+    VkResult OverrideCreateDebugUtilsMessengerEXT(VkInstance                                instance,
+                                                  const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+                                                  const VkAllocationCallbacks*              pAllocator,
+                                                  VkDebugUtilsMessengerEXT*                 pMessenger);
+
+    void OverrideDestroyDebugUtilsMessengerEXT(VkInstance                   instance,
+                                               VkDebugUtilsMessengerEXT     messenger,
+                                               const VkAllocationCallbacks* pAllocator);
+
+    void OverrideQueueBeginDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT* pLabelInfo);
+
+    void OverrideQueueEndDebugUtilsLabelEXT(VkQueue queue);
+
+    void OverrideQueueInsertDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT* pLabelInfo);
+
+    VkResult OverrideSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT* pNameInfo);
+
+    VkResult OverrideSetDebugUtilsObjectTagEXT(VkDevice device, const VkDebugUtilsObjectTagInfoEXT* pTagInfo);
+
+    void OverrideSubmitDebugUtilsMessageEXT(VkInstance                                  instance,
+                                            VkDebugUtilsMessageSeverityFlagBitsEXT      messageSeverity,
+                                            VkDebugUtilsMessageTypeFlagsEXT             messageTypes,
+                                            const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData);
+    void OverrideCmdCopyAccelerationStructureKHR(VkCommandBuffer                           command_buffer,
+                                                 const VkCopyAccelerationStructureInfoKHR* pInfo);
+
+    void OverrideCmdCopyMicromapEXT(VkCommandBuffer command_buffer, const VkCopyMicromapInfoEXT* pInfo);
+
+    void OverrideCmdWriteAccelerationStructuresPropertiesKHR(VkCommandBuffer commandBuffer,
+                                                             uint32_t        accelerationStructureCount,
+                                                             const VkAccelerationStructureKHR* pAccelerationStructures,
+                                                             VkQueryType                       queryType,
+                                                             VkQueryPool                       queryPool,
+                                                             uint32_t                          firstQuery);
+    void OverrideCmdWriteMicromapsPropertiesEXT(VkCommandBuffer      commandBuffer,
+                                                uint32_t             micromapCount,
+                                                const VkMicromapEXT* pMicromaps,
+                                                VkQueryType          queryType,
+                                                VkQueryPool          queryPool,
+                                                uint32_t             firstQuery);
 
     void PostProcess_vkEnumeratePhysicalDevices(VkResult          result,
                                                 VkInstance        instance,
@@ -514,6 +584,8 @@ class VulkanCaptureManager : public ApiCaptureManager
             state_tracker_->TrackSemaphoreSignalState(semaphore);
             state_tracker_->TrackAcquireImage(*index, swapchain, semaphore, fence, 0);
         }
+
+        ProcessFenceSubmit(fence);
     }
 
     void PostProcess_vkAcquireNextImage2KHR(VkResult result,
@@ -531,6 +603,8 @@ class VulkanCaptureManager : public ApiCaptureManager
                                               pAcquireInfo->fence,
                                               pAcquireInfo->deviceMask);
         }
+
+        ProcessFenceSubmit(pAcquireInfo->fence);
     }
 
     void PostProcess_vkQueuePresentKHR(std::shared_lock<CommonCaptureManager::ApiCallMutexT>& current_lock,
@@ -551,7 +625,7 @@ class VulkanCaptureManager : public ApiCaptureManager
     }
 
     void PostProcess_vkQueueBindSparse(
-        VkResult result, VkQueue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo, VkFence)
+        VkResult result, VkQueue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo, VkFence fence)
     {
         if (IsCaptureModeTrack() && (result == VK_SUCCESS))
         {
@@ -563,6 +637,20 @@ class VulkanCaptureManager : public ApiCaptureManager
                                                           pBindInfo[i].signalSemaphoreCount,
                                                           pBindInfo[i].pSignalSemaphores);
             }
+        }
+
+        ProcessFenceSubmit(fence);
+    }
+
+    void PostProcess_vkResetFences(VkResult result, VkDevice device, uint32_t fenceCount, const VkFence* pFences)
+    {
+        GFXRECON_UNREFERENCED_PARAMETER(device);
+
+        for (uint32_t i = 0; i < fenceCount; ++i)
+        {
+            FenceWrapper* wrapper = GetWrapper<FenceWrapper>(pFences[i]);
+            assert(wrapper != nullptr);
+            wrapper->query_delay = 0;
         }
     }
 
@@ -924,7 +1012,6 @@ class VulkanCaptureManager : public ApiCaptureManager
                                                           pSubmits[i].pSignalSemaphores);
             }
         }
-
         // Check whether this queue submission contains a command buffer that should be treated as a frame boundary.
         for (uint32_t i = 0; i < submitCount; ++i)
         {
@@ -937,6 +1024,7 @@ class VulkanCaptureManager : public ApiCaptureManager
             {
                 auto cmd_buffer_wrapper =
                     vulkan_wrappers::GetWrapper<vulkan_wrappers::CommandBufferWrapper>(pSubmits[i].pCommandBuffers[j]);
+
                 if (CheckCommandBufferWrapperForFrameBoundary(current_lock, cmd_buffer_wrapper))
                 {
                     break;
@@ -981,6 +1069,7 @@ class VulkanCaptureManager : public ApiCaptureManager
             {
                 auto cmd_buffer_wrapper = vulkan_wrappers::GetWrapper<vulkan_wrappers::CommandBufferWrapper>(
                     pSubmits[i].pCommandBufferInfos[j].commandBuffer);
+
                 if (CheckCommandBufferWrapperForFrameBoundary(current_lock, cmd_buffer_wrapper))
                 {
                     break;
@@ -1225,7 +1314,7 @@ class VulkanCaptureManager : public ApiCaptureManager
                                                          const VkAllocationCallbacks*                pAllocator,
                                                          VkDescriptorUpdateTemplate* pDescriptorUpdateTemplate);
 
-    void PostProcess_vkGetBufferDeviceAddress(VkDeviceAddress                  result,
+    void PostProcess_vkGetBufferDeviceAddress(VkDeviceAddress                  address,
                                               VkDevice                         device,
                                               const VkBufferDeviceAddressInfo* pInfo);
 
@@ -1235,8 +1324,16 @@ class VulkanCaptureManager : public ApiCaptureManager
                                                           const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo);
 
     void
-    PreProcess_vkGetAccelerationStructureDeviceAddressKHR(VkDevice                                           device,
-                                                          const VkAccelerationStructureDeviceAddressInfoKHR* pInfo);
+         PreProcess_vkGetAccelerationStructureDeviceAddressKHR(VkDevice                                           device,
+                                                               const VkAccelerationStructureDeviceAddressInfoKHR* pInfo);
+    void PostProcess_vkGetAccelerationStructureDeviceAddressKHR(
+        VkDeviceAddress result, VkDevice device, const VkAccelerationStructureDeviceAddressInfoKHR* pInfo)
+    {
+        auto wrapper = GetWrapper<AccelerationStructureKHRWrapper>(pInfo->accelerationStructure);
+    }
+
+    void PreProcess_vkGetRayTracingShaderGroupHandlesKHR(
+        VkDevice device, VkPipeline pipeline, uint32_t firstGroup, uint32_t groupCount, size_t dataSize, void* pData);
 
     void PreProcess_vkGetAndroidHardwareBufferPropertiesANDROID(VkDevice                                  device,
                                                                 const struct AHardwareBuffer*             buffer,
@@ -1265,6 +1362,88 @@ class VulkanCaptureManager : public ApiCaptureManager
     void PostProcess_vkCmdDebugMarkerInsertEXT(VkCommandBuffer                   commandBuffer,
                                                const VkDebugMarkerMarkerInfoEXT* pMarkerInfo);
 
+    void PostProcess_vkCmdInsertDebugUtilsLabelEXT(VkCommandBuffer             commandBuffer,
+                                                   const VkDebugUtilsLabelEXT* pLabelInfo);
+
+    void PostProcess_vkCreateDevice(VkPhysicalDevice             physicalDevice,
+                                    const VkDeviceCreateInfo*    pCreateInfo,
+                                    const VkAllocationCallbacks* pAllocator,
+                                    VkDevice*                    pDevice);
+    void PostProcess_vkCreateSemaphore(VkDevice                     device,
+                                       const VkSemaphoreCreateInfo* pCreateInfo,
+                                       const VkAllocationCallbacks* pAllocator,
+                                       VkSemaphore*                 pSemaphore);
+    void PostProcess_vkAllocateCommandBuffers(VkDevice                           device,
+                                              const VkCommandBufferAllocateInfo* pAllocateInfo,
+                                              VkCommandBuffer*                   pCommandBuffers);
+    void PostProcess_vkCreateFence(VkDevice                     device,
+                                   const VkFenceCreateInfo*     pCreateInfo,
+                                   const VkAllocationCallbacks* pAllocator,
+                                   VkFence*                     pFence);
+    void PostProcess_vkAllocateMemory(VkDevice                     device,
+                                      const VkMemoryAllocateInfo*  pAllocateInfo,
+                                      const VkAllocationCallbacks* pAllocator,
+                                      VkDeviceMemory*              pMemory);
+    void PostProcess_vkCreateBuffer(VkDevice                     device,
+                                    const VkBufferCreateInfo*    pCreateInfo,
+                                    const VkAllocationCallbacks* pAllocator,
+                                    VkBuffer*                    pBuffer);
+    void PostProcess_vkCreateImage(VkDevice                     device,
+                                   const VkImageCreateInfo*     pCreateInfo,
+                                   const VkAllocationCallbacks* pAllocator,
+                                   VkImage*                     pImage);
+    void PostProcess_vkCreateEvent(VkDevice                     device,
+                                   const VkEventCreateInfo*     pCreateInfo,
+                                   const VkAllocationCallbacks* pAllocator,
+                                   VkEvent*                     pEvent);
+    void PostProcess_vkCreateQueryPool(VkDevice                     device,
+                                       const VkQueryPoolCreateInfo* pCreateInfo,
+                                       const VkAllocationCallbacks* pAllocator,
+                                       VkQueryPool*                 pQueryPool);
+    void PostProcess_vkCreateBufferView(VkDevice                      device,
+                                        const VkBufferViewCreateInfo* pCreateInfo,
+                                        const VkAllocationCallbacks*  pAllocator,
+                                        VkBufferView*                 pView);
+    void PostProcess_vkCreateImageView(VkDevice                     device,
+                                       const VkImageViewCreateInfo* pCreateInfo,
+                                       const VkAllocationCallbacks* pAllocator,
+                                       VkImageView*                 pView);
+    void PostProcess_vkCreatePipelineCache(VkDevice                         device,
+                                           const VkPipelineCacheCreateInfo* pCreateInfo,
+                                           const VkAllocationCallbacks*     pAllocator,
+                                           VkPipelineCache*                 pPipelineCache);
+    void PostProcess_vkCreatePipelineLayout(VkDevice                          device,
+                                            const VkPipelineLayoutCreateInfo* pCreateInfo,
+                                            const VkAllocationCallbacks*      pAllocator,
+                                            VkPipelineLayout*                 pPipelineLayout);
+    void PostProcess_vkCreateRenderPass(VkDevice                      device,
+                                        const VkRenderPassCreateInfo* pCreateInfo,
+                                        const VkAllocationCallbacks*  pAllocator,
+                                        VkRenderPass*                 pRenderPass);
+    void PostProcess_vkCreateDescriptorSetLayout(VkDevice                               device,
+                                                 const VkDescriptorSetLayoutCreateInfo* pCreateInfo,
+                                                 const VkAllocationCallbacks*           pAllocator,
+                                                 VkDescriptorSetLayout*                 pSetLayout);
+    void PostProcess_vkCreateSampler(VkDevice                     device,
+                                     const VkSamplerCreateInfo*   pCreateInfo,
+                                     const VkAllocationCallbacks* pAllocator,
+                                     VkSampler*                   pSampler);
+    void PostProcess_vkCreateDescriptorPool(VkDevice                          device,
+                                            const VkDescriptorPoolCreateInfo* pCreateInfo,
+                                            const VkAllocationCallbacks*      pAllocator,
+                                            VkDescriptorPool*                 pDescriptorPool);
+    void PostProcess_vkAllocateDescriptorSets(VkDevice                           device,
+                                              const VkDescriptorSetAllocateInfo* pAllocateInfo,
+                                              VkDescriptorSet*                   pDescriptorSets);
+    void PostProcess_vkCreateFramebuffer(VkDevice                       device,
+                                         const VkFramebufferCreateInfo* pCreateInfo,
+                                         const VkAllocationCallbacks*   pAllocator,
+                                         VkFramebuffer*                 pFramebuffer);
+    void PostProcess_vkCreateCommandPool(VkDevice                       device,
+                                         const VkCommandPoolCreateInfo* pCreateInfo,
+                                         const VkAllocationCallbacks*   pAllocator,
+                                         VkCommandPool*                 pCommandPool);
+
     void PostProcess_vkFrameBoundaryANDROID(std::shared_lock<CommonCaptureManager::ApiCallMutexT>& current_lock,
                                             VkDevice                                               device,
                                             VkSemaphore                                            semaphore,
@@ -1273,8 +1452,16 @@ class VulkanCaptureManager : public ApiCaptureManager
         EndFrame(current_lock);
     }
 
-    void PostProcess_vkCmdInsertDebugUtilsLabelEXT(VkCommandBuffer             commandBuffer,
-                                                   const VkDebugUtilsLabelEXT* pLabelInfo);
+    void PostProcess_vkCreateShaderModule(VkResult                        result,
+                                          VkDevice                        device,
+                                          const VkShaderModuleCreateInfo* pCreateInfo,
+                                          const VkAllocationCallbacks*    pAllocator,
+                                          VkShaderModule*                 pShaderModule);
+
+    void PostProcess_vkDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks* callbacks);
+    void PostProcess_vkDestroyAccelerationStructureKHR(VkDevice                     device,
+                                                       VkAccelerationStructureKHR   acceleration_structure,
+                                                       const VkAllocationCallbacks* callbacks);
 
     void PostProcess_vkCmdBindDescriptorSets(VkCommandBuffer        commandBuffer,
                                              VkPipelineBindPoint    pipelineBindPoint,
@@ -1375,6 +1562,31 @@ class VulkanCaptureManager : public ApiCaptureManager
     void PostProcess_vkCmdBindPipeline(VkCommandBuffer     commandBuffer,
                                        VkPipelineBindPoint pipelineBindPoint,
                                        VkPipeline          pipeline);
+
+    void PostProcess_vkCreateGraphicsPipelines(VkResult                            result,
+                                               VkDevice                            device,
+                                               VkPipelineCache                     pipelineCache,
+                                               uint32_t                            createInfoCount,
+                                               const VkGraphicsPipelineCreateInfo* pCreateInfos,
+                                               const VkAllocationCallbacks*        pAllocator,
+                                               VkPipeline*                         pPipelines);
+
+    void PostProcess_vkCreateComputePipelines(VkResult                           result,
+                                              VkDevice                           device,
+                                              VkPipelineCache                    pipelineCache,
+                                              uint32_t                           createInfoCount,
+                                              const VkComputePipelineCreateInfo* pCreateInfos,
+                                              const VkAllocationCallbacks*       pAllocator,
+                                              VkPipeline*                        pPipelines);
+
+    void PostProcess_vkCreateRayTracingPipelinesKHR(VkResult                                 result,
+                                                    VkDevice                                 device,
+                                                    VkDeferredOperationKHR                   deferredOperation,
+                                                    VkPipelineCache                          pipelineCache,
+                                                    uint32_t                                 createInfoCount,
+                                                    const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
+                                                    const VkAllocationCallbacks*             pAllocator,
+                                                    VkPipeline*                              pPipelines);
 
     void PostProcess_vkCmdDraw(VkCommandBuffer commandBuffer,
                                uint32_t        vertexCount,
@@ -1538,6 +1750,11 @@ class VulkanCaptureManager : public ApiCaptureManager
 #if defined(__ANDROID__)
     void OverrideGetPhysicalDeviceSurfacePresentModesKHR(uint32_t* pPresentModeCount, VkPresentModeKHR* pPresentModes);
 #endif
+    vulkan_wrappers::DeviceMemoryWrapper* GetMemory(format::HandleId id)
+    {
+        std::lock_guard<std::mutex> lock(mapped_memory_lock_);
+        return memories[id];
+    }
 
   protected:
     VulkanCaptureManager() : ApiCaptureManager(format::ApiFamilyId::ApiFamily_Vulkan) {}
@@ -1570,6 +1787,12 @@ class VulkanCaptureManager : public ApiCaptureManager
     {
         format::HandleId      memory_id;
         std::atomic<uint32_t> reference_count;
+
+        VkAndroidHardwareBufferFormatPropertiesANDROID properties = {
+            VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_PROPERTIES_ANDROID, nullptr
+        };
+        bool isStandardFormat;
+        bool hasProperties;
     };
 
     typedef std::unordered_map<AHardwareBuffer*, HardwareBufferInfo> HardwareBufferMap;
@@ -1604,6 +1827,9 @@ class VulkanCaptureManager : public ApiCaptureManager
     VkMemoryPropertyFlags GetMemoryProperties(vulkan_wrappers::DeviceWrapper* device_wrapper,
                                               uint32_t                        memory_type_index);
 
+    const VkImportAndroidHardwareBufferInfoANDROID*
+    FindAllocateMemoryExtensions(const VkMemoryAllocateInfo* allocate_info);
+
     void ProcessHardwareBuffer(format::ThreadId thread_id, AHardwareBuffer* hardware_buffer, VkDevice device);
     void ProcessImportAndroidHardwareBuffer(VkDevice device, VkDeviceMemory memory, AHardwareBuffer* hardware_buffer);
     void ReleaseAndroidHardwareBuffer(AHardwareBuffer* hardware_buffer);
@@ -1615,6 +1841,11 @@ class VulkanCaptureManager : public ApiCaptureManager
     bool CheckPNextChainForFrameBoundary(std::shared_lock<CommonCaptureManager::ApiCallMutexT>& current_lock,
                                          const VkBaseInStructure*                               current);
 
+    void ProcessFenceSubmit(VkFence fence);
+    bool IsExtensionBeingFaked(const char* extension);
+
+    virtual void EndFrame(std::shared_lock<CommonCaptureManager::ApiCallMutexT>& current_lock) override;
+
   private:
     void QueueSubmitWriteFillMemoryCmd();
 
@@ -1622,8 +1853,17 @@ class VulkanCaptureManager : public ApiCaptureManager
     static VulkanLayerTable                         vulkan_layer_table_;
     std::set<vulkan_wrappers::DeviceMemoryWrapper*> mapped_memory_; // Track mapped memory for unassisted tracking mode.
     std::unique_ptr<VulkanStateTracker>             state_tracker_;
+    std::vector<const char*>                        faked_extensions_;
     HardwareBufferMap                               hardware_buffers_;
     std::mutex                                      deferred_operation_mutex;
+    std::unordered_map<format::HandleId, vulkan_wrappers::DeviceMemoryWrapper*> memories;
+    std::mutex                                                                  mapped_memory_lock_;
+
+#if defined(__ANDROID__)
+    bool enable_hardwarebuffer_format_conversion_ = false;
+    // format conversion is bound to a specific device instance
+    std::unordered_map<VkDevice, std::unique_ptr<util::AHardwareBufferFormatConverter>> ahb_format_converter_;
+#endif
 };
 
 GFXRECON_END_NAMESPACE(encode)

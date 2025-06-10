@@ -53,7 +53,8 @@ DispatchTraceRaysDumpingContext::DispatchTraceRaysDumpingContext(const std::vect
                                                                  CommonObjectInfoTable&       object_info_table,
                                                                  const VulkanReplayOptions&   options,
                                                                  VulkanDumpResourcesDelegate& delegate) :
-    original_command_buffer_info(nullptr), DR_command_buffer(VK_NULL_HANDLE), dispatch_indices(dispatch_indices),
+    original_command_buffer_info(nullptr),
+    DR_command_buffer(VK_NULL_HANDLE), dispatch_indices(dispatch_indices),
     trace_rays_indices(trace_rays_indices), bound_pipelines{ nullptr },
     dump_resources_before(options.dump_resources_before), device_table(nullptr), parent_device(VK_NULL_HANDLE),
     instance_table(nullptr), object_info_table(object_info_table), replay_device_phys_mem_props(nullptr),
@@ -1571,8 +1572,9 @@ VkResult DispatchTraceRaysDumpingContext::CopyTraceRaysIndirectParameters(uint64
         return VK_SUCCESS;
     }
 
-    const VkDeviceSize    size = params.type == kTraceRaysIndirect ? sizeof(VkTraceRaysIndirectCommandKHR)
-                                                                   : sizeof(VkTraceRaysIndirectCommand2KHR);
+    const VkDeviceSize size = params.type == kTraceRaysIndirect ? sizeof(VkTraceRaysIndirectCommandKHR)
+                                                                : sizeof(VkTraceRaysIndirectCommand2KHR);
+
     const VkDeviceAddress indirect_device_address =
         params.type == kTraceRaysIndirect ? params.trace_rays_params_union.trace_rays_indirect.indirect_device_address
                                           : params.trace_rays_params_union.trace_rays_indirect2.indirect_device_address;
@@ -1719,8 +1721,10 @@ VkResult DispatchTraceRaysDumpingContext::FetchIndirectParams()
             tr_params.second.type == kTraceRaysIndirect
                 ? tr_params.second.trace_rays_params_union.trace_rays_indirect.new_params_buffer
                 : tr_params.second.trace_rays_params_union.trace_rays_indirect2.new_params_buffer;
-        const VkDeviceSize   size = tr_params.second.type == kTraceRaysIndirect ? sizeof(VkTraceRaysIndirectCommandKHR)
-                                                                                : sizeof(VkTraceRaysIndirectCommand2KHR);
+
+        const VkDeviceSize size = tr_params.second.type == kTraceRaysIndirect ? sizeof(VkTraceRaysIndirectCommandKHR)
+                                                                              : sizeof(VkTraceRaysIndirectCommand2KHR);
+
         std::vector<uint8_t> data;
         VkResult res = resource_util.ReadFromBufferResource(new_params_buffer, size, 0, VK_QUEUE_FAMILY_IGNORED, data);
         if (res != VK_SUCCESS)

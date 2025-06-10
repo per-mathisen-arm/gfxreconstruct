@@ -38,7 +38,6 @@ class FpsInfo
   public:
     explicit FpsInfo(uint64_t         measurement_start_frame        = 1,
                      uint64_t         measurement_end_frame          = std::numeric_limits<uint64_t>::max(),
-                     bool             has_measurement_range          = false,
                      bool             quit_after_range               = false,
                      bool             flush_measurement_range        = false,
                      bool             flush_inside_measurement_range = false,
@@ -47,7 +46,7 @@ class FpsInfo
                      bool             quit_after_frame               = false,
                      uint64_t         quit_frame                     = std::numeric_limits<uint64_t>::max());
 
-    void LogToConsole();
+    void LogMeasurements();
 
     void                   BeginFile();
     bool                   ShouldWaitIdleBeforeFrame(uint64_t file_processor_frame);
@@ -62,16 +61,23 @@ class FpsInfo
   private:
     uint64_t start_time_{};
 
-    uint64_t measurement_start_frame_;
-    uint64_t measurement_end_frame_;
+    int64_t replay_start_time_;
+    int64_t replay_end_time_;
 
     int64_t measurement_start_time_;
     int64_t measurement_end_time_;
 
-    int64_t  replay_start_time_;
+    double measurement_start_boot_time_;
+    double measurement_end_boot_time_;
+
+    double measurement_start_process_time_;
+    double measurement_end_process_time_;
+
     uint64_t replay_start_frame_;
 
-    bool has_measurement_range_;
+    uint64_t measurement_start_frame_;
+    uint64_t measurement_end_frame_;
+
     bool quit_after_range_;
     bool flush_measurement_range_;
     bool flush_inside_measurement_range_;
@@ -79,10 +85,10 @@ class FpsInfo
     bool started_measurement_;
     bool ended_measurement_;
 
+    std::string measurement_file_name_;
+
     int64_t              frame_start_time_;
     std::vector<int64_t> frame_durations_;
-
-    std::string measurement_file_name_;
 
     bool preload_measurement_range_;
 

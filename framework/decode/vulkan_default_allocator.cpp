@@ -84,6 +84,7 @@ VkResult VulkanDefaultAllocator::CreateBuffer(const VkBufferCreateInfo*    creat
     {
         auto resource_alloc_info        = new ResourceAllocInfo;
         resource_alloc_info->capture_id = capture_id;
+        resource_alloc_info->size       = create_info->size;
         (*allocator_data)               = reinterpret_cast<ResourceData>(resource_alloc_info);
 
         result = functions_.create_buffer(device_, create_info, allocation_callbacks, buffer);
@@ -183,6 +184,20 @@ void VulkanDefaultAllocator::DestroyVideoSession(VkVideoSessionKHR            se
     functions_.destroy_video_session(device_, session, allocation_callbacks);
 }
 
+void VulkanDefaultAllocator::GetBufferMemoryRequirements(VkBuffer              buffer,
+                                                         VkMemoryRequirements* memory_requirements,
+                                                         ResourceData          allocator_data)
+{
+    functions_.get_buffer_memory_requirements(device_, buffer, memory_requirements);
+}
+
+void VulkanDefaultAllocator::GetBufferMemoryRequirements2(const VkBufferMemoryRequirementsInfo2* info,
+                                                          VkMemoryRequirements2*                 memory_requirements,
+                                                          ResourceData                           allocator_data)
+{
+    functions_.get_buffer_memory_requirements2(device_, info, memory_requirements);
+}
+
 void VulkanDefaultAllocator::GetImageSubresourceLayout(VkImage                    image,
                                                        const VkImageSubresource*  subresource,
                                                        VkSubresourceLayout*       layout,
@@ -192,6 +207,30 @@ void VulkanDefaultAllocator::GetImageSubresourceLayout(VkImage                  
     GFXRECON_UNREFERENCED_PARAMETER(original_layout);
     GFXRECON_UNREFERENCED_PARAMETER(allocator_data);
     functions_.get_image_subresource_layout(device_, image, subresource, layout);
+}
+
+void VulkanDefaultAllocator::GetImageMemoryRequirements(VkImage               image,
+                                                        VkMemoryRequirements* memory_requirements,
+                                                        ResourceData          allocator_data)
+{
+    functions_.get_image_memory_requirements(device_, image, memory_requirements);
+}
+
+void VulkanDefaultAllocator::GetImageMemoryRequirements2(const VkImageMemoryRequirementsInfo2* info,
+                                                         VkMemoryRequirements2*                memory_requirements,
+                                                         ResourceData                          allocator_data)
+{
+    functions_.get_image_memory_requirements2(device_, info, memory_requirements);
+}
+
+VkResult
+VulkanDefaultAllocator::GetVideoSessionMemoryRequirementsKHR(VkVideoSessionKHR video_session,
+                                                             uint32_t*         memory_requirements_count,
+                                                             VkVideoSessionMemoryRequirementsKHR* memory_requirements,
+                                                             std::vector<ResourceData>            allocator_datas)
+{
+    return functions_.get_video_session_memory_requirements(
+        device_, video_session, memory_requirements_count, memory_requirements);
 }
 
 VkResult VulkanDefaultAllocator::AllocateMemory(const VkMemoryAllocateInfo*  allocate_info,

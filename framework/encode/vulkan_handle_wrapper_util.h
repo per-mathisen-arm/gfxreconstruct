@@ -31,6 +31,7 @@
 #include "format/format_util.h"
 #include "generated/generated_vulkan_dispatch_table.h"
 #include "generated/generated_vulkan_state_table.h"
+#include "generated/generated_vulkan_enum_to_string.h"
 #include "util/defines.h"
 
 #include <algorithm>
@@ -74,6 +75,9 @@ inline format::HandleId GetTempWrapperId<CommandPoolWrapper>(const VkCommandPool
     return 0;
 }
 
+template <typename WrapperType>
+VkObjectType GetObjectType();
+
 template <typename Wrapper>
 format::HandleId GetWrappedId(const typename Wrapper::HandleType& handle, bool log_warning = true)
 {
@@ -92,8 +96,10 @@ format::HandleId GetWrappedId(const typename Wrapper::HandleType& handle, bool l
     {
         if (log_warning)
         {
-            GFXRECON_LOG_WARNING("vulkan_wrappers::GetWrappedId() couldn't find Handle: 0x%" PRIx64
+            std::string type_name = util::ToString<VkObjectType>(GetObjectType<Wrapper>());
+            GFXRECON_LOG_WARNING("GetWrappedId() couldn't find %s Handle: %" PRIu64
                                  "'s wrapper. It might have been destroyed",
+                                 type_name.c_str(),
                                  handle);
         }
         return format::kNullHandleId;
@@ -113,8 +119,10 @@ Wrapper* GetWrapper(const typename Wrapper::HandleType& handle, bool log_warning
     {
         if (log_warning)
         {
-            GFXRECON_LOG_WARNING("vulkan_wrappers::GetWrapper() couldn't find Handle: 0x%" PRIx64
+            std::string type_name = util::ToString<VkObjectType>(GetObjectType<Wrapper>());
+            GFXRECON_LOG_WARNING("GetWrapper() couldn't find %s Handle: %" PRIu64
                                  "'s wrapper. It might have been destroyed",
+                                 type_name.c_str(),
                                  handle);
         }
     }
@@ -122,9 +130,21 @@ Wrapper* GetWrapper(const typename Wrapper::HandleType& handle, bool log_warning
 }
 
 template <typename Wrapper>
+void VisitWrappers(std::function<void(Wrapper*)> visitor)
+{
+    state_handle_table_.VisitWrappers(visitor);
+}
+
+template <typename Wrapper>
 bool RemoveWrapper(const Wrapper* wrapper)
 {
     return state_handle_table_.RemoveWrapper(wrapper);
+}
+
+template <typename Wrapper>
+std::recursive_mutex& GetMapMutex()
+{
+    return state_handle_table_.GetMapMutex<Wrapper>();
 }
 
 uint64_t GetWrappedId(uint64_t, VkObjectType object_type);
@@ -200,12 +220,17 @@ void CreateWrappedDispatchHandle(typename ParentWrapper::HandleType parent,
         }
         if (!state_handle_table_.InsertWrapper(wrapper))
         {
-            auto existing_wrapper = state_handle_table_.GetWrapper<Wrapper>(wrapper->handle);
-            GFXRECON_LOG_WARNING("Cannot add duplicate entry to VulkanStateHandleTable for handle 0x%" PRIx64
-                                 " with ID %" PRIu64 ". This handle is already wrapped with ID %" PRIu64 ".",
-                                 wrapper->handle,
+            Wrapper*    old_wrapper = state_handle_table_.GetWrapper<Wrapper>(wrapper->handle);
+            std::string type_name   = util::ToString<VkObjectType>(GetObjectType<Wrapper>());
+            GFXRECON_LOG_WARNING("Tried to create duplicate object of type %s"
+                                 "VkHandle: %" PRIu64 "New id %" PRIu64 "."
+                                 "Original handle_id: %" PRIu64 "."
+                                 "Wrapper can't be written into VulkanStateHandleTable.",
+                                 type_name.c_str(),
+                                 *handle,
                                  wrapper->handle_id,
-                                 existing_wrapper->handle_id);
+                                 old_wrapper->handle_id);
+            delete wrapper;
         }
     }
 }
@@ -222,12 +247,17 @@ void CreateWrappedNonDispatchHandle(typename Wrapper::HandleType* handle, PFN_Ge
         wrapper->handle_id = get_id();
         if (!state_handle_table_.InsertWrapper(wrapper))
         {
-            auto existing_wrapper = state_handle_table_.GetWrapper<Wrapper>(wrapper->handle);
-            GFXRECON_LOG_WARNING("Cannot add duplicate entry to VulkanStateHandleTable for handle 0x%" PRIx64
-                                 " with ID %" PRIu64 ". This handle is already wrapped with ID %" PRIu64 ".",
-                                 wrapper->handle,
+            Wrapper*    old_wrapper = state_handle_table_.GetWrapper<Wrapper>(wrapper->handle);
+            std::string type_name   = util::ToString<VkObjectType>(GetObjectType<Wrapper>());
+            GFXRECON_LOG_WARNING("Tried to create duplicate object of type %s"
+                                 "VkHandle: %" PRIu64 "New id %" PRIu64 "."
+                                 "Original handle_id: %" PRIu64 "."
+                                 "Wrapper can't be written into VulkanStateHandleTable.",
+                                 type_name.c_str(),
+                                 *handle,
                                  wrapper->handle_id,
-                                 existing_wrapper->handle_id);
+                                 old_wrapper->handle_id);
+            delete wrapper;
         }
     }
 }

@@ -166,8 +166,7 @@ struct VulkanReplayDeviceInfo
     std::optional<VkPhysicalDeviceMemoryProperties> memory_properties;
 
     // extensions
-    std::optional<VkPhysicalDeviceRayTracingPipelinePropertiesKHR>    raytracing_properties;
-    std::optional<VkPhysicalDeviceAccelerationStructurePropertiesKHR> acceleration_structure_properties;
+    std::optional<VkPhysicalDeviceRayTracingPipelinePropertiesKHR> raytracing_properties;
 };
 
 template <typename T>
@@ -353,10 +352,52 @@ struct VulkanFenceInfo : public VulkanObjectInfo<VkFence>
     bool shadow_signaled{ false };
 };
 
+enum class VulkanExternalMemoryType
+{
+    Undefined,
+    AndroidHardwareBuffer,
+    HostMemoryPointer
+};
+
+struct VulkanExternalMemoryInfo
+{
+    VulkanExternalMemoryType memory_type{ VulkanExternalMemoryType::Undefined };
+    uint64_t                 buffer_id{ 0 };
+
+    std::unordered_set<format::HandleId> bound_memories{};
+};
+
+struct VulkanAndroidHardwareBufferPlaneInfo
+{
+    uint64_t capture_offset{ 0 };
+    uint64_t replay_offset{ 0 };
+    uint32_t capture_row_pitch{ 0 };
+    uint32_t replay_row_pitch{ 0 };
+    uint32_t height{ 0 };
+};
+
+struct VulkanAndroidHardwareBufferInfo : public VulkanExternalMemoryInfo
+{
+    format::HandleId memory_id{ format::kNullHandleId };
+    AHardwareBuffer* hardware_buffer{ nullptr };
+    uint8_t*         data{ nullptr };
+    uint32_t         width{ 0 };
+
+    std::vector<VulkanAndroidHardwareBufferPlaneInfo> plane_info{};
+};
+
+struct VulkanHostMemoryPointerInfo : public VulkanExternalMemoryInfo
+{
+    void*  data{ nullptr };
+    size_t size{ 0 };
+};
+
 struct VulkanDeviceMemoryInfo : public VulkanObjectInfo<VkDeviceMemory>
 {
     VulkanResourceAllocator*            allocator{ nullptr };
     VulkanResourceAllocator::MemoryData allocator_data{ 0 };
+
+    VulkanExternalMemoryInfo* external_memory{ nullptr };
 };
 
 struct VulkanBufferInfo : public VulkanObjectInfo<VkBuffer>
@@ -522,6 +563,7 @@ struct VulkanDescriptorUpdateTemplateInfo : public VulkanObjectInfo<VkDescriptor
 {
     std::vector<VkDescriptorType>                descriptor_image_types;
     std::vector<VkDescriptorUpdateTemplateEntry> entries;
+    VkDescriptorUpdateTemplateEntryKHR           acceleration_structure_template_entry;
 };
 
 struct VulkanDisplayKHRInfo : public VulkanObjectInfo<VkDisplayKHR>
@@ -624,6 +666,7 @@ struct VulkanShaderEXTInfo : VulkanObjectInfoAsync<VkShaderEXT>
 struct VulkanCommandBufferInfo : public VulkanPoolObjectInfo<VkCommandBuffer>
 {
     bool                                                      is_frame_boundary{ false };
+    std::string                                               frame_boundary_label;
     std::vector<format::HandleId>                             frame_buffer_ids;
     std::unordered_map<format::HandleId, VkImageLayout>       image_layout_barriers;
     std::unordered_map<VkPipelineBindPoint, format::HandleId> bound_pipelines;
@@ -711,11 +754,6 @@ struct VulkanAccelerationStructureKHRInfo : public VulkanObjectInfo<VkAccelerati
 {
     VkDeviceAddress capture_address = 0;
     VkDeviceAddress replay_address  = 0;
-
-    VkAccelerationStructureTypeKHR type = VK_ACCELERATION_STRUCTURE_TYPE_MAX_ENUM_KHR;
-
-    //! associated buffer
-    VkBuffer buffer = VK_NULL_HANDLE;
 };
 
 //

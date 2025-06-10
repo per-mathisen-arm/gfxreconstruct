@@ -46,7 +46,10 @@ class Application final
   public:
     Application(const std::string& name, decode::FileProcessor* file_processor);
 
-    Application(const std::string& name, const std::string& cli_wsi_extension, decode::FileProcessor* file_processor);
+    Application(const std::string&     name,
+                decode::FileProcessor* file_processor,
+                const std::string&     cli_wsi_extension,
+                void*                  platform_specific_wsi_data);
 
     ~Application();
 
@@ -69,6 +72,25 @@ class Application final
     void SetPaused(bool paused);
 
     void SetPauseFrame(uint32_t pause_frame) { pause_frame_ = pause_frame; }
+
+    void SetTriggerScriptFrame(std::vector<std::pair<uint32_t, uint32_t>> trigger_script_frames)
+    {
+        for (uint32_t i = 0; i < trigger_script_frames.size(); ++i)
+        {
+            std::pair<uint32_t, uint32_t> range;
+            range.first  = trigger_script_frames[i].first;
+            range.second = trigger_script_frames[i].second;
+            trigger_script_frames_.emplace_back(range);
+        }
+        if (!trigger_script_frames_.empty() && !trigger_script_name_.empty())
+        {
+            trigger_script_ = true;
+        }
+    }
+
+    void SetTriggerScriptName(std::string trigger_script_name) { trigger_script_name_ = trigger_script_name; }
+
+    void HandleScriptTrigger(uint32_t frame);
 
     bool PlaySingleFrame();
 
@@ -96,6 +118,9 @@ class Application final
     bool                                                         running_;           ///< Indicates that the application is actively processing system events for playback.
     bool                                                         paused_;            ///< Indicates that the playback has been paused.  When paused the application will stop rendering, but will continue processing system events.
     uint32_t                                                     pause_frame_;       ///< The number for a frame that replay should pause after.
+    bool                                                         trigger_script_;    ///< Indicates that this run will trigger script at certain frames.
+    std::string                                                  trigger_script_name_;   ///< Path to the triggered script.
+    std::vector<std::pair<uint32_t,uint32_t>>                    trigger_script_frames_; ///< Frame ranges to trigger script.
     std::unordered_map<std::string, std::unique_ptr<WsiContext>> wsi_contexts_;      ///< Loaded WSI contexts from CLI and VkInstanceCreateInfo
     std::string                                                  cli_wsi_extension_; ///< WSI extension selected on CLI, empty string if no CLI selection
     graphics::FpsInfo*                                           fps_info_;          ///< A optional FPS info object that logs the FPS across a configured framerange.

@@ -86,6 +86,8 @@ from vulkan_struct_encoders_header_generator import VulkanStructEncodersHeaderGe
 from vulkan_pnext_struct_encode_generator import EncodePNextStructGenerator, EncodePNextStructGeneratorOptions
 from vulkan_struct_handle_wrappers_header_generator import VulkanStructHandleWrappersHeaderGenerator, VulkanStructHandleWrappersHeaderGeneratorOptions
 from vulkan_struct_handle_wrappers_body_generator import VulkanStructHandleWrappersBodyGenerator, VulkanStructHandleWrappersBodyGeneratorOptions
+from vulkan_struct_trackers_header_generator import VulkanStructTrackersHeaderGenerator, VulkanStructTrackersHeaderGeneratorOptions
+from vulkan_struct_trackers_body_generator import VulkanStructTrackersBodyGenerator, VulkanStructTrackersBodyGeneratorOptions
 from vulkan_struct_deep_copy_body_generator import VulkanStructDeepCopyBodyGenerator, VulkanStructDeepCopyBodyGeneratorOptions
 from vulkan_struct_deep_copy_stype_body_generator import VulkanStructDeepCopySTypeBodyGenerator, VulkanStructDeepCopySTypeBodyGeneratorOptions
 
@@ -108,6 +110,9 @@ from vulkan_stype_util_generator import VulkanSTypeUtilGenerator, VulkanSTypeUti
 # ToCpp
 from vulkan_cpp_struct_generator import VulkanCppStructGenerator, VulkanCppStructGeneratorOptions
 from vulkan_cpp_consumer_extension_generator import VulkanCppConsumerExtensionGenerator, VulkanCppConsumerExtensionGeneratorOptions
+
+#skivkmodify
+from vulkan_skiavk_modify_header_generator import VulkanSkiavkModifierHeaderGenerator, VulkanSkiavkModifierHeaderGeneratorOptions
 
 # Simple timer functions
 start_time = None
@@ -720,6 +725,32 @@ def make_gen_opts(args):
         )
     ]
 
+    gen_opts['generated_vulkan_struct_trackers.h'] = [
+        VulkanStructTrackersHeaderGenerator,
+        VulkanStructTrackersHeaderGeneratorOptions(
+            filename='generated_vulkan_struct_trackers.h',
+            directory=directory,
+            blacklists=blacklists,
+            prefix_text=prefix_strings + vk_prefix_strings,
+            protect_file=False,
+            protect_feature=False,
+            extra_headers=extra_headers
+        )
+    ]
+
+    gen_opts['generated_vulkan_struct_trackers.cpp'] = [
+        VulkanStructTrackersBodyGenerator,
+        VulkanStructTrackersBodyGeneratorOptions(
+            filename='generated_vulkan_struct_trackers.cpp',
+            directory=directory,
+            blacklists=blacklists,
+            prefix_text=prefix_strings + vk_prefix_strings,
+            protect_file=False,
+            protect_feature=False,
+            extra_headers=extra_headers
+        )
+    ]
+
     #
     # To string generators
     gen_opts['generated_vulkan_enum_to_string.h'] = [
@@ -916,6 +947,23 @@ def make_gen_opts(args):
             platform_types=platform_types,
             prefix_text=prefix_strings + vk_prefix_strings,
             protect_file=False,
+            protect_feature=False,
+            extra_headers=extra_headers
+        )
+    ]
+
+    gen_opts['generated_vulkan_skiavk_modifier.h'] = [
+        VulkanSkiavkModifierHeaderGenerator,
+        VulkanSkiavkModifierHeaderGeneratorOptions(
+            class_name='VulkanSkiaModifier',
+            base_class_header='vulkan_consumer_base.h',
+            is_override=False,
+            filename='generated_vulkan_skiavk_modifier.h',
+            directory=directory,
+            blacklists=blacklists,
+            platform_types=platform_types,
+            prefix_text=vk_prefix_strings,
+            protect_file=True,
             protect_feature=False,
             extra_headers=extra_headers
         )

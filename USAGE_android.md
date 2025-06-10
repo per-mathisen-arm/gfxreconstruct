@@ -265,6 +265,16 @@ adb shell settings put global gpu_debug_app ${Package Name}
 adb shell settings put global gpu_debug_layers VK_LAYER_LUNARG_gfxreconstruct
 adb shell settings put global gpu_debug_layer_app com.lunarg.gfxreconstruct.replay
 ```
+You can also restrict the layer to a specific application using these three steps:
+1. adb push the GFXReconstruct capture layer to /data/local/debug/vulkan directory.
+2. Enable the global layer.
+3. Set the specific app package name.
+
+For example like this:
+```
+adb shell setprop debug.vulkan.layer.1 VK_LAYER_LUNARG_gfxreconstruct
+adb shell setprop debug.gfxrecon.capture_package_name ${Package name}
+```
 
 If you attempt to capture and nothing is happening, check the `logcat` output.
 A successful run of GFXReconstruct should show a message like the following:
@@ -304,6 +314,7 @@ option values.
 | ---------------------------------------------- | ------------------------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Capture File Name                              | debug.gfxrecon.capture_file                                   | STRING  | Path to use when creating the capture file.  Default is: `/sdcard/gfxrecon_capture.gfxr`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | Capture Specific Frames                        | debug.gfxrecon.capture_frames                                 | STRING  | Specify one or more comma-separated frame ranges to capture.  Each range will be written to its own file.  A frame range can be specified as a single value, to specify a single frame to capture, or as two hyphenated values, to specify the first and last frame to capture.  Frame ranges should be specified in ascending order and cannot overlap. Note that frame numbering is 1-based (i.e. the first frame is frame 1).  Example: `200,301-305` will create two capture files, one containing a single frame and one containing five frames.  Default is: Empty string (all frames are captured).                                                                                                                                                                                                                                                                                                                                                                  |
+| Capture Specific app                           | debug.gfxrecon.capture_package_name                           | STRING  | Specify one app package name to be captured. Default is: ""                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | Quit after capturing frame ranges              | debug.gfxrecon.quit_after_capture_frames                      | BOOL    | Setting it to `true` will force the application to terminate once all frame ranges specified by `debug.gfxrecon.capture_frames` have been captured. Default is: `false`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | Capture trigger for Android                    | debug.gfxrecon.capture_android_trigger                        | BOOL    | Set during runtime to `true` to start capturing and to `false` to stop. If not set at all then it is disabled (non-trimmed capture). Default is not set.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | Capture Trigger Frames                         | debug.gfxrecon.capture_trigger_frames                         | STRING  | Specify a limit on the number of frames to be captured via trim trigger. Example: `1` will capture exactly one frame when the trimming is triggered. Default is: Empty string (no limit) |
@@ -330,7 +341,10 @@ option values.
 | Page guard unblock SIGSEGV                     | debug.gfxrecon.page_guard_unblock_sigsegv                     | BOOL    | When the `page_guard` memory tracking mode is enabled and in the case that SIGSEGV has been marked as blocked in thread's signal mask, setting this enviroment variable to `true` will forcibly re-enable the signal in the thread's signal mask. Default is `false`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | Page guard signal handler watcher              | debug.gfxrecon.page_guard_signal_handler_watcher              | BOOL    | When the `page_guard` memory tracking mode is enabled, setting this enviroment variable to `true` will spawn a thread which will periodically reinstall the `SIGSEGV` handler if it has been replaced by the application being traced. Default is `false`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | Page guard signal handler watcher max restores | debug.gfxrecon.page_guard_signal_handler_watcher_max_restores | INTEGER | Sets the number of times the watcher will attempt to restore the signal handler. Setting it to a negative value will make the watcher thread run indefinitely. Default is `1`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| Force FIFO present mode                        | debug.gfxrecon.force_fifo_present_mode                        | BOOL    | When the `force_fifo_present_mode` is enabled, force all present modes in vkGetPhysicalDeviceSurfacePresentModesKHR to VK_PRESENT_MODE_FIFO_KHR, app present mode is set in vkCreateSwapchain to VK_PRESENT_MODE_FIFO_KHR. Otherwise the original present mode will be used. Default is: `true`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Force FIFO present mode                        | debug.gfxrecon.force_fifo_present_mode                        | BOOL    | When the `force_fifo_present_mode` is enabled, force all present modes in vkGetPhysicalDeviceSurfacePresentModesKHR to VK_PRESENT_MODE_FIFO_KHR, app present mode is set in vkCreateSwapchain to VK_PRESENT_MODE_FIFO_KHR. Otherwise the original present mode will be used. Default is: `true`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| Delay fence queries                            | debug.gfxrecon.fence_query_delay                              | INTEGER | Fences queried using `vkGetFenceStatus` and `vkWaitForFences` won't return `VK_SUCCESS` before a number of such queries and will instead return `VK_NOT_READY` and `VK_TIMEOUT`. Default is `0`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Fence Query Delay unit                         | debug.gfxrecon.fence_query_delay_unit                         | STRING  | Specify the "unit of time" used for the delay fence queries option. If set to `calls` then fence query delay is the number of calls to `vkGetFenceStatus`/`vkWaitForFences` that will be delayed. If set to `frames` then fence query delay is the number of frames for which called will be delayed. Default is `calls`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Fence Query Delay Limit                        | debug.gfxrecon.fence_query_delay_limit                        | INTEGER | Allows to limit the number of times each fence can be delayed when fence_query_delay is used in 'frames' mode.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 
 #### Settings File
 
@@ -361,7 +375,7 @@ in the GFXReconstruct GitHub repository at `layer/vk_layer_settings.txt`. Most
 binary distributions of the GFXReconstruct software will also include a sample
 settings file.
 
-#### Selecting Settings for the page_guard Memory Tracking Mode
+#### Selecting settings for the page_guard Memory Tracking Mode
 
 The default settings selected for the `page_guard` memory tracking mode are the
 settings that are most likely to work on a given platform, but may not provide
@@ -620,7 +634,6 @@ adb shell pm grant ${Package Name} android.permission.WRITE_EXTERNAL_STORAGE
 
 Refer to the other settings in [Capture Options](#capture-options).
 
-
 ## Replaying API Calls
 
 ### Launch Script
@@ -701,10 +714,11 @@ queryable permission to apply.
 The `gfxrecon.py replay` command has the following usage:
 
 ```text
-usage: gfxrecon.py replay [-h] [--push-file LOCAL_FILE] [--version] [--pause-frame N]
+usage: gfxrecon.py replay [-h] [--push-file LOCAL_FILE] [--version] [--cpu-mask <binary-mask>] [--pause-frame N]
                           [--paused] [--screenshot-all] [--screenshots RANGES]
                           [--screenshot-format FORMAT] [--screenshot-dir DIR]
                           [--screenshot-prefix PREFIX] [--screenshot-scale SCALE]
+                          [--screenshot-interval INTERVAL]
                           [--screenshot-size WIDTHxHEIGHT] [--sfa] [--opcd]
                           [--surface-index N] [--sync] [--remove-unsupported]
                           [--mfr START-END] [--replace-shaders <dir>]
@@ -712,6 +726,7 @@ usage: gfxrecon.py replay [-h] [--push-file LOCAL_FILE] [--version] [--pause-fra
                           [--flush-measurement-range] [-m MODE]
                           [--swapchain MODE] [--use-captured-swapchain-indices]
                           [--use-colorspace-fallback] [--wait-before-present]
+                          [--preload-measurement-range] [--log-level LEVEL]
                           [--dump-resources <submit-index,command-index,draw-call-index>]
                           [--dump-resources <arg>]
                           [--dump-resources <filename>]
@@ -724,8 +739,8 @@ usage: gfxrecon.py replay [-h] [--push-file LOCAL_FILE] [--version] [--pause-fra
                           [--dump-resources-dump-vertex-index-buffers]
                           [--dump-resources-json-output-per-command]
                           [--dump-resources-dump-immutable-resources]
-                          [--dump-resources-dump-raw-images]
                           [--dump-resources-dump-all-image-subresources]
+                          [--dump-resources-dump-raw-images]
                           [--pbi-all] [--pbis <index1,index2>]
                           [--quit-after-frame]
                           [file]
@@ -756,6 +771,13 @@ optional arguments:
   -p LOCAL_FILE, --push-file LOCAL_FILE
               Local file to push to the location on device specified
               by <file>
+  --cpu-mask <binary-mask>
+              Set of CPU cores used by the replayer.
+              `binary-mask` is a succession of '0' and '1' that specifies
+              used/unused cores. For example '1010' activates the first and
+              third cores and deactivate all other cores.
+              If the option is not set, all cores can be used. If the option
+              is set only for some cores, the other cores are not used.
   --screenshot-all
               Generate screenshots for all frames. When this option
               is specified, --screenshots is ignored (forwarded to
@@ -771,6 +793,12 @@ optional arguments:
               numbering is 1-based (i.e. the first frame is frame
               1). Example: 200,301-305 will generate six screenshots
               (forwarded to replay tool)
+  --screenshot-interval INTERVAL
+              Specifies the number of frames between two screenshots
+              within a screenshot range.
+              Example: If screenshot range is 10-15 and interval is 2,
+              screenshot will be generated for frames 10, 12 and 14.
+              Default is 1.
   --screenshot-format FORMAT
               Image file format to use for screenshot generation.
               Available formats are:
@@ -792,6 +820,11 @@ optional arguments:
               unspecified screenshots will use the swapchain images
               dimensions. If --screenshot-scale is also specified then
               this option is ignored.
+  --tsp <script-file>, --trigger-script-path <script-file>
+              Path to script file.
+  --tsf <frame-ranges>, --trigger-script-frame <frame-ranges>
+              Trigger script for the specified frames.Target frames are
+              specified as a comma separated list of frame ranges.
   --sfa, --skip-failed-allocations
               Skip vkAllocateMemory, vkAllocateCommandBuffers, and
               vkAllocateDescriptorSets calls that failed during
@@ -803,7 +836,7 @@ optional arguments:
               See gfxrecon-extract.
   --opcd, --omit-pipeline-cache-data
               Omit pipeline cache data from calls to
-              vkCreatePipelineCache and skip calls to
+              vkCreatePipelineCache and skip calls to--cpu-mask <binary-mask>
               vkGetPipelineCacheData (forwarded to replay tool)
   --surface-index N
               Restrict rendering to the Nth surface object created.
@@ -843,7 +876,7 @@ optional arguments:
               case the results would include the last frame).
               (forwarded to replay tool)
   --measurement-file DEVICE_FILE
-              Write measurements to a file at the specified path.
+              File in which measurements are written.
               Default is: '/sdcard/gfxrecon-measurements.json' on
               android and './gfxrecon-measurements.json' on desktop.
               (forwarded to replay tool)
@@ -856,6 +889,13 @@ optional arguments:
               If this is specified the replayer will flush and wait
               for all current GPU work to finish at the start and end
               of the measurement range. (forwarded to replay tool)
+  --vssb, --virtual-swapchain-skip-blit
+              Skip blit to real swapchain to gain performance during
+              replay. (forwarded to replay tool)
+  --use-ext-frame-boundary
+              Convert all offscreen frame boundaries to
+              `VK_EXT_frame_boundary` frame boundaries.
+              (forwarded to replay tool)
   --flush-inside-measurement-range
               If this is specified the replayer will flush and wait
               for all current GPU work to finish at the end of each
@@ -876,6 +916,12 @@ optional arguments:
               Specify behaviour to skip calls to vkWaitForFences and
               vkGetFenceStatus. Default is 0 - No skip
               (forwarded to replay tool)
+  --preload-measurement-range
+              Preloads a frame range specified with
+              --measurement-frame-range
+              from the trace file into a continuous, expandable
+              buffer,in order to mitigate the impact of read file
+              commands on performance measurements.
   --sgfr FRAME-RANGES, --skip-get-fence-ranges FRAME-RANGES
               Frame ranges where --sgfs applies. Default is all frames
               (forwarded to replay tool)

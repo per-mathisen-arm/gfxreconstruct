@@ -270,6 +270,37 @@ bool FileProcessor::ProcessFileHeader()
     return success;
 }
 
+void FileProcessor::ProcessAnnotation()
+{
+    format::BlockHeader block_header;
+    bool                success = ReadBlockHeader(&block_header);
+    if (block_header.type == format::BlockType::kAnnotation)
+    {
+        if (annotation_handler_ != nullptr)
+        {
+            format::AnnotationType annotation_type = format::AnnotationType::kUnknown;
+
+            success = ReadBytes(&annotation_type, sizeof(annotation_type));
+
+            if (success)
+            {
+                success = ProcessAnnotation(block_header, annotation_type);
+            }
+            else
+            {
+                HandleBlockReadError(kErrorReadingBlockHeader, "Failed to read annotation block header");
+            }
+        }
+        else
+        {
+            // If there is no annotation handler to process the annotation, we can skip the annotation
+            // block.
+            GFXRECON_CHECK_CONVERSION_DATA_LOSS(size_t, block_header.size);
+            success = SkipBytes(static_cast<size_t>(block_header.size));
+        }
+    }
+}
+
 void FileProcessor::DecrementRemainingCommands()
 {
     if (file_stack_.empty())
@@ -863,6 +894,40 @@ bool FileProcessor::ProcessMetaData(const format::BlockHeader& block_header, for
         else
         {
             HandleBlockReadError(kErrorReadingBlockHeader, "Failed to read fill memory meta-data block header");
+        }
+    }
+    else if (meta_data_type == format::MetaDataType::kFixDeviceAddressCommand)
+    {
+        format::FixDeviceAddressCommandHeader header;
+        success = ReadBytes(&header.relation_id, sizeof(header.relation_id));
+        success = ReadBytes(&header.num_of_locations, sizeof(header.num_of_locations));
+
+        std::vector<format::AddressLocationInfo> locations(header.num_of_locations);
+        success = ReadBytes(locations.data(), header.num_of_locations * sizeof(format::AddressLocationInfo));
+
+        for (auto decoder : decoders_)
+        {
+            if (decoder->SupportsMetaDataId(meta_data_id))
+            {
+                decoder->DispatchFixDeviceAddresCommand(header, locations.data());
+            }
+        }
+    }
+    else if (meta_data_type == format::MetaDataType::kFixShaderGroupHandleCommand)
+    {
+        format::FixShaderGroupHandleCommandHeader header;
+        success = ReadBytes(&header.relation_id, sizeof(header.relation_id));
+        success = ReadBytes(&header.num_of_locations, sizeof(header.num_of_locations));
+
+        std::vector<format::ShaderHandleLocationInfo> locations(header.num_of_locations);
+        success = ReadBytes(locations.data(), header.num_of_locations * sizeof(format::ShaderHandleLocationInfo));
+
+        for (auto decoder : decoders_)
+        {
+            if (decoder->SupportsMetaDataId(meta_data_id))
+            {
+                decoder->DispatchShaderGroupHandleCommand(header, locations.data());
+            }
         }
     }
     else if (meta_data_type == format::MetaDataType::kFillMemoryResourceValueCommand)
@@ -1897,50 +1962,111 @@ bool FileProcessor::ProcessMetaData(const format::BlockHeader& block_header, for
         success = success && ReadBytes(&header.dependency_type, sizeof(header.dependency_type));
         success = success && ReadBytes(&header.parent_id, sizeof(header.parent_id));
         success = success && ReadBytes(&header.child_count, sizeof(header.child_count));
+        std::vector<format::HandleId> children;
+        children.resize(header.child_count);
+        for (uint32_t i = 0; i < header.child_count; ++i)
+        {
+            success = success && ReadBytes(&children[i], sizeof(children[i]));
+        }
 
         if (success)
         {
-            switch (header.dependency_type)
+            for (auto decoder : decoders_)
             {
-                case format::kAccelerationStructuresDependency:
+                if (decoder->SupportsMetaDataId(meta_data_id))
                 {
-                    std::vector<format::HandleId> blases;
-                    blases.resize(header.child_count);
-
-                    for (uint32_t i = 0; i < header.child_count; ++i)
+                    switch (header.dependency_type)
                     {
-                        success = success && ReadBytes(&blases[i], sizeof(blases[i]));
-                    }
-
-                    if (success)
-                    {
-                        for (auto decoder : decoders_)
-                        {
-                            if (decoder->SupportsMetaDataId(meta_data_id))
-                            {
-                                decoder->DispatchSetTlasToBlasDependencyCommand(header.parent_id, blases);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        HandleBlockReadError(kErrorReadingBlockHeader,
-                                             "Failed to read TLAS to BLAS dependency meta-data block header");
+                        case format::kAccelerationStructuresDependency:
+                            decoder->DispatchSetTlasToBlasDependencyCommand(header.parent_id, children);
+                            break;
+                        case format::kMicromapCompactionDependency:
+                            decoder->DispatchMicromapCompactionDependencyCommand(header.parent_id, children);
+                            break;
+                        case format::kAccelerationStructureCompactionDependency:
+                            decoder->DispatchAccelerationStructureCompactionDependencyCommand(header.parent_id,
+                                                                                              children);
+                            break;
+                        default:
+                            GFXRECON_LOG_WARNING("Unrecognized parent to child dependency type");
                     }
                 }
-                break;
+            }
+        }
+        else
+        {
+            HandleBlockReadError(kErrorReadingBlockHeader, "Failed to read parent to child dependency meta-data");
+        }
+    }
+    else if (meta_data_type == format::MetaDataType::kVulkanBuildAccelerationStructuresCommand)
+    {
+        format::VulkanMetaBuildAccelerationStructuresHeader header;
+        size_t parameter_buffer_size = static_cast<size_t>(block_header.size) - sizeof(meta_data_id);
+        success                      = ReadParameterBuffer(parameter_buffer_size);
 
-                default:
-                    success = false;
-                    HandleBlockReadError(kErrorReadingBlockHeader,
-                                         "Corrupted parent to child dependency meta-data block header");
-                    break;
+        if (success)
+        {
+            for (auto decoder : decoders_)
+            {
+                if (decoder->SupportsMetaDataId(meta_data_id))
+                {
+                    DecodeAllocator::Begin();
+
+                    decoder->DispatchVulkanAccelerationStructuresBuildMetaCommand(parameter_buffer_.data(),
+                                                                                  parameter_buffer_size);
+
+                    DecodeAllocator::End();
+                }
             }
         }
         else
         {
             HandleBlockReadError(kErrorReadingBlockHeader,
-                                 "Failed to read parent to child dependency meta-data block header");
+                                 "Failed to read acceleration structure init meta-data block header");
+        }
+    }
+    else if (meta_data_type == format::MetaDataType::kVulkanCopyAccelerationStructuresCommand)
+    {
+        format::VulkanCopyAccelerationStructuresCommandHeader header;
+        size_t parameter_buffer_size = static_cast<size_t>(block_header.size) - sizeof(meta_data_id);
+        success                      = ReadParameterBuffer(parameter_buffer_size);
+
+        if (success)
+        {
+            for (auto decoder : decoders_)
+            {
+                if (decoder->SupportsMetaDataId(meta_data_id))
+                {
+                    DecodeAllocator::Begin();
+
+                    decoder->DispatchVulkanAccelerationStructuresCopyMetaCommand(parameter_buffer_.data(),
+                                                                                 parameter_buffer_size);
+
+                    DecodeAllocator::End();
+                }
+            }
+        }
+    }
+    else if (meta_data_type == format::MetaDataType::kVulkanWriteAccelerationStructuresPropertiesCommand)
+    {
+        format::VulkanCopyAccelerationStructuresCommandHeader header;
+        size_t parameter_buffer_size = static_cast<size_t>(block_header.size) - sizeof(meta_data_id);
+        success                      = ReadParameterBuffer(parameter_buffer_size);
+
+        if (success)
+        {
+            for (auto decoder : decoders_)
+            {
+                if (decoder->SupportsMetaDataId(meta_data_id))
+                {
+                    DecodeAllocator::Begin();
+
+                    decoder->DispatchVulkanAccelerationStructuresWritePropertiesMetaCommand(parameter_buffer_.data(),
+                                                                                            parameter_buffer_size);
+
+                    DecodeAllocator::End();
+                }
+            }
         }
     }
     else if (meta_data_type == format::MetaDataType::kSetEnvironmentVariablesCommand)

@@ -81,6 +81,8 @@ GFXRECON_BEGIN_NAMESPACE(encode)
 #define SCREENSHOT_FORMAT_UPPER                              "SCREENSHOT_FORMAT"
 #define SCREENSHOT_FRAMES_LOWER                              "screenshot_frames"
 #define SCREENSHOT_FRAMES_UPPER                              "SCREENSHOT_FRAMES"
+#define SCREENSHOT_INTERVAL_LOWER                            "screenshot_interval"
+#define SCREENSHOT_INTERVAL_UPPER                            "SCREENSHOT_INTERVAL"
 #define CAPTURE_FRAMES_LOWER                                 "capture_frames"
 #define CAPTURE_FRAMES_UPPER                                 "CAPTURE_FRAMES"
 #define CAPTURE_DRAW_CALLS_LOWER                             "capture_draw_calls"
@@ -122,6 +124,8 @@ GFXRECON_BEGIN_NAMESPACE(encode)
 #define DEBUG_LAYER_LOWER                                    "debug_layer"
 #define DEBUG_LAYER_UPPER                                    "DEBUG_LAYER"
 #define DEBUG_DEVICE_LOST_LOWER                              "debug_device_lost"
+#define DEBUG_SET_OBJECTS_NAME_LOWER                         "debug_set_objects_name"
+#define DEBUG_SET_OBJECTS_NAME_UPPER                         "DEBUG_SET_OBJECTS_NAME"
 #define DEBUG_DEVICE_LOST_UPPER                              "DEBUG_DEVICE_LOST"
 #define DISABLE_DXR_LOWER                                    "disable_dxr"
 #define DISABLE_DXR_UPPER                                    "DISABLE_DXR"
@@ -141,121 +145,96 @@ GFXRECON_BEGIN_NAMESPACE(encode)
 #define RV_ANNOTATION_GPUVA_UPPER                            "RV_ANNOTATION_GPUVA"
 #define RV_ANNOTATION_DESCRIPTOR_LOWER                       "rv_annotation_descriptor"
 #define RV_ANNOTATION_DESCRIPTOR_UPPER                       "RV_ANNOTATION_DESCRIPTOR"
+#define FENCE_QUERY_DELAY_LOWER                              "fence_query_delay"
+#define FENCE_QUERY_DELAY_UPPER                              "FENCE_QUERY_DELAY"
+#define FENCE_QUERY_DELAY_UNIT_LOWER                         "fence_query_delay_unit"
+#define FENCE_QUERY_DELAY_UNIT_UPPER                         "FENCE_QUERY_DELAY_UNIT"
+#define FENCE_QUERY_DELAY_TIMEOUT_THRESHOLD_LOWER            "fence_query_delay_timeout_threshold"
+#define FENCE_QUERY_DELAY_TIMEOUT_THRESHOLD_UPPER            "FENCE_QUERY_DELAY_TIMEOUT_THRESHOLD"
+#define FENCE_QUERY_DELAY_LIMIT_LOWER                        "fence_query_delay_limit"
+#define FENCE_QUERY_DELAY_LIMIT_UPPER                        "FENCE_QUERY_DELAY_LIMIT"
+#define BUFFER_USAGES_TO_IGNORE_LOWER                        "buffer_usages_to_ignore"
+#define BUFFER_USAGES_TO_IGNORE_UPPER                        "BUFFER_USAGES_TO_IGNORE"
+#define CAPTURE_PACKAGE_NAME_LOWER                           "capture_package_name"
+#define CAPTURE_PACKAGE_NAME_UPPER                           "CAPTURE_PACKAGE_NAME"
 #define FORCE_FIFO_PRESENT_MODE_LOWER                        "force_fifo_present_mode"
 #define FORCE_FIFO_PRESENT_MODE_UPPER                        "FORCE_FIFO_PRESENT_MODE"
 
 #if defined(__ANDROID__)
-// Android Properties
 #define GFXRECON_ENV_VAR_PREFIX "debug.gfxrecon."
-
+#define GFXRECON_POSTFIX LOWER
 const char CaptureSettings::kDefaultCaptureFileName[] = "/sdcard/gfxrecon_capture" GFXRECON_FILE_EXTENSION;
-
-const char kCaptureCompressionTypeEnvVar[]                   = GFXRECON_ENV_VAR_PREFIX CAPTURE_COMPRESSION_TYPE_LOWER;
-const char kCaptureFileFlushEnvVar[]                         = GFXRECON_ENV_VAR_PREFIX CAPTURE_FILE_FLUSH_LOWER;
-const char kCaptureFileNameEnvVar[]                          = GFXRECON_ENV_VAR_PREFIX CAPTURE_FILE_NAME_LOWER;
-const char kCaptureFileUseTimestampEnvVar[]                  = GFXRECON_ENV_VAR_PREFIX CAPTURE_FILE_USE_TIMESTAMP_LOWER;
-const char kLogAllowIndentsEnvVar[]                          = GFXRECON_ENV_VAR_PREFIX LOG_ALLOW_INDENTS_LOWER;
-const char kLogBreakOnErrorEnvVar[]                          = GFXRECON_ENV_VAR_PREFIX LOG_BREAK_ON_ERROR_LOWER;
-const char kLogDetailedEnvVar[]                              = GFXRECON_ENV_VAR_PREFIX LOG_DETAILED_LOWER;
-const char kLogErrorsToStderrEnvVar[]                        = GFXRECON_ENV_VAR_PREFIX LOG_ERRORS_TO_STDERR_LOWER;
-const char kLogFileNameEnvVar[]                              = GFXRECON_ENV_VAR_PREFIX LOG_FILE_NAME_LOWER;
-const char kLogFileCreateNewEnvVar[]                         = GFXRECON_ENV_VAR_PREFIX LOG_FILE_CREATE_NEW_LOWER;
-const char kLogFileFlushAfterWriteEnvVar[]                   = GFXRECON_ENV_VAR_PREFIX LOG_FILE_FLUSH_AFTER_WRITE_LOWER;
-const char kLogFileKeepFileOpenEnvVar[]                      = GFXRECON_ENV_VAR_PREFIX LOG_FILE_KEEP_OPEN_LOWER;
-const char kLogLevelEnvVar[]                                 = GFXRECON_ENV_VAR_PREFIX LOG_LEVEL_LOWER;
-const char kLogOutputToConsoleEnvVar[]                       = GFXRECON_ENV_VAR_PREFIX LOG_OUTPUT_TO_CONSOLE_LOWER;
-const char kLogOutputToOsDebugStringEnvVar[]                 = GFXRECON_ENV_VAR_PREFIX LOG_OUTPUT_TO_OS_DEBUG_STRING_LOWER;
-const char kMemoryTrackingModeEnvVar[]                       = GFXRECON_ENV_VAR_PREFIX MEMORY_TRACKING_MODE_LOWER;
-const char kScreenshotDirEnvVar[]                            = GFXRECON_ENV_VAR_PREFIX SCREENSHOT_DIR_LOWER;
-const char kScreenshotFormatEnvVar[]                         = GFXRECON_ENV_VAR_PREFIX SCREENSHOT_FORMAT_LOWER;
-const char kScreenshotFramesEnvVar[]                         = GFXRECON_ENV_VAR_PREFIX SCREENSHOT_FRAMES_LOWER;
-const char kCaptureFramesEnvVar[]                            = GFXRECON_ENV_VAR_PREFIX CAPTURE_FRAMES_LOWER;
-const char kCaptureDrawCallsEnvVar[]                         = GFXRECON_ENV_VAR_PREFIX CAPTURE_DRAW_CALLS_LOWER;
-const char kQuitAfterFramesEnvVar[]                          = GFXRECON_ENV_VAR_PREFIX QUIT_AFTER_CAPTURE_FRAMES_LOWER;
-const char kCaptureTriggerEnvVar[]                           = GFXRECON_ENV_VAR_PREFIX CAPTURE_TRIGGER_LOWER;
-const char kCaptureTriggerFramesEnvVar[]                     = GFXRECON_ENV_VAR_PREFIX CAPTURE_TRIGGER_FRAMES_LOWER;
-const char kCaptureIUnknownWrappingEnvVar[]                  = GFXRECON_ENV_VAR_PREFIX CAPTURE_IUNKNOWN_WRAPPING_LOWER;
-const char kCaptureQueueSubmitsEnvVar[]                      = GFXRECON_ENV_VAR_PREFIX CAPTURE_QUEUE_SUBMITS_LOWER;
-const char kCaptureUseAssetFileEnvVar[]                      = GFXRECON_ENV_VAR_PREFIX CAPTURE_USE_ASSET_FILE_LOWER;
-const char kPageGuardCopyOnMapEnvVar[]                       = GFXRECON_ENV_VAR_PREFIX PAGE_GUARD_COPY_ON_MAP_LOWER;
-const char kPageGuardSeparateReadEnvVar[]                    = GFXRECON_ENV_VAR_PREFIX PAGE_GUARD_SEPARATE_READ_LOWER;
-const char kPageGuardPersistentMemoryEnvVar[]                = GFXRECON_ENV_VAR_PREFIX PAGE_GUARD_PERSISTENT_MEMORY_LOWER;
-const char kPageGuardAlignBufferSizesEnvVar[]                = GFXRECON_ENV_VAR_PREFIX PAGE_GUARD_ALIGN_BUFFER_SIZES_LOWER;
-const char kPageGuardTrackAhbMemoryEnvVar[]                  = GFXRECON_ENV_VAR_PREFIX PAGE_GUARD_TRACK_AHB_MEMORY_LOWER;
-const char kPageGuardExternalMemoryEnvVar[]                  = GFXRECON_ENV_VAR_PREFIX PAGE_GUARD_EXTERNAL_MEMORY_LOWER;
-const char kPageGuardUnblockSIGSEGVEnvVar[]                  = GFXRECON_ENV_VAR_PREFIX PAGE_GUARD_UNBLOCK_SIGSEGV_LOWER;
-const char kPageGuardSignalHandlerWatcherEnvVar[]            = GFXRECON_ENV_VAR_PREFIX PAGE_GUARD_SIGNAL_HANDLER_WATCHER_LOWER;
-const char kPageGuardSignalHandlerWatcherMaxRestoresEnvVar[] = GFXRECON_ENV_VAR_PREFIX PAGE_GUARD_SIGNAL_HANDLER_WATCHER_MAX_RESTORES_LOWER;
-const char kDebugLayerEnvVar[]                               = GFXRECON_ENV_VAR_PREFIX DEBUG_LAYER_LOWER;
-const char kDebugDeviceLostEnvVar[]                          = GFXRECON_ENV_VAR_PREFIX DEBUG_DEVICE_LOST_LOWER;
-const char kCaptureAndroidTriggerEnvVar[]                    = GFXRECON_ENV_VAR_PREFIX CAPTURE_ANDROID_TRIGGER_LOWER;
-const char kCaptureAndroidDumpAssetsEnvVar[]                 = GFXRECON_ENV_VAR_PREFIX CAPTURE_ANDROID_DUMP_ASSETS_LOWER;
-const char kDisableDxrEnvVar[]                               = GFXRECON_ENV_VAR_PREFIX DISABLE_DXR_LOWER;
-const char kAccelStructPaddingEnvVar[]                       = GFXRECON_ENV_VAR_PREFIX ACCEL_STRUCT_PADDING_LOWER;
-const char kForceCommandSerializationEnvVar[]                = GFXRECON_ENV_VAR_PREFIX FORCE_COMMAND_SERIALIZATION_LOWER;
-const char kQueueZeroOnlyEnvVar[]                            = GFXRECON_ENV_VAR_PREFIX QUEUE_ZERO_ONLY_LOWER;
-const char kAllowPipelineCompileRequiredEnvVar[]             = GFXRECON_ENV_VAR_PREFIX ALLOW_PIPELINE_COMPILE_REQUIRED_LOWER;
-const char kAnnotationExperimentalEnvVar[]                   = GFXRECON_ENV_VAR_PREFIX RV_ANNOTATION_EXPERIMENTAL_LOWER;
-const char kAnnotationRandEnvVar[]                           = GFXRECON_ENV_VAR_PREFIX RV_ANNOTATION_RAND_LOWER;
-const char kAnnotationGPUVAEnvVar[]                          = GFXRECON_ENV_VAR_PREFIX RV_ANNOTATION_GPUVA_LOWER;
-const char kAnnotationDescriptorEnvVar[]                     = GFXRECON_ENV_VAR_PREFIX RV_ANNOTATION_DESCRIPTOR_LOWER;
-const char kForceFifoPresentModeEnvVar[]                     = GFXRECON_ENV_VAR_PREFIX FORCE_FIFO_PRESENT_MODE_LOWER;
-
 #else
-// Desktop environment settings
 #define GFXRECON_ENV_VAR_PREFIX "GFXRECON_"
-
+#define GFXRECON_POSTFIX UPPER
 const char CaptureSettings::kDefaultCaptureFileName[] = "gfxrecon_capture" GFXRECON_FILE_EXTENSION;
+#endif
 
-const char kCaptureCompressionTypeEnvVar[]                   = GFXRECON_ENV_VAR_PREFIX CAPTURE_COMPRESSION_TYPE_UPPER;
-const char kCaptureFileFlushEnvVar[]                         = GFXRECON_ENV_VAR_PREFIX CAPTURE_FILE_FLUSH_UPPER;
-const char kCaptureFileNameEnvVar[]                          = GFXRECON_ENV_VAR_PREFIX CAPTURE_FILE_NAME_UPPER;
-const char kCaptureFileUseTimestampEnvVar[]                  = GFXRECON_ENV_VAR_PREFIX CAPTURE_FILE_USE_TIMESTAMP_UPPER;
-const char kCaptureUseAssetFileEnvVar[]                      = GFXRECON_ENV_VAR_PREFIX CAPTURE_USE_ASSET_FILE_UPPER;
-const char kLogAllowIndentsEnvVar[]                          = GFXRECON_ENV_VAR_PREFIX LOG_ALLOW_INDENTS_UPPER;
-const char kLogBreakOnErrorEnvVar[]                          = GFXRECON_ENV_VAR_PREFIX LOG_BREAK_ON_ERROR_UPPER;
-const char kLogDetailedEnvVar[]                              = GFXRECON_ENV_VAR_PREFIX LOG_DETAILED_UPPER;
-const char kLogErrorsToStderrEnvVar[]                        = GFXRECON_ENV_VAR_PREFIX LOG_ERRORS_TO_STDERR_UPPER;
-const char kLogFileNameEnvVar[]                              = GFXRECON_ENV_VAR_PREFIX LOG_FILE_NAME_UPPER;
-const char kLogFileCreateNewEnvVar[]                         = GFXRECON_ENV_VAR_PREFIX LOG_FILE_CREATE_NEW_UPPER;
-const char kLogFileFlushAfterWriteEnvVar[]                   = GFXRECON_ENV_VAR_PREFIX LOG_FILE_FLUSH_AFTER_WRITE_UPPER;
-const char kLogFileKeepFileOpenEnvVar[]                      = GFXRECON_ENV_VAR_PREFIX LOG_FILE_KEEP_OPEN_UPPER;
-const char kLogLevelEnvVar[]                                 = GFXRECON_ENV_VAR_PREFIX LOG_LEVEL_UPPER;
-const char kLogOutputToConsoleEnvVar[]                       = GFXRECON_ENV_VAR_PREFIX LOG_OUTPUT_TO_CONSOLE_UPPER;
-const char kLogOutputToOsDebugStringEnvVar[]                 = GFXRECON_ENV_VAR_PREFIX LOG_OUTPUT_TO_OS_DEBUG_STRING_UPPER;
-const char kMemoryTrackingModeEnvVar[]                       = GFXRECON_ENV_VAR_PREFIX MEMORY_TRACKING_MODE_UPPER;
-const char kScreenshotDirEnvVar[]                            = GFXRECON_ENV_VAR_PREFIX SCREENSHOT_DIR_UPPER;
-const char kScreenshotFormatEnvVar[]                         = GFXRECON_ENV_VAR_PREFIX SCREENSHOT_FORMAT_UPPER;
-const char kScreenshotFramesEnvVar[]                         = GFXRECON_ENV_VAR_PREFIX SCREENSHOT_FRAMES_UPPER;
-const char kCaptureFramesEnvVar[]                            = GFXRECON_ENV_VAR_PREFIX CAPTURE_FRAMES_UPPER;
-const char kCaptureDrawCallsEnvVar[]                         = GFXRECON_ENV_VAR_PREFIX CAPTURE_DRAW_CALLS_UPPER;
-const char kQuitAfterFramesEnvVar[]                          = GFXRECON_ENV_VAR_PREFIX QUIT_AFTER_CAPTURE_FRAMES_UPPER;
-const char kPageGuardCopyOnMapEnvVar[]                       = GFXRECON_ENV_VAR_PREFIX PAGE_GUARD_COPY_ON_MAP_UPPER;
-const char kPageGuardSeparateReadEnvVar[]                    = GFXRECON_ENV_VAR_PREFIX PAGE_GUARD_SEPARATE_READ_UPPER;
-const char kPageGuardPersistentMemoryEnvVar[]                = GFXRECON_ENV_VAR_PREFIX PAGE_GUARD_PERSISTENT_MEMORY_UPPER;
-const char kPageGuardAlignBufferSizesEnvVar[]                = GFXRECON_ENV_VAR_PREFIX PAGE_GUARD_ALIGN_BUFFER_SIZES_UPPER;
-const char kPageGuardTrackAhbMemoryEnvVar[]                  = GFXRECON_ENV_VAR_PREFIX PAGE_GUARD_TRACK_AHB_MEMORY_UPPER;
-const char kPageGuardExternalMemoryEnvVar[]                  = GFXRECON_ENV_VAR_PREFIX PAGE_GUARD_EXTERNAL_MEMORY_UPPER;
-const char kPageGuardUnblockSIGSEGVEnvVar[]                  = GFXRECON_ENV_VAR_PREFIX PAGE_GUARD_UNBLOCK_SIGSEGV_UPPER;
-const char kPageGuardSignalHandlerWatcherEnvVar[]            = GFXRECON_ENV_VAR_PREFIX PAGE_GUARD_SIGNAL_HANDLER_WATCHER_UPPER;
-const char kPageGuardSignalHandlerWatcherMaxRestoresEnvVar[] = GFXRECON_ENV_VAR_PREFIX PAGE_GUARD_SIGNAL_HANDLER_WATCHER_MAX_RESTORES_UPPER;
-const char kCaptureTriggerEnvVar[]                           = GFXRECON_ENV_VAR_PREFIX CAPTURE_TRIGGER_UPPER;
-const char kCaptureTriggerFramesEnvVar[]                     = GFXRECON_ENV_VAR_PREFIX CAPTURE_TRIGGER_FRAMES_UPPER;
-const char kCaptureIUnknownWrappingEnvVar[]                  = GFXRECON_ENV_VAR_PREFIX CAPTURE_IUNKNOWN_WRAPPING_UPPER;
-const char kCaptureQueueSubmitsEnvVar[]                      = GFXRECON_ENV_VAR_PREFIX CAPTURE_QUEUE_SUBMITS_UPPER;
-const char kDebugLayerEnvVar[]                               = GFXRECON_ENV_VAR_PREFIX DEBUG_LAYER_UPPER;
-const char kDebugDeviceLostEnvVar[]                          = GFXRECON_ENV_VAR_PREFIX DEBUG_DEVICE_LOST_UPPER;
-const char kDisableDxrEnvVar[]                               = GFXRECON_ENV_VAR_PREFIX DISABLE_DXR_UPPER;
-const char kAccelStructPaddingEnvVar[]                       = GFXRECON_ENV_VAR_PREFIX ACCEL_STRUCT_PADDING_UPPER;
-const char kForceCommandSerializationEnvVar[]                = GFXRECON_ENV_VAR_PREFIX FORCE_COMMAND_SERIALIZATION_UPPER;
-const char kQueueZeroOnlyEnvVar[]                            = GFXRECON_ENV_VAR_PREFIX QUEUE_ZERO_ONLY_UPPER;
-const char kAllowPipelineCompileRequiredEnvVar[]             = GFXRECON_ENV_VAR_PREFIX ALLOW_PIPELINE_COMPILE_REQUIRED_UPPER;
-const char kAnnotationExperimentalEnvVar[]                   = GFXRECON_ENV_VAR_PREFIX RV_ANNOTATION_EXPERIMENTAL_UPPER;
-const char kAnnotationRandEnvVar[]                           = GFXRECON_ENV_VAR_PREFIX RV_ANNOTATION_RAND_UPPER;
-const char kAnnotationGPUVAEnvVar[]                          = GFXRECON_ENV_VAR_PREFIX RV_ANNOTATION_GPUVA_UPPER;
-const char kAnnotationDescriptorEnvVar[]                     = GFXRECON_ENV_VAR_PREFIX RV_ANNOTATION_DESCRIPTOR_UPPER;
-const char kForceFifoPresentModeEnvVar[]                     = GFXRECON_ENV_VAR_PREFIX FORCE_FIFO_PRESENT_MODE_UPPER;
+#define GFXRECON_PASTER(x,y) x ## _ ## y
+#define GFXRECON_EVALUATOR(x,y)  GFXRECON_PASTER(x,y)
 
+#define GFXRECON_OPTION_STR(OPTION) GFXRECON_ENV_VAR_PREFIX GFXRECON_EVALUATOR(OPTION, GFXRECON_POSTFIX)
+
+const char kCaptureCompressionTypeEnvVar[]                   = GFXRECON_OPTION_STR(CAPTURE_COMPRESSION_TYPE);
+const char kCaptureFileFlushEnvVar[]                         = GFXRECON_OPTION_STR(CAPTURE_FILE_FLUSH);
+const char kCaptureFileNameEnvVar[]                          = GFXRECON_OPTION_STR(CAPTURE_FILE_NAME);
+const char kCaptureFileUseTimestampEnvVar[]                  = GFXRECON_OPTION_STR(CAPTURE_FILE_USE_TIMESTAMP);
+const char kLogAllowIndentsEnvVar[]                          = GFXRECON_OPTION_STR(LOG_ALLOW_INDENTS);
+const char kLogBreakOnErrorEnvVar[]                          = GFXRECON_OPTION_STR(LOG_BREAK_ON_ERROR);
+const char kLogDetailedEnvVar[]                              = GFXRECON_OPTION_STR(LOG_DETAILED);
+const char kLogErrorsToStderrEnvVar[]                        = GFXRECON_OPTION_STR(LOG_ERRORS_TO_STDERR);
+const char kLogFileNameEnvVar[]                              = GFXRECON_OPTION_STR(LOG_FILE_NAME);
+const char kLogFileCreateNewEnvVar[]                         = GFXRECON_OPTION_STR(LOG_FILE_CREATE_NEW);
+const char kLogFileFlushAfterWriteEnvVar[]                   = GFXRECON_OPTION_STR(LOG_FILE_FLUSH_AFTER_WRITE);
+const char kLogFileKeepFileOpenEnvVar[]                      = GFXRECON_OPTION_STR(LOG_FILE_KEEP_OPEN);
+const char kLogLevelEnvVar[]                                 = GFXRECON_OPTION_STR(LOG_LEVEL);
+const char kLogOutputToConsoleEnvVar[]                       = GFXRECON_OPTION_STR(LOG_OUTPUT_TO_CONSOLE);
+const char kLogOutputToOsDebugStringEnvVar[]                 = GFXRECON_OPTION_STR(LOG_OUTPUT_TO_OS_DEBUG_STRING);
+const char kMemoryTrackingModeEnvVar[]                       = GFXRECON_OPTION_STR(MEMORY_TRACKING_MODE);
+const char kScreenshotDirEnvVar[]                            = GFXRECON_OPTION_STR(SCREENSHOT_DIR);
+const char kScreenshotFormatEnvVar[]                         = GFXRECON_OPTION_STR(SCREENSHOT_FORMAT);
+const char kScreenshotFramesEnvVar[]                         = GFXRECON_OPTION_STR(SCREENSHOT_FRAMES);
+const char kScreenshotIntervalEnvVar[]                       = GFXRECON_OPTION_STR(SCREENSHOT_INTERVAL);
+const char kCaptureFramesEnvVar[]                            = GFXRECON_OPTION_STR(CAPTURE_FRAMES);
+const char kCaptureDrawCallsEnvVar[]                         = GFXRECON_OPTION_STR(CAPTURE_DRAW_CALLS);
+const char kQuitAfterFramesEnvVar[]                          = GFXRECON_OPTION_STR(QUIT_AFTER_CAPTURE_FRAMES);
+const char kCaptureTriggerEnvVar[]                           = GFXRECON_OPTION_STR(CAPTURE_TRIGGER);
+const char kCaptureTriggerFramesEnvVar[]                     = GFXRECON_OPTION_STR(CAPTURE_TRIGGER_FRAMES);
+const char kCaptureIUnknownWrappingEnvVar[]                  = GFXRECON_OPTION_STR(CAPTURE_IUNKNOWN_WRAPPING);
+const char kCaptureQueueSubmitsEnvVar[]                      = GFXRECON_OPTION_STR(CAPTURE_QUEUE_SUBMITS);
+const char kCaptureUseAssetFileEnvVar[]                      = GFXRECON_OPTION_STR(CAPTURE_USE_ASSET_FILE);
+const char kPageGuardCopyOnMapEnvVar[]                       = GFXRECON_OPTION_STR(PAGE_GUARD_COPY_ON_MAP);
+const char kPageGuardSeparateReadEnvVar[]                    = GFXRECON_OPTION_STR(PAGE_GUARD_SEPARATE_READ);
+const char kPageGuardPersistentMemoryEnvVar[]                = GFXRECON_OPTION_STR(PAGE_GUARD_PERSISTENT_MEMORY);
+const char kPageGuardAlignBufferSizesEnvVar[]                = GFXRECON_OPTION_STR(PAGE_GUARD_ALIGN_BUFFER_SIZES);
+const char kPageGuardTrackAhbMemoryEnvVar[]                  = GFXRECON_OPTION_STR(PAGE_GUARD_TRACK_AHB_MEMORY);
+const char kPageGuardExternalMemoryEnvVar[]                  = GFXRECON_OPTION_STR(PAGE_GUARD_EXTERNAL_MEMORY);
+const char kPageGuardUnblockSIGSEGVEnvVar[]                  = GFXRECON_OPTION_STR(PAGE_GUARD_UNBLOCK_SIGSEGV);
+const char kPageGuardSignalHandlerWatcherEnvVar[]            = GFXRECON_OPTION_STR(PAGE_GUARD_SIGNAL_HANDLER_WATCHER);
+const char kPageGuardSignalHandlerWatcherMaxRestoresEnvVar[] = GFXRECON_OPTION_STR(PAGE_GUARD_SIGNAL_HANDLER_WATCHER_MAX_RESTORES);
+const char kDebugLayerEnvVar[]                               = GFXRECON_OPTION_STR(DEBUG_LAYER);
+const char kDebugDeviceLostEnvVar[]                          = GFXRECON_OPTION_STR(DEBUG_DEVICE_LOST);
+const char kDebugSetObjectsNameEnvVar[]                      = GFXRECON_OPTION_STR(DEBUG_SET_OBJECTS_NAME);
+const char kDisableDxrEnvVar[]                               = GFXRECON_OPTION_STR(DISABLE_DXR);
+const char kAccelStructPaddingEnvVar[]                       = GFXRECON_OPTION_STR(ACCEL_STRUCT_PADDING);
+const char kForceCommandSerializationEnvVar[]                = GFXRECON_OPTION_STR(FORCE_COMMAND_SERIALIZATION);
+const char kQueueZeroOnlyEnvVar[]                            = GFXRECON_OPTION_STR(QUEUE_ZERO_ONLY);
+const char kAllowPipelineCompileRequiredEnvVar[]             = GFXRECON_OPTION_STR(ALLOW_PIPELINE_COMPILE_REQUIRED);
+const char kAnnotationExperimentalEnvVar[]                   = GFXRECON_OPTION_STR(RV_ANNOTATION_EXPERIMENTAL);
+const char kAnnotationRandEnvVar[]                           = GFXRECON_OPTION_STR(RV_ANNOTATION_RAND);
+const char kAnnotationGPUVAEnvVar[]                          = GFXRECON_OPTION_STR(RV_ANNOTATION_GPUVA);
+const char kAnnotationDescriptorEnvVar[]                     = GFXRECON_OPTION_STR(RV_ANNOTATION_DESCRIPTOR);
+const char kFenceQueryDelayEnvVar[]                          = GFXRECON_OPTION_STR(FENCE_QUERY_DELAY);
+const char kFenceQueryDelayUnitEnvVar[]                      = GFXRECON_OPTION_STR(FENCE_QUERY_DELAY_UNIT);
+const char kFenceQueryDelayTimeoutThresholdEnvVar[]          = GFXRECON_OPTION_STR(FENCE_QUERY_DELAY_TIMEOUT_THRESHOLD);
+const char kFenceQueryDelayLimitEnvVar[]                     = GFXRECON_OPTION_STR(FENCE_QUERY_DELAY_LIMIT);
+const char kBufferUsagesToIgnoreEnvVar[]                     = GFXRECON_OPTION_STR(BUFFER_USAGES_TO_IGNORE);
+const char kCapturePackageNameEnvVar[]                       = GFXRECON_OPTION_STR(CAPTURE_PACKAGE_NAME);
+const char kForceFifoPresentModeEnvVar[]                     = GFXRECON_OPTION_STR(FORCE_FIFO_PRESENT_MODE);
+
+#if defined(__ANDROID__)
+const char kCaptureAndroidTriggerEnvVar[]                    = GFXRECON_OPTION_STR(CAPTURE_ANDROID_TRIGGER);
+const char kCaptureAndroidDumpAssetsEnvVar[]                 = GFXRECON_OPTION_STR(CAPTURE_ANDROID_DUMP_ASSETS);
 #endif
 
 // Capture options for settings file.
@@ -280,6 +259,7 @@ const std::string kOptionKeyMemoryTrackingMode                       = std::stri
 const std::string kOptionKeyScreenshotDir                            = std::string(kSettingsFilter) + std::string(SCREENSHOT_DIR_LOWER);
 const std::string kOptionKeyScreenshotFormat                         = std::string(kSettingsFilter) + std::string(SCREENSHOT_FORMAT_LOWER);
 const std::string kOptionKeyScreenshotFrames                         = std::string(kSettingsFilter) + std::string(SCREENSHOT_FRAMES_LOWER);
+const std::string kOptionKeyScreenshotInterval                       = std::string(kSettingsFilter) + std::string(SCREENSHOT_INTERVAL_LOWER);
 const std::string kOptionKeyCaptureFrames                            = std::string(kSettingsFilter) + std::string(CAPTURE_FRAMES_LOWER);
 const std::string kOptionKeyCaptureDrawCalls                         = std::string(kSettingsFilter) + std::string(CAPTURE_DRAW_CALLS_LOWER);
 const std::string kOptionKeyQuitAfterCaptureFrames                   = std::string(kSettingsFilter) + std::string(QUIT_AFTER_CAPTURE_FRAMES_LOWER);
@@ -299,6 +279,7 @@ const std::string kOptionKeyPageGuardSignalHandlerWatcher            = std::stri
 const std::string kOptionKeyPageGuardSignalHandlerWatcherMaxRestores = std::string(kSettingsFilter) + std::string(PAGE_GUARD_SIGNAL_HANDLER_WATCHER_MAX_RESTORES_LOWER);
 const std::string kDebugLayer                                        = std::string(kSettingsFilter) + std::string(DEBUG_LAYER_LOWER);
 const std::string kDebugDeviceLost                                   = std::string(kSettingsFilter) + std::string(DEBUG_DEVICE_LOST_LOWER);
+const std::string kDebugSetObjectsName                               = std::string(kSettingsFilter) + std::string(DEBUG_SET_OBJECTS_NAME_LOWER);
 const std::string kOptionDisableDxr                                  = std::string(kSettingsFilter) + std::string(DISABLE_DXR_LOWER);
 const std::string kOptionAccelStructPadding                          = std::string(kSettingsFilter) + std::string(ACCEL_STRUCT_PADDING_LOWER);
 const std::string kOptionForceCommandSerialization                   = std::string(kSettingsFilter) + std::string(FORCE_COMMAND_SERIALIZATION_LOWER);
@@ -308,6 +289,12 @@ const std::string kOptionKeyAnnotationExperimental                   = std::stri
 const std::string kOptionKeyAnnotationRand                           = std::string(kSettingsFilter) + std::string(RV_ANNOTATION_RAND_LOWER);
 const std::string kOptionKeyAnnotationGPUVA                          = std::string(kSettingsFilter) + std::string(RV_ANNOTATION_GPUVA_LOWER);
 const std::string kOptionKeyAnnotationDescriptor                     = std::string(kSettingsFilter) + std::string(RV_ANNOTATION_DESCRIPTOR_LOWER);
+const std::string kOptionFenceQueryDelay                             = std::string(kSettingsFilter) + std::string(FENCE_QUERY_DELAY_LOWER);
+const std::string kOptionFenceQueryDelayUnit                         = std::string(kSettingsFilter) + std::string(FENCE_QUERY_DELAY_UNIT_LOWER);
+const std::string kOptionFenceQueryDelayTimeoutThreshold             = std::string(kSettingsFilter) + std::string(FENCE_QUERY_DELAY_TIMEOUT_THRESHOLD_LOWER);
+const std::string kOptionFenceQueryDelayLimit                        = std::string(kSettingsFilter) + std::string(FENCE_QUERY_DELAY_LIMIT_LOWER);
+const std::string kOptionBufferUsagesToIgnore                        = std::string(kSettingsFilter) + std::string(BUFFER_USAGES_TO_IGNORE_LOWER);
+const std::string kOptionCapturePackageName                          = std::string(kSettingsFilter) + std::string(CAPTURE_PACKAGE_NAME_LOWER);
 const std::string kOptionForceFifoPresentModeEnvVar                  = std::string(kSettingsFilter) + std::string(FORCE_FIFO_PRESENT_MODE_LOWER);
 
 #if defined(GFXRECON_ENABLE_LZ4_COMPRESSION)
@@ -455,11 +442,13 @@ void CaptureSettings::LoadOptionsEnvVar(OptionsMap* options)
     // Debug environment variables
     LoadSingleOptionEnvVar(options, kDebugLayerEnvVar, kDebugLayer);
     LoadSingleOptionEnvVar(options, kDebugDeviceLostEnvVar, kDebugDeviceLost);
+    LoadSingleOptionEnvVar(options, kDebugSetObjectsNameEnvVar, kDebugSetObjectsName);
 
     // Screenshot environment variables
     LoadSingleOptionEnvVar(options, kScreenshotDirEnvVar, kOptionKeyScreenshotDir);
     LoadSingleOptionEnvVar(options, kScreenshotFormatEnvVar, kOptionKeyScreenshotFormat);
     LoadSingleOptionEnvVar(options, kScreenshotFramesEnvVar, kOptionKeyScreenshotFrames);
+    LoadSingleOptionEnvVar(options, kScreenshotIntervalEnvVar, kOptionKeyScreenshotInterval);
 
     // DirectX environment variables
     LoadSingleOptionEnvVar(options, kDisableDxrEnvVar, kOptionDisableDxr);
@@ -477,6 +466,16 @@ void CaptureSettings::LoadOptionsEnvVar(OptionsMap* options)
     LoadSingleOptionEnvVar(options, kAnnotationRandEnvVar, kOptionKeyAnnotationRand);
     LoadSingleOptionEnvVar(options, kAnnotationGPUVAEnvVar, kOptionKeyAnnotationGPUVA);
     LoadSingleOptionEnvVar(options, kAnnotationDescriptorEnvVar, kOptionKeyAnnotationDescriptor);
+
+    LoadSingleOptionEnvVar(options, kFenceQueryDelayEnvVar, kOptionFenceQueryDelay);
+    LoadSingleOptionEnvVar(options, kFenceQueryDelayUnitEnvVar, kOptionFenceQueryDelayUnit);
+    LoadSingleOptionEnvVar(options, kFenceQueryDelayTimeoutThresholdEnvVar, kOptionFenceQueryDelayTimeoutThreshold);
+    LoadSingleOptionEnvVar(options, kFenceQueryDelayLimitEnvVar, kOptionFenceQueryDelayLimit);
+
+    LoadSingleOptionEnvVar(options, kBufferUsagesToIgnoreEnvVar, kOptionBufferUsagesToIgnore);
+
+    LoadSingleOptionEnvVar(options, kCapturePackageNameEnvVar, kOptionCapturePackageName);
+
     LoadSingleOptionEnvVar(options, kForceFifoPresentModeEnvVar, kOptionForceFifoPresentModeEnvVar);
 }
 
@@ -646,6 +645,8 @@ void CaptureSettings::ProcessOptions(OptionsMap* options, CaptureSettings* setti
         ParseBoolString(FindOption(options, kDebugLayer), settings->trace_settings_.debug_layer);
     settings->trace_settings_.debug_device_lost =
         ParseBoolString(FindOption(options, kDebugDeviceLost), settings->trace_settings_.debug_device_lost);
+    settings->trace_settings_.debug_set_objects_name =
+        ParseBoolString(FindOption(options, kDebugSetObjectsName), settings->trace_settings_.debug_set_objects_name);
 
     ProcessLogOptions(options, settings);
 
@@ -655,6 +656,14 @@ void CaptureSettings::ProcessOptions(OptionsMap* options, CaptureSettings* setti
     ParseUintRangeList(FindOption(options, kOptionKeyScreenshotFrames),
                        &settings->trace_settings_.screenshot_ranges,
                        "screenshot frames");
+    settings->trace_settings_.screenshot_interval = ParseIntegerString(
+        FindOption(options, kOptionKeyScreenshotInterval), settings->trace_settings_.screenshot_interval);
+    if (settings->trace_settings_.screenshot_interval == 0)
+    {
+        GFXRECON_LOG_WARNING(
+            "A screenshot interval of 0 has been specified, which is invalid. An interval of 1 will be used.");
+        settings->trace_settings_.screenshot_interval = 1;
+    }
     settings->trace_settings_.screenshot_format = ParseScreenshotFormatString(
         FindOption(options, kOptionKeyScreenshotFormat), settings->trace_settings_.screenshot_format);
 
@@ -689,6 +698,23 @@ void CaptureSettings::ProcessOptions(OptionsMap* options, CaptureSettings* setti
     settings->trace_settings_.rv_anotation_info.descriptor_mask =
         ParseUnsignedInteger16String(FindOption(options, kOptionKeyAnnotationDescriptor),
                                      settings->trace_settings_.rv_anotation_info.descriptor_mask);
+
+    settings->trace_settings_.fence_query_delay =
+        ParseIntegerString(FindOption(options, kOptionFenceQueryDelay), settings->trace_settings_.fence_query_delay);
+    settings->trace_settings_.fence_query_delay_unit = ParseFenceQueryDelayUnit(
+        FindOption(options, kOptionFenceQueryDelayUnit), settings->trace_settings_.fence_query_delay_unit);
+    settings->trace_settings_.fence_query_delay_timeout_threshold =
+        ParseIntegerString(FindOption(options, kOptionFenceQueryDelayTimeoutThreshold),
+                           settings->trace_settings_.fence_query_delay_timeout_threshold);
+    settings->trace_settings_.fence_query_delay_limit = ParseIntegerString(
+        FindOption(options, kOptionFenceQueryDelayLimit), settings->trace_settings_.fence_query_delay_limit);
+
+    settings->trace_settings_.buffer_usages_to_ignore =
+        ParseBufferUsages(FindOption(options, kOptionBufferUsagesToIgnore));
+
+    settings->trace_settings_.capture_package_name =
+        FindOption(options, kOptionCapturePackageName, settings->trace_settings_.capture_package_name);
+
     settings->trace_settings_.force_fifo_present_mode = ParseBoolString(
         FindOption(options, kOptionForceFifoPresentModeEnvVar), settings->trace_settings_.force_fifo_present_mode);
 }
@@ -991,5 +1017,97 @@ util::ScreenshotFormat CaptureSettings::ParseScreenshotFormatString(const std::s
 
     return result;
 }
+
+uint64_t StringToBufferUsage(std::string& str)
+{
+    if (str == "transfer_src") // VK_BUFFER_USAGE_TRANSFER_SRC_BIT
+        return 0x00000001;
+    if (str == "transfer_dst") // VK_BUFFER_USAGE_TRANSFER_DST_BIT
+        return 0x00000002;
+    if (str == "uniform_texel") // VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT
+        return 0x00000004;
+    if (str == "storage_texel") // VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT
+        return 0x00000008;
+    if (str == "uniform") // VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
+        return 0x00000010;
+    if (str == "storage") // VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+        return 0x00000020;
+    if (str == "index") // VK_BUFFER_USAGE_INDEX_BUFFER_BIT
+        return 0x00000040;
+    if (str == "vertex") // VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
+        return 0x00000080;
+    if (str == "indirect") // VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT
+        return 0x00000100;
+    if (str == "shader_address") // VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
+        return 0x00020000;
+    if (str == "acc_input") // VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR
+        return 0x00080000;
+    if (str == "acc_storage") // VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR
+        return 0x00100000;
+    if (str == "shader_binding") // VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR
+        return 0x00000400;
+    if (str == "resource_descriptor") // VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT
+        return 0x00400000;
+    if (str == "push_descriptors") // VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT
+        return 0x04000000;
+    if (str == "ignore_all")
+        return 0;
+
+    GFXRECON_LOG_WARNING("Unimplemented usage %s", str.c_str());
+    return UINT64_MAX;
+}
+
+std::vector<uint64_t> CaptureSettings::ParseBufferUsages(const std::string& value_string)
+{
+    std::string trimmed;
+    if (!value_string.empty())
+    {
+        trimmed = value_string;
+        gfxrecon::util::strings::RemoveWhitespace(trimmed);
+    }
+    else
+    {
+        return {};
+    }
+    std::vector<uint64_t>    result;
+    std::vector<std::string> values = util::strings::SplitString(trimmed, ',');
+    for (auto& val : values)
+    {
+        uint64_t                 mask = 0;
+        std::vector<std::string> vals = util::strings::SplitString(val, '|');
+        for (auto& v : vals)
+        {
+            mask |= StringToBufferUsage(v);
+            GFXRECON_LOG_DEBUG("multiple opt %s", v.c_str());
+        }
+        result.push_back(mask);
+    }
+    return result;
+}
+
+CaptureSettings::FenceQueryDelayUnit CaptureSettings::ParseFenceQueryDelayUnit(const std::string&  value_string,
+                                                                               FenceQueryDelayUnit default_value)
+{
+    if (value_string == "calls")
+    {
+        return FenceQueryDelayUnit::kCalls;
+    }
+    else if (value_string == "frames")
+    {
+        return FenceQueryDelayUnit::kFrames;
+    }
+    else
+    {
+        if (!value_string.empty())
+        {
+            GFXRECON_LOG_WARNING(
+                "Unrecognized fence query delay unit '%s'. The replay will continue with the default value.",
+                value_string.c_str());
+        }
+
+        return default_value;
+    }
+}
+
 GFXRECON_END_NAMESPACE(encode)
 GFXRECON_END_NAMESPACE(gfxrecon)

@@ -28,7 +28,8 @@ GFXRECON_BEGIN_NAMESPACE(encode)
 CommandWriter::CommandWriter(util::ThreadData*   thread_data,
                              util::OutputStream* output_stream,
                              util::Compressor*   compressor) :
-    thread_data_(thread_data), output_stream_(output_stream), compressor_(compressor)
+    thread_data_(thread_data),
+    output_stream_(output_stream), compressor_(compressor)
 {
     GFXRECON_ASSERT(thread_data_ != nullptr);
 }

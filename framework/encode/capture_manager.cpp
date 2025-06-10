@@ -55,6 +55,7 @@ GFXRECON_BEGIN_NAMESPACE(encode)
 const uint32_t kFirstFrame           = 1;
 const size_t   kFileStreamBufferSize = 256 * 1024;
 
+int32_t                                        CommonCaptureManager::process_id_ = INT32_MAX;
 CommonCaptureManager*                          CommonCaptureManager::singleton_;
 std::mutex                                     CommonCaptureManager::instance_lock_;
 thread_local std::unique_ptr<util::ThreadData> CommonCaptureManager::thread_data_;
@@ -136,8 +137,14 @@ bool CommonCaptureManager::LockedCreateInstance(ApiCaptureManager*           api
         GFXRECON_LOG_INFO("Initializing GFXReconstruct capture layer");
         GFXRECON_LOG_INFO("  GFXReconstruct Version %s", GFXRECON_PROJECT_VERSION_STRING);
 
-        CaptureSettings::TraceSettings trace_settings = capture_settings_.GetTraceSettings();
-        std::string                    base_filename  = trace_settings.capture_file;
+        CaptureSettings::TraceSettings trace_settings       = capture_settings_.GetTraceSettings();
+        std::string                    base_filename        = trace_settings.capture_file;
+        std::string                    capture_package_name = trace_settings.capture_package_name;
+        GFXRECON_LOG_INFO("capture_package_name = %s", capture_package_name.c_str());
+        if (!capture_package_name.empty())
+        {
+            process_id_ = GetPidFromPackageName(capture_package_name.c_str());
+        }
 
         // Initialize capture manager with default settings.
         success = Initialize(api_capture_singleton->GetApiFamily(), base_filename, trace_settings);
@@ -212,7 +219,71 @@ void CommonCaptureManager::DestroyInstance(ApiCaptureManager* api_capture_manage
     }
 }
 
-std::vector<uint32_t> CalcScreenshotIndices(std::vector<util::UintRange> ranges)
+int32_t CommonCaptureManager::GetPidFromPackageName(const char* progress_name)
+{
+    int32_t pid = -1;
+#if defined(__linux__)
+    int            id            = 0;
+    DIR*           dir           = nullptr;
+    FILE*          fp            = nullptr;
+    struct dirent* entry         = nullptr;
+    char           filename[256] = { 0 };
+    char           cmdline[256]  = { 0 };
+
+    if (progress_name == nullptr)
+    {
+        return pid;
+    }
+    dir = opendir("/proc");
+    if (dir == nullptr)
+    {
+        return pid;
+    }
+    while ((entry = readdir(dir)) != NULL)
+    {
+        id = atoi(entry->d_name);
+        if (id != 0)
+        {
+            sprintf(filename, "/proc/%d/cmdline", id);
+            fp = fopen(filename, "r");
+            if (fp)
+            {
+                char* str = fgets(cmdline, sizeof(cmdline), fp);
+                fclose(fp);
+                if (str != nullptr && strcmp(progress_name, cmdline) == 0)
+                {
+                    pid = id;
+                    break;
+                }
+            }
+        }
+    }
+    closedir(dir);
+#else
+    HANDLE         hSnapShot = ::CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    PROCESSENTRY32 pe        = { 0 };
+    pe.dwSize                = sizeof(PROCESSENTRY32);
+    BOOL bSuccess            = ::Process32First(hSnapShot, &pe);
+    if (!bSuccess)
+    {
+        ::CloseHandle(hSnapShot);
+        return pid;
+    }
+    while (bSuccess)
+    {
+        if (strcmp(pe.szExeFile, progress_name) == 0)
+        {
+            pid = pe.th32ProcessID;
+            break;
+        }
+        bSuccess = ::Process32Next(hSnapShot, &pe);
+    }
+    ::CloseHandle(hSnapShot);
+#endif
+    return pid;
+}
+
+std::vector<uint32_t> CalcScreenshotIndices(std::vector<util::UintRange> ranges, uint32_t interval)
 {
     // Take a range of frames and convert it to a flat list of indices
     std::vector<uint32_t> indices;
@@ -223,7 +294,7 @@ std::vector<uint32_t> CalcScreenshotIndices(std::vector<util::UintRange> ranges)
 
         uint32_t diff = range.last - range.first + 1;
 
-        for (uint32_t j = 0; j < diff; ++j)
+        for (uint32_t j = 0; j < diff; j += interval)
         {
             uint32_t screenshot_index = range.first + j;
 
@@ -261,25 +332,31 @@ bool CommonCaptureManager::Initialize(format::ApiFamilyId                   api_
 {
     bool success = true;
 
-    base_filename_                   = base_filename;
-    file_options_                    = trace_settings.capture_file_options;
-    timestamp_filename_              = trace_settings.time_stamp_file;
-    memory_tracking_mode_            = trace_settings.memory_tracking_mode;
-    force_file_flush_                = trace_settings.force_flush;
-    debug_layer_                     = trace_settings.debug_layer;
-    debug_device_lost_               = trace_settings.debug_device_lost;
-    screenshots_enabled_             = !trace_settings.screenshot_ranges.empty();
-    screenshot_format_               = trace_settings.screenshot_format;
-    screenshot_indices_              = CalcScreenshotIndices(trace_settings.screenshot_ranges);
-    screenshot_prefix_               = PrepScreenshotPrefix(trace_settings.screenshot_dir);
-    disable_dxr_                     = trace_settings.disable_dxr;
-    accel_struct_padding_            = trace_settings.accel_struct_padding;
-    iunknown_wrapping_               = trace_settings.iunknown_wrapping;
-    force_command_serialization_     = trace_settings.force_command_serialization;
-    queue_zero_only_                 = trace_settings.queue_zero_only;
-    allow_pipeline_compile_required_ = trace_settings.allow_pipeline_compile_required;
-    force_fifo_present_mode_         = trace_settings.force_fifo_present_mode;
-    use_asset_file_                  = trace_settings.use_asset_file;
+    base_filename_          = base_filename;
+    file_options_           = trace_settings.capture_file_options;
+    timestamp_filename_     = trace_settings.time_stamp_file;
+    memory_tracking_mode_   = trace_settings.memory_tracking_mode;
+    force_file_flush_       = trace_settings.force_flush;
+    debug_layer_            = trace_settings.debug_layer;
+    debug_device_lost_      = trace_settings.debug_device_lost;
+    debug_set_objects_name_ = trace_settings.debug_set_objects_name;
+    screenshots_enabled_    = !trace_settings.screenshot_ranges.empty();
+    screenshot_format_      = trace_settings.screenshot_format;
+    screenshot_indices_   = CalcScreenshotIndices(trace_settings.screenshot_ranges, trace_settings.screenshot_interval);
+    screenshot_prefix_    = PrepScreenshotPrefix(trace_settings.screenshot_dir);
+    disable_dxr_          = trace_settings.disable_dxr;
+    accel_struct_padding_ = trace_settings.accel_struct_padding;
+    iunknown_wrapping_    = trace_settings.iunknown_wrapping;
+    force_command_serialization_         = trace_settings.force_command_serialization;
+    queue_zero_only_                     = trace_settings.queue_zero_only;
+    allow_pipeline_compile_required_     = trace_settings.allow_pipeline_compile_required;
+    fence_query_delay_                   = trace_settings.fence_query_delay;
+    fence_query_delay_unit_              = trace_settings.fence_query_delay_unit;
+    fence_query_delay_timeout_threshold_ = trace_settings.fence_query_delay_timeout_threshold;
+    fence_query_delay_limit_             = trace_settings.fence_query_delay_limit;
+    buffer_usages_to_ignore_             = trace_settings.buffer_usages_to_ignore;
+    force_fifo_present_mode_             = trace_settings.force_fifo_present_mode;
+    use_asset_file_                      = trace_settings.use_asset_file;
 
     rv_annotation_info_.gpuva_mask      = trace_settings.rv_anotation_info.gpuva_mask;
     rv_annotation_info_.descriptor_mask = trace_settings.rv_anotation_info.descriptor_mask;
@@ -872,6 +949,8 @@ bool CommonCaptureManager::ShouldTriggerScreenshot()
 
 void CommonCaptureManager::WriteFrameMarker(format::MarkerType marker_type)
 {
+    if (!IsCaptureApp())
+        return;
     if ((capture_mode_ & kModeWrite) == kModeWrite)
     {
         format::Marker marker_cmd;
@@ -944,7 +1023,10 @@ void CommonCaptureManager::PostQueueSubmit(format::ApiFamilyId              api_
     {
         if ((capture_mode_ & kModeWrite) == kModeWrite)
         {
-            CheckContinueCaptureForWriteMode(api_family, queue_submit_count_, current_lock);
+            // Currently capturing a queue submit range, check for end of range.
+            // It checks the boundary count with +1. That is for trim frames.
+            // It will write one more QueueSubmit for trim QueueSubmits, so +1.
+            CheckContinueCaptureForWriteMode(api_family, queue_submit_count_ + 1, current_lock);
         }
     }
 }
@@ -1048,6 +1130,9 @@ std::string CommonCaptureManager::CreateAssetFilename(const std::string& base_fi
 
 bool CommonCaptureManager::CreateCaptureFile(format::ApiFamilyId api_family, const std::string& base_filename)
 {
+    if (!IsCaptureApp())
+        return true;
+
     bool success      = true;
     capture_filename_ = base_filename;
 
@@ -1068,31 +1153,19 @@ bool CommonCaptureManager::CreateCaptureFile(format::ApiFamilyId api_family, con
         WriteExeFileInfo(api_family, info);
 
         // Save parameters of the capture in an annotation.
-        std::string operation_annotation = "{\n"
-                                           "    \"tool\": \"capture\",\n"
-                                           "    \"";
-        operation_annotation += gfxrecon::format::kOperationAnnotationTimestamp;
-        operation_annotation += "\": \"";
-        operation_annotation += util::datetime::UtcNowString();
-        operation_annotation += "\",\n";
-        operation_annotation += "    \"";
-        operation_annotation += gfxrecon::format::kOperationAnnotationGfxreconstructVersion;
-        operation_annotation += "\": \"" GFXRECON_PROJECT_VERSION_STRING "\",\n";
-        operation_annotation += "    \"";
-        operation_annotation += gfxrecon::format::kOperationAnnotationVulkanVersion;
-        operation_annotation += "\": \"";
-        operation_annotation += std::to_string(VK_VERSION_MAJOR(VK_HEADER_VERSION_COMPLETE));
-        operation_annotation += '.';
-        operation_annotation += std::to_string(VK_VERSION_MINOR(VK_HEADER_VERSION_COMPLETE));
-        operation_annotation += '.';
-        operation_annotation += std::to_string(VK_VERSION_PATCH(VK_HEADER_VERSION_COMPLETE));
-        operation_annotation += "\"";
+        nlohmann::ordered_json operation_annotation;
+        operation_annotation["tool"] = "capture";
+
+        operation_annotation[format::kOperationAnnotationTimestamp]             = util::datetime::UtcNowString();
+        operation_annotation[format::kOperationAnnotationGfxreconstructVersion] = GFXRECON_PROJECT_VERSION_STRING;
+        operation_annotation[format::kOperationAnnotationVulkanVersion] =
+            std::to_string(VK_VERSION_MAJOR(VK_HEADER_VERSION_COMPLETE)) + '.' +
+            std::to_string(VK_VERSION_MINOR(VK_HEADER_VERSION_COMPLETE)) + '.' +
+            std::to_string(VK_VERSION_PATCH(VK_HEADER_VERSION_COMPLETE));
 
         WriteCaptureOptions(operation_annotation);
-
-        operation_annotation += "\n}";
         ForcedWriteAnnotation(
-            format::AnnotationType::kJson, format::kAnnotationLabelOperation, operation_annotation.c_str());
+            format::AnnotationType::kJson, format::kAnnotationLabelOperation, operation_annotation.dump().c_str());
 
         // Gather environment variables in format::kEnvironmentStringDelimeter -delimited string
         std::string env_vars;
@@ -1255,6 +1328,8 @@ void CommonCaptureManager::DeactivateTrimming(std::shared_lock<ApiCallMutexT>& c
 
 void CommonCaptureManager::WriteFileHeader(util::FileOutputStream* file_stream)
 {
+    if (!IsCaptureApp())
+        return;
     std::vector<format::FileOptionPair> option_list;
 
     BuildOptionList(file_options_, &option_list);
@@ -1287,6 +1362,8 @@ void CommonCaptureManager::BuildOptionList(const format::EnabledOptions&        
 
 void CommonCaptureManager::WriteDisplayMessageCmd(format::ApiFamilyId api_family, const char* message)
 {
+    if (!IsCaptureApp())
+        return;
     if ((capture_mode_ & kModeWrite) == kModeWrite)
     {
         auto                                thread_data    = GetThreadData();
@@ -1309,6 +1386,8 @@ void CommonCaptureManager::WriteDisplayMessageCmd(format::ApiFamilyId api_family
 void CommonCaptureManager::WriteExeFileInfo(format::ApiFamilyId                       api_family,
                                             const gfxrecon::util::filepath::FileInfo& info)
 {
+    if (!IsCaptureApp())
+        return;
     auto                     thread_data     = GetThreadData();
     size_t                   info_length     = sizeof(format::ExeFileInfoBlock);
     format::ExeFileInfoBlock exe_info_header = {};
@@ -1342,6 +1421,8 @@ void CommonCaptureManager::ForcedWriteAnnotation(const format::AnnotationType ty
 
 void CommonCaptureManager::WriteAnnotation(const format::AnnotationType type, const char* label, const char* data)
 {
+    if (!IsCaptureApp())
+        return;
     if ((capture_mode_ & kModeWrite) == kModeWrite)
     {
         ForcedWriteAnnotation(type, label, data);
@@ -1353,6 +1434,8 @@ void CommonCaptureManager::WriteResizeWindowCmd(format::ApiFamilyId api_family,
                                                 uint32_t            width,
                                                 uint32_t            height)
 {
+    if (!IsCaptureApp())
+        return;
     if ((capture_mode_ & kModeWrite) == kModeWrite)
     {
         auto                        thread_data = GetThreadData();
@@ -1374,6 +1457,8 @@ void CommonCaptureManager::WriteResizeWindowCmd(format::ApiFamilyId api_family,
 void CommonCaptureManager::WriteFillMemoryCmd(
     format::ApiFamilyId api_family, format::HandleId memory_id, uint64_t offset, uint64_t size, const void* data)
 {
+    if (!IsCaptureApp())
+        return;
     if ((capture_mode_ & kModeWrite) == kModeWrite)
     {
         GFXRECON_CHECK_CONVERSION_DATA_LOSS(size_t, size);
@@ -1426,6 +1511,30 @@ void CommonCaptureManager::WriteFillMemoryCmd(
 
             CombineAndWriteToFile({ { &fill_cmd, header_size }, { uncompressed_data, uncompressed_size } });
         }
+    }
+}
+
+void CommonCaptureManager::WriteFixDeviceAddressCmd(format::ApiFamilyId          api_family,
+                                                    format::HandleId             relation_id,
+                                                    uint64_t                     num_of_locations,
+                                                    format::AddressLocationInfo* locations)
+{
+    if (!IsCaptureApp())
+        return;
+    if ((capture_mode_ & kModeWrite) == kModeWrite)
+    {
+        format::FixDeviceAddressCommandHeader fix_cmd;
+        auto                                  thread_data = GetThreadData();
+        assert(thread_data != nullptr);
+        fix_cmd.meta_header.block_header.type = format::BlockType::kMetaDataBlock;
+        fix_cmd.meta_header.block_header.size =
+            format::GetMetaDataBlockBaseSize(fix_cmd) + (num_of_locations * sizeof(format::AddressLocationInfo));
+        fix_cmd.meta_header.meta_data_id =
+            format::MakeMetaDataId(api_family, format::MetaDataType::kFixDeviceAddressCommand);
+        fix_cmd.relation_id      = relation_id;
+        fix_cmd.num_of_locations = num_of_locations;
+        CombineAndWriteToFile({ { &fix_cmd, sizeof(format::FixDeviceAddressCommandHeader) },
+                                { locations, num_of_locations * sizeof(format::AddressLocationInfo) } });
     }
 }
 
@@ -1483,6 +1592,9 @@ void CommonCaptureManager::WriteCreateHeapAllocationCmd(format::ApiFamilyId api_
                                                         uint64_t            allocation_id,
                                                         uint64_t            allocation_size)
 {
+    if (!IsCaptureApp())
+        return;
+
     if (IsCaptureModeWrite())
     {
         format::CreateHeapAllocationCommand allocation_cmd;
@@ -1504,6 +1616,9 @@ void CommonCaptureManager::WriteCreateHeapAllocationCmd(format::ApiFamilyId api_
 
 void CommonCaptureManager::WriteToFile(const void* data, size_t size, util::FileOutputStream* file_stream)
 {
+    if (!IsCaptureApp())
+        return;
+
     file_stream ? file_stream->Write(data, size) : file_stream_->Write(data, size);
 }
 
@@ -1520,116 +1635,128 @@ void CommonCaptureManager::AtExit()
     }
 }
 
-void CommonCaptureManager::WriteCaptureOptions(std::string& operation_annotation)
+void CommonCaptureManager::WriteCaptureOptions(nlohmann::ordered_json& operation_annotation)
 {
+    if (!IsCaptureApp())
+        return;
+
+    nlohmann::ordered_json         capture_options;
     CaptureSettings::TraceSettings default_settings = default_settings_.GetTraceSettings();
-    std::string                    buffer;
 
     if (force_file_flush_ != default_settings.force_flush)
     {
-        buffer += "\n    \"file-flush\": ";
-        buffer += force_file_flush_ ? "true," : "false,";
+        capture_options["file-flush"] = force_file_flush_;
     }
 
     if (memory_tracking_mode_ == CaptureSettings::MemoryTrackingMode::kUnassisted)
     {
-        buffer += "\n    \"memory-tracking-mode\": \"unassisted\",";
+        capture_options["memory-tracking-mode"] = "unassisted";
     }
     else if (memory_tracking_mode_ == CaptureSettings::MemoryTrackingMode::kAssisted)
     {
-        buffer += "\n    \"memory-tracking-mode\": \"assisted\",";
+        capture_options["memory-tracking-mode"] = "assisted";
     }
     else
     {
-        std::string page_guard_options_buffer;
+        nlohmann::ordered_json page_guard_options;
         if (page_guard_copy_on_map_ != default_settings.page_guard_copy_on_map)
         {
-            page_guard_options_buffer += "\n    \"page-guard-copy-on-map\": ";
-            page_guard_options_buffer += page_guard_copy_on_map_ ? "true," : "false,";
+            page_guard_options["page-guard-copy-on-map"] = page_guard_copy_on_map_;
         }
         if (page_guard_separate_read_ != default_settings.page_guard_separate_read)
         {
-            page_guard_options_buffer += "\n    \"page-guard-separate-read\": ";
-            page_guard_options_buffer += page_guard_separate_read_ ? "true," : "false,";
+            page_guard_options["page-guard-separate-read"] = page_guard_separate_read_;
         }
         if (page_guard_external_memory_ != default_settings.page_guard_external_memory)
         {
-            page_guard_options_buffer += "\n    \"page-guard-external-memory\": ";
-            page_guard_options_buffer += page_guard_external_memory_ ? "true," : "false,";
+            page_guard_options["page-guard-external-memory"] = page_guard_external_memory_;
         }
         if (!page_guard_external_memory_ && page_guard_memory_mode_ != PageGuardMemoryMode::kMemoryModeShadowInternal)
         {
-            page_guard_options_buffer += "\n    \"page-guard-persistent-memory\": ";
-            page_guard_options_buffer +=
-                (page_guard_memory_mode_ == PageGuardMemoryMode::kMemoryModeShadowPersistent) ? "true," : "false,";
+            page_guard_options["page-guard-persistent-memory"] =
+                page_guard_memory_mode_ == PageGuardMemoryMode::kMemoryModeShadowPersistent;
         }
         if (page_guard_align_buffer_sizes_ != default_settings.page_guard_align_buffer_sizes)
         {
-            page_guard_options_buffer += "\n    \"page-guard-align-buffer-sizes\": ";
-            page_guard_options_buffer += page_guard_align_buffer_sizes_ ? "true," : "false,";
+            page_guard_options["page-guard-align-buffer-sizes"] = page_guard_align_buffer_sizes_;
         }
         if (page_guard_unblock_sigsegv_ != default_settings.page_guard_unblock_sigsegv)
         {
-            page_guard_options_buffer += "\n    \"page-guard-unblock-sigsegv\": ";
-            page_guard_options_buffer += page_guard_unblock_sigsegv_ ? "true," : "false,";
+            page_guard_options["page-guard-unblock-sigsegv"] = page_guard_unblock_sigsegv_;
         }
         if (page_guard_signal_handler_watcher_ != default_settings.page_guard_signal_handler_watcher)
         {
-            page_guard_options_buffer += "\n    \"page-guard-signal-handler-watcher\": ";
-            page_guard_options_buffer += page_guard_signal_handler_watcher_ ? "true," : "false,";
+            page_guard_options["page-guard-signal-handler-watcher"] = page_guard_signal_handler_watcher_;
         }
         if (page_guard_signal_handler_watcher_max_restores_ !=
             default_settings.page_guard_signal_handler_watcher_max_restores)
         {
-            page_guard_options_buffer += "\n    \"page-guard-signal-handler-watcher-max-restores\": " +
-                                         std::to_string(page_guard_signal_handler_watcher_max_restores_) + ',';
+            page_guard_options["page-guard-signal-handler-watcher-max-restores"] =
+                page_guard_signal_handler_watcher_max_restores_;
         }
 
-        if (!page_guard_options_buffer.empty())
+        if (!page_guard_options.empty())
         {
-            buffer += "\n    \"memory-tracking-mode\": \"page_guard\",";
-            buffer += page_guard_options_buffer;
+            capture_options["memory-tracking-mode"] = "page_guard";
+            capture_options["page-guard-options"]   = page_guard_options;
         }
     }
 
     if (force_command_serialization_ != default_settings.force_command_serialization)
     {
-        buffer += "\n    \"force-command-serialization\": ";
-        buffer += force_command_serialization_ ? "true," : "false,";
+        capture_options["force-command-serialization"] = force_command_serialization_;
     }
-
+    if (fence_query_delay_ != default_settings.fence_query_delay)
+    {
+        capture_options["fence-query-delay"] = fence_query_delay_;
+        if (fence_query_delay_unit_ == CaptureSettings::FenceQueryDelayUnit::kCalls)
+        {
+            capture_options["fence-query-delay-unit"] = "calls";
+        }
+        else if (fence_query_delay_unit_ == CaptureSettings::FenceQueryDelayUnit::kFrames)
+        {
+            capture_options["fence-query-delay-unit"] = "frames";
+        }
+        capture_options["fence-query-delay-timeout-threshold"] = fence_query_delay_timeout_threshold_;
+        capture_options["fence-query-delay-limit"]             = fence_query_delay_limit_;
+    }
     if (queue_zero_only_ != default_settings.queue_zero_only)
     {
-        buffer += "\n    \"queue-zero-only\": ";
-        buffer += queue_zero_only_ ? "true," : "false,";
+        capture_options["queue-zero-only"] = queue_zero_only_;
     }
     if (force_fifo_present_mode_ != default_settings.force_fifo_present_mode)
     {
-        buffer += "\n    \"force-fifo-present-mode\": ";
-        buffer += force_fifo_present_mode_ ? "true," : "false,";
+        capture_options["force-fifo-present-mode"] = force_fifo_present_mode_;
     }
 
-    if (buffer.empty())
+    if (buffer_usages_to_ignore_ != default_settings.buffer_usages_to_ignore)
     {
-        return;
+        capture_options["buffer-usages-to-ignore"] = GetIgnoredBufferUsages();
     }
+    if (!capture_options.empty())
+    {
+        operation_annotation[format::kOperationAnnotationCaptureParameters] = capture_options;
+    }
+}
 
-    // Erase the trailing comma
-    buffer.pop_back();
+nlohmann::ordered_json CommonCaptureManager::GetIgnoredBufferUsages()
+{
+    nlohmann::ordered_json::array_t ignored_usages;
+    ignored_usages.reserve(buffer_usages_to_ignore_.size());
 
-    // Add the comma after the vulkan version only if there is something more to write
-    operation_annotation += ",\n    \"";
-    operation_annotation += gfxrecon::format::kOperationAnnotationCaptureParameters;
-    operation_annotation += "\": \n    {";
-    operation_annotation += buffer;
-    operation_annotation += "\n    }";
+    for (uint64_t usage : buffer_usages_to_ignore_)
+    {
+        ignored_usages.push_back(util::BitmaskToString<VkBufferUsageFlagBits>(usage));
+    }
+    return ignored_usages;
 }
 
 CaptureFileOutputStream::CaptureFileOutputStream(CommonCaptureManager* capture_manager,
                                                  const std::string&    filename,
                                                  size_t                buffer_size,
                                                  bool                  append) :
-    FileOutputStream(filename, buffer_size, append), capture_manager_(capture_manager)
+    FileOutputStream(filename, buffer_size, append),
+    capture_manager_(capture_manager)
 {}
 
 bool CaptureFileOutputStream::Write(const void* data, size_t len)

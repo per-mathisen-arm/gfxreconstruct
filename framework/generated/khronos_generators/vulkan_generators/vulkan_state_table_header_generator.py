@@ -72,6 +72,9 @@ class VulkanStateTableHeaderGenerator(BaseGenerator, KhronosStateTableHeaderGene
         write(
             '#include "encode/vulkan_state_table_base.h"\n', file=self.outFile
         )
+        write(
+            '#include "encode/custom_vulkan_wrapper_handlers.h"\n', file=self.outFile
+        )
         self.newline()
         write('GFXRECON_BEGIN_NAMESPACE(gfxrecon)', file=self.outFile)
         write('GFXRECON_BEGIN_NAMESPACE(encode)', file=self.outFile)

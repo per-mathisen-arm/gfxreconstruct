@@ -46,6 +46,8 @@ generate_targets = [
     'generated_vulkan_struct_encoders.cpp',
     'generated_vulkan_struct_handle_wrappers.h',
     'generated_vulkan_struct_handle_wrappers.cpp',
+    'generated_vulkan_struct_trackers.h',
+    'generated_vulkan_struct_trackers.cpp',
     'generated_vulkan_struct_deep_copy.cpp',
     'generated_vulkan_struct_deep_copy_stype.cpp',
     'generated_vulkan_api_call_encoders.h',
@@ -56,7 +58,7 @@ generate_targets = [
     'generated_vulkan_dispatch_table.h',
     'generated_vulkan_layer_func_table.h',
     'generated_vulkan_pnext_struct_encoder.cpp',
-    'generated_vulkan_pnext_struct_encoder.cpp',
+    'generated_vulkan_pnext_struct_decoder.cpp',
     'generated_vulkan_struct_decoders.h',
     'generated_vulkan_struct_decoders.cpp',
     'generated_vulkan_struct_decoders_forward.h',
@@ -90,6 +92,7 @@ generate_targets = [
     'generated_vulkan_cpp_consumer_extension.h',
     'generated_vulkan_cpp_consumer_extension.cpp',
     'generated_vulkan_stype_util.h',
+    'generated_vulkan_skiavk_modifier.h',
 ]
 
 if __name__ == '__main__':

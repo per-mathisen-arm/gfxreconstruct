@@ -89,6 +89,12 @@ class ApiDecoder
     virtual void DispatchFillMemoryCommand(
         format::ThreadId thread_id, uint64_t memory_id, uint64_t offset, uint64_t size, const uint8_t* data) = 0;
 
+    virtual void DispatchFixDeviceAddresCommand(const format::FixDeviceAddressCommandHeader& header,
+                                                const format::AddressLocationInfo*           infos) = 0;
+
+    virtual void DispatchShaderGroupHandleCommand(const format::FixShaderGroupHandleCommandHeader& header,
+                                                  const format::ShaderHandleLocationInfo*          infos) = 0;
+
     virtual void
     DispatchFillMemoryResourceValueCommand(const format::FillMemoryResourceValueCommandHeader& command_header,
                                            const uint8_t*                                      data) = 0;
@@ -201,6 +207,13 @@ class ApiDecoder
 
     virtual void DispatchSetTlasToBlasDependencyCommand(format::HandleId                     tlas,
                                                         const std::vector<format::HandleId>& blases){};
+
+    virtual void DispatchMicromapCompactionDependencyCommand(format::HandleId                     parent,
+                                                             const std::vector<format::HandleId>& children){};
+
+    virtual void
+    DispatchAccelerationStructureCompactionDependencyCommand(format::HandleId                     parent,
+                                                             const std::vector<format::HandleId>& children){};
 
     virtual void DispatchSetEnvironmentVariablesCommand(format::SetEnvironmentVariablesCommand& header,
                                                         const char*                             env_string){};

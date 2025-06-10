@@ -37,6 +37,7 @@
 #include "util/defines.h"
 #include "util/logging.h"
 #include "util/memory_output_stream.h"
+#include "graphics/vulkan_resources_util.h"
 
 #include "vulkan/vulkan.h"
 #include "vulkan/vulkan_core.h"
@@ -392,6 +393,8 @@ class VulkanStateTracker
 
     void TrackEndRenderPass(VkCommandBuffer command_buffer);
 
+    void TrackImageDstLayout(VkCommandBuffer command_buffer, VkImage dst_image, VkImageLayout dst_image_layout);
+
     void TrackExecuteCommands(VkCommandBuffer        command_buffer,
                               uint32_t               command_buffer_count,
                               const VkCommandBuffer* command_buffers);
@@ -454,32 +457,24 @@ class VulkanStateTracker
                                                     VkAccelerationStructureKHR accel_struct,
                                                     VkDeviceAddress            address);
 
+    void TrackMicromapDeviceAddress(VkDevice device, VkMicromapEXT micromap, VkDeviceAddress address);
+
     void
     TrackAccelerationStructureBuildCommand(VkCommandBuffer                                        command_buffer,
                                            uint32_t                                               info_count,
                                            const VkAccelerationStructureBuildGeometryInfoKHR*     infos,
                                            const VkAccelerationStructureBuildRangeInfoKHR* const* pp_buildRange_infos);
 
-    void TrackAccelerationStructureCopyCommand(VkCommandBuffer                           command_buffer,
-                                               const VkCopyAccelerationStructureInfoKHR* info);
-
-    void TrackWriteAccelerationStructuresPropertiesCommand(VkCommandBuffer                   commandBuffer,
-                                                           uint32_t                          accelerationStructureCount,
-                                                           const VkAccelerationStructureKHR* pAccelerationStructures,
-                                                           VkQueryType                       queryType,
-                                                           VkQueryPool                       queryPool,
-                                                           uint32_t                          firstQuery);
+    void
+    TrackMicromapBuildCommand(VkCommandBuffer commandBuffer, uint32_t infoCount, const VkMicromapBuildInfoEXT* pInfos);
 
     void TrackDeviceMemoryDeviceAddress(VkDevice device, VkDeviceMemory memory, VkDeviceAddress address);
 
     void TrackRayTracingPipelineProperties(VkPhysicalDevice                                 physicalDevice,
                                            VkPhysicalDeviceRayTracingPipelinePropertiesKHR* ray_properties);
 
-    void TrackAccelerationStructureProperties(
-        VkPhysicalDevice                                    physicalDevice,
-        VkPhysicalDeviceAccelerationStructurePropertiesKHR* acceleration_structure_properties);
-
-    void TrackRayTracingShaderGroupHandles(VkDevice device, VkPipeline pipeline, size_t data_size, const void* data);
+    void TrackRayTracingShaderGroupHandles(
+        VkDevice device, VkPipeline pipeline, size_t group_count, size_t data_size, const void* data);
 
     void TrackAcquireFullScreenExclusiveMode(VkDevice device, VkSwapchainKHR swapchain);
 
@@ -494,6 +489,25 @@ class VulkanStateTracker
     void TrackSetLocalDimmingAMD(VkDevice device, VkSwapchainKHR swapChain, VkBool32 localDimmingEnable);
 
     void TrackTlasToBlasDependencies(uint32_t command_buffer_count, const VkCommandBuffer* command_buffers);
+
+    void TrackAccelerationStructureCopyCommand(VkCommandBuffer                           command_buffer,
+                                               const VkCopyAccelerationStructureInfoKHR* info);
+
+    void TrackMicromapCopyCommand(VkCommandBuffer command_buffer, const VkCopyMicromapInfoEXT* info);
+
+    void TrackWriteAccelerationStructuresPropertiesCommand(VkCommandBuffer                   commandBuffer,
+                                                           uint32_t                          accelerationStructureCount,
+                                                           const VkAccelerationStructureKHR* pAccelerationStructures,
+                                                           VkQueryType                       queryType,
+                                                           VkQueryPool                       queryPool,
+                                                           uint32_t                          firstQuery);
+
+    void TrackWriteMicromapsPropertiesCommand(VkCommandBuffer      commandBuffer,
+                                              uint32_t             micromapCount,
+                                              const VkMicromapEXT* pMicromaps,
+                                              VkQueryType          queryType,
+                                              VkQueryPool          queryPool,
+                                              uint32_t             firstQuery);
 
     void TrackCmdBindDescriptorSets(VkCommandBuffer        commandBuffer,
                                     VkPipelineBindPoint    pipelineBindPoint,
@@ -789,6 +803,11 @@ class VulkanStateTracker
                         InitializeGroupObjectState<ParentHandle, SecondaryHandle, Wrapper, CreateInfo>(
                             parent_handle, secondary_handle, wrapper, create_info, create_call_id, create_parameters);
                 }
+                // If it is a duplicate handle add, make sure that creation parameters are updated
+                else
+                {
+                    wrapper->create_parameters = create_parameters;
+                }
             }
         }
     }
@@ -819,6 +838,8 @@ class VulkanStateTracker
     void DestroyState(vulkan_wrappers::BufferWrapper* wrapper);
 
     void DestroyState(vulkan_wrappers::AccelerationStructureKHRWrapper* wrapper);
+
+    void DestroyState(vulkan_wrappers::MicromapEXTWrapper* wrapper);
 
     void DestroyState(vulkan_wrappers::AccelerationStructureNVWrapper* wrapper);
 
@@ -851,6 +872,8 @@ class VulkanStateTracker
     // Keeps track of device memories' device addresses
     std::unordered_map<VkDeviceAddress, const vulkan_wrappers::DeviceMemoryWrapper*> device_memory_addresses_map;
 
+    // Keeps track of acceleration structures' device addresses
+    std::unordered_map<VkDeviceAddress, vulkan_wrappers::MicromapEXTWrapper*> mm_device_addresses_map;
     // Keeps track of buffer- and acceleration-structure device addresses
     std::unordered_map<VkDevice, encode::VulkanDeviceAddressTracker> device_address_trackers_;
 

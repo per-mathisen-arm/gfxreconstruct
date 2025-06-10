@@ -90,6 +90,11 @@ class VulkanDecoderBase : public ApiDecoder
     virtual void DispatchFillMemoryCommand(
         format::ThreadId thread_id, uint64_t memory_id, uint64_t offset, uint64_t size, const uint8_t* data) override;
 
+    virtual void DispatchFixDeviceAddresCommand(const format::FixDeviceAddressCommandHeader& header,
+                                                const format::AddressLocationInfo*           infos) override;
+
+    virtual void DispatchShaderGroupHandleCommand(const format::FixShaderGroupHandleCommandHeader& header,
+                                                  const format::ShaderHandleLocationInfo*          infos) override;
     virtual void
     DispatchFillMemoryResourceValueCommand(const format::FillMemoryResourceValueCommandHeader& command_header,
                                            const uint8_t*                                      data) override;
@@ -185,6 +190,13 @@ class VulkanDecoderBase : public ApiDecoder
     virtual void DispatchSetTlasToBlasDependencyCommand(format::HandleId                     tlas,
                                                         const std::vector<format::HandleId>& blases) override;
 
+    virtual void DispatchMicromapCompactionDependencyCommand(format::HandleId                     parent,
+                                                             const std::vector<format::HandleId>& children) override;
+
+    virtual void
+    DispatchAccelerationStructureCompactionDependencyCommand(format::HandleId                     parent,
+                                                             const std::vector<format::HandleId>& children) override;
+
     virtual void DispatchInitDx12AccelerationStructureCommand(
         const format::InitDx12AccelerationStructureCommandHeader&       command_header,
         std::vector<format::InitDx12AccelerationStructureGeometryDesc>& geometry_descs,
@@ -197,7 +209,6 @@ class VulkanDecoderBase : public ApiDecoder
 
     virtual void DispatchSetEnvironmentVariablesCommand(format::SetEnvironmentVariablesCommand& header,
                                                         const char*                             env_string) override;
-
     virtual void SetCurrentBlockIndex(uint64_t block_index) override;
 
     void DispatchVulkanAccelerationStructuresBuildMetaCommand(const uint8_t* parameter_buffer,

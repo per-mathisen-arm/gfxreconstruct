@@ -44,12 +44,16 @@ GFXRECON_BEGIN_NAMESPACE(decode)
 class ScreenshotHandler : public ScreenshotHandlerBase
 {
   public:
-    ScreenshotHandler(util::ScreenshotFormat screenshot_format, const std::vector<ScreenshotRange>& screenshot_ranges) :
-        ScreenshotHandlerBase(screenshot_format, screenshot_ranges)
+    ScreenshotHandler(util::ScreenshotFormat              screenshot_format,
+                      const std::vector<ScreenshotRange>& screenshot_ranges,
+                      uint32_t                            screenshot_interval) :
+        ScreenshotHandlerBase(screenshot_format, screenshot_ranges, screenshot_interval)
     {}
 
-    ScreenshotHandler(util::ScreenshotFormat screenshot_format, std::vector<ScreenshotRange>&& screenshot_ranges) :
-        ScreenshotHandlerBase(screenshot_format, screenshot_ranges)
+    ScreenshotHandler(util::ScreenshotFormat         screenshot_format,
+                      std::vector<ScreenshotRange>&& screenshot_ranges,
+                      uint32_t                       screenshot_interval) :
+        ScreenshotHandlerBase(screenshot_format, screenshot_ranges, screenshot_interval)
     {}
 
     void WriteImage(const std::string&                      filename_prefix,
@@ -99,6 +103,10 @@ class ScreenshotHandler : public ScreenshotHandlerBase
                                    VkFormat                         format,
                                    uint32_t                         width,
                                    uint32_t                         height) const;
+
+    uint32_t GetMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties& memory_properties,
+                                uint32_t                                type_bits,
+                                VkMemoryPropertyFlags                   property_flags) const;
 
     VkResult CreateCopyResource(VkDevice                                device,
                                 const encode::VulkanDeviceTable*        device_table,

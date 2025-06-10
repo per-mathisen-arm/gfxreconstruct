@@ -26,6 +26,7 @@
 #include "decode/api_decoder.h"
 #include "decode/struct_pointer_decoder.h"
 #include "decode/stat_consumer_base.h"
+#include "format/format.h"
 
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(decode)
@@ -78,6 +79,14 @@ class StatDecoderBase : public ApiDecoder
 
     virtual void DispatchFillMemoryCommand(
         format::ThreadId thread_id, uint64_t memory_id, uint64_t offset, uint64_t size, const uint8_t* data) override
+    {}
+
+    virtual void DispatchFixDeviceAddresCommand(const format::FixDeviceAddressCommandHeader& header,
+                                                const format::AddressLocationInfo*           infos) override
+    {}
+
+    virtual void DispatchShaderGroupHandleCommand(const format::FixShaderGroupHandleCommandHeader& header,
+                                                  const format::ShaderHandleLocationInfo*          infos) override
     {}
 
     virtual void

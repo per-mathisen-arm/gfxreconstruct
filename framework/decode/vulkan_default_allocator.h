@@ -82,11 +82,32 @@ class VulkanDefaultAllocator : public VulkanResourceAllocator
                                      const VkAllocationCallbacks* allocation_callbacks,
                                      std::vector<ResourceData>    allocator_datas) override;
 
+    virtual void GetBufferMemoryRequirements(VkBuffer              buffer,
+                                             VkMemoryRequirements* memory_requirements,
+                                             ResourceData          allocator_data) override;
+
+    virtual void GetBufferMemoryRequirements2(const VkBufferMemoryRequirementsInfo2* info,
+                                              VkMemoryRequirements2*                 memory_requirements,
+                                              ResourceData                           allocator_data) override;
+
     virtual void GetImageSubresourceLayout(VkImage                    image,
                                            const VkImageSubresource*  subresource,
                                            VkSubresourceLayout*       layout,
                                            const VkSubresourceLayout* original_layout,
                                            ResourceData               allocator_data) override;
+
+    virtual void GetImageMemoryRequirements(VkImage               image,
+                                            VkMemoryRequirements* memory_requirements,
+                                            ResourceData          allocator_data) override;
+
+    virtual void GetImageMemoryRequirements2(const VkImageMemoryRequirementsInfo2* info,
+                                             VkMemoryRequirements2*                memory_requirements,
+                                             ResourceData                          allocator_data) override;
+
+    virtual VkResult GetVideoSessionMemoryRequirementsKHR(VkVideoSessionKHR video_session,
+                                                          uint32_t*         memory_requirements_count,
+                                                          VkVideoSessionMemoryRequirementsKHR* memory_requirements,
+                                                          std::vector<ResourceData> allocator_datas) override;
 
     virtual VkResult AllocateMemory(const VkMemoryAllocateInfo*  allocate_info,
                                     const VkAllocationCallbacks* allocation_callbacks,
@@ -259,6 +280,13 @@ class VulkanDefaultAllocator : public VulkanResourceAllocator
             image, memory, memory_offset, allocator_image_data, allocator_memory_data, bind_memory_properties);
     }
 
+    virtual void BindMemoryImageAHardwareBuffer(MemoryData* allocator_memory_data,
+                                                VkImage     image,
+                                                void*       ahardwahardwarebuffer_infoarebuffer_id) override
+    {
+        return;
+    }
+
     virtual VkResult MapResourceMemoryDirect(VkDeviceSize     size,
                                              VkMemoryMapFlags flags,
                                              void**           data,
@@ -282,6 +310,14 @@ class VulkanDefaultAllocator : public VulkanResourceAllocator
 
     virtual bool SupportsOpaqueDeviceAddresses() override { return true; }
 
+    virtual bool SupportsExternalMemory() override { return true; }
+
+    virtual size_t GetBufferSize(VulkanResourceAllocator::ResourceData alloc_data) override
+    {
+        GFXRECON_ASSERT(alloc_data != 0);
+        return reinterpret_cast<ResourceAllocInfo*>(alloc_data)->size;
+    }
+
     virtual bool SupportBindVideoSessionMemory() override { return false; }
 
   protected:
@@ -290,6 +326,7 @@ class VulkanDefaultAllocator : public VulkanResourceAllocator
         format::HandleId capture_id{ format::kNullHandleId };
         VkDeviceMemory   bound_memory{ VK_NULL_HANDLE };
         VkDeviceSize     bound_offset{ 0 };
+        VkDeviceSize     size{ 0 };
     };
 
     struct MemoryAllocInfo

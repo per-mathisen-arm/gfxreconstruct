@@ -306,5 +306,101 @@ const std::string& ArgumentParser::GetArgumentValue(const std::string& argument)
     return empty_string;
 }
 
+void ArgumentParser::AddArguments(std::vector<std::string> command_line_args)
+{
+    for (size_t cur_arg = 0; cur_arg < command_line_args.size(); ++cur_arg)
+    {
+        bool is_option   = false;
+        bool is_argument = false;
+
+        // Strip off any quotes surrounding the whole string
+        std::string current_argument = command_line_args[cur_arg];
+        if (current_argument.front() == '\"')
+        {
+            current_argument.erase(current_argument.begin());
+        }
+        if (current_argument.back() == '\"')
+        {
+            current_argument.pop_back();
+        }
+
+        // Optional option/argument
+        if (current_argument.front() == '-')
+        {
+            for (const auto& cur_option : options_indices_)
+            {
+                if (cur_option.first == current_argument)
+                {
+                    options_present_[cur_option.second] = true;
+                    is_option                           = true;
+                    break;
+                }
+            }
+            if (!is_option)
+            {
+                for (const auto& cur_argument : arguments_indices_)
+                {
+                    if (cur_argument.first == current_argument)
+                    {
+                        // Make sure we have room for the argument's value.
+                        if (cur_arg == (command_line_args.size() - 1))
+                        {
+                            // We're on the last argument, so add this to the invalid list.
+                            invalid_values_present_.push_back(current_argument);
+                            is_invalid_ = true;
+                        }
+                        else
+                        {
+                            // Get the next value and strip off any quotes surrounding the whole string
+                            std::string argument_value = command_line_args[++cur_arg];
+                            if (!argument_value.empty())
+                            {
+                                if (argument_value.front() == '\"')
+                                {
+                                    argument_value.erase(argument_value.begin());
+                                }
+                                if (argument_value.back() == '\"')
+                                {
+                                    argument_value.pop_back();
+                                }
+                            }
+                            // Do not override any existing arguments
+                            if (!arguments_present_[cur_argument.second])
+                            {
+                                arguments_present_[cur_argument.second] = true;
+                                argument_values_[cur_argument.second]   = argument_value;
+                            }
+                        }
+
+                        is_argument = true;
+                        break;
+                    }
+                }
+            }
+            if (!is_option && !is_argument)
+            {
+                // Past the valid number of non-optional arguments, this must
+                // be an invalid value.
+                invalid_values_present_.push_back(current_argument);
+                is_invalid_ = true;
+                GFXRECON_LOG_FATAL("Invalid command-line setting \'%s\'", current_argument.c_str());
+            }
+        }
+    }
+}
+
+const std::vector<std::string> ArgumentParser::SplitStringByFlag(std::string& rawstring, char flag)
+{
+    std::vector<std::string> node;
+    std::istringstream       raw_string_stream(rawstring);
+    while (raw_string_stream.good())
+    {
+        std::string sub_string;
+        std::getline(raw_string_stream, sub_string, flag);
+        node.push_back(sub_string);
+    }
+    return node;
+}
+
 GFXRECON_END_NAMESPACE(util)
 GFXRECON_END_NAMESPACE(gfxrecon)

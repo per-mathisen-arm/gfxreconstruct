@@ -465,7 +465,7 @@ class Dx12ReplayConsumerBase : public Dx12Consumer
                                  D3D12_RENDER_PASS_FLAGS                                             Flags);
 
     template <typename T>
-    void SetResourceSamplerFeedbackMipRegion(D3D12_RESOURCE_DESC1& desc_dest, T* desc_src) {};
+    void SetResourceSamplerFeedbackMipRegion(D3D12_RESOURCE_DESC1& desc_dest, T* desc_src){};
 
     template <>
     void SetResourceSamplerFeedbackMipRegion(D3D12_RESOURCE_DESC1& desc_dest, D3D12_RESOURCE_DESC1* desc_src)

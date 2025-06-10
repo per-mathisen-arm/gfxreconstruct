@@ -45,26 +45,18 @@ class VulkanAddressReplacer
 
     VulkanAddressReplacer(const VulkanDeviceInfo*              device_info,
                           const encode::VulkanDeviceTable*     device_table,
-                          const encode::VulkanInstanceTable*   instance_table,
                           const decode::CommonObjectInfoTable& object_table);
 
     //! prevent copying
     VulkanAddressReplacer(const VulkanAddressReplacer&) = delete;
 
     //! allow moving
-    VulkanAddressReplacer(VulkanAddressReplacer&& other) noexcept = default;
+    VulkanAddressReplacer(VulkanAddressReplacer&& other) noexcept;
 
     ~VulkanAddressReplacer();
 
     /**
-     * @brief   Set raytracing-related properties
-     *
-     * @param   physical_device_info    a physical-device info struct.
-     */
-    void SetRaytracingProperties(const decode::VulkanPhysicalDeviceInfo* physical_device_info);
-
-    /**
-     * @brief   ProcessCmdTraceRays will check and potentially correct input-parameters to 'vkCmdTraceRays',
+     * @brief   ProcessCmdTraceRays will check and potentially correct input-parameters to 'VkCmdTraceRays',
      *          like buffer-device-addresses and shader-group-handles.
      *
      * Depending on capture- and replay-device-properties one of the following strategies will be used:
@@ -97,18 +89,7 @@ class VulkanAddressReplacer
 
     /**
      * @brief   ProcessCmdBuildAccelerationStructuresKHR will check
-     *          and potentially correct input-parameters to 'vkCmdBuildAccelerationStructuresKHR'
-     *
-     * Depending on capture- and replay-device-properties this includes the following:
-     *
-     * if replaying on same device/driver using the default-allocator (no -m rebind):
-     * - happy day, nothing to do!
-     *
-     * if replaying on a different device/driver and/or using the rebind-allocator (via -m rebind):
-     * - remap buffer-device-addresses for triangle-, aabb- and instance-geometries referenced in `build_geometry_infos`
-     * - check buffer-sizes for acceleration-structures and scratch-buffers
-     *      - if necessary, create shadow acceleration-structures and -buffers, adjust references
-     * - apply in-place correction of acceleration-structure device-addresses referenced by top-level builds
+     *          and potentially correct input-parameters to 'VkCmdBuildAccelerationStructuresKHR'
      *
      * @param command_buffer_info   a provided VulkanCommandBufferInfo
      * @param info_count            number of elements in 'build_geometry_infos'
@@ -120,125 +101,10 @@ class VulkanAddressReplacer
                                                   uint32_t                                     info_count,
                                                   VkAccelerationStructureBuildGeometryInfoKHR* build_geometry_infos,
                                                   VkAccelerationStructureBuildRangeInfoKHR**   build_range_infos,
-                                                  const decode::VulkanDeviceAddressTracker&    address_tracker);
+                                                  const decode::VulkanDeviceAddressTracker&    address_tracker,
+                                                  bool                                         process_scratch_buffers);
 
-    /**
-     * @brief   ProcessCmdCopyAccelerationStructuresKHR will check
-     *          and potentially correct input-parameters to 'vkCmdCopyAccelerationStructuresKHR'
-     *
-     * @param   info                a provided VkCopyAccelerationStructureInfoKHR*
-     * @param   address_tracker     const reference to a VulkanDeviceAddressTracker, used for mapping device-addresses
-     */
-    void ProcessCmdCopyAccelerationStructuresKHR(VkCopyAccelerationStructureInfoKHR*       info,
-                                                 const decode::VulkanDeviceAddressTracker& address_tracker);
-
-    /**
-     * @brief   ProcessCmdWriteAccelerationStructuresPropertiesKHR will check
-     *          and potentially correct input-parameters to 'vkCmdWriteAccelerationStructuresPropertiesKHR'
-     *
-     * @param   count                   element count in acceleration_structures
-     * @param   acceleration_structures provided array of VkAccelerationStructureKHR-handles
-     * @param   query_type              the query's type
-     * @param   pool                    provided VkQuerypool handle
-     * @param   first_query             index of first query
-     */
-    void ProcessCmdWriteAccelerationStructuresPropertiesKHR(uint32_t                    count,
-                                                            VkAccelerationStructureKHR* acceleration_structures,
-                                                            VkQueryType                 query_type,
-                                                            VkQueryPool                 pool,
-                                                            uint32_t                    first_query);
-
-    /**
-     * @brief   ProcessUpdateDescriptorSets will check
-     *          and potentially correct input-parameters to 'vkUpdateDescriptorSets'
-     *
-     * @param   descriptor_write_count  element count in descriptor_writes
-     * @param   descriptor_writes       provided array of VkWriteDescriptorSet
-     * @param   descriptor_copy_count   element count in descriptor_copies
-     * @param   descriptor_copies       provided array of VkCopyDescriptorSet
-     */
-    void ProcessUpdateDescriptorSets(uint32_t              descriptor_write_count,
-                                     VkWriteDescriptorSet* descriptor_writes,
-                                     uint32_t              descriptor_copy_count,
-                                     VkCopyDescriptorSet*  descriptor_copies);
-
-    /**
-     * @brief   ProcessGetQueryPoolResults will check for running queries and attempt to extract information
-     *          about acceleration-structure compactions-sizes.
-     *
-     * Should be run after vkGetQueryPoolResults has returned.
-     *
-     * @param   device      a VkDevice handle
-     * @param   query_pool  a VkQueryPool handle
-     * @param   firstQuery  index for first query
-     * @param   queryCount  number of queries
-     * @param   dataSize    datasize in bytes
-     * @param   pData       provided data-pointer
-     * @param   stride      provided stride in bytes
-     * @param   flags       query result-flags
-     */
-    void ProcessGetQueryPoolResults(VkDevice           device,
-                                    VkQueryPool        query_pool,
-                                    uint32_t           firstQuery,
-                                    uint32_t           queryCount,
-                                    size_t             dataSize,
-                                    void*              pData,
-                                    VkDeviceSize       stride,
-                                    VkQueryResultFlags flags);
-
-    /**
-     * @brief   Process information contained in a metadata-block in order to build acceleration-structures.
-     *
-     * Will use an internal command-buffer, submit work to a VkQueue and perform host-synchronization.
-     *
-     * @param   info_count              element count in 'geometry_infos'
-     * @param   geometry_infos          provided array of VkAccelerationStructureBuildGeometryInfoKHR
-     * @param   range_infos             provided array of pointers to VkAccelerationStructureBuildRangeInfoKHR
-     * @param   address_tracker         const reference to a VulkanDeviceAddressTracker
-     */
-    void
-    ProcessBuildVulkanAccelerationStructuresMetaCommand(uint32_t                                     info_count,
-                                                        VkAccelerationStructureBuildGeometryInfoKHR* geometry_infos,
-                                                        VkAccelerationStructureBuildRangeInfoKHR**   range_infos,
-                                                        const decode::VulkanDeviceAddressTracker&    address_tracker);
-
-    /**
-     * @brief   Process information contained in a metadata-block in order to copy acceleration-structures.
-     *
-     * @param   info_count      element count in 'copy_infos'
-     * @param   copy_infos      provided array of VkCopyAccelerationStructureInfoKHR
-     * @param   address_tracker const reference to a VulkanDeviceAddressTracker
-     */
-    void ProcessCopyVulkanAccelerationStructuresMetaCommand(uint32_t                                  info_count,
-                                                            VkCopyAccelerationStructureInfoKHR*       copy_infos,
-                                                            const decode::VulkanDeviceAddressTracker& address_tracker);
-    /**
-     * @brief   Process information contained in a metadata-block in order to issue a query on internal an query-pool.
-     *
-     * Will use an internal command-buffer, submit work to a VkQueue and perform host-synchronization.
-     *
-     * @param   query_type              type of query
-     * @param   acceleration_structure  provided acceleration-structure handle
-     */
-    void
-    ProcessVulkanAccelerationStructuresWritePropertiesMetaCommand(VkQueryType                query_type,
-                                                                  VkAccelerationStructureKHR acceleration_structure);
-
-    /**
-     * @brief   DestroyShadowResources should be called upon destruction of provided VkAccelerationStructureKHR handle,
-     *          allowing this class to free potential resources associated with it.
-     *
-     * @param   handle  a provided VkAccelerationStructureKHR handle
-     */
-    void DestroyShadowResources(VkAccelerationStructureKHR handle);
-
-    /**
-     * @brief   DestroyShadowResources should be called upon destruction of provided VkCommandBuffer handle,
-     *          allowing this class to free potential resources associated with it.
-     *
-     * @param   handle  a provided VkCommandBuffer handle
-     */
-    void DestroyShadowResources(VkCommandBuffer handle);
+    friend void swap(VulkanAddressReplacer& lhs, VulkanAddressReplacer& rhs) noexcept;
 
   private:
     struct buffer_context_t
@@ -275,18 +141,7 @@ class VulkanAddressReplacer
 
     [[nodiscard]] bool init_pipeline();
 
-    [[nodiscard]] bool init_queue_assets();
-
-    [[nodiscard]] bool create_buffer(buffer_context_t& buffer_context,
-                                     size_t            num_bytes,
-                                     uint32_t          usage_flags   = 0,
-                                     uint32_t          min_alignment = 0,
-                                     bool              use_host_mem  = true);
-
-    [[nodiscard]] bool create_acceleration_asset(acceleration_structure_asset_t& as_asset,
-                                                 VkAccelerationStructureTypeKHR  type,
-                                                 size_t                          num_buffer_bytes,
-                                                 size_t                          num_scratch_bytes);
+    [[nodiscard]] bool create_buffer(size_t num_bytes, buffer_context_t& buffer_context, uint32_t usage_flags = 0);
 
     void barrier(VkCommandBuffer      command_buffer,
                  VkBuffer             buffer,
@@ -295,9 +150,8 @@ class VulkanAddressReplacer
                  VkPipelineStageFlags dst_stage,
                  VkAccessFlags        dst_access);
 
-    bool swap_acceleration_structure_handle(VkAccelerationStructureKHR& handle);
-
     const encode::VulkanDeviceTable*                               device_table_      = nullptr;
+    const VulkanDeviceInfo*                                        device_info_       = nullptr;
     const decode::CommonObjectInfoTable*                           object_table_      = nullptr;
     VkPhysicalDeviceMemoryProperties                               memory_properties_ = {};
     std::optional<VkPhysicalDeviceRayTracingPipelinePropertiesKHR> capture_ray_properties_{}, replay_ray_properties_{};
@@ -316,6 +170,9 @@ class VulkanAddressReplacer
 
     // pipeline dealing with buffer-device-addresses (BDA), replacing addresses
     VkPipeline pipeline_bda_ = VK_NULL_HANDLE;
+
+    pipeline_context_t pipeline_context_sbt_;
+    pipeline_context_t pipeline_context_bda_;
 
     // required assets for submitting meta-commands
     VkCommandPool   command_pool_   = VK_NULL_HANDLE;

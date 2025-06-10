@@ -67,10 +67,14 @@ struct BmpInfoHeader
 enum DataFormats
 {
     kFormat_UNSPECIFIED = 0,
+    kFormat_R8,
     kFormat_RGB,
     kFormat_RGBA,
     kFormat_BGR,
     kFormat_BGRA,
+    kFormat_R16G16B16A16_SFLOAT,
+    kFormat_B10G11R11_UFLOAT,
+    kFormat_A2B10G10R10,
     kFormat_D32_FLOAT,
     kFormat_D24_UNORM,
     kFormat_D16_UNORM
@@ -101,6 +105,9 @@ constexpr size_t DataFormatsSizes(DataFormats format)
 {
     switch (format)
     {
+        case kFormat_R8:
+            return 1;
+
         case kFormat_D16_UNORM:
             return 2;
 
@@ -112,7 +119,12 @@ constexpr size_t DataFormatsSizes(DataFormats format)
         case kFormat_RGBA:
         case kFormat_BGRA:
         case kFormat_D32_FLOAT:
+        case kFormat_B10G11R11_UFLOAT:
+        case kFormat_A2B10G10R10:
             return 4;
+
+        case kFormat_R16G16B16A16_SFLOAT:
+            return 8;
 
         case kFormat_UNSPECIFIED:
         default:

@@ -20,7 +20,7 @@
 ** DEALINGS IN THE SOFTWARE.
 */
 
-#include "decode/vulkan_feature_util.h"
+#include "graphics/vulkan_feature_util.h"
 
 #include "util/logging.h"
 #include "util/platform.h"
@@ -32,7 +32,6 @@
 #include <algorithm>
 
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
-GFXRECON_BEGIN_NAMESPACE(decode)
 GFXRECON_BEGIN_NAMESPACE(feature_util)
 
 // There are some extensions which can be enabled by the application, but can be ignored during replay if
@@ -42,7 +41,7 @@ GFXRECON_BEGIN_NAMESPACE(feature_util)
 // querying layer information.  This can be problematic if the instance replaying attempts to
 // enable the extension with no support present on the replay device (usually because the layer is
 // no longer there)
-std::set<std::string> kIgnorableExtensions = {
+static const std::set<std::string> kIgnorableExtensions = {
     VK_EXT_TOOLING_INFO_EXTENSION_NAME,
     VK_EXT_DEBUG_MARKER_EXTENSION_NAME,
     "VK_ANDROID_frame_boundary",
@@ -240,5 +239,4 @@ void RemoveIgnorableExtensions(const std::vector<VkExtensionProperties>& propert
 }
 
 GFXRECON_END_NAMESPACE(feature_util)
-GFXRECON_END_NAMESPACE(decode)
 GFXRECON_END_NAMESPACE(gfxrecon)

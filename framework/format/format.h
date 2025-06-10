@@ -64,6 +64,7 @@ const size_t   kMaxPhysicalDeviceNameSize = 256;
 const HandleId kNullHandleId              = 0;
 const size_t   kAdapterDescriptionSize    = 128;
 const int8_t   kNoneIndex                 = -1;
+const size_t   kMaxShaderGroupHandleSize  = 32;
 
 /// Label for operation annotation, which captures parameters used by tools
 /// operating on a capture file.
@@ -153,11 +154,11 @@ enum class MetaDataType : uint16_t
     kVulkanBuildAccelerationStructuresCommand           = 28,
     kVulkanCopyAccelerationStructuresCommand            = 29,
     kVulkanWriteAccelerationStructuresPropertiesCommand = 30,
-    kReserved31                             = 31,
+    kFixDeviceAddressCommand                            = 31,
     kSetEnvironmentVariablesCommand         = 32,
     kViewRelativeLocation                   = 33,
     kExecuteBlocksFromFile                  = 34,
-    kReserved35                             = 35
+    kFixShaderGroupHandleCommand            = 35,
 };
 
 // MetaDataId is stored in the capture file and its type must be uint32_t to avoid breaking capture file compatibility.
@@ -329,6 +330,44 @@ struct FillMemoryCommandHeader
     HandleId memory_id;
     uint64_t memory_offset; // Offset from the start of the mapped pointer, not the start of the memory object.
     uint64_t memory_size;   // Uncompressed size of the data encoded after the header.
+};
+
+struct FixDeviceAddressCommandHeader
+{
+    MetaDataHeader meta_header;
+    // This could be either device id for standalone binary blobs, or memory id for data associated with particular
+    // vkDeviceMemory
+    format::HandleId relation_id;
+    uint64_t         num_of_locations;
+};
+
+struct AddressLocationInfo
+{
+    format::HandleId id;
+    uint64_t         size;
+    uint64_t         original_address; // Buffer start
+    uint64_t         adjusted_address; // Address found in memory
+    uint64_t         offset_in_memory;
+    uint64_t         new_address; // Set on replay
+};
+
+struct FixShaderGroupHandleCommandHeader
+{
+    MetaDataHeader meta_header;
+    // This could be either shader group handle for standalone binary blobs, or memory id for data associated with
+    // particular vkDeviceMemory
+    format::HandleId relation_id;
+    uint64_t         num_of_locations;
+};
+
+struct ShaderHandleLocationInfo
+{
+    format::HandleId id; // ray tracing pipeline handle
+    uint32_t         group;
+    uint32_t         group_size;
+    uint64_t         offset_in_memory;
+    uint8_t          original_handles[kMaxShaderGroupHandleSize];
+    uint8_t          new_handles[kMaxShaderGroupHandleSize];
 };
 
 struct FillMemoryResourceValueCommandHeader
@@ -641,8 +680,10 @@ struct Dx12RuntimeInfoCommandHeader
 
 enum ParentToChildDependencyType : uint32_t
 {
-    kUnknownDependency                = 0,
-    kAccelerationStructuresDependency = 1
+    kUnknownDependency                         = 0,
+    kAccelerationStructuresDependency          = 1,
+    kMicromapCompactionDependency              = 2,
+    kAccelerationStructureCompactionDependency = 3
 };
 
 struct ParentToChildDependencyHeader

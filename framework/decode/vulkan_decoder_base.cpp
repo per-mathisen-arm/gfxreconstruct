@@ -26,6 +26,7 @@
 #include "decode/descriptor_update_template_decoder.h"
 #include "decode/pointer_decoder.h"
 #include "decode/value_decoder.h"
+#include "format/format.h"
 
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(decode)
@@ -80,6 +81,24 @@ void VulkanDecoderBase::DispatchFillMemoryCommand(
     for (auto consumer : consumers_)
     {
         consumer->ProcessFillMemoryCommand(memory_id, offset, size, data);
+    }
+}
+
+void VulkanDecoderBase::DispatchFixDeviceAddresCommand(const format::FixDeviceAddressCommandHeader& header,
+                                                       const format::AddressLocationInfo*           infos)
+{
+    for (auto consumer : consumers_)
+    {
+        consumer->ProcessFixDeviceAddressCommand(header, infos);
+    }
+}
+
+void VulkanDecoderBase::DispatchShaderGroupHandleCommand(const format::FixShaderGroupHandleCommandHeader& header,
+                                                         const format::ShaderHandleLocationInfo*          infos)
+{
+    for (auto consumer : consumers_)
+    {
+        consumer->ProcessFixShaderGroupHandleCommand(header, infos);
     }
 }
 
@@ -551,6 +570,24 @@ void VulkanDecoderBase::DispatchSetTlasToBlasDependencyCommand(format::HandleId 
     }
 }
 
+void VulkanDecoderBase::DispatchMicromapCompactionDependencyCommand(format::HandleId                     parent,
+                                                                    const std::vector<format::HandleId>& children)
+{
+    for (auto consumer : consumers_)
+    {
+        consumer->ProcessMicromapCompactionDependencyCommand(parent, children);
+    }
+}
+
+void VulkanDecoderBase::DispatchAccelerationStructureCompactionDependencyCommand(
+    format::HandleId parent, const std::vector<format::HandleId>& children)
+{
+    for (auto consumer : consumers_)
+    {
+        consumer->ProcessAccelerationStructureCompactionDependencyCommand(parent, children);
+    }
+}
+
 void VulkanDecoderBase::DispatchSetEnvironmentVariablesCommand(format::SetEnvironmentVariablesCommand& header,
                                                                const char*                             env_string)
 {
@@ -578,12 +615,35 @@ void VulkanDecoderBase::DispatchVulkanAccelerationStructuresBuildMetaCommand(con
 
     std::size_t bytes_read = ValueDecoder::DecodeHandleIdValue(parameter_buffer, buffer_size, &device_id);
     bytes_read += pInfos.Decode(parameter_buffer + bytes_read, buffer_size - bytes_read);
-    ppRangeInfos.Decode(parameter_buffer + bytes_read, buffer_size - bytes_read);
+    bytes_read += ppRangeInfos.Decode(parameter_buffer + bytes_read, buffer_size - bytes_read);
+
+    std::vector<std::vector<VkAccelerationStructureInstanceKHR>> instance_buffers;
+    if (bytes_read < buffer_size)
+    {
+        for (uint32_t i = 0; i < pInfos.GetLength(); ++i)
+        {
+            if (pInfos.GetPointer()[i].type != VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR)
+            {
+                continue;
+            }
+
+            uint32_t geometry_count = pInfos.GetPointer()[i].geometryCount;
+            for (uint32_t g = 0; g < geometry_count; ++g)
+            {
+                instance_buffers.emplace_back(ppRangeInfos.GetPointer()[g]->primitiveCount);
+                util::platform::MemoryCopy(instance_buffers.back().data(),
+                                           instance_buffers.back().size() * sizeof(VkAccelerationStructureInstanceKHR),
+                                           parameter_buffer + bytes_read,
+                                           instance_buffers.back().size() * sizeof(VkAccelerationStructureInstanceKHR));
+                bytes_read += instance_buffers.back().size() * sizeof(VkAccelerationStructureInstanceKHR);
+            }
+        }
+    }
 
     for (auto consumer : consumers_)
     {
         consumer->ProcessBuildVulkanAccelerationStructuresMetaCommand(
-            device_id, pInfos.GetLength(), &pInfos, &ppRangeInfos);
+            device_id, pInfos.GetLength(), &pInfos, &ppRangeInfos, instance_buffers);
     }
 }
 
@@ -594,7 +654,7 @@ void VulkanDecoderBase::DispatchVulkanAccelerationStructuresCopyMetaCommand(cons
     StructPointerDecoder<Decoded_VkCopyAccelerationStructureInfoKHR> pInfos;
 
     std::size_t bytes_read = ValueDecoder::DecodeHandleIdValue(parameter_buffer, buffer_size, &device_id);
-    bytes_read += pInfos.Decode(parameter_buffer + bytes_read, buffer_size - bytes_read);
+    pInfos.Decode(parameter_buffer + bytes_read, buffer_size - bytes_read);
 
     for (auto consumer : consumers_)
     {

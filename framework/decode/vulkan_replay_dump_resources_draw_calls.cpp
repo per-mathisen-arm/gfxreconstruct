@@ -59,10 +59,11 @@ DrawCallsDumpingContext::DrawCallsDumpingContext(const std::vector<uint64_t>&   
                                                  CommonObjectInfoTable&                    object_info_table,
                                                  const VulkanReplayOptions&                options,
                                                  VulkanDumpResourcesDelegate&              delegate) :
-    original_command_buffer_info(nullptr), current_cb_index(0), dc_indices(dc_indices), RP_indices(rp_indices),
-    active_renderpass(nullptr), active_framebuffer(nullptr), bound_pipelines{ nullptr }, current_renderpass(0),
-    current_subpass(0), dump_resources_before(options.dump_resources_before), aux_command_buffer(VK_NULL_HANDLE),
-    aux_fence(VK_NULL_HANDLE), device_table(nullptr), instance_table(nullptr), object_info_table(object_info_table),
+    original_command_buffer_info(nullptr),
+    current_cb_index(0), dc_indices(dc_indices), RP_indices(rp_indices), active_renderpass(nullptr),
+    active_framebuffer(nullptr), bound_pipelines{ nullptr }, current_renderpass(0), current_subpass(0),
+    dump_resources_before(options.dump_resources_before), aux_command_buffer(VK_NULL_HANDLE), aux_fence(VK_NULL_HANDLE),
+    device_table(nullptr), instance_table(nullptr), object_info_table(object_info_table),
     replay_device_phys_mem_props(nullptr), delegate_(delegate), dump_depth(options.dump_resources_dump_depth),
     color_attachment_to_dump(options.dump_resources_color_attachment_index),
     dump_vertex_index_buffers(options.dump_resources_dump_vertex_index_buffer),
@@ -2146,14 +2147,16 @@ VkResult DrawCallsDumpingContext::CloneRenderPass(const VulkanRenderPassInfo*  o
             renderPassMultiviewCI.sType = VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO;
             renderPassMultiviewCI.pNext = nullptr;
 
-            renderPassMultiviewCI.subpassCount         = original_render_pass->multiview.view_masks.size();
-            renderPassMultiviewCI.pViewMasks           = original_render_pass->multiview.view_masks.empty()
-                                                             ? nullptr
-                                                             : original_render_pass->multiview.view_masks.data();
-            renderPassMultiviewCI.dependencyCount      = original_render_pass->multiview.view_offsets.size();
-            renderPassMultiviewCI.pViewOffsets         = original_render_pass->multiview.view_offsets.empty()
-                                                             ? nullptr
-                                                             : original_render_pass->multiview.view_offsets.data();
+            renderPassMultiviewCI.subpassCount = original_render_pass->multiview.view_masks.size();
+            renderPassMultiviewCI.pViewMasks   = original_render_pass->multiview.view_masks.empty()
+                                                     ? nullptr
+                                                     : original_render_pass->multiview.view_masks.data();
+
+            renderPassMultiviewCI.dependencyCount = original_render_pass->multiview.view_offsets.size();
+            renderPassMultiviewCI.pViewOffsets    = original_render_pass->multiview.view_offsets.empty()
+                                                        ? nullptr
+                                                        : original_render_pass->multiview.view_offsets.data();
+
             renderPassMultiviewCI.correlationMaskCount = original_render_pass->multiview.correlation_masks.size();
             renderPassMultiviewCI.pCorrelationMasks    = original_render_pass->multiview.correlation_masks.empty()
                                                              ? nullptr

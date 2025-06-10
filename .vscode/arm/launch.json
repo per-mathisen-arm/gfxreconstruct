@@ -1,0 +1,74 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "gfxrecon-capture",
+            "type": "cppdbg",
+            "request": "launch",
+            "preLaunchTask": "build-task",
+            "program": "< ---------- PATH TO VULKAN PROGRAM ---------- >",
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "environment": [
+                {
+                    "name": "VK_LAYER_PATH",
+                    "value": "${workspaceFolder}/build/layer/:$VK_LAYER_PATH"
+                },
+                {
+                    "name": "VK_INSTANCE_LAYERS",
+                    "value": "VK_LAYER_LUNARG_gfxreconstruct"
+                },
+                {
+                    "name": "GFXRECON_LOG_LEVEL",
+                    "value": "debug"
+                },
+                {
+                    "name": "GFXRECON_CAPTURE_FILE",
+                    "value": "${workspaceFolder}/captures/capture.gfxr"
+                }
+            ],
+            "setupCommands": [
+                {
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                },
+                {
+                    // Ignore SIGSEGV because of a bug that happens when gdb runs with gfxreconstruct capture layer. Remove that as soon as possible !
+                    "text": "handle SIGSEGV noprint",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "gfxrecon-replay",
+            "type": "cppdbg",
+            "request": "launch",
+            "preLaunchTask": "build-task",
+            "program": "${workspaceFolder}/build/tools/replay/gfxrecon-replay",
+            "args": [
+                "< ---------- PATH TO GFXRECONSTRUCT TRACE ---------- >",
+                "< ---------- GFXRECON-REPLAY ARGUMENTS ---------- >"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ]
+        }
+    ]
+}

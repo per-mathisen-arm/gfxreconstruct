@@ -35,7 +35,7 @@ include(GNUInstallDirs)
 set(CMAKE_CXX_STANDARD 17)
 set(CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" "${CMAKE_SOURCE_DIR}/external/cmake-modules")
+set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" "${PROJECT_SOURCE_DIR}/external/cmake-modules")
 
 option(USE_STRICT_COMPILER_WARNINGS "Use a stricter compiler-warning level" OFF)
 
@@ -55,6 +55,9 @@ set(GFXRECONSTRUCT_PROJECT_VERSION_MINOR 0)
 set(GFXRECONSTRUCT_PROJECT_VERSION_PATCH 5)
 
 set(GFXRECON_PROJECT_VERSION_SHA1 "unknown-build-source")
+set(GFXRECONSTRUCT_PROJECT_BUILD_TYPE "${CMAKE_BUILD_TYPE}")
+
+
 
 option(BUILD_STATIC "Build static binaries for HPC clusters (will not build the tracer library)" OFF)
 
@@ -70,16 +73,17 @@ set(GIT_BRANCH "")
 if (GIT_REFSPEC)
     string(REGEX REPLACE ".*/(.+)$" "\\1" GIT_BRANCH ${GIT_REFSPEC})
     string(COMPARE EQUAL ${GIT_BRANCH} "master" GIT_IS_MASTER)
+    string(COMPARE EQUAL ${GIT_BRANCH} "release-internal" GIT_IS_RELEASE)
     string(REGEX MATCH "^vulkan-sdk-[0-9]+\.[0-9]+\.[0-9]+$" GIT_IS_SDK ${GIT_BRANCH})
 
-    if (GIT_IS_MASTER OR GIT_IS_SDK)
+    if (GIT_IS_MASTER OR GIT_IS_SDK OR GIT_IS_RELEASE)
         if (GIT_TAG)
             set(GIT_BRANCH ${GIT_TAG})
         else()
             set(GIT_BRANCH "")
         endif()
         if(NOT DEFINED GFXRECON_PROJECT_VERSION_DESIGNATION)
-            set(GFXRECON_PROJECT_VERSION_DESIGNATION "")
+            set(GFXRECON_PROJECT_VERSION_DESIGNATION "-release-internal")
         endif()
     elseif(NOT DEFINED GFXRECON_PROJECT_VERSION_DESIGNATION)
         set(GFXRECON_PROJECT_VERSION_DESIGNATION "-dev")
@@ -109,7 +113,7 @@ if (GIT_SHA1)
 endif()
 
 # Adds all the configure time information into project_version_temp.h.in
-configure_file("${CMAKE_SOURCE_DIR}/project_version.h.in" "${CMAKE_BINARY_DIR}/project_version_temp.h.in")
+configure_file("${PROJECT_SOURCE_DIR}/project_version.h.in" "${CMAKE_BINARY_DIR}/project_version_temp.h.in")
 
 # Generate a "project_version_$<CONFIG>.h" for the current config - necessary to determine the current build configuration
 file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/project_version_$<CONFIG>.h" INPUT "${CMAKE_BINARY_DIR}/project_version_temp.h.in")
@@ -168,8 +172,8 @@ if(MSVC)
 
     set(CMAKE_PREFIX_PATH
         ${CMAKE_PREFIX_PATH}
-       "${CMAKE_SOURCE_DIR}/external/precompiled/win${PRECOMPILED_ARCH}"
-       "${CMAKE_SOURCE_DIR}/external/precompiled/win${PRECOMPILED_ARCH}")
+       "${PROJECT_SOURCE_DIR}/external/precompiled/win${PRECOMPILED_ARCH}"
+       "${PROJECT_SOURCE_DIR}/external/precompiled/win${PRECOMPILED_ARCH}")
 
     # Enable LARGEADDRESSAWARE to increase memory address space for 32-bit executables
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /LARGEADDRESSAWARE")
@@ -184,7 +188,7 @@ if(MSVC)
     add_definitions(-D_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR)
 
     if(${D3D12_SUPPORT})
-        set(D3D12_INCLUDE_DIRECTORIES "${CMAKE_SOURCE_DIR}/external/AgilitySDK/inc")
+        set(D3D12_INCLUDE_DIRECTORIES "${PROJECT_SOURCE_DIR}/external/AgilitySDK/inc")
         add_definitions(-DD3D12_SUPPORT)
 
         # Check Windows SDK version and print warning if there is a mismatch.
@@ -245,19 +249,23 @@ else(MSVC)
     if(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
         set(CMAKE_PREFIX_PATH
             ${CMAKE_PREFIX_PATH}
-        "${CMAKE_SOURCE_DIR}/external/precompiled/linux/lib/arm64-v8a")
+        "${PROJECT_SOURCE_DIR}/external/precompiled/linux/lib/arm64-v8a")
     elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "arm")
         set(CMAKE_PREFIX_PATH
             ${CMAKE_PREFIX_PATH}
-        "${CMAKE_SOURCE_DIR}/external/precompiled/linux/lib/arm")
+        "${PROJECT_SOURCE_DIR}/external/precompiled/linux/lib/arm")
     endif()
 endif(MSVC)
 
 if(APPLE)
     add_link_options(-Wl,-dead_strip -Wl,-dead_strip_dylibs)
     set(CMAKE_PREFIX_PATH
-        "${CMAKE_SOURCE_DIR}/external/precompiled/macos"
+        "${PROJECT_SOURCE_DIR}/external/precompiled/macos"
         ${CMAKE_PREFIX_PATH})
+endif()
+
+if(ANDROID)
+    add_link_options(-Wl,-z,max-page-size=16384)
 endif()
 
 # GFXReconstruct provided find modules
@@ -351,18 +359,18 @@ if(BUILD_WERROR)
 endif()
 
 add_library(vulkan_registry INTERFACE)
-target_include_directories(vulkan_registry SYSTEM INTERFACE ${CMAKE_SOURCE_DIR}/external/Vulkan-Headers/include)
+target_include_directories(vulkan_registry SYSTEM INTERFACE ${PROJECT_SOURCE_DIR}/external/Vulkan-Headers/include)
 target_compile_definitions(vulkan_registry INTERFACE VK_NO_PROTOTYPES VK_ENABLE_BETA_EXTENSIONS)
 
 add_library(spirv_registry INTERFACE)
-target_include_directories(spirv_registry SYSTEM INTERFACE ${CMAKE_SOURCE_DIR}/external/SPIRV-Headers/include)
+target_include_directories(spirv_registry SYSTEM INTERFACE ${PROJECT_SOURCE_DIR}/external/SPIRV-Headers/include)
 
 add_library(vulkan_memory_allocator INTERFACE)
 target_compile_options(vulkan_memory_allocator INTERFACE
     $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>:
         -Wno-nullability-completeness>
 )
-target_include_directories(vulkan_memory_allocator SYSTEM INTERFACE ${CMAKE_SOURCE_DIR}/external/VulkanMemoryAllocator/include)
+target_include_directories(vulkan_memory_allocator SYSTEM INTERFACE ${PROJECT_SOURCE_DIR}/external/VulkanMemoryAllocator/include)
 
 # SPIRV-Reflect included as submodule -> libspirv-reflect-static.a
 set(SPIRV_REFLECT_EXAMPLES OFF)

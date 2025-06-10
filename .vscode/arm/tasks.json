@@ -1,0 +1,25 @@
+{
+    "tasks": [
+        {
+            "label": "build-task",
+            "type": "shell",
+            "command": "/usr/bin/python",
+            "args": [
+                "${workspaceFolder}/scripts/build.py",
+                "--build-dir",
+                "${workspaceFolder}/build",
+                "-a",
+                "x64",
+                "-c",
+                "debug",
+                "-j",
+                "16"
+            ],
+            "group": "build",
+            "problemMatcher": [
+                "$gcc"
+            ],
+        }
+    ],
+    "version": "2.0.0"
+}

@@ -275,6 +275,8 @@ class VulkanReplayConsumerBodyGenerator(
                     preexpr.append("VkPhysicalDevice  physical_device = device_info->parent;")
                     dispatchfunc += '({})->{}'.format(object_name, name[2:])
                     dispatch_func_is_set = True
+            else:
+                dispatchfunc = 'GetDeviceTable'
 
             if not dispatch_func_is_set:
                 if is_override:
@@ -325,7 +327,38 @@ class VulkanReplayConsumerBodyGenerator(
                 postexpr = postexpr[1:]  # drop async post-expression, don't repeat later
 
             body += '    VkResult replay_result = {};\n'.format(call_expr)
-            body += '    CheckResult("{}", returnValue, replay_result, call_info);\n'.format(name)
+            val = values[0]
+            if val.full_type == 'VkDevice':
+                if is_override:
+                    body += '    CheckResult("{}", returnValue, replay_result, call_info, {}->handle, GetDeviceTable({}->handle)->GetDeviceFaultInfoEXT);\n'.format(
+                    name, args[0], args[0]
+                )
+                else:
+                    body += '    CheckResult("{}", returnValue, replay_result, call_info, in_device, GetDeviceTable({})->GetDeviceFaultInfoEXT);\n'.format(
+                        name, args[0]
+                    )
+            elif 'GetDeviceTable' in dispatchfunc and name not in ['vkCreateInstance', 'vkCreateDevice']:
+                if is_override:
+                    body += '    auto in_device = GetObjectInfoTable().GetVkDeviceInfo({}->parent_id);\n'.format(args[0])
+                    body += '    CheckResult("{}", returnValue, replay_result, call_info, in_device->handle, GetDeviceTable(in_device->handle)->GetDeviceFaultInfoEXT);\n'.format(
+                        name
+                    )
+                    if 'vkQueueSubmit' in name:
+                        body += '    if ((options_.sync_queue_submissions) && (replay_result == VK_SUCCESS))\n'
+                        body += '    {\n'
+                        body += '        auto sync_result = GetDeviceTable(in_device->handle)->QueueWaitIdle(in_queue->handle);\n'
+                        body += '        CheckResult("(SYNC) vkQueueWaitIdle", VK_SUCCESS, sync_result, call_info, in_device->handle, GetDeviceTable(in_device->handle)->GetDeviceFaultInfoEXT);\n'
+                        body += '    }\n'
+                else:
+                    body += '    auto {}_info = GetObjectInfoTable().Get{}Info({});\n'.format(val.name, val.full_type, val.name)
+                    body += '    auto in_device = GetObjectInfoTable().GetVkDeviceInfo({}_info->parent_id);\n'.format(val.name)
+                    body += '    CheckResult("{}", returnValue, replay_result, call_info, in_device->handle, GetDeviceTable(in_device->handle)->GetDeviceFaultInfoEXT);\n'.format(
+                        name
+                    )
+            else:
+                body += '    CheckResult("{}", returnValue, replay_result, call_info);\n'.format(
+                    name
+                )
         else:
             body += '    {};\n'.format(call_expr)
 
@@ -358,6 +391,8 @@ class VulkanReplayConsumerBodyGenerator(
                     dump_resource_arglist += ', '
                 dump_resource_arglist = dump_resource_arglist[:-2]
             else:
+                if return_type == 'VkResult':
+                    dump_resource_arglist = 'returnValue, '
                 if is_dr_override:
                     for val in values:
                         if val.is_pointer and not self.is_handle(val.base_type):
@@ -376,16 +411,15 @@ class VulkanReplayConsumerBodyGenerator(
                         dump_resource_arglist += ', '
                     dump_resource_arglist = dump_resource_arglist[:-2]
                 else:
-                    dump_resource_arglist = arglist
+                    if return_type == 'VkResult':
+                        dump_resource_arglist = 'returnValue, ' + arglist
+                    else:
+                        dump_resource_arglist = arglist
 
             body += '\n'
             body += '    if (options_.dumping_resources)\n'
             body += '    {\n'
-            if return_type == 'VkResult':
-                body += '        resource_dumper_->Process_{}(call_info, {}, returnValue, {});\n'.format(name, dispatchfunc, dump_resource_arglist)
-            else:
-                body += '        resource_dumper_->Process_{}(call_info, {}, {});\n'.format(name, dispatchfunc, dump_resource_arglist)
-
+            body += '        resource_dumper_->Process_{}(call_info, {}, {});\n'.format(name, dispatchfunc, dump_resource_arglist)
             body += '    }\n'
 
         if postexpr:

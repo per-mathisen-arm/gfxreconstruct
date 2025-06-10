@@ -35,6 +35,7 @@
 #include "graphics/fps_info.h"
 #include "util/argument_parser.h"
 #include "util/logging.h"
+#include "decode/replay_options_annotation.h"
 
 #if defined(D3D12_SUPPORT)
 #include "generated/generated_dx12_decoder.h"
@@ -70,17 +71,18 @@ void WaitForExit()
 {
     DWORD process_list[2];
     DWORD result = GetConsoleProcessList(process_list, ARRAYSIZE(process_list));
-
     // If the process list contains a single entry, we assume that the console was created when the gfxrecon-replay.exe
     // process started, and will be destroyed when it exits.  In this case, we will wait on user input before exiting
     // and closing the console window to give the user a chance to read any console output.
     if (result <= 1)
     {
-        GFXRECON_WRITE_CONSOLE("\nPress any key to close this window . . .");
-        while (!_kbhit())
-        {
-            Sleep(250);
-        }
+        // Waiting stucks some automations and is mainly useless for us
+
+        // GFXRECON_WRITE_CONSOLE("\nPress any key to close this window . . .");
+        // while (!_kbhit())
+        // {
+        //     Sleep(250);
+        // }
     }
 }
 #else
@@ -172,10 +174,11 @@ int main(int argc, const char** argv)
 
     // Default initialize logging to report issues while loading settings.
     gfxrecon::util::Log::Init(gfxrecon::decode::kDefaultLogLevel);
+    PrintVersion(argv[0]);
 
     gfxrecon::util::ArgumentParser arg_parser(argc, argv, kOptions, kArguments);
 
-    if (CheckOptionPrintVersion(argv[0], arg_parser) || CheckOptionPrintUsage(argv[0], arg_parser))
+    if (arg_parser.IsOptionSet(kVersionOption) || CheckOptionPrintUsage(argv[0], arg_parser))
     {
         gfxrecon::util::Log::Release();
         exit(0);
@@ -202,6 +205,8 @@ int main(int argc, const char** argv)
         const std::vector<std::string>& positional_arguments = arg_parser.GetPositionalArguments();
         std::string                     filename             = positional_arguments[0];
 
+        arg_parser.AddArguments(gfxrecon::decode::GetTraceReplayOptions(filename));
+
         std::unique_ptr<gfxrecon::decode::FileProcessor> file_processor;
 
         if (arg_parser.IsOptionSet(kPreloadMeasurementRangeOption))
@@ -222,19 +227,18 @@ int main(int argc, const char** argv)
             // Select WSI context based on CLI
             std::string wsi_extension = GetWsiExtensionName(GetWsiPlatform(arg_parser));
             auto        application   = std::make_shared<gfxrecon::application::Application>(
-                kApplicationName, wsi_extension, file_processor.get());
+                kApplicationName, file_processor.get(), wsi_extension, nullptr);
 
             gfxrecon::decode::VulkanTrackedObjectInfoTable tracked_object_info_table;
             gfxrecon::decode::VulkanReplayOptions          vulkan_replay_options =
                 GetVulkanReplayOptions(arg_parser, filename, &tracked_object_info_table);
 
-            uint32_t start_frame = 0;
-            uint32_t end_frame   = 0;
+            uint32_t measurement_start_frame = 0;
+            uint32_t measurement_end_frame   = 0;
 
             bool     quit_after_frame = false;
             uint32_t quit_frame       = std::numeric_limits<uint32_t>::max();
 
-            bool        has_mfr                            = false;
             bool        quit_after_measurement_frame_range = false;
             bool        flush_measurement_frame_range      = false;
             bool        flush_inside_measurement_range     = false;
@@ -243,9 +247,11 @@ int main(int argc, const char** argv)
 
             if (vulkan_replay_options.enable_vulkan)
             {
-                has_mfr                            = GetMeasurementFrameRange(arg_parser, start_frame, end_frame);
+                GetMeasurementFrameRange(arg_parser, measurement_start_frame, measurement_end_frame);
+                GetMeasurementFilename(arg_parser, measurement_file_name);
                 quit_after_measurement_frame_range = vulkan_replay_options.quit_after_measurement_frame_range;
                 flush_measurement_frame_range      = vulkan_replay_options.flush_measurement_frame_range;
+                preload_measurement_frame_range    = vulkan_replay_options.preload_measurement_range;
                 flush_inside_measurement_range     = vulkan_replay_options.flush_inside_measurement_range;
                 preload_measurement_frame_range    = vulkan_replay_options.preload_measurement_range;
 
@@ -256,14 +262,8 @@ int main(int argc, const char** argv)
                 }
             }
 
-            if (has_mfr)
-            {
-                GetMeasurementFilename(arg_parser, measurement_file_name);
-            }
-
-            gfxrecon::graphics::FpsInfo fps_info(static_cast<uint64_t>(start_frame),
-                                                 static_cast<uint64_t>(end_frame),
-                                                 has_mfr,
+            gfxrecon::graphics::FpsInfo fps_info(static_cast<uint64_t>(measurement_start_frame),
+                                                 static_cast<uint64_t>(measurement_end_frame),
                                                  quit_after_measurement_frame_range,
                                                  flush_measurement_frame_range,
                                                  flush_inside_measurement_range,
@@ -350,6 +350,8 @@ int main(int argc, const char** argv)
             fps_info.BeginFile();
 
             application->SetPauseFrame(GetPauseFrame(arg_parser));
+            application->SetTriggerScriptName(GetTriggerScriptName(arg_parser));
+            application->SetTriggerScriptFrame(GetTriggerScriptRanges(arg_parser));
             application->SetFpsInfo(&fps_info);
             application->Run();
 
@@ -360,12 +362,12 @@ int main(int argc, const char** argv)
             if ((file_processor->GetCurrentFrameNumber() > 0) &&
                 (file_processor->GetErrorState() == gfxrecon::decode::FileProcessor::kErrorNone))
             {
-                if (file_processor->GetCurrentFrameNumber() < start_frame)
+                if (file_processor->GetCurrentFrameNumber() < measurement_start_frame)
                 {
                     GFXRECON_LOG_WARNING(
                         "Measurement range start frame (%u) is greater than the last replayed frame (%u). "
                         "Measurements were never started, cannot calculate measurement range FPS.",
-                        start_frame,
+                        measurement_start_frame,
                         file_processor->GetCurrentFrameNumber());
                 }
                 else
@@ -383,7 +385,7 @@ int main(int argc, const char** argv)
                     }
 #endif
 
-                    fps_info.LogToConsole();
+                    fps_info.LogMeasurements();
                 }
             }
             else if (file_processor->GetErrorState() != gfxrecon::decode::FileProcessor::kErrorNone)

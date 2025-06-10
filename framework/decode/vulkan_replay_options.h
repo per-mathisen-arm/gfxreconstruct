@@ -58,6 +58,9 @@ struct VulkanReplayOptions : public ReplayOptions
 {
     bool                         enable_vulkan{ true };
     bool                         omit_pipeline_cache_data{ false };
+    bool                         remove_unsupported_features{ false };
+    bool                         disable_subpass_fusion{ false };
+    bool                         use_ext_frame_boundary{ false };
     bool                         use_colorspace_fallback{ false };
     bool                         offscreen_swapchain_frame_boundary{ false };
     util::SwapchainOption        swapchain_option{ util::SwapchainOption::kVirtual };
@@ -93,6 +96,8 @@ struct VulkanReplayOptions : public ReplayOptions
     bool  dump_resources_dump_all_image_subresources{ false };
     bool  dump_resources_dump_raw_images{ false };
     bool  dump_resources_dump_separate_alpha{ false };
+
+    std::vector<std::string> marking_layers_names;
 
     bool preload_measurement_range{ false };
 

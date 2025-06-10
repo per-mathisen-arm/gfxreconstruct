@@ -73,6 +73,8 @@ class FileProcessor
 
     FileProcessor(uint64_t block_limit);
 
+    void ProcessAnnotation();
+
     virtual ~FileProcessor();
 
     void WaitDecodersIdle();
@@ -102,6 +104,8 @@ class FileProcessor
     uint64_t GetCurrentBlockIndex() const { return block_index_; }
 
     bool GetLoadingTrimmedState() const { return loading_trimmed_capture_state_; }
+
+    bool GetUsedFrameMarkers() const { return capture_uses_frame_markers_; }
 
     uint64_t GetNumBytesRead() const { return bytes_read_; }
 
@@ -165,6 +169,7 @@ class FileProcessor
     AnnotationHandler*       annotation_handler_;
     Error                    error_state_;
     uint64_t                 bytes_read_;
+    bool                     capture_uses_frame_markers_;
 
     /// @brief Incremented at the end of every block successfully processed.
     uint64_t block_index_;
@@ -198,7 +203,8 @@ class FileProcessor
                                        size_t  expected_uncompressed_size,
                                        size_t* uncompressed_buffer_size);
 
-    bool IsFileValid() const
+  protected:
+    virtual bool IsFileValid() const
     {
         if (!file_stack_.empty())
         {
@@ -238,7 +244,6 @@ class FileProcessor
     util::Compressor*                   compressor_;
     uint64_t                            api_call_index_;
     uint64_t                            block_limit_;
-    bool                                capture_uses_frame_markers_;
     uint64_t                            first_frame_;
     bool                                enable_print_block_info_{ false };
     int64_t                             block_index_from_{ 0 };

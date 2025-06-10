@@ -169,6 +169,12 @@ class VulkanResourceTrackingConsumer : public VulkanConsumer
 
     void ProcessFillMemoryCommand(uint64_t memory_id, uint64_t offset, uint64_t size, const uint8_t* data) override;
 
+    void ProcessFixDeviceAddressCommand(const format::FixDeviceAddressCommandHeader& header,
+                                        const format::AddressLocationInfo*           infos) override;
+
+    void ProcessFixShaderGroupHandleCommand(const format::FixShaderGroupHandleCommandHeader& header,
+                                            const format::ShaderHandleLocationInfo*          infos) override;
+
     void SortMemoriesBoundResourcesByOffset();
 
     void CalculateReplayBindingOffsetAndMemoryAllocationSize();

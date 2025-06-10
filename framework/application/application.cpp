@@ -58,19 +58,20 @@ GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(application)
 
 Application::Application(const std::string& name, decode::FileProcessor* file_processor) :
-    Application(name, std::string(), file_processor)
+    Application(name, file_processor, std::string(), nullptr)
 {}
 
 Application::Application(const std::string&     name,
+                         decode::FileProcessor* file_processor,
                          const std::string&     cli_wsi_extension,
-                         decode::FileProcessor* file_processor) :
+                         void*                  platform_specific_wsi_data) :
     name_(name),
     file_processor_(file_processor), cli_wsi_extension_(cli_wsi_extension), running_(false), paused_(false),
-    pause_frame_(0), fps_info_(nullptr)
+    pause_frame_(0), fps_info_(nullptr), trigger_script_name_(""), trigger_script_(false)
 {
     if (!cli_wsi_extension_.empty())
     {
-        InitializeWsiContext(cli_wsi_extension_.c_str());
+        InitializeWsiContext(cli_wsi_extension_.c_str(), platform_specific_wsi_data);
     }
 }
 
@@ -138,7 +139,12 @@ void Application::Run()
         {
             // Add one to match "trim frame range semantic"
             uint32_t frame_number = file_processor_->GetCurrentFrameNumber() + 1;
-
+#if !defined(WIN32)
+            if (trigger_script_)
+            {
+                HandleScriptTrigger(frame_number);
+            }
+#endif
             if (fps_info_ != nullptr)
             {
                 if (fps_info_->ShouldQuit(frame_number))
@@ -195,6 +201,34 @@ void Application::SetPaused(bool paused)
     }
 
     paused_ = paused;
+}
+
+void Application::HandleScriptTrigger(uint32_t frame)
+{
+    // frame 1 ends twice
+    if (file_processor_->GetUsedFrameMarkers() || file_processor_->GetCurrentFrameNumber() == 0)
+    {
+        for (uint32_t i = 0; i < trigger_script_frames_.size(); ++i)
+        {
+            std::pair<uint32_t, uint32_t> range;
+            range.first  = trigger_script_frames_[i].first;
+            range.second = trigger_script_frames_[i].second;
+            // start of the frame
+            if (frame >= (trigger_script_frames_[i].first) && frame <= (trigger_script_frames_[i].second))
+            {
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
+                std::string cmd = "/system/bin/sh ";
+#else
+                std::string cmd = "/bin/sh ";
+#endif
+                cmd += trigger_script_name_;
+                int ret = system(cmd.c_str());
+                GFXRECON_LOG_INFO(
+                    "Trigger script %s at frame %u run result: %d", trigger_script_name_.c_str(), frame, ret);
+                break;
+            }
+        }
+    }
 }
 
 bool Application::PlaySingleFrame()

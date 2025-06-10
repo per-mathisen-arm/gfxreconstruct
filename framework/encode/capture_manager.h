@@ -48,6 +48,15 @@
 #include <vector>
 #include "util/file_path.h"
 
+#include "nlohmann/json.hpp"
+
+#if defined(__linux__)
+#include <dirent.h>
+#else
+#include <windows.h>
+#include <TlHelp32.h>
+#endif
+
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(encode)
 
@@ -64,6 +73,18 @@ class CommonCaptureManager
     static auto AcquireSharedApiCallLock() { return std::move(std::shared_lock<ApiCallMutexT>(api_call_mutex_)); }
 
     static auto AcquireExclusiveApiCallLock() { return std::move(std::unique_lock<ApiCallMutexT>(api_call_mutex_)); }
+    static bool IsCaptureApp()
+    {
+        int32_t pid = -1;
+#if defined(__linux__)
+        pid = getpid();
+#else
+        pid = GetCurrentProcessId();
+#endif
+        if (CommonCaptureManager::process_id_ == INT32_MAX || pid == CommonCaptureManager::process_id_)
+            return true;
+        return false;
+    }
 
     HandleUnwrapMemory* GetHandleUnwrapMemory()
     {
@@ -128,7 +149,10 @@ class CommonCaptureManager
 
     bool ShouldTriggerScreenshot();
 
-    util::ScreenshotFormat GetScreenshotFormat() { return screenshot_format_; }
+    util::ScreenshotFormat GetScreenshotFormat()
+    {
+        return screenshot_format_;
+    }
 
     void CheckContinueCaptureForWriteMode(format::ApiFamilyId              api_family,
                                           uint32_t                         current_boundary_count,
@@ -162,21 +186,65 @@ class CommonCaptureManager
     /// @param data The value or payload text of the annotation.
     void WriteAnnotation(const format::AnnotationType type, const char* label, const char* data);
 
-    bool GetIUnknownWrappingSetting() const { return iunknown_wrapping_; }
-    auto GetForceCommandSerialization() const { return force_command_serialization_; }
-    auto GetQueueZeroOnly() const { return queue_zero_only_; }
-    auto GetAllowPipelineCompileRequired() const { return allow_pipeline_compile_required_; }
+    bool GetIUnknownWrappingSetting() const
+    {
+        return iunknown_wrapping_;
+    }
+    auto GetForceCommandSerialization() const
+    {
+        return force_command_serialization_;
+    }
+    auto GetQueueZeroOnly() const
+    {
+        return queue_zero_only_;
+    }
+    auto GetAllowPipelineCompileRequired() const
+    {
+        return allow_pipeline_compile_required_;
+    }
 
-    bool     IsAnnotated() const { return rv_annotation_info_.rv_annotation; }
-    uint16_t GetGPUVAMask() const { return rv_annotation_info_.gpuva_mask; }
-    uint16_t GetDescriptorMask() const { return rv_annotation_info_.descriptor_mask; }
-    uint64_t GetShaderIDMask() const { return rv_annotation_info_.shaderid_mask; }
+    bool IsAnnotated() const
+    {
+        return rv_annotation_info_.rv_annotation;
+    }
+    uint16_t GetGPUVAMask() const
+    {
+        return rv_annotation_info_.gpuva_mask;
+    }
+    uint16_t GetDescriptorMask() const
+    {
+        return rv_annotation_info_.descriptor_mask;
+    }
+    uint64_t GetShaderIDMask() const
+    {
+        return rv_annotation_info_.shaderid_mask;
+    }
 
     uint64_t GetBlockIndex()
     {
         auto thread_data = GetThreadData();
         return thread_data->block_index_ == 0 ? 0 : thread_data->block_index_ - 1;
     }
+
+    uint32_t GetFenceQueryDelay() const
+    {
+        return fence_query_delay_;
+    }
+    CaptureSettings::FenceQueryDelayUnit GetFenceQueryDelayUnit() const
+    {
+        return fence_query_delay_unit_;
+    }
+    uint64_t GetFenceQueryDelayTimeoutThreshold() const
+    {
+        return fence_query_delay_timeout_threshold_;
+    }
+    uint32_t GetFenceQueryDelayLimit() const
+    {
+        return fence_query_delay_limit_;
+    }
+
+  public:
+    static int32_t GetPidFromPackageName(const char* progress_name);
 
     static bool CreateInstance(ApiCaptureManager* api_instance_, const std::function<void()>& destroyer);
     template <typename Derived>
@@ -221,32 +289,107 @@ class CommonCaptureManager
                     const CaptureSettings::TraceSettings& trace_settings);
 
   public:
-    bool                                GetForceFileFlush() const { return force_file_flush_; }
-    CaptureSettings::MemoryTrackingMode GetMemoryTrackingMode() const { return memory_tracking_mode_; }
-    bool                                GetPageGuardAlignBufferSizes() const { return page_guard_align_buffer_sizes_; }
-    bool                                GetPageGuardTrackAhbMemory() const { return page_guard_track_ahb_memory_; }
-    PageGuardMemoryMode                 GetPageGuardMemoryMode() const { return page_guard_memory_mode_; }
-    const std::string&                  GetTrimKey() const { return trim_key_; }
-    bool                                IsTrimEnabled() const { return trim_enabled_; }
-    uint32_t                            GetCurrentFrame() const { return current_frame_; }
-    CaptureMode                         GetCaptureMode() const { return capture_mode_; }
-    void                                SetCaptureMode(CaptureMode new_mode) { capture_mode_ = new_mode; }
-    bool                                GetDebugLayerSetting() const { return debug_layer_; }
-    bool                                GetDebugDeviceLostSetting() const { return debug_device_lost_; }
-    bool                                GetDisableDxrSetting() const { return disable_dxr_; }
-    auto                                GetAccelStructPaddingSetting() const { return accel_struct_padding_; }
-    bool                                GetForceFifoPresentModeSetting() const { return force_fifo_present_mode_; }
-    auto                                GetTrimBoundary() const { return trim_boundary_; }
-    auto                                GetTrimDrawCalls() const { return trim_draw_calls_; }
-    auto                                GetQueueSubmitCount() const { return queue_submit_count_; }
-    bool                                GetUseAssetFile() const { return use_asset_file_; }
+    bool GetForceFileFlush() const
+    {
+        return force_file_flush_;
+    }
+    CaptureSettings::MemoryTrackingMode GetMemoryTrackingMode() const
+    {
+        return memory_tracking_mode_;
+    }
+    bool GetPageGuardAlignBufferSizes() const
+    {
+        return page_guard_align_buffer_sizes_;
+    }
+    bool GetPageGuardTrackAhbMemory() const
+    {
+        return page_guard_track_ahb_memory_;
+    }
+    PageGuardMemoryMode GetPageGuardMemoryMode() const
+    {
+        return page_guard_memory_mode_;
+    }
+    const std::string& GetTrimKey() const
+    {
+        return trim_key_;
+    }
+    bool IsTrimEnabled() const
+    {
+        return trim_enabled_;
+    }
+    uint32_t GetCurrentFrame() const
+    {
+        return current_frame_;
+    }
+    CaptureMode GetCaptureMode() const
+    {
+        return capture_mode_;
+    }
+    void SetCaptureMode(CaptureMode new_mode)
+    {
+        capture_mode_ = new_mode;
+    }
+    bool GetDebugLayerSetting() const
+    {
+        return debug_layer_;
+    }
+    bool GetDebugDeviceLostSetting() const
+    {
+        return debug_device_lost_;
+    }
+    bool GetDisableDxrSetting() const
+    {
+        return disable_dxr_;
+    }
+    auto GetAccelStructPaddingSetting() const
+    {
+        return accel_struct_padding_;
+    }
+    bool GetForceFifoPresentModeSetting() const
+    {
+        return force_fifo_present_mode_;
+    }
+    auto GetTrimBoundary() const
+    {
+        return trim_boundary_;
+    }
+    auto GetTrimDrawCalls() const
+    {
+        return trim_draw_calls_;
+    }
+    auto GetQueueSubmitCount() const
+    {
+        return queue_submit_count_;
+    }
+    bool GetUseAssetFile() const
+    {
+        return use_asset_file_;
+    }
 
-    util::Compressor*      GetCompressor() { return compressor_.get(); }
-    std::mutex&            GetMappedMemoryLock() { return mapped_memory_lock_; }
-    util::Keyboard&        GetKeyboard() { return keyboard_; }
-    const std::string&     GetScreenshotPrefix() const { return screenshot_prefix_; }
-    util::ScreenshotFormat GetScreenShotFormat() const { return screenshot_format_; }
-    CommandWriter*         GetCommandWriter() { return command_writer_.get(); }
+    util::Compressor* GetCompressor()
+    {
+        return compressor_.get();
+    }
+    std::mutex& GetMappedMemoryLock()
+    {
+        return mapped_memory_lock_;
+    }
+    util::Keyboard& GetKeyboard()
+    {
+        return keyboard_;
+    }
+    const std::string& GetScreenshotPrefix() const
+    {
+        return screenshot_prefix_;
+    }
+    util::ScreenshotFormat GetScreenShotFormat() const
+    {
+        return screenshot_format_;
+    }
+    CommandWriter* GetCommandWriter()
+    {
+        return command_writer_.get();
+    }
 
     std::string CreateTrimFilename(const std::string& base_filename, const util::UintRange& trim_range);
     std::string CreateTrimDrawCallsFilename(const std::string&                    base_filename,
@@ -254,7 +397,7 @@ class CommonCaptureManager
     std::unique_ptr<util::FileOutputStream> CreateAssetFile();
     std::string                             CreateAssetFilename(const std::string& base_filename) const;
     bool CreateCaptureFile(format::ApiFamilyId api_family, const std::string& base_filename);
-    void WriteCaptureOptions(std::string& operation_annotation);
+    void WriteCaptureOptions(nlohmann::ordered_json& operation_annotation);
     void ActivateTrimming(std::shared_lock<ApiCallMutexT>& current_lock);
     void DeactivateTrimming(std::shared_lock<ApiCallMutexT>& current_lock);
 
@@ -272,6 +415,13 @@ class CommonCaptureManager
 
     void WriteFillMemoryCmd(
         format::ApiFamilyId api_family, format::HandleId memory_id, uint64_t offset, uint64_t size, const void* data);
+
+    void WriteCreateHeapAllocationCmd(uint64_t allocation_id, uint64_t allocation_size);
+
+    void WriteFixDeviceAddressCmd(format::ApiFamilyId          api_family,
+                                  format::HandleId             relation_id,
+                                  uint64_t                     num_of_locations,
+                                  format::AddressLocationInfo* locations);
 
     void
     WriteBeginResourceInitCmd(format::ApiFamilyId api_family, format::HandleId device_id, uint64_t max_resource_size);
@@ -302,16 +452,24 @@ class CommonCaptureManager
         GetThreadData()->block_index_ = block_index_;
     }
 
-    void SetWriteAssets() { write_assets_ = true; }
+    uint64_t GetGlobalBlockIndex()
+    {
+        return block_index_.load();
+    }
+    void SetWriteAssets()
+    {
+        write_assets_ = true;
+    }
 
     bool WriteFrameStateFile();
 
   private:
-    void WriteExecuteFromFile(util::FileOutputStream& out_stream,
-                              const std::string&      filename,
-                              format::ThreadId        thread_id,
-                              uint32_t                n_blocks,
-                              int64_t                 offset);
+    void                   WriteExecuteFromFile(util::FileOutputStream& out_stream,
+                                                const std::string&      filename,
+                                                format::ThreadId        thread_id,
+                                                uint32_t                n_blocks,
+                                                int64_t                 offset);
+    nlohmann::ordered_json GetIgnoredBufferUsages();
 
   protected:
     std::unique_ptr<util::Compressor> compressor_;
@@ -321,10 +479,14 @@ class CommonCaptureManager
     util::ScreenshotFormat            screenshot_format_;
     std::atomic<uint64_t>             block_index_;
 
+  public:
+    bool debug_set_objects_name_;
+
   private:
     static void AtExit();
 
   private:
+    static int32_t                                        process_id_;
     static std::mutex                                     instance_lock_;
     static CommonCaptureManager*                          singleton_;
     static thread_local std::unique_ptr<util::ThreadData> thread_data_;
@@ -385,6 +547,12 @@ class CommonCaptureManager
     bool                                    queue_zero_only_;
     bool                                    allow_pipeline_compile_required_;
     bool                                    quit_after_frame_ranges_;
+    static std::function<void()>            delete_instance_func_;
+    uint32_t                                fence_query_delay_;
+    CaptureSettings::FenceQueryDelayUnit    fence_query_delay_unit_;
+    uint64_t                                fence_query_delay_timeout_threshold_;
+    uint32_t                                fence_query_delay_limit_;
+    std::vector<uint64_t>                   buffer_usages_to_ignore_;
     bool                                    force_fifo_present_mode_;
     bool                                    use_asset_file_;
     bool                                    write_assets_;

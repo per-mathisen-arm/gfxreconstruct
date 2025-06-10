@@ -28,8 +28,8 @@ target_sources(gfxrecon_decode
                    ${GFXRECON_SOURCE_DIR}/framework/decode/handle_pointer_decoder.h
                    ${GFXRECON_SOURCE_DIR}/framework/decode/json_writer.h
                    ${GFXRECON_SOURCE_DIR}/framework/decode/json_writer.cpp
-                   ${GFXRECON_SOURCE_DIR}/framework/decode/mark_injected_commands.h
-                   ${GFXRECON_SOURCE_DIR}/framework/decode/mark_injected_commands.cpp
+                   # ${GFXRECON_SOURCE_DIR}/framework/decode/mark_injected_commands.h
+                   # ${GFXRECON_SOURCE_DIR}/framework/decode/mark_injected_commands.cpp
                    ${GFXRECON_SOURCE_DIR}/framework/decode/pointer_decoder_base.h
                    ${GFXRECON_SOURCE_DIR}/framework/decode/pointer_decoder.h
                    ${GFXRECON_SOURCE_DIR}/framework/decode/portability.h
@@ -37,6 +37,8 @@ target_sources(gfxrecon_decode
                    ${GFXRECON_SOURCE_DIR}/framework/decode/referenced_resource_table.h
                    ${GFXRECON_SOURCE_DIR}/framework/decode/referenced_resource_table.cpp
                    ${GFXRECON_SOURCE_DIR}/framework/decode/replay_options.h
+                   ${GFXRECON_SOURCE_DIR}/framework/decode/replay_options_annotation.h
+                   ${GFXRECON_SOURCE_DIR}/framework/decode/replay_options_annotation.cpp
                    ${GFXRECON_SOURCE_DIR}/framework/decode/resource_util.h
                    ${GFXRECON_SOURCE_DIR}/framework/decode/resource_util.cpp
                    ${GFXRECON_SOURCE_DIR}/framework/decode/screenshot_handler.h
@@ -63,8 +65,6 @@ target_sources(gfxrecon_decode
                    ${GFXRECON_SOURCE_DIR}/framework/decode/vulkan_captured_swapchain.h
                    ${GFXRECON_SOURCE_DIR}/framework/decode/vulkan_captured_swapchain.cpp
                    ${GFXRECON_SOURCE_DIR}/framework/decode/vulkan_enum_util.h
-                   ${GFXRECON_SOURCE_DIR}/framework/decode/vulkan_feature_util.h
-                   ${GFXRECON_SOURCE_DIR}/framework/decode/vulkan_feature_util.cpp
                    ${GFXRECON_SOURCE_DIR}/framework/decode/vulkan_handle_mapping_util.h
                    ${GFXRECON_SOURCE_DIR}/framework/decode/vulkan_handle_mapping_util.cpp
                    ${GFXRECON_SOURCE_DIR}/framework/decode/vulkan_object_cleanup_util.h
@@ -114,6 +114,13 @@ target_sources(gfxrecon_decode
                    ${GFXRECON_SOURCE_DIR}/framework/decode/vulkan_offscreen_swapchain.h
                    ${GFXRECON_SOURCE_DIR}/framework/decode/vulkan_offscreen_swapchain.cpp
                    ${GFXRECON_SOURCE_DIR}/framework/decode/window.h
+                   ${GFXRECON_SOURCE_DIR}/framework/decode/vulkan_acceleration_structure_builder.h
+                   ${GFXRECON_SOURCE_DIR}/framework/decode/vulkan_acceleration_structure_builder.cpp
+                   ${GFXRECON_SOURCE_DIR}/framework/decode/vulkan_micromap_builder.h
+                   ${GFXRECON_SOURCE_DIR}/framework/decode/vulkan_micromap_builder.cpp
+                   ${GFXRECON_SOURCE_DIR}/framework/decode/vulkan_internal_buffer_manager.h
+                   ${GFXRECON_SOURCE_DIR}/framework/decode/vulkan_internal_buffer_manager.cpp
+                   ${GFXRECON_SOURCE_DIR}/framework/decode/vulkan_captured_swapchain.cpp
                    ${GFXRECON_SOURCE_DIR}/framework/generated/generated_vulkan_consumer.h
                    ${GFXRECON_SOURCE_DIR}/framework/generated/generated_vulkan_decoder.h
                    ${GFXRECON_SOURCE_DIR}/framework/generated/generated_vulkan_decoder.cpp
