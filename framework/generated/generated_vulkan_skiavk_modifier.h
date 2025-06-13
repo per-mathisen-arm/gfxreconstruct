@@ -4131,6 +4131,24 @@ class VulkanSkiaModifier : public util::VulkanModifierBase
         format::HandleId                            device,
         StructPointerDecoder<Decoded_VkRenderingInfo>* pRenderingInfo,
         StructPointerDecoder<Decoded_VkTilePropertiesQCOM>* pProperties){ CheckSkiavk(device);}
+    virtual void Process_vkGetPhysicalDeviceCooperativeVectorPropertiesNV(
+        const ApiCallInfo&                          call_info,
+        VkResult                                    returnValue,
+        format::HandleId                            physicalDevice,
+        PointerDecoder<uint32_t>*                   pPropertyCount,
+        StructPointerDecoder<Decoded_VkCooperativeVectorPropertiesNV>* pProperties){ CheckSkiavk(physicalDevice);}
+
+    virtual void Process_vkConvertCooperativeVectorMatrixNV(
+        const ApiCallInfo&                          call_info,
+        VkResult                                    returnValue,
+        format::HandleId                            device,
+        StructPointerDecoder<Decoded_VkConvertCooperativeVectorMatrixInfoNV>* pInfo){ CheckSkiavk(device);}
+
+    virtual void Process_vkCmdConvertCooperativeVectorMatrixNV(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        uint32_t                                    infoCount,
+        StructPointerDecoder<Decoded_VkConvertCooperativeVectorMatrixInfoNV>* pInfos){ CheckSkiavk(commandBuffer);}
     virtual void Process_vkSetLatencySleepModeNV(
         const ApiCallInfo&                          call_info,
         VkResult                                    returnValue,
@@ -4165,6 +4183,16 @@ class VulkanSkiaModifier : public util::VulkanModifierBase
         const ApiCallInfo&                          call_info,
         format::HandleId                            commandBuffer,
         VkImageAspectFlags                          aspectMask){ CheckSkiavk(commandBuffer);}
+    virtual void Process_vkGetPartitionedAccelerationStructuresBuildSizesNV(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            device,
+        StructPointerDecoder<Decoded_VkPartitionedAccelerationStructureInstancesInputNV>* pInfo,
+        StructPointerDecoder<Decoded_VkAccelerationStructureBuildSizesInfoKHR>* pSizeInfo){ CheckSkiavk(device);}
+
+    virtual void Process_vkCmdBuildPartitionedAccelerationStructuresNV(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        StructPointerDecoder<Decoded_VkBuildPartitionedAccelerationStructureInfoNV>* pBuildInfo){ CheckSkiavk(commandBuffer);}
     virtual void Process_vkGetGeneratedCommandsMemoryRequirementsEXT(
         const ApiCallInfo&                          call_info,
         format::HandleId                            device,
@@ -4230,6 +4258,20 @@ class VulkanSkiaModifier : public util::VulkanModifierBase
         format::HandleId                            physicalDevice,
         PointerDecoder<uint32_t>*                   pPropertyCount,
         StructPointerDecoder<Decoded_VkCooperativeMatrixFlexibleDimensionsPropertiesNV>* pProperties){ CheckSkiavk(physicalDevice);}
+    virtual void Process_vkGetMemoryMetalHandleEXT(
+        const ApiCallInfo&                          call_info,
+        VkResult                                    returnValue,
+        format::HandleId                            device,
+        StructPointerDecoder<Decoded_VkMemoryGetMetalHandleInfoEXT>* pGetMetalHandleInfo,
+        PointerDecoder<uint64_t, void*>*            pHandle){ CheckSkiavk(device);}
+
+    virtual void Process_vkGetMemoryMetalHandlePropertiesEXT(
+        const ApiCallInfo&                          call_info,
+        VkResult                                    returnValue,
+        format::HandleId                            device,
+        VkExternalMemoryHandleTypeFlagBits          handleType,
+        uint64_t                                    pHandle,
+        StructPointerDecoder<Decoded_VkMemoryMetalHandlePropertiesEXT>* pMemoryMetalHandleProperties){ CheckSkiavk(device);}
     virtual void Process_vkCreateAccelerationStructureKHR(
         const ApiCallInfo&                          call_info,
         VkResult                                    returnValue,
