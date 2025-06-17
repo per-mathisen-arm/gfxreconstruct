@@ -3199,7 +3199,6 @@ HRESULT Dx12ReplayConsumerBase::OverrideGetBuffer(DxObjectInfo*                r
             if (swapchain_info->image_ids[buffer] == format::kNullHandleId)
             {
                 auto object_info = static_cast<DxObjectInfo*>(surface->GetConsumerData(0));
-                InitialResourceExtraInfo(replay_object_info->capture_id, surface, D3D12_RESOURCE_STATE_PRESENT, false);
 
                 // Ensure that the retrieved buffer is a D3D12 resource prior to casting to ID3D12Resource.
                 const auto& buffer_iid = *riid.decoded_value;
