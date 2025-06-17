@@ -6100,7 +6100,8 @@ VulkanReplayConsumerBase::OverrideCreateImage(PFN_vkCreateImage                 
     auto                                  capture_id           = (*pImage->GetPointer());
     auto                                  modified_create_info = *pCreateInfo->GetPointer();
 
-    if (replaying_trimmed_capture_ || options_.dumping_resources)
+    if ((replaying_trimmed_capture_ || options_.dumping_resources) &&
+        (modified_create_info.usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) == 0)
     {
         // The GFXR trimmed capture process sets VK_IMAGE_USAGE_TRANSFER_SRC_BIT flag for image VkImageCreateInfo.
         // Since image memory requirements can differ when VK_IMAGE_USAGE_TRANSFER_SRC_BIT is set, we sometimes hit
@@ -6108,7 +6109,11 @@ VulkanReplayConsumerBase::OverrideCreateImage(PFN_vkCreateImage                 
         // VK_IMAGE_USAGE_TRANSFER_SRC_BIT to keep things consistent with capture.
         // We also need to add VK_IMAGE_USAGE_TRANSFER_DST_BIT to be able to restore image and copy to it
         modified_create_info.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-        modified_create_info.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+        if (loading_trim_state_)
+        {
+            // ensure image-initialization can copy
+            modified_create_info.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+        }
     }
 
     // Modify external memory extensions depending on device support
@@ -6171,22 +6176,22 @@ VulkanReplayConsumerBase::OverrideCreateImage(PFN_vkCreateImage                 
         assert(image_info != nullptr);
 
         image_info->allocator_data = allocator_data;
-        image_info->usage          = replay_create_info->usage;
-        image_info->type           = replay_create_info->imageType;
-        image_info->format         = replay_create_info->format;
-        image_info->extent         = replay_create_info->extent;
-        image_info->tiling         = replay_create_info->tiling;
-        image_info->sample_count   = replay_create_info->samples;
-        image_info->initial_layout = replay_create_info->initialLayout;
-        image_info->layer_count    = replay_create_info->arrayLayers;
-        image_info->level_count    = replay_create_info->mipLevels;
+        image_info->usage          = modified_create_info.usage;
+        image_info->type           = modified_create_info.imageType;
+        image_info->format         = modified_create_info.format;
+        image_info->extent         = modified_create_info.extent;
+        image_info->tiling         = modified_create_info.tiling;
+        image_info->sample_count   = modified_create_info.samples;
+        image_info->initial_layout = modified_create_info.initialLayout;
+        image_info->layer_count    = modified_create_info.arrayLayers;
+        image_info->level_count    = modified_create_info.mipLevels;
 
-        image_info->current_layout = replay_create_info->initialLayout;
+        image_info->current_layout = modified_create_info.initialLayout;
 
-        if ((replay_create_info->sharingMode == VK_SHARING_MODE_CONCURRENT) &&
-            (replay_create_info->queueFamilyIndexCount > 0) && (replay_create_info->pQueueFamilyIndices != nullptr))
+        if ((modified_create_info.sharingMode == VK_SHARING_MODE_CONCURRENT) &&
+            (modified_create_info.queueFamilyIndexCount > 0) && (modified_create_info.pQueueFamilyIndices != nullptr))
         {
-            image_info->queue_family_index = replay_create_info->pQueueFamilyIndices[0];
+            image_info->queue_family_index = modified_create_info.pQueueFamilyIndices[0];
         }
         else
         {
