@@ -49,7 +49,7 @@ class Dx12FileOptimizer : public FileOptimizer
     bool AddFillMemoryResourceValueCommand();
 
     virtual bool ProcessMetaData(const format::MetaDataHeader& meta_header) override;
-    
+
     bool AddPrebuildInfoResourceValueCommand(const format::BlockHeader& block_header, format::ApiCallId call_id);
 
     void WriteMethodCall(format::ApiCallId               call_id,

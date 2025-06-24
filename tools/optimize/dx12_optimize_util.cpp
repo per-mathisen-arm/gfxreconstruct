@@ -42,6 +42,7 @@
 #include <map>
 
 extern std::unordered_set<gfxrecon::format::ThreadId> removed_threads_ids;
+
 void PrintUsage(const char*) {}
 
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
