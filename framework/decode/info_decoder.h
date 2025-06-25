@@ -94,6 +94,16 @@ class InfoDecoder : public ApiDecoder
                                                   const format::ShaderHandleLocationInfo*          infos) override
     {}
 
+    virtual void DispatchFixDescriptorDataCommand(const format::FixDescriptorDataCommandHeader& header,
+                                                  const format::DescriptorDataLocationInfo*     info) override
+    {}
+
+    virtual void DispatchFixShadowMemoryCommand(format::ThreadId thread_id,
+                                                format::HandleId memory_id,
+                                                uint64_t         map_memory,
+                                                uint64_t         shadow_memory) override
+    {}
+
     virtual void DispatchResizeWindowCommand(format::ThreadId thread_id,
                                              format::HandleId surface_id,
                                              uint32_t         width,

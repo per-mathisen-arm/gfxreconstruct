@@ -1318,5 +1318,13 @@ std::string GenerateStruct_VkDataGraphPipelineConstantARM(std::ostream&         
     return {};
 }
 
+std::string GenerateStruct_VkDescriptorGetInfoEXT(std::ostream&                   out,
+                                                  const VkDescriptorGetInfoEXT*   structInfo,
+                                                  Decoded_VkDescriptorGetInfoEXT* metaInfo,
+                                                  VulkanCppConsumerBase&          consumer)
+{
+    return {};
+}
+
 GFXRECON_END_NAMESPACE(gfxrecon)
 GFXRECON_END_NAMESPACE(decode)

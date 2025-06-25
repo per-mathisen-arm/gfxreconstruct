@@ -65,8 +65,6 @@ _emit_extensions = []
 # be added to the list kUnsupportedDeviceExtensions in trace_layer.cpp.
 _remove_extensions = [
     "VK_AMDX_shader_enqueue",
-    ## @todo <https://github.com/LunarG/gfxreconstruct/issues/917>
-    "VK_EXT_descriptor_buffer",
     "VK_EXT_metal_objects",
     "VK_EXT_pipeline_properties",
     "VK_FUCHSIA_buffer_collection",

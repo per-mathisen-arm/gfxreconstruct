@@ -1894,6 +1894,7 @@ class VulkanCaptureManager : public ApiCaptureManager
 
   private:
     void QueueSubmitWriteFillMemoryCmd();
+    void MapMemoryWriteFixShadowMemoryCmd(format::HandleId memory_id, uint64_t map_memory, uint64_t shadow_memory);
 
     static VulkanCaptureManager*                    singleton_;
     static VulkanLayerTable                         vulkan_layer_table_;

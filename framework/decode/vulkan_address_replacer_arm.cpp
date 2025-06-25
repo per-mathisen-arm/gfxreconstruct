@@ -329,6 +329,123 @@ void VulkanAddressReplacerARM::ProcessCmdBuildAccelerationStructuresKHR(
     }
 }
 
+void VulkanAddressReplacerARM::ProcessGetDescriptorEXT(const VulkanDeviceInfo*           device_info,
+                                                       VkDescriptorGetInfoEXT*           descriptorInfo,
+                                                       const VulkanDeviceAddressTracker& address_tracker)
+{
+    std::unordered_set<VkBuffer> buffer_set;
+    auto                         address_remap = [&address_tracker, &buffer_set](VkDeviceAddress& capture_address) {
+        if (capture_address == 0)
+        {
+            return;
+        }
+        auto buffer_info = address_tracker.GetBufferByCaptureDeviceAddress(capture_address);
+
+        if (buffer_info != nullptr && buffer_info->replay_address != 0)
+        {
+            // keep track of used handles
+            buffer_set.insert(buffer_info->handle);
+
+            uint64_t offset = capture_address - buffer_info->capture_address;
+
+            // in-place address-remap via const-cast
+            capture_address = buffer_info->replay_address + offset;
+        }
+        else
+        {
+            GFXRECON_LOG_WARNING(
+                "VulkanAddressReplacer::ProcessGetDescriptorEXT: missing buffer_info->replay_address, remap failed");
+        }
+    };
+
+    std::unordered_set<VkAccelerationStructureKHR> as_set;
+    auto accelerationStruct_address_remap = [&address_tracker, &as_set](VkDeviceAddress& capture_address) {
+        if (capture_address == 0)
+        {
+            return;
+        }
+        auto accelerationStruct_info = address_tracker.GetAccelerationStructureByCaptureDeviceAddress(capture_address);
+
+        if (accelerationStruct_info != nullptr && accelerationStruct_info->replay_address != 0)
+        {
+            // keep track of used handles
+            as_set.insert(accelerationStruct_info->handle);
+            // in-place address-remap via const-cast
+            capture_address = accelerationStruct_info->replay_address;
+        }
+        else
+        {
+            GFXRECON_LOG_WARNING("VulkanAddressReplacer::ProcessGetDescriptorEXT: missing "
+                                 "accelerationStruct_info->replay_address, remap failed");
+        }
+    };
+
+    auto&                       descriptorData = descriptorInfo->data;
+    VkDescriptorAddressInfoEXT* addressInfo;
+
+    switch (descriptorInfo->type)
+    {
+        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
+            addressInfo = const_cast<VkDescriptorAddressInfoEXT*>(descriptorData.pUniformTexelBuffer);
+            address_remap(addressInfo->address);
+            break;
+        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+            addressInfo = const_cast<VkDescriptorAddressInfoEXT*>(descriptorData.pStorageTexelBuffer);
+            address_remap(addressInfo->address);
+            break;
+        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+            addressInfo = const_cast<VkDescriptorAddressInfoEXT*>(descriptorData.pUniformBuffer);
+            address_remap(addressInfo->address);
+            break;
+        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+            addressInfo = const_cast<VkDescriptorAddressInfoEXT*>(descriptorData.pStorageBuffer);
+            address_remap(addressInfo->address);
+            break;
+        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
+            accelerationStruct_address_remap(descriptorData.accelerationStructure);
+            break;
+        default:
+            break;
+    }
+}
+
+void VulkanAddressReplacerARM::ProcessCmdBindDescriptorBuffersEXT(const VulkanCommandBufferInfo*    commandBuffer_info,
+                                                                  uint32_t                          bufferCount,
+                                                                  VkDescriptorBufferBindingInfoEXT* bindingInfos,
+                                                                  const VulkanDeviceAddressTracker& address_tracker)
+{
+    std::unordered_set<VkBuffer> buffer_set;
+    auto                         address_remap = [&address_tracker, &buffer_set](VkDeviceAddress& capture_address) {
+        if (capture_address == 0)
+        {
+            return;
+        }
+        auto buffer_info = address_tracker.GetBufferByCaptureDeviceAddress(capture_address);
+
+        if (buffer_info != nullptr && buffer_info->replay_address != 0)
+        {
+            // keep track of used handles
+            buffer_set.insert(buffer_info->handle);
+
+            uint64_t offset = capture_address - buffer_info->capture_address;
+
+            // in-place address-remap via const-cast
+            capture_address = buffer_info->replay_address + offset;
+        }
+        else
+        {
+            GFXRECON_LOG_WARNING("VulkanAddressReplacer::CmdBindDescriptorBuffersEXT: missing "
+                                                         "buffer_info->replay_address, remap failed");
+        }
+    };
+
+    for (uint32_t i = 0; i < bufferCount; i++)
+    {
+        auto& bindingInfo = bindingInfos[i];
+        address_remap(bindingInfo.address);
+    }
+}
+
 bool VulkanAddressReplacerARM::init_pipeline()
 {
     if (pipeline_sbt_ != VK_NULL_HANDLE)

@@ -66,6 +66,14 @@ class AgsDecoder : public ApiDecoder
     virtual void DispatchShaderGroupHandleCommand(const format::FixShaderGroupHandleCommandHeader& header,
                                                   const format::ShaderHandleLocationInfo*          infos)
     {}
+    virtual void DispatchFixDescriptorDataCommand(const format::FixDescriptorDataCommandHeader& header,
+                                                  const format::DescriptorDataLocationInfo*     infos) override
+    {}
+    virtual void DispatchFixShadowMemoryCommand(format::ThreadId thread_id,
+                                                format::HandleId memory_id,
+                                                uint64_t         map_memory,
+                                                uint64_t         shadow_memory) override
+    {}
 
     virtual void
     DispatchFillMemoryResourceValueCommand(const format::FillMemoryResourceValueCommandHeader& command_header,

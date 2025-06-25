@@ -11400,6 +11400,201 @@ VkQueryLowLatencySupportNV* TrackStruct(const VkQueryLowLatencySupportNV* value,
     return unwrapped_struct;
 }
 
+VkPhysicalDeviceDescriptorBufferPropertiesEXT* TrackStruct(const VkPhysicalDeviceDescriptorBufferPropertiesEXT* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkPhysicalDeviceDescriptorBufferPropertiesEXT* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkPhysicalDeviceDescriptorBufferDensityMapPropertiesEXT* TrackStruct(const VkPhysicalDeviceDescriptorBufferDensityMapPropertiesEXT* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkPhysicalDeviceDescriptorBufferDensityMapPropertiesEXT* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkPhysicalDeviceDescriptorBufferFeaturesEXT* TrackStruct(const VkPhysicalDeviceDescriptorBufferFeaturesEXT* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkPhysicalDeviceDescriptorBufferFeaturesEXT* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkDescriptorAddressInfoEXT* TrackStruct(const VkDescriptorAddressInfoEXT* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkDescriptorAddressInfoEXT* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkDescriptorBufferBindingInfoEXT* TrackStruct(const VkDescriptorBufferBindingInfoEXT* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkDescriptorBufferBindingInfoEXT* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkDescriptorBufferBindingPushDescriptorBufferHandleEXT* TrackStruct(const VkDescriptorBufferBindingPushDescriptorBufferHandleEXT* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkDescriptorBufferBindingPushDescriptorBufferHandleEXT* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkDescriptorGetInfoEXT* TrackStruct(const VkDescriptorGetInfoEXT* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkDescriptorGetInfoEXT* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkBufferCaptureDescriptorDataInfoEXT* TrackStruct(const VkBufferCaptureDescriptorDataInfoEXT* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkBufferCaptureDescriptorDataInfoEXT* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkImageCaptureDescriptorDataInfoEXT* TrackStruct(const VkImageCaptureDescriptorDataInfoEXT* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkImageCaptureDescriptorDataInfoEXT* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkImageViewCaptureDescriptorDataInfoEXT* TrackStruct(const VkImageViewCaptureDescriptorDataInfoEXT* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkImageViewCaptureDescriptorDataInfoEXT* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkSamplerCaptureDescriptorDataInfoEXT* TrackStruct(const VkSamplerCaptureDescriptorDataInfoEXT* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkSamplerCaptureDescriptorDataInfoEXT* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkOpaqueCaptureDescriptorDataCreateInfoEXT* TrackStruct(const VkOpaqueCaptureDescriptorDataCreateInfoEXT* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkOpaqueCaptureDescriptorDataCreateInfoEXT* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkAccelerationStructureCaptureDescriptorDataInfoEXT* TrackStruct(const VkAccelerationStructureCaptureDescriptorDataInfoEXT* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkAccelerationStructureCaptureDescriptorDataInfoEXT* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
 VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT* TrackStruct(const VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT* value, HandleUnwrapMemory* unwrap_memory)
 {
     if (value == nullptr)
@@ -17656,6 +17851,32 @@ void* TrackStruct(const void* value, HandleUnwrapMemory* unwrap_memory)
             return TrackStruct(reinterpret_cast<const VkDispatchTileInfoQCOM*>(value), unwrap_memory);
         case VK_STRUCTURE_TYPE_QUERY_LOW_LATENCY_SUPPORT_NV:
             return TrackStruct(reinterpret_cast<const VkQueryLowLatencySupportNV*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_PROPERTIES_EXT:
+            return TrackStruct(reinterpret_cast<const VkPhysicalDeviceDescriptorBufferPropertiesEXT*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_DENSITY_MAP_PROPERTIES_EXT:
+            return TrackStruct(reinterpret_cast<const VkPhysicalDeviceDescriptorBufferDensityMapPropertiesEXT*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT:
+            return TrackStruct(reinterpret_cast<const VkPhysicalDeviceDescriptorBufferFeaturesEXT*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT:
+            return TrackStruct(reinterpret_cast<const VkDescriptorAddressInfoEXT*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT:
+            return TrackStruct(reinterpret_cast<const VkDescriptorBufferBindingInfoEXT*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_PUSH_DESCRIPTOR_BUFFER_HANDLE_EXT:
+            return TrackStruct(reinterpret_cast<const VkDescriptorBufferBindingPushDescriptorBufferHandleEXT*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT:
+            return TrackStruct(reinterpret_cast<const VkDescriptorGetInfoEXT*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_BUFFER_CAPTURE_DESCRIPTOR_DATA_INFO_EXT:
+            return TrackStruct(reinterpret_cast<const VkBufferCaptureDescriptorDataInfoEXT*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_IMAGE_CAPTURE_DESCRIPTOR_DATA_INFO_EXT:
+            return TrackStruct(reinterpret_cast<const VkImageCaptureDescriptorDataInfoEXT*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_IMAGE_VIEW_CAPTURE_DESCRIPTOR_DATA_INFO_EXT:
+            return TrackStruct(reinterpret_cast<const VkImageViewCaptureDescriptorDataInfoEXT*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_SAMPLER_CAPTURE_DESCRIPTOR_DATA_INFO_EXT:
+            return TrackStruct(reinterpret_cast<const VkSamplerCaptureDescriptorDataInfoEXT*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_OPAQUE_CAPTURE_DESCRIPTOR_DATA_CREATE_INFO_EXT:
+            return TrackStruct(reinterpret_cast<const VkOpaqueCaptureDescriptorDataCreateInfoEXT*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CAPTURE_DESCRIPTOR_DATA_INFO_EXT:
+            return TrackStruct(reinterpret_cast<const VkAccelerationStructureCaptureDescriptorDataInfoEXT*>(value), unwrap_memory);
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GRAPHICS_PIPELINE_LIBRARY_FEATURES_EXT:
             return TrackStruct(reinterpret_cast<const VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT*>(value), unwrap_memory);
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GRAPHICS_PIPELINE_LIBRARY_PROPERTIES_EXT:

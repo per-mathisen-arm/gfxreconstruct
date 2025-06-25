@@ -105,6 +105,15 @@ class VulkanAddressReplacerARM : public VulkanAddressReplacerBase
                                                   const decode::VulkanDeviceAddressTracker&    address_tracker,
                                                   bool                                         process_scratch_buffers);
 
+    void ProcessGetDescriptorEXT(const VulkanDeviceInfo*           device_info,
+                                 VkDescriptorGetInfoEXT*           descriptorInfo,
+                                 const VulkanDeviceAddressTracker& address_tracker);
+
+    void ProcessCmdBindDescriptorBuffersEXT(const VulkanCommandBufferInfo*    commandBuffer_info,
+                                            uint32_t                          bufferCount,
+                                            VkDescriptorBufferBindingInfoEXT* bindingInfos,
+                                            const VulkanDeviceAddressTracker& address_tracker);
+
     friend void swap(VulkanAddressReplacerARM& lhs, VulkanAddressReplacerARM& rhs) noexcept;
 
   private:

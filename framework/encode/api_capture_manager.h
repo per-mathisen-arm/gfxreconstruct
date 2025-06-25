@@ -216,6 +216,12 @@ class ApiCaptureManager
     {
         common_manager_->WriteCreateHeapAllocationCmd(api_family_, allocation_id, allocation_size);
     }
+
+    void WriteFixShadowMemoryCmd(format::HandleId memory_id, uint64_t map_memory, uint64_t shadow_memory)
+    {
+        common_manager_->WriteFixShadowMemoryCmd(api_family_, memory_id, map_memory, shadow_memory);
+    }
+
     void WriteToFile(const void* data, size_t size) { common_manager_->WriteToFile(data, size); }
 
     template <size_t N>

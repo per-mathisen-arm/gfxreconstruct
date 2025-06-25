@@ -388,5 +388,55 @@ void EncodeStruct(ParameterEncoder* encoder, const VkIndirectCommandsLayoutToken
     encoder->EncodeUInt32Value(value.offset);
 }
 
+void EncodeStruct(ParameterEncoder* encoder, const VkDescriptorGetInfoEXT& value)
+{
+    encoder->EncodeEnumValue(value.sType);
+    EncodePNextStruct(encoder, value.pNext);
+    encoder->EncodeEnumValue(value.type);
+    switch (value.type)
+    {
+        case VK_DESCRIPTOR_TYPE_SAMPLER:
+            encoder->EncodeVulkanHandlePtr<vulkan_wrappers::SamplerWrapper>(value.data.pSampler);
+            break;
+        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+            encoder->EncodeStructPtrPreamble(value.data.pCombinedImageSampler);
+            if (value.data.pCombinedImageSampler)
+                EncodeStruct(encoder, value.type, *value.data.pCombinedImageSampler);
+            break;
+        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+            encoder->EncodeStructPtrPreamble(value.data.pInputAttachmentImage);
+            if (value.data.pInputAttachmentImage)
+                EncodeStruct(encoder, value.type, *value.data.pInputAttachmentImage);
+            break;
+        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+            encoder->EncodeStructPtrPreamble(value.data.pSampledImage);
+            if (value.data.pSampledImage)
+                EncodeStruct(encoder, value.type, *value.data.pSampledImage);
+            break;
+        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+            encoder->EncodeStructPtrPreamble(value.data.pStorageImage);
+            if (value.data.pStorageImage)
+                EncodeStruct(encoder, value.type, *value.data.pStorageImage);
+            break;
+        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
+            EncodeStructPtr(encoder, value.data.pUniformTexelBuffer);
+            break;
+        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+            EncodeStructPtr(encoder, value.data.pStorageTexelBuffer);
+            break;
+        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+            EncodeStructPtr(encoder, value.data.pUniformBuffer);
+            break;
+        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+            EncodeStructPtr(encoder, value.data.pStorageBuffer);
+            break;
+        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
+            encoder->EncodeUInt64Value(value.data.accelerationStructure);
+            break;
+        default:
+            break;
+    }
+}
+
 GFXRECON_END_NAMESPACE(encode)
 GFXRECON_END_NAMESPACE(gfxrecon)

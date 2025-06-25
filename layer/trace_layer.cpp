@@ -98,7 +98,6 @@ const std::vector<struct LayerExtensionProps> kDeviceExtensionProps = {
 const char* const kUnsupportedDeviceExtensions[] = { VK_AMDX_SHADER_ENQUEUE_EXTENSION_NAME,
                                                      VK_ARM_TENSORS_EXTENSION_NAME,
                                                      VK_ARM_DATA_GRAPH_EXTENSION_NAME,
-                                                     VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME,
                                                      VK_EXT_PIPELINE_PROPERTIES_EXTENSION_NAME,
                                                      VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME,
                                                      VK_HUAWEI_SUBPASS_SHADING_EXTENSION_NAME,

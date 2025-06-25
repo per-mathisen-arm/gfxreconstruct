@@ -1068,6 +1068,33 @@ bool FileTransformer::ProcessMetaData(const format::MetaDataHeader& meta_header)
 
             return false;
         }
+        case format::MetaDataType::kFixDescriptorDataCommand:
+        {
+            format::FixDescriptorDataCommandHeader header;
+            header.meta_header = meta_header;
+            bool success       = ReadBytes(&header.memory_id, sizeof(header.memory_id));
+            success            = success && ReadBytes(&header.num_of_locations, sizeof(header.num_of_locations));
+
+            if (success)
+            {
+                return ProcessFixDescriptorDataCommand(header);
+            }
+            return false;
+        }
+        case format::MetaDataType::kFixShadowMemoryCommand:
+        {
+            format::FixShadowMemoryCommand header;
+            header.meta_header = meta_header;
+            bool success       = ReadBytes(&header.thread_id, sizeof(header.thread_id));
+            success            = success && ReadBytes(&header.memory_id, sizeof(header.memory_id));
+            success            = success && ReadBytes(&header.map_memory, sizeof(header.map_memory));
+            success            = success && ReadBytes(&header.shadow_memory, sizeof(header.shadow_memory));
+            if (success)
+            {
+                return ProcessFixShadowMemoryCommand(header);
+            }
+            return false;
+        }
         case format::MetaDataType::kSetEnvironmentVariablesCommand:
         {
             format::SetEnvironmentVariablesCommand header;
@@ -1609,6 +1636,38 @@ bool FileTransformer::ProcessVulkanWriteAccelerationStructuresPropertiesCommand(
     return true;
 }
 bool FileTransformer::ProcessFixDeviceAddressCommand(const format::FixDeviceAddressCommandHeader& header)
+{
+    if (!WriteBytes(&header, sizeof(header)))
+    {
+        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write meta-data block header");
+        return false;
+    }
+
+    if (!CopyBytes(header.meta_header.block_header.size + sizeof(header.meta_header.block_header) - sizeof(header)))
+    {
+        HandleBlockCopyError(kErrorCopyingBlockData, "Failed to copy meta-data block data");
+        return false;
+    }
+
+    return true;
+}
+bool FileTransformer::ProcessFixDescriptorDataCommand(const format::FixDescriptorDataCommandHeader& header)
+{
+    if (!WriteBytes(&header, sizeof(header)))
+    {
+        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write meta-data block header");
+        return false;
+    }
+
+    if (!CopyBytes(header.meta_header.block_header.size + sizeof(header.meta_header.block_header) - sizeof(header)))
+    {
+        HandleBlockCopyError(kErrorCopyingBlockData, "Failed to copy meta-data block data");
+        return false;
+    }
+
+    return true;
+}
+bool FileTransformer::ProcessFixShadowMemoryCommand(const format::FixShadowMemoryCommand& header)
 {
     if (!WriteBytes(&header, sizeof(header)))
     {

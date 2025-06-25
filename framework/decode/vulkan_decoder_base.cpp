@@ -102,6 +102,27 @@ void VulkanDecoderBase::DispatchShaderGroupHandleCommand(const format::FixShader
     }
 }
 
+void VulkanDecoderBase::DispatchFixDescriptorDataCommand(const format::FixDescriptorDataCommandHeader& header,
+                                                         const format::DescriptorDataLocationInfo*     infos)
+{
+    for (auto consumer : consumers_)
+    {
+        consumer->ProcessFixDescriptorDataCommand(header, infos);
+    }
+}
+
+void VulkanDecoderBase::DispatchFixShadowMemoryCommand(format::ThreadId thread_id,
+                                                       format::HandleId memory_id,
+                                                       uint64_t         map_memory,
+                                                       uint64_t         shadow_memory)
+{
+    GFXRECON_UNREFERENCED_PARAMETER(thread_id);
+    for (auto consumer : consumers_)
+    {
+        consumer->ProcessFixShadowMemoryCommand(memory_id, map_memory, shadow_memory);
+    }
+}
+
 void VulkanDecoderBase::DispatchExeFileInfo(format::ThreadId thread_id, format::ExeFileInfoBlock& info)
 {
     for (auto consumer : consumers_)

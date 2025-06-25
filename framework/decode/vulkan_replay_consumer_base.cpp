@@ -688,6 +688,23 @@ void VulkanReplayConsumerBase::ProcessFixShaderGroupHandleCommand(
     }
 }
 
+void VulkanReplayConsumerBase::ProcessFixDescriptorDataCommand(const format::FixDescriptorDataCommandHeader& header,
+                                                               const format::DescriptorDataLocationInfo*     infos)
+{
+    for (uint64_t i = 0; i < header.num_of_locations; i++)
+    {
+        DescriptorData replayed_data = descriptor_data_map[infos[i].descriptor_addr];
+
+        auto it = descriptor_locations
+                      .emplace(infos[i].descriptor_addr,
+                               std::make_pair(infos[i], std::vector<uint8_t>(replayed_data.dataSize)))
+                      .first;
+        it->second.first.new_size = replayed_data.dataSize;
+        util::platform::MemoryCopy(
+            it->second.second.data(), replayed_data.dataSize, replayed_data.descriptor.data(), replayed_data.dataSize);
+    }
+}
+
 void VulkanReplayConsumerBase::ProcessMicromapCompactionDependencyCommand(format::HandleId                     parent,
                                                                           const std::vector<format::HandleId>& children)
 {
@@ -1837,6 +1854,9 @@ void VulkanReplayConsumerBase::SetPhysicalDeviceProperties(VulkanPhysicalDeviceI
         physical_device_info->replay_device_info->raytracing_properties        = *ray_replay_props;
         physical_device_info->replay_device_info->raytracing_properties->pNext = nullptr;
     }
+
+    arm_features_->SetPhysicalDevicePropertiesDescriptorBuffer(
+        physical_device_info, capture_properties, replay_properties);
 }
 
 void VulkanReplayConsumerBase::SetPhysicalDeviceMemoryProperties(
@@ -10586,6 +10606,60 @@ VkResult VulkanReplayConsumerBase::OverrideWaitForPresentKHR(PFN_vkWaitForPresen
     }
     result = func(device, swapchain, presentid, timeout);
     return result;
+}
+
+void VulkanReplayConsumerBase::OverrideGetDescriptorEXT(
+    PFN_vkGetDescriptorEXT                                func,
+    VulkanDeviceInfo*                                     device_info,
+    StructPointerDecoder<Decoded_VkDescriptorGetInfoEXT>* pDescriptorInfo,
+    size_t                                                dataSize,
+    PointerDecoder<uint8_t>*                              pDescriptor)
+{
+    assert((device_info != nullptr) && !pDescriptorInfo->IsNull() && (pDescriptorInfo->GetPointer() != nullptr) &&
+           (pDescriptor->GetOutputPointer() != nullptr));
+
+    VkDevice                device             = device_info->handle;
+    VkDescriptorGetInfoEXT* in_pDescriptorInfo = pDescriptorInfo->GetPointer();
+    void*                   out_pDescriptor    = pDescriptor->GetOutputPointer();
+
+    if (UseAddressReplacement(device_info))
+    {
+        auto& address_tracker  = GetDeviceAddressTracker(device_info);
+        auto& address_replacer = GetDeviceAddressReplacer(device_info);
+        address_replacer.ProcessGetDescriptorEXT(device_info, in_pDescriptorInfo, address_tracker);
+    }
+
+    func(device, in_pDescriptorInfo, dataSize, out_pDescriptor);
+
+    // keep track of old/new descriptor  in any case
+    DescriptorData data;
+    data.dataSize = dataSize;
+    data.descriptor.resize(dataSize);
+    util::platform::MemoryCopy(data.descriptor.data(), dataSize, pDescriptor->GetOutputPointer(), dataSize);
+    descriptor_data_map[pDescriptor->GetAddress()] = data;
+}
+
+void VulkanReplayConsumerBase::OverrideCmdBindDescriptorBuffersEXT(
+    PFN_vkCmdBindDescriptorBuffersEXT                               func,
+    VulkanCommandBufferInfo*                                        commandBuffer_info,
+    uint32_t                                                        bufferCount,
+    StructPointerDecoder<Decoded_VkDescriptorBufferBindingInfoEXT>* pBindingInfos)
+{
+    assert((commandBuffer_info != nullptr) && (pBindingInfos->GetPointer() != nullptr));
+
+    VulkanDeviceInfo*                 device_info = object_info_table_->GetVkDeviceInfo(commandBuffer_info->parent_id);
+    VkCommandBuffer                   command_buffer   = commandBuffer_info->handle;
+    VkDescriptorBufferBindingInfoEXT* in_pBindingInfos = pBindingInfos->GetPointer();
+
+    if (UseAddressReplacement(device_info))
+    {
+        auto& address_tracker  = GetDeviceAddressTracker(device_info);
+        auto& address_replacer = GetDeviceAddressReplacer(device_info);
+        address_replacer.ProcessCmdBindDescriptorBuffersEXT(
+            commandBuffer_info, bufferCount, in_pBindingInfos, address_tracker);
+    }
+
+    func(command_buffer, bufferCount, in_pBindingInfos);
 }
 
 void VulkanReplayConsumerBase::MapDescriptorUpdateTemplateHandles(

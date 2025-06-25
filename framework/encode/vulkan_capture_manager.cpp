@@ -3003,6 +3003,12 @@ void VulkanCaptureManager::PostProcess_vkMapMemory(VkResult         result,
                                                           wrapper->shadow_allocation,
                                                           use_shadow_memory,
                                                           use_write_watch);
+                    if (use_shadow_memory)
+                    {
+                        MapMemoryWriteFixShadowMemoryCmd(wrapper->handle_id,
+                                                         reinterpret_cast<uint64_t>(wrapper->mapped_data),
+                                                         reinterpret_cast<uint64_t>(*ppData));
+                    }
                 }
             }
             else if (GetMemoryTrackingMode() == CaptureSettings::MemoryTrackingMode::kUnassisted)
@@ -3119,6 +3125,10 @@ void VulkanCaptureManager::PreProcess_vkUnmapMemory(VkDevice device, VkDeviceMem
 
     if (wrapper->mapped_data != nullptr)
     {
+        const void*  last_mapped_data   = wrapper->mapped_data;
+        VkDeviceSize last_mapped_size   = wrapper->mapped_size;
+        VkDeviceSize last_mapped_offset = wrapper->mapped_offset;
+
         // Make sure state tracker's TrackMappedMemory is called before ProcessMemoryEntry is called which resets
         // pages status
         if (IsCaptureModeTrack())
@@ -3150,16 +3160,16 @@ void VulkanCaptureManager::PreProcess_vkUnmapMemory(VkDevice device, VkDeviceMem
         }
         else if (GetMemoryTrackingMode() == CaptureSettings::MemoryTrackingMode::kUnassisted)
         {
-            VkDeviceSize size = wrapper->mapped_size;
+            VkDeviceSize size = last_mapped_size;
             if (size == VK_WHOLE_SIZE)
             {
-                assert(wrapper->mapped_offset <= wrapper->allocation_size);
-                size = wrapper->allocation_size - wrapper->mapped_offset;
+                assert(last_mapped_offset <= wrapper->allocation_size);
+                size = wrapper->allocation_size - last_mapped_offset;
             }
 
             // Write the entire mapped region.
             // We set offset to 0, because the pointer returned by vkMapMemory already includes the offset.
-            WriteFillMemoryCmd(wrapper->handle_id, 0, size, wrapper->mapped_data);
+            WriteFillMemoryCmd(wrapper->handle_id, 0, size, last_mapped_data);
 
             {
                 std::lock_guard<std::mutex> lock(GetMappedMemoryLock());
@@ -3167,19 +3177,6 @@ void VulkanCaptureManager::PreProcess_vkUnmapMemory(VkDevice device, VkDeviceMem
             }
         }
 
-        if (IsCaptureModeTrack())
-        {
-            assert(state_tracker_ != nullptr);
-            state_tracker_->TrackMappedMemory(device, memory, nullptr, 0, 0, 0, GetUseAssetFile());
-        }
-        else
-        {
-            // Perform subset of the state tracking performed by VulkanStateTracker::TrackMappedMemory, only storing
-            // values needed for non-tracking capture.
-            wrapper->mapped_data   = nullptr;
-            wrapper->mapped_offset = 0;
-            wrapper->mapped_size   = 0;
-        }
         std::lock_guard<std::mutex> lock(mapped_memory_lock_);
         memories.erase(wrapper->handle_id);
     }
@@ -3435,6 +3432,17 @@ void VulkanCaptureManager::ProcessFenceSubmit(VkFence fence)
         assert(wrapper != nullptr);
         wrapper->query_delay       = common_manager_->GetFenceQueryDelay();
         wrapper->query_delay_limit = common_manager_->GetFenceQueryDelayLimit();
+    }
+}
+
+void VulkanCaptureManager::MapMemoryWriteFixShadowMemoryCmd(format::HandleId memory_id,
+                                                            uint64_t         map_memory,
+                                                            uint64_t         shadow_memory)
+{
+    if (GetMemoryTrackingMode() == CaptureSettings::MemoryTrackingMode::kPageGuard ||
+        GetMemoryTrackingMode() == CaptureSettings::MemoryTrackingMode::kUserfaultfd)
+    {
+        WriteFixShadowMemoryCmd(memory_id, map_memory, shadow_memory);
     }
 }
 

@@ -161,6 +161,8 @@ enum class MetaDataType : uint16_t
     kFixShaderGroupHandleCommand            = 35,
     kReserved36                             = 36, // will be kInitializeMetaCommand - awaiting upstream merge
     kInitTensorCommand                      = 37,
+    kFixDescriptorDataCommand               = 38,
+    kFixShadowMemoryCommand                 = 39,
 };
 
 // MetaDataId is stored in the capture file and its type must be uint32_t to avoid breaking capture file compatibility.
@@ -332,6 +334,33 @@ struct FillMemoryCommandHeader
     HandleId memory_id;
     uint64_t memory_offset; // Offset from the start of the mapped pointer, not the start of the memory object.
     uint64_t memory_size;   // Uncompressed size of the data encoded after the header.
+};
+
+struct FixDescriptorDataCommandHeader
+{
+    MetaDataHeader   meta_header;
+    format::HandleId memory_id;
+    uint64_t         num_of_locations;
+};
+
+struct DescriptorDataLocationInfo
+{
+    uint64_t descriptor_offset_in_mapped_memory; // offset from the start the mapped pointer
+    uint64_t descriptor_offset_in_buffer;        // offset from the start of bound buffer for this descriptor data
+    uint64_t descriptor_offset_in_memory;        // offset from the start of one block of filled-memory
+    uint64_t descriptor_addr;                    // captured memory pointer to store descriptor
+    uint64_t orig_size;
+    uint64_t new_size;
+    bool     is_descriptor_buffer;
+};
+
+struct FixShadowMemoryCommand
+{
+    MetaDataHeader   meta_header;
+    format::ThreadId thread_id;
+    format::HandleId memory_id;
+    uint64_t         map_memory;
+    uint64_t         shadow_memory;
 };
 
 struct FixDeviceAddressCommandHeader

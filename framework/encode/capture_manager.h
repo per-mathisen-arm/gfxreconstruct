@@ -429,6 +429,11 @@ class CommonCaptureManager
 
     void WriteCreateHeapAllocationCmd(format::ApiFamilyId api_family, uint64_t allocation_id, uint64_t allocation_size);
 
+    void WriteFixShadowMemoryCmd(format::ApiFamilyId api_family,
+                                 format::HandleId    memory_id,
+                                 uint64_t            map_memory,
+                                 uint64_t            shadow_memory);
+
     bool OutputStreamWrite(const void* data, size_t len)
     {
         WriteToFile(data, len);

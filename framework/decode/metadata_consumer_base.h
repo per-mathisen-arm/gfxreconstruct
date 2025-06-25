@@ -47,6 +47,11 @@ class MetadataConsumerBase
     virtual void ProcessFixShaderGroupHandleCommand(const format::FixShaderGroupHandleCommandHeader& header,
                                                     const format::ShaderHandleLocationInfo*          infos)
     {}
+    virtual void ProcessFixDescriptorDataCommand(const format::FixDescriptorDataCommandHeader& header,
+                                                 const format::DescriptorDataLocationInfo*     infos)
+    {}
+    virtual void ProcessFixShadowMemoryCommand(format::HandleId memory_id, uint64_t map_memory, uint64_t shadow_memory)
+    {}
     virtual void
     ProcessFillMemoryResourceValueCommand(const format::FillMemoryResourceValueCommandHeader& command_header,
                                           const uint8_t*                                      data)

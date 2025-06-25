@@ -121,6 +121,45 @@ class MetadataJsonConsumer : public Base
         WriteBlockEnd();
     }
 
+    virtual void ProcessFixDescriptorDataCommand(const format::FixDescriptorDataCommandHeader& header,
+                                                 const format::DescriptorDataLocationInfo*     infos) override
+    {
+        using namespace util;
+        const JsonOptions& json_options = GetOptions();
+        auto&              jdata        = WriteMetaCommandStart("FixDescriptorDataCommand");
+        HandleToJson(jdata["memory_id"], header.memory_id, json_options);
+        if (json_options.verbose)
+        {
+            for (int i = 0; i < header.num_of_locations; i++)
+            {
+                FieldToJson(jdata["location"][i]["offset_in_mapped_memory"],
+                            infos[i].descriptor_offset_in_mapped_memory,
+                            json_options);
+                FieldToJson(
+                    jdata["location"][i]["offset_in_buffer"], infos[i].descriptor_offset_in_buffer, json_options);
+                FieldToJson(
+                    jdata["location"][i]["offset_in_memory"], infos[i].descriptor_offset_in_memory, json_options);
+                FieldToJson(jdata["location"][i]["descriptor_address"], infos[i].descriptor_addr, json_options);
+                FieldToJson(jdata["location"][i]["orig_size"], infos[i].orig_size, json_options);
+                FieldToJson(jdata["location"][i]["is_descriptor_buffer"], infos[i].is_descriptor_buffer, json_options);
+            }
+        }
+        WriteBlockEnd();
+    }
+
+    virtual void
+    ProcessFixShadowMemoryCommand(format::HandleId memory_id, uint64_t map_memory, uint64_t shadow_memory) override
+    {
+        using namespace util;
+        const JsonOptions& json_options = GetOptions();
+        auto&              jdata        = WriteMetaCommandStart("FixShadowMemoryCommand");
+        HandleToJson(jdata["memory_id"], memory_id, json_options);
+        FieldToJsonAsHex(jdata["map_memory"], map_memory, json_options);
+        FieldToJsonAsHex(jdata["shadow_memory"], shadow_memory, json_options);
+
+        WriteBlockEnd();
+    }
+
     virtual void Process_ExeFileInfo(gfxrecon::util::filepath::FileInfo& info) override
     {
         const util::JsonOptions& json_options = GetOptions();

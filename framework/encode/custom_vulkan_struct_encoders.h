@@ -50,6 +50,7 @@ void EncodeStruct(ParameterEncoder* encoder, const VkPushDescriptorSetWithTempla
 void EncodeStruct(ParameterEncoder* encoder, const VkIndirectExecutionSetCreateInfoEXT& value);
 void EncodeStruct(ParameterEncoder* encoder, const VkIndirectCommandsLayoutTokenEXT& value);
 void EncodeStruct(ParameterEncoder* encoder, const VkDataGraphPipelineConstantARM& value);
+void EncodeStruct(ParameterEncoder* encoder, const VkDescriptorGetInfoEXT& value);
 
 // Platform defined structures that are external to Vulkan.
 void EncodeStruct(ParameterEncoder* encoder, const ACL& value);

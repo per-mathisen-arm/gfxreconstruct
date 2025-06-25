@@ -930,6 +930,38 @@ bool FileProcessor::ProcessMetaData(const format::BlockHeader& block_header, for
             }
         }
     }
+    else if (meta_data_type == format::MetaDataType::kFixDescriptorDataCommand)
+    {
+        format::FixDescriptorDataCommandHeader header;
+        success = ReadBytes(&header.memory_id, sizeof(header.memory_id));
+        success = ReadBytes(&header.num_of_locations, sizeof(header.num_of_locations));
+
+        std::vector<format::DescriptorDataLocationInfo> locations(header.num_of_locations);
+        success = ReadBytes(locations.data(), header.num_of_locations * sizeof(format::DescriptorDataLocationInfo));
+        for (auto decoder : decoders_)
+        {
+            if (decoder->SupportsMetaDataId(meta_data_id))
+            {
+                decoder->DispatchFixDescriptorDataCommand(header, locations.data());
+            }
+        }
+    }
+    else if (meta_data_type == format::MetaDataType::kFixShadowMemoryCommand)
+    {
+        format::FixShadowMemoryCommand cmd;
+        success = ReadBytes(&cmd.thread_id, sizeof(cmd.thread_id));
+        success = ReadBytes(&cmd.memory_id, sizeof(cmd.memory_id));
+        success = ReadBytes(&cmd.map_memory, sizeof(cmd.map_memory));
+        success = ReadBytes(&cmd.shadow_memory, sizeof(cmd.shadow_memory));
+        for (auto decoder : decoders_)
+        {
+            if (decoder->SupportsMetaDataId(meta_data_id))
+            {
+                decoder->DispatchFixShadowMemoryCommand(
+                    cmd.thread_id, cmd.memory_id, cmd.map_memory, cmd.shadow_memory);
+            }
+        }
+    }
     else if (meta_data_type == format::MetaDataType::kFillMemoryResourceValueCommand)
     {
         format::FillMemoryResourceValueCommandHeader header;

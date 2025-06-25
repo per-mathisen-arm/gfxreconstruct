@@ -169,12 +169,13 @@ enum ValidationCacheEXTArrayIndices : uint32_t
 
 struct VulkanReplayDeviceInfo
 {
-    std::optional<VkPhysicalDeviceProperties>       properties;
-    std::optional<VkPhysicalDeviceMemoryProperties> memory_properties;
+    std::optional<VkPhysicalDeviceProperties>       properties        = {};
+    std::optional<VkPhysicalDeviceMemoryProperties> memory_properties = {};
 
     // extensions
-    std::optional<VkPhysicalDeviceRayTracingPipelinePropertiesKHR>    raytracing_properties;
-    std::optional<VkPhysicalDeviceAccelerationStructurePropertiesKHR> acceleration_structure_properties;
+    std::optional<VkPhysicalDeviceRayTracingPipelinePropertiesKHR>    raytracing_properties             = {};
+    std::optional<VkPhysicalDeviceAccelerationStructurePropertiesKHR> acceleration_structure_properties = {};
+    std::optional<VkPhysicalDeviceDescriptorBufferPropertiesEXT>      descriptor_buffer_properties      = {};
 };
 
 template <typename T>
@@ -292,6 +293,9 @@ struct VulkanPhysicalDeviceInfo : public VulkanObjectInfo<VkPhysicalDevice>
 
     // capture raytracing (shader-binding-table) properties
     std::optional<VkPhysicalDeviceRayTracingPipelinePropertiesKHR> capture_raytracing_properties = {};
+
+    // capture descriptor buffer properties
+    std::optional<VkPhysicalDeviceDescriptorBufferPropertiesEXT> capture_descriptor_buffer_properties = {};
 
     // Closest matching replay device.
     VulkanReplayDeviceInfo* replay_device_info{ nullptr };

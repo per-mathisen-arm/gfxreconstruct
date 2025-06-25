@@ -4,6 +4,7 @@
 #include "util/to_string.h"
 #include "graphics/vulkan_util.h"
 #include "graphics/vulkan_feature_util.h"
+#include "graphics/vulkan_struct_get_pnext.h"
 #ifdef __linux__
 #include <sys/resource.h>
 #endif
@@ -193,6 +194,14 @@ void VulkanReplayConsumerArmFeatures::DisableSubpassFusion(
 
 void VulkanReplayConsumerArmFeatures::ProcessFillMemoryCommandDeviceAddresses(const uint8_t* data)
 {
+    for (auto& entry : consumer_->descriptor_locations)
+    {
+        format::DescriptorDataLocationInfo loc_info = entry.second.first;
+        uint8_t*                           dest     = (uint8_t*)(data + loc_info.descriptor_offset_in_memory);
+        util::platform::MemoryCopy(dest, loc_info.new_size, entry.second.second.data(), loc_info.new_size);
+    }
+    consumer_->descriptor_locations.clear();
+
     for (format::AddressLocationInfo& location : consumer_->device_memory_address_locations)
     {
         auto old_value_ptr = (uint64_t*)(data + location.offset_in_memory);
@@ -448,6 +457,25 @@ void VulkanReplayConsumerArmFeatures::InsertFrameBoundaryExt(void*              
     }
 
     current->pNext = reinterpret_cast<VkBaseOutStructure*>(&frame_boundary);
+}
+
+void VulkanReplayConsumerArmFeatures::SetPhysicalDevicePropertiesDescriptorBuffer(
+    VulkanPhysicalDeviceInfo*          physical_device_info,
+    const VkPhysicalDeviceProperties2* capture_properties,
+    const VkPhysicalDeviceProperties2* replay_properties)
+{
+    if (auto descriptor_buffer_capture_pros =
+            graphics::vulkan_struct_get_pnext<VkPhysicalDeviceDescriptorBufferPropertiesEXT>(capture_properties))
+    {
+        physical_device_info->capture_descriptor_buffer_properties = *descriptor_buffer_capture_pros;
+    }
+
+    if (auto descriptor_buffer_replay_pros =
+            graphics::vulkan_struct_get_pnext<VkPhysicalDeviceDescriptorBufferPropertiesEXT>(replay_properties))
+    {
+        physical_device_info->replay_device_info->descriptor_buffer_properties        = *descriptor_buffer_replay_pros;
+        physical_device_info->replay_device_info->descriptor_buffer_properties->pNext = nullptr;
+    }
 }
 
 GFXRECON_END_NAMESPACE(gfxrecon)

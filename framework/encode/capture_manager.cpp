@@ -1611,6 +1611,34 @@ void CommonCaptureManager::WriteCreateHeapAllocationCmd(format::ApiFamilyId api_
     }
 }
 
+void CommonCaptureManager::WriteFixShadowMemoryCmd(format::ApiFamilyId api_family,
+                                                   format::HandleId    memory_id,
+                                                   uint64_t            map_memory,
+                                                   uint64_t            shadow_memory)
+{
+    if (!IsCaptureApp())
+        return;
+
+    if ((capture_mode_ & kModeWrite) == kModeWrite)
+    {
+        format::FixShadowMemoryCommand fix_cmd;
+
+        auto thread_data = GetThreadData();
+        assert(thread_data != nullptr);
+
+        fix_cmd.meta_header.block_header.type = format::BlockType::kMetaDataBlock;
+        fix_cmd.meta_header.block_header.size = format::GetMetaDataBlockBaseSize(fix_cmd);
+        fix_cmd.meta_header.meta_data_id =
+            format::MakeMetaDataId(api_family, format::MetaDataType::kFixShadowMemoryCommand);
+        fix_cmd.thread_id     = thread_data->thread_id_;
+        fix_cmd.memory_id     = memory_id;
+        fix_cmd.map_memory    = map_memory;
+        fix_cmd.shadow_memory = shadow_memory;
+
+        WriteToFile(&fix_cmd, sizeof(fix_cmd));
+    }
+}
+
 void CommonCaptureManager::WriteToFile(const void* data, size_t size, util::FileOutputStream* file_stream)
 {
     if (!IsCaptureApp())

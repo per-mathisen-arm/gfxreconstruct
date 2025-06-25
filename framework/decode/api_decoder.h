@@ -95,6 +95,14 @@ class ApiDecoder
     virtual void DispatchShaderGroupHandleCommand(const format::FixShaderGroupHandleCommandHeader& header,
                                                   const format::ShaderHandleLocationInfo*          infos) = 0;
 
+    virtual void DispatchFixDescriptorDataCommand(const format::FixDescriptorDataCommandHeader& header,
+                                                  const format::DescriptorDataLocationInfo*     info) = 0;
+
+    virtual void DispatchFixShadowMemoryCommand(format::ThreadId thread_id,
+                                                format::HandleId memory_id,
+                                                uint64_t         map_memory,
+                                                uint64_t         shadow_memory) = 0;
+
     virtual void
     DispatchFillMemoryResourceValueCommand(const format::FillMemoryResourceValueCommandHeader& command_header,
                                            const uint8_t*                                      data) = 0;

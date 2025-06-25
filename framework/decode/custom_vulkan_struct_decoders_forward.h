@@ -41,6 +41,7 @@ struct Decoded_VkAccelerationStructureMotionInstanceNV;
 struct Decoded_VkPerformanceValueDataINTEL;
 struct Decoded_VkIndirectExecutionSetInfoEXT;
 struct Decoded_VkIndirectCommandsTokenDataEXT;
+struct Decoded_VkDescriptorDataEXT;
 
 size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_VkClearColorValue* wrapper);
 size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_VkClearValue* wrapper);
@@ -50,6 +51,7 @@ size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_VkDeviceO
 size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_VkAccelerationStructureGeometryDataKHR* wrapper);
 size_t
 DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_VkAccelerationStructureMotionInstanceNV* wrapper);
+size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_VkDescriptorDataEXT* wrapper);
 
 // Decoded struct wrappers for Vulkan structures that require special processing.
 struct Decoded_VkDescriptorImageInfo;
@@ -60,6 +62,7 @@ struct Decoded_VkPushDescriptorSetWithTemplateInfo;
 struct Decoded_VkIndirectExecutionSetCreateInfoEXT;
 struct Decoded_VkIndirectCommandsLayoutTokenEXT;
 struct Decoded_VkDataGraphPipelineConstantARM;
+struct Decoded_VkDescriptorGetInfoEXT;
 
 size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_VkDescriptorImageInfo* wrapper);
 size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_VkWriteDescriptorSet* wrapper);
@@ -69,6 +72,7 @@ size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_VkPushDes
 size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_VkIndirectExecutionSetCreateInfoEXT* wrapper);
 size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_VkIndirectCommandsLayoutTokenEXT* wrapper);
 size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_VkDataGraphPipelineConstantARM* wrapper);
+size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_VkDescriptorGetInfoEXT* wrapper);
 
 // Decoded struct wrappers for SECURITY_ATTRIBUTES and related WIN32 structures.
 struct Decoded_ACL;

@@ -119,6 +119,9 @@ class VulkanReplayConsumerBase : public VulkanConsumer
     virtual void ProcessFixShaderGroupHandleCommand(const format::FixShaderGroupHandleCommandHeader& header,
                                                     const format::ShaderHandleLocationInfo*          infos) override;
 
+    virtual void ProcessFixDescriptorDataCommand(const format::FixDescriptorDataCommandHeader& header,
+                                                 const format::DescriptorDataLocationInfo*     infos) override;
+
     virtual void ProcessResizeWindowCommand(format::HandleId surface_id, uint32_t width, uint32_t height) override;
 
     virtual void ProcessResizeWindowCommand2(format::HandleId surface_id,
@@ -1569,6 +1572,18 @@ class VulkanReplayConsumerBase : public VulkanConsumer
         const VulkanSwapchainKHRInfo*                               swapchain_info,
         StructPointerDecoder<Decoded_VkRefreshCycleDurationGOOGLE>* pDisplayTimingProperties);
 
+    void OverrideGetDescriptorEXT(PFN_vkGetDescriptorEXT                                func,
+                                  VulkanDeviceInfo*                                     device,
+                                  StructPointerDecoder<Decoded_VkDescriptorGetInfoEXT>* pDescriptorInfo,
+                                  size_t                                                dataSize,
+                                  PointerDecoder<uint8_t>*                              pDescriptor);
+
+    void
+    OverrideCmdBindDescriptorBuffersEXT(PFN_vkCmdBindDescriptorBuffersEXT                               func,
+                                        VulkanCommandBufferInfo*                                        commandBuffer,
+                                        uint32_t                                                        bufferCount,
+                                        StructPointerDecoder<Decoded_VkDescriptorBufferBindingInfoEXT>* pBindingInfos);
+
     std::function<handle_create_result_t<VkPipeline>()>
     AsyncCreateGraphicsPipelines(PFN_vkCreateGraphicsPipelines                               func,
                                  VkResult                                                    returnValue,
@@ -1897,6 +1912,18 @@ class VulkanReplayConsumerBase : public VulkanConsumer
     std::vector<format::ShaderHandleLocationInfo> shader_group_handle_locations;
 
     std::unique_ptr<VulkanReplayConsumerArmFeatures> arm_features_;
+
+    struct DescriptorData
+    {
+        size_t               dataSize;
+        std::vector<uint8_t> descriptor;
+    };
+    // captured descriptor addr ---> replayed descriptor data
+    std::unordered_map<uint64_t, DescriptorData> descriptor_data_map;
+
+    typedef std::unordered_map<uint64_t, std::pair<format::DescriptorDataLocationInfo, std::vector<uint8_t>>>
+                          DescriptorLocationMap;
+    DescriptorLocationMap descriptor_locations;
 };
 
 GFXRECON_END_NAMESPACE(decode)

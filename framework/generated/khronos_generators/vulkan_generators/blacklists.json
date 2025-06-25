@@ -20,7 +20,12 @@
     "vkDestroyExternalComputeQueueNV",
     "vkGetExternalComputeQueueDataNV",
     "vkGetTensorOpaqueCaptureDescriptorDataARM",
-    "vkGetTensorViewOpaqueCaptureDescriptorDataARM"
+    "vkGetTensorViewOpaqueCaptureDescriptorDataARM",
+    "vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT",
+    "vkGetBufferOpaqueCaptureDescriptorDataEXT",
+    "vkGetImageOpaqueCaptureDescriptorDataEXT",
+    "vkGetImageViewOpaqueCaptureDescriptorDataEXT",
+    "vkGetSamplerOpaqueCaptureDescriptorDataEXT"
   ],
   "functions-encoder": [
     "vkCreateComputePipelines",
@@ -44,6 +49,7 @@
     "VkIndirectExecutionSetCreateInfoEXT",
     "VkIndirectCommandsTokenDataEXT",
     "VkIndirectCommandsLayoutTokenEXT",
-    "VkDataGraphPipelineConstantARM"
+    "VkDataGraphPipelineConstantARM",
+    "VkDescriptorGetInfoEXT"
   ]
 }
