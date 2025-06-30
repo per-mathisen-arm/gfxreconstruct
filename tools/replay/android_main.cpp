@@ -127,7 +127,8 @@ void android_main(struct android_app* app)
     ANativeActivity_setWindowFlags(app->activity, AWINDOW_FLAG_KEEP_SCREEN_ON, 0);
 
     std::string                    args = GetIntentExtra(app, kArgsExtentKey);
-    gfxrecon::util::ArgumentParser arg_parser(false, args.c_str(), kOptions, kArguments);
+    gfxrecon::util::ArgumentParser arg_parser(
+        false, args.c_str(), GetArmOptionString(kOptions), GetArmArgumentsString(kArguments));
 
     app->onAppCmd     = ProcessAppCmd;
     app->onInputEvent = ProcessInputEvent;

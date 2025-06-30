@@ -176,7 +176,8 @@ int main(int argc, const char** argv)
     gfxrecon::util::Log::Init(gfxrecon::decode::kDefaultLogLevel);
     PrintVersion(argv[0]);
 
-    gfxrecon::util::ArgumentParser arg_parser(argc, argv, kOptions, kArguments);
+    gfxrecon::util::ArgumentParser arg_parser(
+        argc, argv, GetArmOptionString(kOptions), GetArmArgumentsString(kArguments));
 
     if (arg_parser.IsOptionSet(kVersionOption) || CheckOptionPrintUsage(argv[0], arg_parser))
     {
