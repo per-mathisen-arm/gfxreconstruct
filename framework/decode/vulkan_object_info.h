@@ -32,6 +32,7 @@
 #include "graphics/vulkan_device_util.h"
 #include "graphics/vulkan_shader_group_handle.h"
 #include "util/defines.h"
+#include "util/spirv_parsing_util.h"
 
 #include "vulkan/vulkan.h"
 
@@ -167,7 +168,8 @@ struct VulkanReplayDeviceInfo
     std::optional<VkPhysicalDeviceMemoryProperties> memory_properties;
 
     // extensions
-    std::optional<VkPhysicalDeviceRayTracingPipelinePropertiesKHR> raytracing_properties;
+    std::optional<VkPhysicalDeviceRayTracingPipelinePropertiesKHR>    raytracing_properties;
+    std::optional<VkPhysicalDeviceAccelerationStructurePropertiesKHR> acceleration_structure_properties;
 };
 
 template <typename T>
@@ -415,7 +417,7 @@ struct VulkanBufferInfo : public VulkanObjectInfo<VkBuffer>
     VkDeviceSize       replay_size{ 0 };
     VkDeviceSize       capture_size{ 0 };
 
-    uint32_t           queue_family_index{ 0 };
+    uint32_t queue_family_index{ 0 };
 };
 
 struct VulkanBufferViewInfo : public VulkanObjectInfo<VkBufferView>
@@ -495,16 +497,6 @@ struct VulkanShaderModuleInfo : public VulkanObjectInfo<VkShaderModule>
         bool             is_array;
     };
 
-    VulkanShaderModuleInfo() = default;
-    VulkanShaderModuleInfo(const VulkanShaderModuleInfo& other)
-    {
-        handle                = other.handle;
-        parent_id             = other.parent_id;
-        capture_id            = other.capture_id;
-        used_descriptors_info = other.used_descriptors_info;
-    }
-    VulkanShaderModuleInfo& operator=(const VulkanShaderModuleInfo& other) = default;
-
     // One entry per descriptor binding
     using ShaderDescriptorSetInfo = std::map<uint32_t, ShaderDescriptorInfo>;
 
@@ -512,15 +504,26 @@ struct VulkanShaderModuleInfo : public VulkanObjectInfo<VkShaderModule>
     using ShaderDescriptorSetsInfos = std::map<uint32_t, ShaderDescriptorSetInfo>;
 
     ShaderDescriptorSetsInfos used_descriptors_info;
+
+    // keep track of existing usage of buffer-references
+    std::vector<gfxrecon::util::SpirVParsingUtil::BufferReferenceInfo> buffer_reference_infos;
 };
 
 struct VulkanPipelineInfo : public VulkanObjectInfoAsync<VkPipeline>
 {
     std::unordered_map<uint32_t, size_t> array_counts;
 
-    // The following information is populated and used only when the
-    // dump resources feature is in use
+    // shader modules used during creation of this pipeline,
+    // NOTE: this can be circumvented by inlined SPIRV
     std::unordered_map<VkShaderStageFlagBits, VulkanShaderModuleInfo> shaders;
+
+    // keep track of existing usage of buffer-references
+    std::vector<gfxrecon::util::SpirVParsingUtil::BufferReferenceInfo> buffer_reference_infos;
+
+    // map capture- to replay-time shader-group-handles
+    std::unordered_map<graphics::shader_group_handle_t, graphics::shader_group_handle_t> shader_group_handle_map;
+
+    // The following information is populated and used only when the dump resources feature is in use
 
     struct InputBindingDescription
     {
@@ -548,9 +551,6 @@ struct VulkanPipelineInfo : public VulkanObjectInfoAsync<VkPipeline>
 
     // Is VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT enabled
     bool dynamic_vertex_binding_stride{ false };
-
-    // map capture- to replay-time shader-group-handles
-    std::unordered_map<graphics::shader_group_handle_t, graphics::shader_group_handle_t> shader_group_handle_map;
 };
 
 struct VulkanDescriptorPoolInfo : public VulkanPoolInfo<VkDescriptorPool>
@@ -664,6 +664,9 @@ struct VulkanVideoSessionKHRInfo : VulkanObjectInfo<VkVideoSessionKHR>
 struct VulkanShaderEXTInfo : VulkanObjectInfoAsync<VkShaderEXT>
 {
     std::unordered_map<uint32_t, size_t> array_counts;
+
+    // keep track of existing usage of buffer-references
+    std::vector<gfxrecon::util::SpirVParsingUtil::BufferReferenceInfo> buffer_reference_infos;
 };
 
 struct VulkanCommandBufferInfo : public VulkanPoolObjectInfo<VkCommandBuffer>
@@ -676,6 +679,10 @@ struct VulkanCommandBufferInfo : public VulkanPoolObjectInfo<VkCommandBuffer>
     std::vector<uint8_t>                                      push_constant_data;
     VkShaderStageFlags                                        push_constant_stage_flags     = 0;
     VkPipelineLayout                                          push_constant_pipeline_layout = VK_NULL_HANDLE;
+
+    // collect buffer-device-addresses of locations to replace before submit
+    std::unordered_set<VkDeviceAddress> addresses_to_replace;
+    bool                                inside_renderpass = false;
 };
 
 struct VulkanRenderPassInfo : public VulkanObjectInfo<VkRenderPass>
@@ -757,6 +764,11 @@ struct VulkanAccelerationStructureKHRInfo : public VulkanObjectInfo<VkAccelerati
 {
     VkDeviceAddress capture_address = 0;
     VkDeviceAddress replay_address  = 0;
+
+    VkAccelerationStructureTypeKHR type = VK_ACCELERATION_STRUCTURE_TYPE_MAX_ENUM_KHR;
+
+    //! associated buffer
+    VkBuffer buffer = VK_NULL_HANDLE;
 };
 
 //

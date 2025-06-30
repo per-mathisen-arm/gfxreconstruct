@@ -30,6 +30,7 @@ add_library(gfxrecon_util STATIC "")
 
 target_sources(gfxrecon_util
                PRIVATE
+                    ${CMAKE_CURRENT_LIST_DIR}/alignment_utils.h
                     ${CMAKE_CURRENT_LIST_DIR}/argument_parser.h
                     ${CMAKE_CURRENT_LIST_DIR}/argument_parser.cpp
                     ${CMAKE_CURRENT_LIST_DIR}/call_modifier_base.h
@@ -210,6 +211,7 @@ if (${RUN_TESTS})
     target_sources(gfxrecon_util_test PRIVATE
             ${CMAKE_CURRENT_LIST_DIR}/test/main.cpp
             ${CMAKE_CURRENT_LIST_DIR}/test/test_linear_hashmap.cpp
+            ${CMAKE_CURRENT_LIST_DIR}/test/test_spirv_parsing_util.cpp
             ${CMAKE_CURRENT_LIST_DIR}/../../tools/platform_debug_helper.cpp
             $<$<BOOL:${D3D12_SUPPORT}>:${CMAKE_CURRENT_LIST_DIR}/test/dx_pointers.h>
             $<$<BOOL:${D3D12_SUPPORT}>:${CMAKE_CURRENT_LIST_DIR}/test/dx12_utils.cpp>

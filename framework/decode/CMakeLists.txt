@@ -158,6 +158,9 @@ target_sources(gfxrecon_decode
                     ${CMAKE_CURRENT_LIST_DIR}/vulkan_decoder_base.cpp
                     ${CMAKE_CURRENT_LIST_DIR}/vulkan_default_allocator.h
                     ${CMAKE_CURRENT_LIST_DIR}/vulkan_default_allocator.cpp
+                    ${CMAKE_CURRENT_LIST_DIR}/vulkan_address_replacer_base.h
+                    ${CMAKE_CURRENT_LIST_DIR}/vulkan_address_replacer_arm.h
+                    ${CMAKE_CURRENT_LIST_DIR}/vulkan_address_replacer_arm.cpp
                     ${CMAKE_CURRENT_LIST_DIR}/vulkan_address_replacer.h
                     ${CMAKE_CURRENT_LIST_DIR}/vulkan_address_replacer.cpp
                     ${CMAKE_CURRENT_LIST_DIR}/vulkan_address_replacer_shaders.h
