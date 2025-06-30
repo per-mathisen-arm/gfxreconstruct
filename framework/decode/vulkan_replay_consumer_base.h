@@ -25,6 +25,7 @@
 #ifndef GFXRECON_DECODE_VULKAN_REPLAY_CONSUMER_BASE_H
 #define GFXRECON_DECODE_VULKAN_REPLAY_CONSUMER_BASE_H
 
+#include "vulkan_replay_consumer_arm_features.h"
 #include "decode/handle_pointer_decoder.h"
 #include "decode/pointer_decoder.h"
 #include "decode/screenshot_handler.h"
@@ -72,8 +73,12 @@
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(decode)
 
+class VulkanReplayConsumerArmFeatures;
+
 class VulkanReplayConsumerBase : public VulkanConsumer
 {
+    friend class VulkanReplayConsumerArmFeatures;
+
   public:
     VulkanReplayConsumerBase(std::shared_ptr<application::Application> application, const VulkanReplayOptions& options);
 
@@ -1723,11 +1728,6 @@ class VulkanReplayConsumerBase : public VulkanConsumer
 
     void WriteScreenshots(const Decoded_VkPresentInfoKHR* meta_info) const;
 
-    void FillFrameBoundaryExtFromCommandBufferInfo(const VulkanCommandBufferInfo* command_buffer_info,
-                                                   VkFrameBoundaryEXT*            frame_boundary,
-                                                   std::vector<VkImage>&          frame_boundary_images);
-    void InsertFrameBoundaryExt(void* pnext_chain, const VkFrameBoundaryEXT* frame_boundary);
-
     bool CheckCommandBufferInfoForFrameBoundary(const VulkanCommandBufferInfo* command_buffer_info);
     bool CheckPNextChainForFrameBoundary(const VulkanDeviceInfo* device_info, const PNextNode* pnext);
 
@@ -1760,18 +1760,14 @@ class VulkanReplayConsumerBase : public VulkanConsumer
     bool            IsExtensionBeingFaked(const char* extension);
 
   private:
-    void LogFrameDebugInfo();
-
     // Retrieve image attachments from the renderpass framebuffer
     // Returns attachments specified in CreateFramebuffer call, or in BeginRenderPass if imageless flag
     // is used.
     std::vector<format::HandleId>
     GetImageAttachments(StructPointerDecoder<Decoded_VkRenderPassBeginInfo>* render_pass_begin_info_decoder);
 
-    void ConsumeVendorBinaryDataHeader(const uint8_t*                                vendor_binary_data,
-                                       VkDeviceFaultVendorBinaryHeaderVersionOneEXT& header);
-
   private:
+    std::unique_ptr<VulkanReplayConsumerArmFeatures>                           arm_features_;
     util::platform::LibraryHandle                                              loader_handle_;
     PFN_vkGetInstanceProcAddr                                                  get_instance_proc_addr_;
     PFN_vkCreateInstance                                                       create_instance_proc_;
