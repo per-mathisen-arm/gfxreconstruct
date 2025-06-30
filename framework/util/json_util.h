@@ -94,7 +94,6 @@ struct JsonOptions
     bool        expand_flags     = false;
     bool        hex_handles      = false;
     bool        verbose          = false;
-    bool        bare             = false;
     bool        checksum         = false;
     uint32_t    checksum_trigger = 0;
 };

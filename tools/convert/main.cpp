@@ -46,7 +46,7 @@ using Dx12JsonConsumer =
     gfxrecon::decode::MetadataJsonConsumer<gfxrecon::decode::MarkerJsonConsumer<gfxrecon::decode::Dx12JsonConsumer>>;
 #endif
 const char kOptions[] = "-h|--help,--version,--no-debug-popup,--file-per-frame,--include-binaries,--expand-flags,--"
-                        "verbose,--bare,--checksum";
+                        "verbose,--checksum";
 
 const char kArguments[] = "--output,--format,--log-level,--frame-range,--checksum-trigger";
 
@@ -92,9 +92,6 @@ static void PrintUsage(const char* exe_name)
     GFXRECON_WRITE_CONSOLE("  --log-level <level>\tSpecify highest level message to log. Options are:");
     GFXRECON_WRITE_CONSOLE("                  \t\tdebug, info, warning, error, and fatal. Default is info.");
     GFXRECON_WRITE_CONSOLE("  --verbose\t Request verbose output.")
-    GFXRECON_WRITE_CONSOLE("  --bare");
-    GFXRECON_WRITE_CONSOLE("                  \tCreate a 'diff-friendly' output by removing block indices and other");
-    GFXRECON_WRITE_CONSOLE("                  \tfields that generates artificial differences.");
     GFXRECON_WRITE_CONSOLE("  --checksum\t Show checksum of every data vector (ex pData field in a vkApiCall) with "
                            "size bigger than --checksum-trigger")
     GFXRECON_WRITE_CONSOLE("  --checksum-trigger\t If --checksum set, represents the minimum data vector length for "
@@ -224,7 +221,6 @@ int main(int argc, const char** argv)
     bool        expand_flags         = arg_parser.IsOptionSet(kExpandFlagsOption);
     bool        file_per_frame       = arg_parser.IsOptionSet(kFilePerFrameOption);
     bool        verbose              = arg_parser.IsOptionSet(kVerboseOption);
-    bool        bare                 = arg_parser.IsOptionSet(kBareOption);
     bool        checksum             = arg_parser.IsOptionSet(kChecksumOption);
     bool        output_to_stdout     = output_filename == "stdout";
 
@@ -317,7 +313,6 @@ int main(int argc, const char** argv)
             json_options.dump_binaries    = dump_binaries;
             json_options.expand_flags     = expand_flags;
             json_options.verbose          = verbose;
-            json_options.bare             = bare;
             json_options.checksum         = checksum;
             json_options.checksum_trigger = checksum_trigger;
 
