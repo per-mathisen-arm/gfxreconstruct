@@ -714,7 +714,9 @@ queryable permission to apply.
 The `gfxrecon.py replay` command has the following usage:
 
 ```text
-usage: gfxrecon.py replay [-h] [--push-file LOCAL_FILE] [--version] [--cpu-mask <binary-mask>] [--pause-frame N]
+usage: gfxrecon.py replay [-h] [-p LOCAL_FILE] [--version] [--log-level LEVEL]
+                          [--log-timestamps] [--log-file DEVICE_FILE]
+                          [--cpu-mask <binary-mask>] [--pause-frame N]
                           [--paused] [--screenshot-all] [--screenshots RANGES]
                           [--screenshot-format FORMAT] [--screenshot-dir DIR]
                           [--screenshot-prefix PREFIX] [--screenshot-scale SCALE]
@@ -726,7 +728,7 @@ usage: gfxrecon.py replay [-h] [--push-file LOCAL_FILE] [--version] [--cpu-mask 
                           [--flush-measurement-range] [-m MODE]
                           [--swapchain MODE] [--use-captured-swapchain-indices]
                           [--use-colorspace-fallback] [--wait-before-present]
-                          [--preload-measurement-range] [--log-level LEVEL]
+                          [--preload-measurement-range]
                           [--dump-resources <submit-index,command-index,draw-call-index>]
                           [--dump-resources <arg>]
                           [--dump-resources <filename>]
@@ -759,6 +761,8 @@ optional arguments:
               Specify highest level message to log. Options are:
               debug, info, warning, error, and fatal. Default is
               info. (forwarded to replay tool)
+  --log-timestamps
+              Output a timestamp in front of each log message.
   --log-file DEVICE_FILE
               Write log messages to a file at the specified path
               instead of logcat (forwarded to replay tool)
