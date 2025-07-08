@@ -477,6 +477,52 @@ class Dx12ExtractConsumer : public gfxrecon::decode::Dx12Consumer
         }
     }
 
+    virtual void Process_ID3D12Device7_AddToStateObject(
+        const gfxrecon::decode::ApiCallInfo&                                                       call_info,
+        gfxrecon::format::HandleId                                                                 object_id,
+        HRESULT                                                                                    return_value,
+        gfxrecon::decode::StructPointerDecoder<gfxrecon::decode::Decoded_D3D12_STATE_OBJECT_DESC>* pAddition,
+        gfxrecon::format::HandleId                     pStateObjectToGrowFrom,
+        gfxrecon::decode::Decoded_GUID                 riid,
+        gfxrecon::decode::HandlePointerDecoder<void*>* ppNewStateObject) override
+    {
+        if ((return_value == S_OK) && (pAddition != nullptr) && !pAddition->IsNull() && (ppNewStateObject != nullptr) &&
+            !ppNewStateObject->IsNull())
+        {
+            uint64_t handle_id = *ppNewStateObject->GetPointer();
+
+            auto& subobjects = pAddition->GetPointer()->pSubobjects;
+            for (uint32_t i = 0; i < pAddition->GetPointer()->NumSubobjects; i++)
+            {
+                if ((subobjects[i].pDesc != nullptr) && (subobjects[i].Type == D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY))
+                {
+                    auto& dxil_lib = reinterpret_cast<const D3D12_DXIL_LIBRARY_DESC*>(subobjects[i].pDesc)->DXILLibrary;
+
+                    const void* orig_code = dxil_lib.pShaderBytecode;
+                    size_t      orig_size = dxil_lib.BytecodeLength;
+                    std::string file_name = "sh" + std::to_string(handle_id) + "_" + std::to_string(i) + ".dxil";
+                    std::string file_path = gfxrecon::util::filepath::Join(extract_dir_, file_name);
+
+                    FILE*   fp     = nullptr;
+                    int32_t result = gfxrecon::util::platform::FileOpen(&fp, file_path.c_str(), "wb");
+                    if (result == 0)
+                    {
+                        if (!gfxrecon::util::platform::FileWrite(orig_code, orig_size, fp))
+                        {
+                            GFXRECON_WRITE_CONSOLE("Error while writing file %s: Could not complete",
+                                                   file_name.c_str());
+                        }
+                        gfxrecon::util::platform::FileClose(fp);
+                    }
+                    else
+                    {
+                        GFXRECON_WRITE_CONSOLE("Error while writing file %s: Could not open", file_name.c_str());
+                    }
+                }
+            }
+        }
+    }
+
   private:
     std::string extract_dir_;
 };
