@@ -1624,17 +1624,6 @@ void VulkanReplayConsumerBase::CheckResult(const char*                func_name,
     }
 }
 
-void VulkanReplayConsumerBase::CheckResult(const char*                 func_name,
-                                           VkResult                    original,
-                                           VkResult                    replay,
-                                           const decode::ApiCallInfo&  call_info,
-                                           VkDevice                    lost_device,
-                                           PFN_vkGetDeviceFaultInfoEXT func)
-{
-    arm_features_->ProcessDeviceFaultData(replay, lost_device, func);
-    CheckResult(func_name, original, replay, call_info);
-}
-
 void VulkanReplayConsumerBase::SetInstancePhysicalDeviceEntries(VulkanInstanceInfo*     instance_info,
                                                                 size_t                  capture_device_count,
                                                                 const format::HandleId* capture_devices,
@@ -3305,12 +3294,12 @@ VkResult VulkanReplayConsumerBase::PostCreateDeviceUpdateState(VulkanPhysicalDev
 
     uint32_t                              tool_count                          = 0;
     PFN_vkGetPhysicalDeviceToolProperties get_physical_device_tool_properties = nullptr;
-    if (instance_table->GetPhysicalDeviceToolProperties != gfxrecon::encode::noop::GetPhysicalDeviceToolProperties)
+    if (instance_table->GetPhysicalDeviceToolProperties != gfxrecon::encode::noop::vkGetPhysicalDeviceToolProperties)
     {
         get_physical_device_tool_properties = instance_table->GetPhysicalDeviceToolProperties;
     }
     else if (instance_table->GetPhysicalDeviceToolPropertiesEXT !=
-             gfxrecon::encode::noop::GetPhysicalDeviceToolPropertiesEXT)
+             gfxrecon::encode::noop::vkGetPhysicalDeviceToolPropertiesEXT)
     {
         get_physical_device_tool_properties = instance_table->GetPhysicalDeviceToolPropertiesEXT;
     }
@@ -8687,7 +8676,7 @@ VkResult VulkanReplayConsumerBase::OverrideGetSemaphoreCounterValue(PFN_vkGetSem
 
         // At least one of the two functions is available, because to call any of vkGetSemaphoreCounterValue{KHR} you
         // either have instance version >= 1.2 or VK_KHR_timeline_semaphore activated
-        if (device_table->WaitSemaphores != encode::noop::WaitSemaphores)
+        if (device_table->WaitSemaphores != encode::noop::vkWaitSemaphores)
         {
             result = device_table->WaitSemaphores(device, &wait_info, UINT64_MAX);
         }

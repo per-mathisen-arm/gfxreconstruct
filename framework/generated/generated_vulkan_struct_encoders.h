@@ -47,7 +47,6 @@
 
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(encode)
-
 void EncodePNextStruct(ParameterEncoder* encoder, const void* value);
 void EncodeStruct(ParameterEncoder* encoder, const StdVideoH264SpsVuiFlags& value);
 void EncodeStruct(ParameterEncoder* encoder, const StdVideoH264HrdParameters& value);
@@ -1209,4 +1208,4 @@ void EncodeStruct(ParameterEncoder* encoder, const VkDrawMeshTasksIndirectComman
 GFXRECON_END_NAMESPACE(encode)
 GFXRECON_END_NAMESPACE(gfxrecon)
 
-#endif
+#endif // GFXRECON_GENERATED_VULKAN_STRUCT_ENCODERS_H

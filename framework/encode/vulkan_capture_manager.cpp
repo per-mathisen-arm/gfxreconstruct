@@ -1144,7 +1144,7 @@ void SetObjectName(VkDevice device, typename WrapperType::HandleType handle)
     name_info.objectHandle = (uint64_t)handle;
     name_info.pObjectName  = object_type_str.c_str();
     name_info.objectType   = object_type;
-    encode::SetDebugUtilsObjectNameEXT(device, &name_info);
+    encode::vkSetDebugUtilsObjectNameEXT(device, &name_info);
 }
 
 VkResult

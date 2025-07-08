@@ -30,6 +30,7 @@
 #include "util/defines.h"
 #include "generated/generated_vulkan_json_consumer.h"
 #include "decode/custom_vulkan_struct_to_json.h"
+
 #include "vulkan/vulkan.h"
 #include "vk_video/vulkan_video_codec_h264std.h"
 #include "vk_video/vulkan_video_codec_h264std_decode.h"
@@ -7631,7 +7632,7 @@ void VulkanExportJsonConsumer::Process_vkGetAccelerationStructureMemoryRequireme
     const ApiCallInfo&                          call_info,
     format::HandleId                            device,
     StructPointerDecoder<Decoded_VkAccelerationStructureMemoryRequirementsInfoNV>* pInfo,
-    StructPointerDecoder<Decoded_VkMemoryRequirements2KHR>* pMemoryRequirements)
+    StructPointerDecoder<Decoded_VkMemoryRequirements2>* pMemoryRequirements)
 {
     nlohmann::ordered_json& jdata = WriteApiCallStart(call_info, "vkGetAccelerationStructureMemoryRequirementsNV");
     const JsonOptions& json_options = GetJsonOptions();

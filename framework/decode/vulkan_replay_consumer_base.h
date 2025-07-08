@@ -312,13 +312,6 @@ class VulkanReplayConsumerBase : public VulkanConsumer
 
     void CheckResult(const char* func_name, VkResult original, VkResult replay, const decode::ApiCallInfo& call_info);
 
-    void CheckResult(const char*                 func_name,
-                     VkResult                    original,
-                     VkResult                    replay,
-                     const decode::ApiCallInfo&  call_info,
-                     VkDevice                    lost_device,
-                     PFN_vkGetDeviceFaultInfoEXT func);
-
     PFN_vkGetInstanceProcAddr GetGetInstanceProcAddr()
     {
         if (loader_handle_ == nullptr)
@@ -1810,7 +1803,6 @@ class VulkanReplayConsumerBase : public VulkanConsumer
     GetImageAttachments(StructPointerDecoder<Decoded_VkRenderPassBeginInfo>* render_pass_begin_info_decoder);
 
   private:
-    std::unique_ptr<VulkanReplayConsumerArmFeatures>                           arm_features_;
     util::platform::LibraryHandle                                              loader_handle_;
     PFN_vkGetInstanceProcAddr                                                  get_instance_proc_addr_;
     PFN_vkCreateInstance                                                       create_instance_proc_;
@@ -1918,6 +1910,8 @@ class VulkanReplayConsumerBase : public VulkanConsumer
     std::vector<format::AddressLocationInfo>      device_memory_address_locations;
     std::vector<format::AddressLocationInfo>      other_address_locations;
     std::vector<format::ShaderHandleLocationInfo> shader_group_handle_locations;
+
+    std::unique_ptr<VulkanReplayConsumerArmFeatures> arm_features_;
 };
 
 GFXRECON_END_NAMESPACE(decode)

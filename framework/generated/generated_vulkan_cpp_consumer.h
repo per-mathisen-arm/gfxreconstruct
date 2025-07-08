@@ -3093,7 +3093,7 @@ class VulkanCppConsumer : public VulkanCppConsumerBase
         const ApiCallInfo&                          call_info,
         format::HandleId                            device,
         StructPointerDecoder<Decoded_VkAccelerationStructureMemoryRequirementsInfoNV>* pInfo,
-        StructPointerDecoder<Decoded_VkMemoryRequirements2KHR>* pMemoryRequirements) override;
+        StructPointerDecoder<Decoded_VkMemoryRequirements2>* pMemoryRequirements) override;
 
     virtual void Process_vkGetRayTracingShaderGroupHandlesKHR(
         const ApiCallInfo&                          call_info,
@@ -4388,9 +4388,7 @@ class VulkanCppConsumer : public VulkanCppConsumerBase
         uint32_t                                    drawCount,
         uint32_t                                    stride) override;
 };
-
-
 GFXRECON_END_NAMESPACE(decode)
 GFXRECON_END_NAMESPACE(gfxrecon)
 
-#endif
+#endif // GFXRECON_GENERATED_VULKAN_CPP_CONSUMER_H

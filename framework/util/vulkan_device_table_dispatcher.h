@@ -40,21 +40,21 @@ struct VulkanDeviceTableDispatcher
     VkDeviceAddress GetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo* pInfo)
     {
         using namespace encode;
-        if (table_->GetBufferDeviceAddress != noop::GetBufferDeviceAddress)
+        if (table_->GetBufferDeviceAddress != noop::vkGetBufferDeviceAddress)
         {
             return table_->GetBufferDeviceAddress(device, pInfo);
         }
-        else if (table_->GetBufferDeviceAddressKHR != noop::GetBufferDeviceAddressKHR)
+        else if (table_->GetBufferDeviceAddressKHR != noop::vkGetBufferDeviceAddressKHR)
         {
             return table_->GetBufferDeviceAddressKHR(device, pInfo);
         }
-        else if (table_->GetBufferDeviceAddressEXT != noop::GetBufferDeviceAddressEXT)
+        else if (table_->GetBufferDeviceAddressEXT != noop::vkGetBufferDeviceAddressEXT)
         {
             return table_->GetBufferDeviceAddressEXT(device, pInfo);
         }
         else
         {
-            return noop::GetBufferDeviceAddress(device, pInfo);
+            return noop::vkGetBufferDeviceAddress(device, pInfo);
         }
     }
 };

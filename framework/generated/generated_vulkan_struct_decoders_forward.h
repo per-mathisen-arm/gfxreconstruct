@@ -45,7 +45,6 @@
 
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(decode)
-
 struct Decoded_StdVideoH264SpsVuiFlags;
 struct Decoded_StdVideoH264HrdParameters;
 struct Decoded_StdVideoH264SequenceParameterSetVui;
@@ -2363,4 +2362,4 @@ size_t DecodeStruct(const uint8_t* parameter_buffer, size_t buffer_size, Decoded
 GFXRECON_END_NAMESPACE(decode)
 GFXRECON_END_NAMESPACE(gfxrecon)
 
-#endif
+#endif // GFXRECON_GENERATED_VULKAN_STRUCT_DECODERS_FORWARD_H

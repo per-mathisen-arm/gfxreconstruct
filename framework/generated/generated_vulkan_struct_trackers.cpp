@@ -33,7 +33,6 @@
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(encode)
 GFXRECON_BEGIN_NAMESPACE(vulkan_trackers)
-
 VkBufferMemoryBarrier* TrackStruct(const VkBufferMemoryBarrier* value, HandleUnwrapMemory* unwrap_memory)
 {
     if (value == nullptr)

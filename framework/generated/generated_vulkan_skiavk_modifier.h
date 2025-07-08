@@ -30,6 +30,7 @@
 #define  GFXRECON_GENERATED_VULKAN_SKIAVK_MODIFIER_H
 
 #include "util/vulkan_modifier_base.h"
+
 #include <unordered_map>
 #include <unordered_set>
 
@@ -3064,7 +3065,7 @@ class VulkanSkiaModifier : public util::VulkanModifierBase
         const ApiCallInfo&                          call_info,
         format::HandleId                            device,
         StructPointerDecoder<Decoded_VkAccelerationStructureMemoryRequirementsInfoNV>* pInfo,
-        StructPointerDecoder<Decoded_VkMemoryRequirements2KHR>* pMemoryRequirements){ CheckSkiavk(device);}
+        StructPointerDecoder<Decoded_VkMemoryRequirements2>* pMemoryRequirements){ CheckSkiavk(device);}
 
     virtual void Process_vkBindAccelerationStructureMemoryNV(
         const ApiCallInfo&                          call_info,
@@ -4527,4 +4528,4 @@ class VulkanSkiaModifier : public util::VulkanModifierBase
 GFXRECON_END_NAMESPACE(decode)
 GFXRECON_END_NAMESPACE(gfxrecon)
 
-#endif
+#endif // GFXRECON_GENERATED_VULKAN_SKIAVK_MODIFIER_H
