@@ -539,7 +539,7 @@ void Encode_ID3D12DeviceChild_GetDevice(
         EncodeStruct(encoder, riid);
         encoder->EncodeObjectPtr(ppvDevice, omit_output_data);
         encoder->EncodeInt32Value(return_value);
-        D3D12CaptureManager::Get()->EndCreateMethodCallCapture(return_value, riid, ppvDevice, wrapper);
+        D3D12CaptureManager::Get()->EndCreateMethodCallCapture(return_value, riid, ppvDevice, static_cast<IUnknown_Wrapper*>(wrapper));
     }
 }
 
