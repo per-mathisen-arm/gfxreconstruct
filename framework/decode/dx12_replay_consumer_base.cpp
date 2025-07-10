@@ -386,6 +386,8 @@ void Dx12ReplayConsumerBase::ProcessFillMemoryResourceValueCommand(
     // should use and clear fill_memory_resource_value_info_.
     GFXRECON_ASSERT(fill_memory_resource_value_info_.expected_block_index == 0);
 
+    fill_memory_resource_value_info_.Clear();
+
     // The next block should be the FillMemoryCommand the resource data is associated with.
     fill_memory_resource_value_info_.expected_block_index = GetCurrentBlockIndex() + 1;
 
@@ -852,6 +854,15 @@ void Dx12ReplayConsumerBase::MapGpuDescriptorHandle(D3D12_GPU_DESCRIPTOR_HANDLE&
 
 void Dx12ReplayConsumerBase::MapGpuDescriptorHandle(uint8_t* dst_handle_ptr, const uint8_t* src_handle_ptr)
 {
+    if (support_memory_allocator_)
+    {
+        D3D12_GPU_DESCRIPTOR_HANDLE gpu_desc_handle = {};
+        gpu_desc_handle.ptr                         = *reinterpret_cast<const UINT64*>(src_handle_ptr);
+        MapGpuDescriptorHandle(gpu_desc_handle);
+        *reinterpret_cast<UINT64*>(dst_handle_ptr) = gpu_desc_handle.ptr;
+        return;
+    }
+
     D3D12_GPU_DESCRIPTOR_HANDLE handle = {};
     util::platform::MemoryCopy(&handle.ptr,
                                sizeof(D3D12_GPU_DESCRIPTOR_HANDLE::ptr),
@@ -871,6 +882,15 @@ void Dx12ReplayConsumerBase::MapCpuDescriptorHandle(D3D12_CPU_DESCRIPTOR_HANDLE&
 
 void Dx12ReplayConsumerBase::MapCpuDescriptorHandle(uint8_t* dst_handle_ptr, const uint8_t* src_handle_ptr)
 {
+    if (support_memory_allocator_)
+    {
+        D3D12_CPU_DESCRIPTOR_HANDLE cpu_desc_handle = {};
+        cpu_desc_handle.ptr                         = *reinterpret_cast<const UINT64*>(src_handle_ptr);
+        MapCpuDescriptorHandle(cpu_desc_handle);
+        *reinterpret_cast<UINT64*>(dst_handle_ptr) = cpu_desc_handle.ptr;
+        return;
+    }
+
     D3D12_CPU_DESCRIPTOR_HANDLE handle = {};
     util::platform::MemoryCopy(&handle.ptr,
                                sizeof(D3D12_CPU_DESCRIPTOR_HANDLE::ptr),
@@ -895,6 +915,14 @@ void Dx12ReplayConsumerBase::MapGpuVirtualAddress(D3D12_GPU_VIRTUAL_ADDRESS& add
 
 void Dx12ReplayConsumerBase::MapGpuVirtualAddress(uint8_t* dst_address_ptr, const uint8_t* src_address_ptr)
 {
+    if (support_memory_allocator_)
+    {
+        auto address_value = *reinterpret_cast<const D3D12_GPU_VIRTUAL_ADDRESS*>(src_address_ptr);
+        MapGpuVirtualAddress(address_value);
+        *reinterpret_cast<D3D12_GPU_VIRTUAL_ADDRESS*>(dst_address_ptr) = address_value;
+        return;
+    }
+
     D3D12_GPU_VIRTUAL_ADDRESS address;
     util::platform::MemoryCopy(
         &address, sizeof(D3D12_GPU_VIRTUAL_ADDRESS), src_address_ptr, sizeof(D3D12_GPU_VIRTUAL_ADDRESS));
@@ -1950,7 +1978,10 @@ void Dx12ReplayConsumerBase::SetResourceReplayRequiredSize(DxObjectInfo* replay_
         auto desc_pointer = pDesc->GetPointer();
         if (desc_pointer->Dimension == D3D12_RESOURCE_DIMENSION_BUFFER)
         {
-            if (InitialResourceState == D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE)
+            if (((InitialResourceState & D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE) ==
+                 D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE) ||
+                ((desc_pointer->Flags & D3D12_RESOURCE_FLAG_RAYTRACING_ACCELERATION_STRUCTURE) ==
+                 D3D12_RESOURCE_FLAG_RAYTRACING_ACCELERATION_STRUCTURE))
             {
                 UINT64 accel_struct_size = 0;
                 if (accel_struct_builder != nullptr)
@@ -1979,7 +2010,10 @@ void Dx12ReplayConsumerBase::SetResourceReplayRequiredSize(DxObjectInfo* replay_
         auto desc_pointer = pDesc1->GetPointer();
         if (desc_pointer->Dimension == D3D12_RESOURCE_DIMENSION_BUFFER)
         {
-            if (InitialResourceState == D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE)
+            if (((InitialResourceState & D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE) ==
+                 D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE) ||
+                ((desc_pointer->Flags & D3D12_RESOURCE_FLAG_RAYTRACING_ACCELERATION_STRUCTURE) ==
+                 D3D12_RESOURCE_FLAG_RAYTRACING_ACCELERATION_STRUCTURE))
             {
                 UINT64 accel_struct_size = 0;
                 if (accel_struct_builder != nullptr)
@@ -2996,7 +3030,7 @@ void Dx12ReplayConsumerBase::OverrideExecuteCommandLists(DxObjectInfo*          
     // Check if the command list requires sync after mapping.
     // If resource value mapping is needed, it will sync after command lists execution, so we don't need to add an
     // extra sync here.
-    if (!needs_mapping)
+    if ((!needs_mapping) && (resource_value_mapper_ != nullptr))
     {
         for (UINT i = 0; (i < num_command_lists) && !do_sync_after_execute; ++i)
         {
@@ -4668,7 +4702,11 @@ void Dx12ReplayConsumerBase::OverrideGetResourceTiling(
                                  FirstSubresourceTilingToGet,
                                  pSubresourceTilingsForNonPackedMips->GetOutputPointer());
 
-    auto replay_NumTilesForEntireResource = *pNumTilesForEntireResource->GetOutputPointer();
+    UINT replay_NumTilesForEntireResource = 0;
+    if (pNumSubresourceTilings->GetPointer())
+    {
+        replay_NumTilesForEntireResource = *pNumTilesForEntireResource->GetOutputPointer();
+    }
 
     if (capture_NumTilesForEntireResource != replay_NumTilesForEntireResource ||
         capture_NumSubresourceTilings != replay_NumSubresourceTilings)
