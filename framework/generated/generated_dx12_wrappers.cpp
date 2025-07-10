@@ -13227,7 +13227,8 @@ HRESULT STDMETHODCALLTYPE ID3D12Device5_Wrapper::EnumerateMetaCommands(
             pNumMetaCommands,
             pDescs);
 
-        result = GetWrappedObjectAs<ID3D12Device5>()->EnumerateMetaCommands(
+        result = D3D12CaptureManager::Get()->OverrideID3D12Device5_EnumerateMetaCommands(
+            this,
             pNumMetaCommands,
             pDescs);
 
