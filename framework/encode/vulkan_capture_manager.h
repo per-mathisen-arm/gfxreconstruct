@@ -1782,6 +1782,52 @@ class VulkanCaptureManager : public ApiCaptureManager
                              const std::string*      asset_file_name,
                              util::ThreadData*       thread_data) override;
 
+    void
+    PostProcess_vkBindDataGraphPipelineSessionMemoryARM(VkResult,
+                                                        VkDevice device,
+                                                        uint32_t bindInfoCount,
+                                                        const VkBindDataGraphPipelineSessionMemoryInfoARM* pBindInfos)
+    {
+        if (!IsCaptureModeTrack())
+            return;
+
+        for (int i = 0; i < bindInfoCount; i++)
+        {
+            state_tracker_->TrackDataGraphPipelineSessionMemoryBinding(
+                device, pBindInfos[i].session, pBindInfos[i].memory, pBindInfos[i].memoryOffset);
+            auto wrapper         = GetWrapper<DataGraphPipelineSessionARMWrapper>(pBindInfos[i].session);
+            wrapper->objectIndex = pBindInfos[i].objectIndex;
+            wrapper->bindPoint   = pBindInfos[i].bindPoint;
+        }
+    }
+
+    void PostProcess_vkBindTensorMemoryARM(VkResult,
+                                           VkDevice                         device,
+                                           uint32_t                         bindInfoCount,
+                                           const VkBindTensorMemoryInfoARM* pBindInfos)
+    {
+        if (!IsCaptureModeTrack())
+            return;
+
+        for (int i = 0; i < bindInfoCount; i++)
+        {
+            state_tracker_->TrackTensorMemoryBinding(
+                device, pBindInfos[i].tensor, pBindInfos[i].memory, pBindInfos[i].memoryOffset);
+        }
+    }
+
+    void PostProcess_vkCreateTensorView(VkResult,
+                                        VkDevice                         device,
+                                        const VkTensorViewCreateInfoARM* pCreateInfo,
+                                        const VkAllocationCallbacks*     pAllocator,
+                                        VkTensorViewARM*                 pView)
+    {
+        auto view   = GetWrapper<TensorViewARMWrapper>(*pView);
+        auto tensor = GetWrapper<TensorARMWrapper>(pCreateInfo->tensor);
+        tensor->tensor_views.insert(view);
+        view->tensor = tensor;
+    }
+
   private:
     struct HardwareBufferInfo
     {

@@ -18,7 +18,9 @@
     "vkCreateRayTracingPipelinesKHR",
     "vkCreateExternalComputeQueueNV",
     "vkDestroyExternalComputeQueueNV",
-    "vkGetExternalComputeQueueDataNV"
+    "vkGetExternalComputeQueueDataNV",
+    "vkGetTensorOpaqueCaptureDescriptorDataARM",
+    "vkGetTensorViewOpaqueCaptureDescriptorDataARM"
   ],
   "functions-encoder": [
     "vkCreateComputePipelines",
@@ -41,6 +43,7 @@
     "VkIndirectExecutionSetInfoEXT",
     "VkIndirectExecutionSetCreateInfoEXT",
     "VkIndirectCommandsTokenDataEXT",
-    "VkIndirectCommandsLayoutTokenEXT"
+    "VkIndirectCommandsLayoutTokenEXT",
+    "VkDataGraphPipelineConstantARM"
   ]
 }

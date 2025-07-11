@@ -4057,6 +4057,63 @@ class VulkanSkiaModifier : public util::VulkanModifierBase
         const ApiCallInfo&                          call_info,
         format::HandleId                            commandBuffer,
         VkCoverageReductionModeNV                   coverageReductionMode){ CheckSkiavk(commandBuffer);}
+    virtual void Process_vkCreateTensorARM(
+        const ApiCallInfo&                          call_info,
+        VkResult                                    returnValue,
+        format::HandleId                            device,
+        StructPointerDecoder<Decoded_VkTensorCreateInfoARM>* pCreateInfo,
+        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
+        HandlePointerDecoder<VkTensorARM>*          pTensor){ CheckSkiavk(device);}
+
+    virtual void Process_vkDestroyTensorARM(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            device,
+        format::HandleId                            tensor,
+        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
+
+    virtual void Process_vkCreateTensorViewARM(
+        const ApiCallInfo&                          call_info,
+        VkResult                                    returnValue,
+        format::HandleId                            device,
+        StructPointerDecoder<Decoded_VkTensorViewCreateInfoARM>* pCreateInfo,
+        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
+        HandlePointerDecoder<VkTensorViewARM>*      pView){ CheckSkiavk(device);}
+
+    virtual void Process_vkDestroyTensorViewARM(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            device,
+        format::HandleId                            tensorView,
+        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
+
+    virtual void Process_vkGetTensorMemoryRequirementsARM(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            device,
+        StructPointerDecoder<Decoded_VkTensorMemoryRequirementsInfoARM>* pInfo,
+        StructPointerDecoder<Decoded_VkMemoryRequirements2>* pMemoryRequirements){ CheckSkiavk(device);}
+
+    virtual void Process_vkBindTensorMemoryARM(
+        const ApiCallInfo&                          call_info,
+        VkResult                                    returnValue,
+        format::HandleId                            device,
+        uint32_t                                    bindInfoCount,
+        StructPointerDecoder<Decoded_VkBindTensorMemoryInfoARM>* pBindInfos){ CheckSkiavk(device);}
+
+    virtual void Process_vkGetDeviceTensorMemoryRequirementsARM(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            device,
+        StructPointerDecoder<Decoded_VkDeviceTensorMemoryRequirementsARM>* pInfo,
+        StructPointerDecoder<Decoded_VkMemoryRequirements2>* pMemoryRequirements){ CheckSkiavk(device);}
+
+    virtual void Process_vkCmdCopyTensorARM(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        StructPointerDecoder<Decoded_VkCopyTensorInfoARM>* pCopyTensorInfo){ CheckSkiavk(commandBuffer);}
+
+    virtual void Process_vkGetPhysicalDeviceExternalTensorPropertiesARM(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            physicalDevice,
+        StructPointerDecoder<Decoded_VkPhysicalDeviceExternalTensorInfoARM>* pExternalTensorInfo,
+        StructPointerDecoder<Decoded_VkExternalTensorPropertiesARM>* pExternalTensorProperties){ CheckSkiavk(physicalDevice);}
     virtual void Process_vkGetShaderModuleIdentifierEXT(
         const ApiCallInfo&                          call_info,
         format::HandleId                            device,
@@ -4205,6 +4262,87 @@ class VulkanSkiaModifier : public util::VulkanModifierBase
         const ApiCallInfo&                          call_info,
         format::HandleId                            queue,
         StructPointerDecoder<Decoded_VkOutOfBandQueueTypeInfoNV>* pQueueTypeInfo){ CheckSkiavk(queue);}
+    virtual void Process_vkCreateDataGraphPipelinesARM(
+        const ApiCallInfo&                          call_info,
+        VkResult                                    returnValue,
+        format::HandleId                            device,
+        format::HandleId                            deferredOperation,
+        format::HandleId                            pipelineCache,
+        uint32_t                                    createInfoCount,
+        StructPointerDecoder<Decoded_VkDataGraphPipelineCreateInfoARM>* pCreateInfos,
+        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
+        HandlePointerDecoder<VkPipeline>*           pPipelines){ CheckSkiavk(device);}
+
+    virtual void Process_vkCreateDataGraphPipelineSessionARM(
+        const ApiCallInfo&                          call_info,
+        VkResult                                    returnValue,
+        format::HandleId                            device,
+        StructPointerDecoder<Decoded_VkDataGraphPipelineSessionCreateInfoARM>* pCreateInfo,
+        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
+        HandlePointerDecoder<VkDataGraphPipelineSessionARM>* pSession){ CheckSkiavk(device);}
+
+    virtual void Process_vkGetDataGraphPipelineSessionBindPointRequirementsARM(
+        const ApiCallInfo&                          call_info,
+        VkResult                                    returnValue,
+        format::HandleId                            device,
+        StructPointerDecoder<Decoded_VkDataGraphPipelineSessionBindPointRequirementsInfoARM>* pInfo,
+        PointerDecoder<uint32_t>*                   pBindPointRequirementCount,
+        StructPointerDecoder<Decoded_VkDataGraphPipelineSessionBindPointRequirementARM>* pBindPointRequirements){ CheckSkiavk(device);}
+
+    virtual void Process_vkGetDataGraphPipelineSessionMemoryRequirementsARM(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            device,
+        StructPointerDecoder<Decoded_VkDataGraphPipelineSessionMemoryRequirementsInfoARM>* pInfo,
+        StructPointerDecoder<Decoded_VkMemoryRequirements2>* pMemoryRequirements){ CheckSkiavk(device);}
+
+    virtual void Process_vkBindDataGraphPipelineSessionMemoryARM(
+        const ApiCallInfo&                          call_info,
+        VkResult                                    returnValue,
+        format::HandleId                            device,
+        uint32_t                                    bindInfoCount,
+        StructPointerDecoder<Decoded_VkBindDataGraphPipelineSessionMemoryInfoARM>* pBindInfos){ CheckSkiavk(device);}
+
+    virtual void Process_vkDestroyDataGraphPipelineSessionARM(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            device,
+        format::HandleId                            session,
+        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
+
+    virtual void Process_vkCmdDispatchDataGraphARM(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        format::HandleId                            session,
+        StructPointerDecoder<Decoded_VkDataGraphPipelineDispatchInfoARM>* pInfo){ CheckSkiavk(commandBuffer);}
+
+    virtual void Process_vkGetDataGraphPipelineAvailablePropertiesARM(
+        const ApiCallInfo&                          call_info,
+        VkResult                                    returnValue,
+        format::HandleId                            device,
+        StructPointerDecoder<Decoded_VkDataGraphPipelineInfoARM>* pPipelineInfo,
+        PointerDecoder<uint32_t>*                   pPropertiesCount,
+        PointerDecoder<VkDataGraphPipelinePropertyARM>* pProperties){ CheckSkiavk(device);}
+
+    virtual void Process_vkGetDataGraphPipelinePropertiesARM(
+        const ApiCallInfo&                          call_info,
+        VkResult                                    returnValue,
+        format::HandleId                            device,
+        StructPointerDecoder<Decoded_VkDataGraphPipelineInfoARM>* pPipelineInfo,
+        uint32_t                                    propertiesCount,
+        StructPointerDecoder<Decoded_VkDataGraphPipelinePropertyQueryResultARM>* pProperties){ CheckSkiavk(device);}
+
+    virtual void Process_vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(
+        const ApiCallInfo&                          call_info,
+        VkResult                                    returnValue,
+        format::HandleId                            physicalDevice,
+        uint32_t                                    queueFamilyIndex,
+        PointerDecoder<uint32_t>*                   pQueueFamilyDataGraphPropertyCount,
+        StructPointerDecoder<Decoded_VkQueueFamilyDataGraphPropertiesARM>* pQueueFamilyDataGraphProperties){ CheckSkiavk(physicalDevice);}
+
+    virtual void Process_vkGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            physicalDevice,
+        StructPointerDecoder<Decoded_VkPhysicalDeviceQueueFamilyDataGraphProcessingEngineInfoARM>* pQueueFamilyDataGraphProcessingEngineInfo,
+        StructPointerDecoder<Decoded_VkQueueFamilyDataGraphProcessingEnginePropertiesARM>* pQueueFamilyDataGraphProcessingEngineProperties){ CheckSkiavk(physicalDevice);}
     virtual void Process_vkCmdSetAttachmentFeedbackLoopEnableEXT(
         const ApiCallInfo&                          call_info,
         format::HandleId                            commandBuffer,

@@ -1304,6 +1304,67 @@ void VulkanReplayConsumerBase::ProcessInitBufferCommand(format::HandleId device_
     }
 }
 
+void VulkanReplayConsumerBase::ProcessInitTensorCommand(format::HandleId device_id,
+                                                        format::HandleId tensor_id,
+                                                        uint64_t         data_size,
+                                                        const uint8_t*   data)
+{
+    VulkanDeviceInfo*          device_info = object_info_table_->GetVkDeviceInfo(device_id);
+    const VulkanTensorARMInfo* tensor_info = object_info_table_->GetVkTensorARMInfo(tensor_id);
+    auto                       allocator   = device_info->allocator.get();
+
+    if ((device_info != nullptr) && (tensor_info != nullptr))
+    {
+        VkResult                   result      = VK_SUCCESS;
+        VkDevice                   device      = device_info->handle;
+        VkTensorARM                tensor      = tensor_info->handle;
+        VulkanResourceInitializer* initializer = device_info->resource_initializer.get();
+
+        assert((device != VK_NULL_HANDLE) && (tensor != VK_NULL_HANDLE));
+
+        if (initializer != nullptr)
+        {
+            if ((tensor_info->memory_property_flags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) ==
+                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)
+            {
+                result = initializer->LoadData(data_size, data, tensor_info->allocator_data);
+
+                if (result != VK_SUCCESS)
+                {
+                    GFXRECON_LOG_WARNING("State snapshot mapped memory copy failed for VkTensor object (ID = %" PRIu64
+                                         ", handle = 0x%" PRIx64 ")",
+                                         tensor_id,
+                                         tensor);
+                }
+            }
+            else
+            {
+                GFXRECON_LOG_WARNING("Tensor staging not supported");
+            }
+        }
+    }
+    else
+    {
+        if (device_info != nullptr)
+        {
+            GFXRECON_LOG_WARNING(
+                "Skipping state snapshot tensor upload for unrecognized VkTensor object (ID = %" PRIu64 ")", tensor_id);
+        }
+        else if (tensor_info != nullptr)
+        {
+            GFXRECON_LOG_WARNING(
+                "Skipping state snapshot tensor upload for unrecognized VkDevice object (ID = %" PRIu64 ")", device_id);
+        }
+        else
+        {
+            GFXRECON_LOG_WARNING("Skipping state snapshot tensor upload for unrecognized VkDevice (ID = %" PRIu64
+                                 ") and VkTensor (ID = %" PRIu64 ") objects",
+                                 device_id,
+                                 tensor_id);
+        }
+    }
+}
+
 void VulkanReplayConsumerBase::ProcessInitImageCommand(format::HandleId             device_id,
                                                        format::HandleId             image_id,
                                                        uint64_t                     data_size,

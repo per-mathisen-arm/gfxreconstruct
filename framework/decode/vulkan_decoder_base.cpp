@@ -321,6 +321,20 @@ void VulkanDecoderBase::DispatchInitImageCommand(format::ThreadId             th
     }
 }
 
+void VulkanDecoderBase::DispatchInitTensorCommand(format::ThreadId thread_id,
+                                                  format::HandleId device_id,
+                                                  format::HandleId tensor_id,
+                                                  uint64_t         data_size,
+                                                  const uint8_t*   data)
+{
+    GFXRECON_UNREFERENCED_PARAMETER(thread_id);
+
+    for (auto consumer : consumers_)
+    {
+        consumer->ProcessInitTensorCommand(device_id, tensor_id, data_size, data);
+    }
+}
+
 /// @note Dead code, never called.
 /// @note The Vulkan Layer does not encode this and no Vulkan consumers process it. It is one of several DX12-specific
 /// metablocks which could have stubbed ({}) versions of their dispatch functions in ApiDecoder.

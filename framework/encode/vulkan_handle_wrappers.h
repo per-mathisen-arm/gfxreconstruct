@@ -675,6 +675,29 @@ struct DebugUtilsObjectNameInfoWrapper
     std::string      name;
 };
 
+struct TensorViewARMWrapper;
+struct TensorARMWrapper : public HandleWrapper<VkTensorARM>, AssetWrapperBase
+{
+    std::set<TensorViewARMWrapper*> tensor_views;
+    VkTensorTilingARM               tiling{};
+    VkFormat                        format{};
+    uint32_t                        dimensionCount{};
+    VkTensorUsageFlagsARM           usage{};
+    std::vector<int64_t>            pDimensions{};
+    std::vector<int64_t>            pStrides{};
+};
+
+struct TensorViewARMWrapper : public HandleWrapper<VkTensorViewARM>
+{
+    TensorARMWrapper* tensor;
+};
+
+struct DataGraphPipelineSessionARMWrapper : public HandleWrapper<VkDataGraphPipelineSessionARM>, AssetWrapperBase
+{
+    VkDataGraphPipelineSessionBindPointARM bindPoint;
+    uint32_t                               objectIndex;
+};
+
 struct PipelineCacheWrapper : public HandleWrapper<VkPipelineCache>
 {
     DeviceWrapper*            device{ nullptr };

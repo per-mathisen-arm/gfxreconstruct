@@ -66,12 +66,15 @@ class VulkanResourcesUtil
         DestroyStagingBuffer();
         DestroyCommandBuffer();
         DestroyCommandPool();
+        DestroyStagingTensor();
     }
 
     // This function creates a staging buffer that will be used by the ReadFromImageResourceStaging() and
     // ReadFromBufferResource() functions. It is not necessary to do so but can be useful when dumping multiple
     // resource and the size of the biggest staging buffer necessary is known in advance.
     VkResult CreateStagingBuffer(VkDeviceSize size);
+
+    VkResult CreateStagingTensor(const VkTensorDescriptionARM* desc);
 
     // Will return the size requirements and offsets for each subresource contained in the specified image.
     // Sizes and offsets are calculated in such a way that the each subresource will be tightly packed.
@@ -155,6 +158,11 @@ class VulkanResourcesUtil
     VkResult ReadFromBufferResource(
         VkBuffer buffer, uint64_t size, uint64_t offset, uint32_t queue_family_index, std::vector<uint8_t>& data);
 
+    VkResult ReadFromTensorResource(VkTensorARM                   tensor,
+                                    const VkTensorDescriptionARM* desc,
+                                    uint32_t                      queue_family_index,
+                                    std::vector<uint8_t>&         data);
+
     bool IsBlitSupported(VkFormat       src_format,
                          VkImageTiling  src_image_tiling,
                          VkFormat       dst_format,
@@ -189,6 +197,18 @@ class VulkanResourcesUtil
     void InvalidateStagingBuffer();
 
     void DestroyStagingBuffer();
+
+    VkResult MapStagingTensor();
+
+    void UnmapStagingTensor();
+
+    void InvalidateStagingTensor();
+
+    void DestroyStagingTensor();
+
+    void DestroyStagingTensorMemory();
+
+    void CopyTensor(VkTensorARM source, VkTensorARM destination);
 
     void TransitionImageToTransferOptimal(VkImage            image,
                                           VkImageLayout      current_layout,
@@ -257,6 +277,17 @@ class VulkanResourcesUtil
         void*                 mapped_ptr            = nullptr;
     };
 
+    struct StagingTensorContext
+    {
+        StagingTensorContext() = default;
+
+        VkTensorARM           tensor                = VK_NULL_HANDLE;
+        VkDeviceMemory        memory                = VK_NULL_HANDLE;
+        VkDeviceSize          size                  = 0;
+        VkMemoryPropertyFlags memory_property_flags = VkMemoryPropertyFlags(0);
+        void*                 mapped_ptr            = nullptr;
+    };
+
     VkDevice                                device_;
     const encode::VulkanDeviceTable&        device_table_;
     VkPhysicalDevice                        physical_device_;
@@ -266,6 +297,7 @@ class VulkanResourcesUtil
     VkCommandPool                           command_pool_;
     VkCommandBuffer                         command_buffer_;
     StagingBufferContext                    staging_buffer_;
+    StagingTensorContext                    staging_tensor_;
 };
 
 void GetFormatAspects(VkFormat                            format,

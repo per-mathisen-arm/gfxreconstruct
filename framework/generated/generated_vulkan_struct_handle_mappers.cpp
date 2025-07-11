@@ -614,6 +614,11 @@ void MapStructHandles(Decoded_VkDependencyInfo* wrapper, const CommonObjectInfoT
 {
     if (wrapper != nullptr)
     {
+        if (wrapper->pNext)
+        {
+            MapPNextStructHandles(wrapper->pNext, object_info_table);
+        }
+
         MapStructArrayHandles<Decoded_VkBufferMemoryBarrier2>(wrapper->pBufferMemoryBarriers->GetMetaStructPointer(), wrapper->pBufferMemoryBarriers->GetLength(), object_info_table);
 
         MapStructArrayHandles<Decoded_VkImageMemoryBarrier2>(wrapper->pImageMemoryBarriers->GetMetaStructPointer(), wrapper->pImageMemoryBarriers->GetLength(), object_info_table);
@@ -1867,6 +1872,128 @@ void MapStructHandles(Decoded_VkPipelineIndirectDeviceAddressInfoNV* wrapper, co
     }
 }
 
+void MapStructHandles(Decoded_VkTensorViewCreateInfoARM* wrapper, const CommonObjectInfoTable& object_info_table)
+{
+    if ((wrapper != nullptr) && (wrapper->decoded_value != nullptr))
+    {
+        VkTensorViewCreateInfoARM* value = wrapper->decoded_value;
+
+        value->tensor = handle_mapping::MapHandle<VulkanTensorARMInfo>(wrapper->tensor, object_info_table, &CommonObjectInfoTable::GetVkTensorARMInfo);
+    }
+}
+
+void MapStructHandles(Decoded_VkTensorMemoryRequirementsInfoARM* wrapper, const CommonObjectInfoTable& object_info_table)
+{
+    if ((wrapper != nullptr) && (wrapper->decoded_value != nullptr))
+    {
+        VkTensorMemoryRequirementsInfoARM* value = wrapper->decoded_value;
+
+        value->tensor = handle_mapping::MapHandle<VulkanTensorARMInfo>(wrapper->tensor, object_info_table, &CommonObjectInfoTable::GetVkTensorARMInfo);
+    }
+}
+
+void MapStructHandles(Decoded_VkBindTensorMemoryInfoARM* wrapper, const CommonObjectInfoTable& object_info_table)
+{
+    if ((wrapper != nullptr) && (wrapper->decoded_value != nullptr))
+    {
+        VkBindTensorMemoryInfoARM* value = wrapper->decoded_value;
+
+        value->tensor = handle_mapping::MapHandle<VulkanTensorARMInfo>(wrapper->tensor, object_info_table, &CommonObjectInfoTable::GetVkTensorARMInfo);
+
+        value->memory = handle_mapping::MapHandle<VulkanDeviceMemoryInfo>(wrapper->memory, object_info_table, &CommonObjectInfoTable::GetVkDeviceMemoryInfo);
+    }
+}
+
+void MapStructHandles(Decoded_VkWriteDescriptorSetTensorARM* wrapper, const CommonObjectInfoTable& object_info_table)
+{
+    if ((wrapper != nullptr) && (wrapper->decoded_value != nullptr))
+    {
+        VkWriteDescriptorSetTensorARM* value = wrapper->decoded_value;
+
+        value->pTensorViews = handle_mapping::MapHandleArray<VulkanTensorViewARMInfo>(&wrapper->pTensorViews, object_info_table, &CommonObjectInfoTable::GetVkTensorViewARMInfo);
+    }
+}
+
+void MapStructHandles(Decoded_VkTensorMemoryBarrierARM* wrapper, const CommonObjectInfoTable& object_info_table)
+{
+    if ((wrapper != nullptr) && (wrapper->decoded_value != nullptr))
+    {
+        VkTensorMemoryBarrierARM* value = wrapper->decoded_value;
+
+        value->tensor = handle_mapping::MapHandle<VulkanTensorARMInfo>(wrapper->tensor, object_info_table, &CommonObjectInfoTable::GetVkTensorARMInfo);
+    }
+}
+
+void MapStructHandles(Decoded_VkTensorDependencyInfoARM* wrapper, const CommonObjectInfoTable& object_info_table)
+{
+    if (wrapper != nullptr)
+    {
+        MapStructArrayHandles<Decoded_VkTensorMemoryBarrierARM>(wrapper->pTensorMemoryBarriers->GetMetaStructPointer(), 1, object_info_table);
+    }
+}
+
+void MapStructHandles(Decoded_VkCopyTensorInfoARM* wrapper, const CommonObjectInfoTable& object_info_table)
+{
+    if ((wrapper != nullptr) && (wrapper->decoded_value != nullptr))
+    {
+        VkCopyTensorInfoARM* value = wrapper->decoded_value;
+
+        value->srcTensor = handle_mapping::MapHandle<VulkanTensorARMInfo>(wrapper->srcTensor, object_info_table, &CommonObjectInfoTable::GetVkTensorARMInfo);
+
+        value->dstTensor = handle_mapping::MapHandle<VulkanTensorARMInfo>(wrapper->dstTensor, object_info_table, &CommonObjectInfoTable::GetVkTensorARMInfo);
+    }
+}
+
+void MapStructHandles(Decoded_VkMemoryDedicatedAllocateInfoTensorARM* wrapper, const CommonObjectInfoTable& object_info_table)
+{
+    if ((wrapper != nullptr) && (wrapper->decoded_value != nullptr))
+    {
+        VkMemoryDedicatedAllocateInfoTensorARM* value = wrapper->decoded_value;
+
+        value->tensor = handle_mapping::MapHandle<VulkanTensorARMInfo>(wrapper->tensor, object_info_table, &CommonObjectInfoTable::GetVkTensorARMInfo);
+    }
+}
+
+void MapStructHandles(Decoded_VkDescriptorGetTensorInfoARM* wrapper, const CommonObjectInfoTable& object_info_table)
+{
+    if ((wrapper != nullptr) && (wrapper->decoded_value != nullptr))
+    {
+        VkDescriptorGetTensorInfoARM* value = wrapper->decoded_value;
+
+        value->tensorView = handle_mapping::MapHandle<VulkanTensorViewARMInfo>(wrapper->tensorView, object_info_table, &CommonObjectInfoTable::GetVkTensorViewARMInfo);
+    }
+}
+
+void MapStructHandles(Decoded_VkTensorCaptureDescriptorDataInfoARM* wrapper, const CommonObjectInfoTable& object_info_table)
+{
+    if ((wrapper != nullptr) && (wrapper->decoded_value != nullptr))
+    {
+        VkTensorCaptureDescriptorDataInfoARM* value = wrapper->decoded_value;
+
+        value->tensor = handle_mapping::MapHandle<VulkanTensorARMInfo>(wrapper->tensor, object_info_table, &CommonObjectInfoTable::GetVkTensorARMInfo);
+    }
+}
+
+void MapStructHandles(Decoded_VkTensorViewCaptureDescriptorDataInfoARM* wrapper, const CommonObjectInfoTable& object_info_table)
+{
+    if ((wrapper != nullptr) && (wrapper->decoded_value != nullptr))
+    {
+        VkTensorViewCaptureDescriptorDataInfoARM* value = wrapper->decoded_value;
+
+        value->tensorView = handle_mapping::MapHandle<VulkanTensorViewARMInfo>(wrapper->tensorView, object_info_table, &CommonObjectInfoTable::GetVkTensorViewARMInfo);
+    }
+}
+
+void MapStructHandles(Decoded_VkFrameBoundaryTensorsARM* wrapper, const CommonObjectInfoTable& object_info_table)
+{
+    if ((wrapper != nullptr) && (wrapper->decoded_value != nullptr))
+    {
+        VkFrameBoundaryTensorsARM* value = wrapper->decoded_value;
+
+        value->pTensors = handle_mapping::MapHandleArray<VulkanTensorARMInfo>(&wrapper->pTensors, object_info_table, &CommonObjectInfoTable::GetVkTensorARMInfo);
+    }
+}
+
 void MapStructHandles(Decoded_VkShaderCreateInfoEXT* wrapper, const CommonObjectInfoTable& object_info_table)
 {
     if ((wrapper != nullptr) && (wrapper->decoded_value != nullptr))
@@ -1884,6 +2011,88 @@ void MapStructHandles(Decoded_VkLatencySleepInfoNV* wrapper, const CommonObjectI
         VkLatencySleepInfoNV* value = wrapper->decoded_value;
 
         value->signalSemaphore = handle_mapping::MapHandle<VulkanSemaphoreInfo>(wrapper->signalSemaphore, object_info_table, &CommonObjectInfoTable::GetVkSemaphoreInfo);
+    }
+}
+
+void MapStructHandles(Decoded_VkDataGraphPipelineCreateInfoARM* wrapper, const CommonObjectInfoTable& object_info_table)
+{
+    if ((wrapper != nullptr) && (wrapper->decoded_value != nullptr))
+    {
+        VkDataGraphPipelineCreateInfoARM* value = wrapper->decoded_value;
+
+        if (wrapper->pNext)
+        {
+            MapPNextStructHandles(wrapper->pNext, object_info_table);
+        }
+
+        value->layout = handle_mapping::MapHandle<VulkanPipelineLayoutInfo>(wrapper->layout, object_info_table, &CommonObjectInfoTable::GetVkPipelineLayoutInfo);
+    }
+}
+
+void MapStructHandles(Decoded_VkDataGraphPipelineShaderModuleCreateInfoARM* wrapper, const CommonObjectInfoTable& object_info_table)
+{
+    if ((wrapper != nullptr) && (wrapper->decoded_value != nullptr))
+    {
+        VkDataGraphPipelineShaderModuleCreateInfoARM* value = wrapper->decoded_value;
+
+        if (wrapper->pNext)
+        {
+            MapPNextStructHandles(wrapper->pNext, object_info_table);
+        }
+
+        value->module = handle_mapping::MapHandle<VulkanShaderModuleInfo>(wrapper->module, object_info_table, &CommonObjectInfoTable::GetVkShaderModuleInfo);
+    }
+}
+
+void MapStructHandles(Decoded_VkDataGraphPipelineSessionCreateInfoARM* wrapper, const CommonObjectInfoTable& object_info_table)
+{
+    if ((wrapper != nullptr) && (wrapper->decoded_value != nullptr))
+    {
+        VkDataGraphPipelineSessionCreateInfoARM* value = wrapper->decoded_value;
+
+        value->dataGraphPipeline = handle_mapping::MapHandle<VulkanPipelineInfo>(wrapper->dataGraphPipeline, object_info_table, &CommonObjectInfoTable::GetVkPipelineInfo);
+    }
+}
+
+void MapStructHandles(Decoded_VkDataGraphPipelineSessionBindPointRequirementsInfoARM* wrapper, const CommonObjectInfoTable& object_info_table)
+{
+    if ((wrapper != nullptr) && (wrapper->decoded_value != nullptr))
+    {
+        VkDataGraphPipelineSessionBindPointRequirementsInfoARM* value = wrapper->decoded_value;
+
+        value->session = handle_mapping::MapHandle<VulkanDataGraphPipelineSessionARMInfo>(wrapper->session, object_info_table, &CommonObjectInfoTable::GetVkDataGraphPipelineSessionARMInfo);
+    }
+}
+
+void MapStructHandles(Decoded_VkDataGraphPipelineSessionMemoryRequirementsInfoARM* wrapper, const CommonObjectInfoTable& object_info_table)
+{
+    if ((wrapper != nullptr) && (wrapper->decoded_value != nullptr))
+    {
+        VkDataGraphPipelineSessionMemoryRequirementsInfoARM* value = wrapper->decoded_value;
+
+        value->session = handle_mapping::MapHandle<VulkanDataGraphPipelineSessionARMInfo>(wrapper->session, object_info_table, &CommonObjectInfoTable::GetVkDataGraphPipelineSessionARMInfo);
+    }
+}
+
+void MapStructHandles(Decoded_VkBindDataGraphPipelineSessionMemoryInfoARM* wrapper, const CommonObjectInfoTable& object_info_table)
+{
+    if ((wrapper != nullptr) && (wrapper->decoded_value != nullptr))
+    {
+        VkBindDataGraphPipelineSessionMemoryInfoARM* value = wrapper->decoded_value;
+
+        value->session = handle_mapping::MapHandle<VulkanDataGraphPipelineSessionARMInfo>(wrapper->session, object_info_table, &CommonObjectInfoTable::GetVkDataGraphPipelineSessionARMInfo);
+
+        value->memory = handle_mapping::MapHandle<VulkanDeviceMemoryInfo>(wrapper->memory, object_info_table, &CommonObjectInfoTable::GetVkDeviceMemoryInfo);
+    }
+}
+
+void MapStructHandles(Decoded_VkDataGraphPipelineInfoARM* wrapper, const CommonObjectInfoTable& object_info_table)
+{
+    if ((wrapper != nullptr) && (wrapper->decoded_value != nullptr))
+    {
+        VkDataGraphPipelineInfoARM* value = wrapper->decoded_value;
+
+        value->dataGraphPipeline = handle_mapping::MapHandle<VulkanPipelineInfo>(wrapper->dataGraphPipeline, object_info_table, &CommonObjectInfoTable::GetVkPipelineInfo);
     }
 }
 
@@ -2143,6 +2352,9 @@ void MapPNextStructHandles(PNextNode* pnext, const CommonObjectInfoTable& object
         case VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_SWAPCHAIN_INFO_KHR:
             MapStructHandles(reinterpret_cast<Decoded_VkBindImageMemorySwapchainInfoKHR*>(wrapper), object_info_table);
             break;
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SHADER_MODULE_CREATE_INFO_ARM:
+            MapStructHandles(reinterpret_cast<Decoded_VkDataGraphPipelineShaderModuleCreateInfoARM*>(wrapper), object_info_table);
+            break;
         case VK_STRUCTURE_TYPE_DEDICATED_ALLOCATION_MEMORY_ALLOCATE_INFO_NV:
             MapStructHandles(reinterpret_cast<Decoded_VkDedicatedAllocationMemoryAllocateInfoNV*>(wrapper), object_info_table);
             break;
@@ -2151,6 +2363,9 @@ void MapPNextStructHandles(PNextNode* pnext, const CommonObjectInfoTable& object
             break;
         case VK_STRUCTURE_TYPE_FRAME_BOUNDARY_EXT:
             MapStructHandles(reinterpret_cast<Decoded_VkFrameBoundaryEXT*>(wrapper), object_info_table);
+            break;
+        case VK_STRUCTURE_TYPE_FRAME_BOUNDARY_TENSORS_ARM:
+            MapStructHandles(reinterpret_cast<Decoded_VkFrameBoundaryTensorsARM*>(wrapper), object_info_table);
             break;
         case VK_STRUCTURE_TYPE_GENERATED_COMMANDS_PIPELINE_INFO_EXT:
             MapStructHandles(reinterpret_cast<Decoded_VkGeneratedCommandsPipelineInfoEXT*>(wrapper), object_info_table);
@@ -2166,6 +2381,9 @@ void MapPNextStructHandles(PNextNode* pnext, const CommonObjectInfoTable& object
             break;
         case VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO:
             MapStructHandles(reinterpret_cast<Decoded_VkMemoryDedicatedAllocateInfo*>(wrapper), object_info_table);
+            break;
+        case VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO_TENSOR_ARM:
+            MapStructHandles(reinterpret_cast<Decoded_VkMemoryDedicatedAllocateInfoTensorARM*>(wrapper), object_info_table);
             break;
         case VK_STRUCTURE_TYPE_PIPELINE_BINARY_INFO_KHR:
             MapStructHandles(reinterpret_cast<Decoded_VkPipelineBinaryInfoKHR*>(wrapper), object_info_table);
@@ -2200,6 +2418,12 @@ void MapPNextStructHandles(PNextNode* pnext, const CommonObjectInfoTable& object
         case VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_FENCE_INFO_KHR:
             MapStructHandles(reinterpret_cast<Decoded_VkSwapchainPresentFenceInfoKHR*>(wrapper), object_info_table);
             break;
+        case VK_STRUCTURE_TYPE_TENSOR_DEPENDENCY_INFO_ARM:
+            MapStructHandles(reinterpret_cast<Decoded_VkTensorDependencyInfoARM*>(wrapper), object_info_table);
+            break;
+        case VK_STRUCTURE_TYPE_TENSOR_MEMORY_BARRIER_ARM:
+            MapStructHandles(reinterpret_cast<Decoded_VkTensorMemoryBarrierARM*>(wrapper), object_info_table);
+            break;
         case VK_STRUCTURE_TYPE_TILE_MEMORY_BIND_INFO_QCOM:
             MapStructHandles(reinterpret_cast<Decoded_VkTileMemoryBindInfoQCOM*>(wrapper), object_info_table);
             break;
@@ -2220,6 +2444,9 @@ void MapPNextStructHandles(PNextNode* pnext, const CommonObjectInfoTable& object
             break;
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_NV:
             MapStructHandles(reinterpret_cast<Decoded_VkWriteDescriptorSetAccelerationStructureNV*>(wrapper), object_info_table);
+            break;
+        case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_TENSOR_ARM:
+            MapStructHandles(reinterpret_cast<Decoded_VkWriteDescriptorSetTensorARM*>(wrapper), object_info_table);
             break;
         }
     pnext = header->pNext;

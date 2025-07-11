@@ -1813,6 +1813,12 @@ void Process_vkCmdSetCoverageReductionModeNV(
     VkCommandBuffer                             commandBuffer,
     VkCoverageReductionModeNV                   coverageReductionMode);
 
+void Process_vkCmdCopyTensorARM(
+    const ApiCallInfo&                          call_info,
+    PFN_vkCmdCopyTensorARM                      func,
+    VkCommandBuffer                             commandBuffer,
+    const VkCopyTensorInfoARM*                  pCopyTensorInfo);
+
 void Process_vkCmdOpticalFlowExecuteNV(
     const ApiCallInfo&                          call_info,
     PFN_vkCmdOpticalFlowExecuteNV               func,
@@ -1841,6 +1847,13 @@ void Process_vkCmdConvertCooperativeVectorMatrixNV(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    infoCount,
     const VkConvertCooperativeVectorMatrixInfoNV* pInfos);
+
+void Process_vkCmdDispatchDataGraphARM(
+    const ApiCallInfo&                          call_info,
+    PFN_vkCmdDispatchDataGraphARM               func,
+    VkCommandBuffer                             commandBuffer,
+    VkDataGraphPipelineSessionARM               session,
+    const VkDataGraphPipelineDispatchInfoARM*   pInfo);
 
 void Process_vkCmdSetAttachmentFeedbackLoopEnableEXT(
     const ApiCallInfo&                          call_info,

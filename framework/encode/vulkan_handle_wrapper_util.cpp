@@ -459,6 +459,22 @@ VkObjectType GetObjectType<IndirectCommandsLayoutEXTWrapper>()
     return VK_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_EXT;
 }
 
+template <>
+VkObjectType GetObjectType<TensorARMWrapper>()
+{
+    return VK_OBJECT_TYPE_TENSOR_ARM;
+}
+template <>
+VkObjectType GetObjectType<TensorViewARMWrapper>()
+{
+    return VK_OBJECT_TYPE_TENSOR_VIEW_ARM;
+}
+template <>
+VkObjectType GetObjectType<DataGraphPipelineSessionARMWrapper>()
+{
+    return VK_OBJECT_TYPE_DATA_GRAPH_PIPELINE_SESSION_ARM;
+}
+
 GFXRECON_END_NAMESPACE(vulkan_wrappers)
 GFXRECON_END_NAMESPACE(encode)
 GFXRECON_END_NAMESPACE(gfxrecon)

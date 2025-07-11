@@ -3317,6 +3317,102 @@ size_t vulkan_struct_deep_copy_stype(const void* pNext, uint8_t* out_data)
             offset += vulkan_struct_deep_copy(
                 reinterpret_cast<const VkDirectDriverLoadingListLUNARG*>(pNext), 1, out_ptr);
             break;
+        case VK_STRUCTURE_TYPE_TENSOR_DESCRIPTION_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkTensorDescriptionARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_TENSOR_CREATE_INFO_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkTensorCreateInfoARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_TENSOR_VIEW_CREATE_INFO_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkTensorViewCreateInfoARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_TENSOR_MEMORY_REQUIREMENTS_INFO_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkTensorMemoryRequirementsInfoARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_BIND_TENSOR_MEMORY_INFO_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkBindTensorMemoryInfoARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_TENSOR_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkWriteDescriptorSetTensorARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_TENSOR_FORMAT_PROPERTIES_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkTensorFormatPropertiesARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TENSOR_PROPERTIES_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkPhysicalDeviceTensorPropertiesARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_TENSOR_MEMORY_BARRIER_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkTensorMemoryBarrierARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_TENSOR_DEPENDENCY_INFO_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkTensorDependencyInfoARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TENSOR_FEATURES_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkPhysicalDeviceTensorFeaturesARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_DEVICE_TENSOR_MEMORY_REQUIREMENTS_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkDeviceTensorMemoryRequirementsARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_TENSOR_COPY_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkTensorCopyARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_COPY_TENSOR_INFO_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkCopyTensorInfoARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO_TENSOR_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkMemoryDedicatedAllocateInfoTensorARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_TENSOR_INFO_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkPhysicalDeviceExternalTensorInfoARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_EXTERNAL_TENSOR_PROPERTIES_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkExternalTensorPropertiesARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_TENSOR_CREATE_INFO_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkExternalMemoryTensorCreateInfoARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_TENSOR_FEATURES_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkPhysicalDeviceDescriptorBufferTensorFeaturesARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_TENSOR_PROPERTIES_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkPhysicalDeviceDescriptorBufferTensorPropertiesARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_DESCRIPTOR_GET_TENSOR_INFO_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkDescriptorGetTensorInfoARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_TENSOR_CAPTURE_DESCRIPTOR_DATA_INFO_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkTensorCaptureDescriptorDataInfoARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_TENSOR_VIEW_CAPTURE_DESCRIPTOR_DATA_INFO_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkTensorViewCaptureDescriptorDataInfoARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_FRAME_BOUNDARY_TENSORS_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkFrameBoundaryTensorsARM*>(pNext), 1, out_ptr);
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MODULE_IDENTIFIER_FEATURES_EXT:
             offset += vulkan_struct_deep_copy(
                 reinterpret_cast<const VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT*>(pNext), 1, out_ptr);
@@ -3516,6 +3612,86 @@ size_t vulkan_struct_deep_copy_stype(const void* pNext, uint8_t* out_data)
         case VK_STRUCTURE_TYPE_LATENCY_SURFACE_CAPABILITIES_NV:
             offset += vulkan_struct_deep_copy(
                 reinterpret_cast<const VkLatencySurfaceCapabilitiesNV*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_FEATURES_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkPhysicalDeviceDataGraphFeaturesARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_CONSTANT_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkDataGraphPipelineConstantARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_RESOURCE_INFO_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkDataGraphPipelineResourceInfoARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_COMPILER_CONTROL_CREATE_INFO_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkDataGraphPipelineCompilerControlCreateInfoARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_CREATE_INFO_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkDataGraphPipelineCreateInfoARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SHADER_MODULE_CREATE_INFO_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkDataGraphPipelineShaderModuleCreateInfoARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SESSION_CREATE_INFO_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkDataGraphPipelineSessionCreateInfoARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_REQUIREMENTS_INFO_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkDataGraphPipelineSessionBindPointRequirementsInfoARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_REQUIREMENT_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkDataGraphPipelineSessionBindPointRequirementARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SESSION_MEMORY_REQUIREMENTS_INFO_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkDataGraphPipelineSessionMemoryRequirementsInfoARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_BIND_DATA_GRAPH_PIPELINE_SESSION_MEMORY_INFO_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkBindDataGraphPipelineSessionMemoryInfoARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_INFO_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkDataGraphPipelineInfoARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_PROPERTY_QUERY_RESULT_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkDataGraphPipelinePropertyQueryResultARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_IDENTIFIER_CREATE_INFO_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkDataGraphPipelineIdentifierCreateInfoARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_DISPATCH_INFO_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkDataGraphPipelineDispatchInfoARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_PROPERTIES_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkQueueFamilyDataGraphPropertiesARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PROCESSING_ENGINE_CREATE_INFO_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkDataGraphProcessingEngineCreateInfoARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_QUEUE_FAMILY_DATA_GRAPH_PROCESSING_ENGINE_INFO_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkPhysicalDeviceQueueFamilyDataGraphProcessingEngineInfoARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_PROCESSING_ENGINE_PROPERTIES_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkQueueFamilyDataGraphProcessingEnginePropertiesARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_CONSTANT_TENSOR_SEMI_STRUCTURED_SPARSITY_INFO_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkDataGraphPipelineConstantTensorSemiStructuredSparsityInfoARM*>(pNext), 1, out_ptr);
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_RENDER_AREAS_FEATURES_QCOM:
             offset += vulkan_struct_deep_copy(

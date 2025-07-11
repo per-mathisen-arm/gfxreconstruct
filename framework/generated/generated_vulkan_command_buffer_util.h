@@ -257,9 +257,13 @@ void TrackCmdDrawClusterIndirectHUAWEIHandles(vulkan_wrappers::CommandBufferWrap
 
 void TrackCmdUpdatePipelineIndirectBufferNVHandles(vulkan_wrappers::CommandBufferWrapper* wrapper, VkPipeline pipeline);
 
+void TrackCmdCopyTensorARMHandles(vulkan_wrappers::CommandBufferWrapper* wrapper, const VkCopyTensorInfoARM* pCopyTensorInfo);
+
 void TrackCmdOpticalFlowExecuteNVHandles(vulkan_wrappers::CommandBufferWrapper* wrapper, VkOpticalFlowSessionNV session);
 
 void TrackCmdBindShadersEXTHandles(vulkan_wrappers::CommandBufferWrapper* wrapper, uint32_t stageCount, const VkShaderEXT* pShaders);
+
+void TrackCmdDispatchDataGraphARMHandles(vulkan_wrappers::CommandBufferWrapper* wrapper, VkDataGraphPipelineSessionARM session);
 
 void TrackCmdBindTileMemoryQCOMHandles(vulkan_wrappers::CommandBufferWrapper* wrapper, const VkTileMemoryBindInfoQCOM* pTileMemoryBindInfo);
 

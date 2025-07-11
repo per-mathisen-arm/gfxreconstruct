@@ -104,6 +104,13 @@ VKAPI_ATTR VkResult VKAPI_CALL vkCreateRayTracingPipelinesKHR(VkDevice          
                                                               const VkAllocationCallbacks*             pAllocator,
                                                               VkPipeline*                              pPipelines);
 
+VKAPI_ATTR VkResult VKAPI_CALL vkGetTensorOpaqueCaptureDescriptorDataARM(VkDevice,
+                                                                         const VkTensorCaptureDescriptorDataInfoARM*,
+                                                                         void*);
+
+VKAPI_ATTR VkResult VKAPI_CALL
+vkGetTensorViewOpaqueCaptureDescriptorDataARM(VkDevice, const VkTensorViewCaptureDescriptorDataInfoARM*, void*);
+
 GFXRECON_END_NAMESPACE(encode)
 GFXRECON_END_NAMESPACE(gfxrecon)
 

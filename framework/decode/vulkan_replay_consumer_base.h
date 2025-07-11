@@ -1719,6 +1719,11 @@ class VulkanReplayConsumerBase : public VulkanConsumer
 
     void InitializeScreenshotHandler();
 
+    virtual void ProcessInitTensorCommand(format::HandleId device_id,
+                                          format::HandleId tensor_id,
+                                          uint64_t         data_size,
+                                          const uint8_t*   data) override;
+
     void WriteScreenshots(const Decoded_VkPresentInfoKHR* meta_info) const;
 
     bool CheckCommandBufferInfoForFrameBoundary(const VulkanCommandBufferInfo* command_buffer_info);

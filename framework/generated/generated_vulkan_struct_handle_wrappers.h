@@ -373,9 +373,47 @@ void UnwrapStructHandles(VkRenderPassStripeSubmitInfoARM* value, HandleUnwrapMem
 
 void UnwrapStructHandles(VkPipelineIndirectDeviceAddressInfoNV* value, HandleUnwrapMemory* unwrap_memory);
 
+void UnwrapStructHandles(VkTensorViewCreateInfoARM* value, HandleUnwrapMemory* unwrap_memory);
+
+void UnwrapStructHandles(VkTensorMemoryRequirementsInfoARM* value, HandleUnwrapMemory* unwrap_memory);
+
+void UnwrapStructHandles(VkBindTensorMemoryInfoARM* value, HandleUnwrapMemory* unwrap_memory);
+
+void UnwrapStructHandles(VkWriteDescriptorSetTensorARM* value, HandleUnwrapMemory* unwrap_memory);
+
+void UnwrapStructHandles(VkTensorMemoryBarrierARM* value, HandleUnwrapMemory* unwrap_memory);
+
+void UnwrapStructHandles(VkTensorDependencyInfoARM* value, HandleUnwrapMemory* unwrap_memory);
+
+void UnwrapStructHandles(VkCopyTensorInfoARM* value, HandleUnwrapMemory* unwrap_memory);
+
+void UnwrapStructHandles(VkMemoryDedicatedAllocateInfoTensorARM* value, HandleUnwrapMemory* unwrap_memory);
+
+void UnwrapStructHandles(VkDescriptorGetTensorInfoARM* value, HandleUnwrapMemory* unwrap_memory);
+
+void UnwrapStructHandles(VkTensorCaptureDescriptorDataInfoARM* value, HandleUnwrapMemory* unwrap_memory);
+
+void UnwrapStructHandles(VkTensorViewCaptureDescriptorDataInfoARM* value, HandleUnwrapMemory* unwrap_memory);
+
+void UnwrapStructHandles(VkFrameBoundaryTensorsARM* value, HandleUnwrapMemory* unwrap_memory);
+
 void UnwrapStructHandles(VkShaderCreateInfoEXT* value, HandleUnwrapMemory* unwrap_memory);
 
 void UnwrapStructHandles(VkLatencySleepInfoNV* value, HandleUnwrapMemory* unwrap_memory);
+
+void UnwrapStructHandles(VkDataGraphPipelineCreateInfoARM* value, HandleUnwrapMemory* unwrap_memory);
+
+void UnwrapStructHandles(VkDataGraphPipelineShaderModuleCreateInfoARM* value, HandleUnwrapMemory* unwrap_memory);
+
+void UnwrapStructHandles(VkDataGraphPipelineSessionCreateInfoARM* value, HandleUnwrapMemory* unwrap_memory);
+
+void UnwrapStructHandles(VkDataGraphPipelineSessionBindPointRequirementsInfoARM* value, HandleUnwrapMemory* unwrap_memory);
+
+void UnwrapStructHandles(VkDataGraphPipelineSessionMemoryRequirementsInfoARM* value, HandleUnwrapMemory* unwrap_memory);
+
+void UnwrapStructHandles(VkBindDataGraphPipelineSessionMemoryInfoARM* value, HandleUnwrapMemory* unwrap_memory);
+
+void UnwrapStructHandles(VkDataGraphPipelineInfoARM* value, HandleUnwrapMemory* unwrap_memory);
 
 void UnwrapStructHandles(VkTileMemoryBindInfoQCOM* value, HandleUnwrapMemory* unwrap_memory);
 

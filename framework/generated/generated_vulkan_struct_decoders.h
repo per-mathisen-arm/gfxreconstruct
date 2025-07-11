@@ -10114,6 +10114,247 @@ struct Decoded_VkDirectDriverLoadingListLUNARG
     StructPointerDecoder<Decoded_VkDirectDriverLoadingInfoLUNARG>* pDrivers{ nullptr };
 };
 
+struct Decoded_VkTensorDescriptionARM
+{
+    using struct_type = VkTensorDescriptionARM;
+
+    VkTensorDescriptionARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+    PointerDecoder<int64_t> pDimensions;
+    PointerDecoder<int64_t> pStrides;
+};
+
+struct Decoded_VkTensorCreateInfoARM
+{
+    using struct_type = VkTensorCreateInfoARM;
+
+    VkTensorCreateInfoARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+    StructPointerDecoder<Decoded_VkTensorDescriptionARM>* pDescription{ nullptr };
+    PointerDecoder<uint32_t> pQueueFamilyIndices;
+};
+
+struct Decoded_VkTensorViewCreateInfoARM
+{
+    using struct_type = VkTensorViewCreateInfoARM;
+
+    VkTensorViewCreateInfoARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+    format::HandleId tensor{ format::kNullHandleId };
+};
+
+struct Decoded_VkTensorMemoryRequirementsInfoARM
+{
+    using struct_type = VkTensorMemoryRequirementsInfoARM;
+
+    VkTensorMemoryRequirementsInfoARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+    format::HandleId tensor{ format::kNullHandleId };
+};
+
+struct Decoded_VkBindTensorMemoryInfoARM
+{
+    using struct_type = VkBindTensorMemoryInfoARM;
+
+    VkBindTensorMemoryInfoARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+    format::HandleId tensor{ format::kNullHandleId };
+    format::HandleId memory{ format::kNullHandleId };
+};
+
+struct Decoded_VkWriteDescriptorSetTensorARM
+{
+    using struct_type = VkWriteDescriptorSetTensorARM;
+
+    VkWriteDescriptorSetTensorARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+    HandlePointerDecoder<VkTensorViewARM> pTensorViews;
+};
+
+struct Decoded_VkTensorFormatPropertiesARM
+{
+    using struct_type = VkTensorFormatPropertiesARM;
+
+    VkTensorFormatPropertiesARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+};
+
+struct Decoded_VkPhysicalDeviceTensorPropertiesARM
+{
+    using struct_type = VkPhysicalDeviceTensorPropertiesARM;
+
+    VkPhysicalDeviceTensorPropertiesARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+};
+
+struct Decoded_VkTensorMemoryBarrierARM
+{
+    using struct_type = VkTensorMemoryBarrierARM;
+
+    VkTensorMemoryBarrierARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+    format::HandleId tensor{ format::kNullHandleId };
+};
+
+struct Decoded_VkTensorDependencyInfoARM
+{
+    using struct_type = VkTensorDependencyInfoARM;
+
+    VkTensorDependencyInfoARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+    StructPointerDecoder<Decoded_VkTensorMemoryBarrierARM>* pTensorMemoryBarriers{ nullptr };
+};
+
+struct Decoded_VkPhysicalDeviceTensorFeaturesARM
+{
+    using struct_type = VkPhysicalDeviceTensorFeaturesARM;
+
+    VkPhysicalDeviceTensorFeaturesARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+};
+
+struct Decoded_VkDeviceTensorMemoryRequirementsARM
+{
+    using struct_type = VkDeviceTensorMemoryRequirementsARM;
+
+    VkDeviceTensorMemoryRequirementsARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+    StructPointerDecoder<Decoded_VkTensorCreateInfoARM>* pCreateInfo{ nullptr };
+};
+
+struct Decoded_VkTensorCopyARM
+{
+    using struct_type = VkTensorCopyARM;
+
+    VkTensorCopyARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+    PointerDecoder<uint64_t> pSrcOffset;
+    PointerDecoder<uint64_t> pDstOffset;
+    PointerDecoder<uint64_t> pExtent;
+};
+
+struct Decoded_VkCopyTensorInfoARM
+{
+    using struct_type = VkCopyTensorInfoARM;
+
+    VkCopyTensorInfoARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+    format::HandleId srcTensor{ format::kNullHandleId };
+    format::HandleId dstTensor{ format::kNullHandleId };
+    StructPointerDecoder<Decoded_VkTensorCopyARM>* pRegions{ nullptr };
+};
+
+struct Decoded_VkMemoryDedicatedAllocateInfoTensorARM
+{
+    using struct_type = VkMemoryDedicatedAllocateInfoTensorARM;
+
+    VkMemoryDedicatedAllocateInfoTensorARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+    format::HandleId tensor{ format::kNullHandleId };
+};
+
+struct Decoded_VkPhysicalDeviceExternalTensorInfoARM
+{
+    using struct_type = VkPhysicalDeviceExternalTensorInfoARM;
+
+    VkPhysicalDeviceExternalTensorInfoARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+    StructPointerDecoder<Decoded_VkTensorDescriptionARM>* pDescription{ nullptr };
+};
+
+struct Decoded_VkExternalTensorPropertiesARM
+{
+    using struct_type = VkExternalTensorPropertiesARM;
+
+    VkExternalTensorPropertiesARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+    Decoded_VkExternalMemoryProperties* externalMemoryProperties{ nullptr };
+};
+
+struct Decoded_VkExternalMemoryTensorCreateInfoARM
+{
+    using struct_type = VkExternalMemoryTensorCreateInfoARM;
+
+    VkExternalMemoryTensorCreateInfoARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+};
+
+struct Decoded_VkPhysicalDeviceDescriptorBufferTensorFeaturesARM
+{
+    using struct_type = VkPhysicalDeviceDescriptorBufferTensorFeaturesARM;
+
+    VkPhysicalDeviceDescriptorBufferTensorFeaturesARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+};
+
+struct Decoded_VkPhysicalDeviceDescriptorBufferTensorPropertiesARM
+{
+    using struct_type = VkPhysicalDeviceDescriptorBufferTensorPropertiesARM;
+
+    VkPhysicalDeviceDescriptorBufferTensorPropertiesARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+};
+
+struct Decoded_VkDescriptorGetTensorInfoARM
+{
+    using struct_type = VkDescriptorGetTensorInfoARM;
+
+    VkDescriptorGetTensorInfoARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+    format::HandleId tensorView{ format::kNullHandleId };
+};
+
+struct Decoded_VkTensorCaptureDescriptorDataInfoARM
+{
+    using struct_type = VkTensorCaptureDescriptorDataInfoARM;
+
+    VkTensorCaptureDescriptorDataInfoARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+    format::HandleId tensor{ format::kNullHandleId };
+};
+
+struct Decoded_VkTensorViewCaptureDescriptorDataInfoARM
+{
+    using struct_type = VkTensorViewCaptureDescriptorDataInfoARM;
+
+    VkTensorViewCaptureDescriptorDataInfoARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+    format::HandleId tensorView{ format::kNullHandleId };
+};
+
+struct Decoded_VkFrameBoundaryTensorsARM
+{
+    using struct_type = VkFrameBoundaryTensorsARM;
+
+    VkFrameBoundaryTensorsARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+    HandlePointerDecoder<VkTensorARM> pTensors;
+};
+
 struct Decoded_VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT
 {
     using struct_type = VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT;
@@ -10602,6 +10843,211 @@ struct Decoded_VkLatencySurfaceCapabilitiesNV
 
     PNextNode* pNext{ nullptr };
     PointerDecoder<VkPresentModeKHR> pPresentModes;
+};
+
+struct Decoded_VkPhysicalDeviceDataGraphFeaturesARM
+{
+    using struct_type = VkPhysicalDeviceDataGraphFeaturesARM;
+
+    VkPhysicalDeviceDataGraphFeaturesARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+};
+
+struct Decoded_VkDataGraphPipelineResourceInfoARM
+{
+    using struct_type = VkDataGraphPipelineResourceInfoARM;
+
+    VkDataGraphPipelineResourceInfoARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+};
+
+struct Decoded_VkDataGraphPipelineCompilerControlCreateInfoARM
+{
+    using struct_type = VkDataGraphPipelineCompilerControlCreateInfoARM;
+
+    VkDataGraphPipelineCompilerControlCreateInfoARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+    StringDecoder pVendorOptions;
+};
+
+struct Decoded_VkDataGraphPipelineCreateInfoARM
+{
+    using struct_type = VkDataGraphPipelineCreateInfoARM;
+
+    VkDataGraphPipelineCreateInfoARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+    format::HandleId layout{ format::kNullHandleId };
+    StructPointerDecoder<Decoded_VkDataGraphPipelineResourceInfoARM>* pResourceInfos{ nullptr };
+};
+
+struct Decoded_VkDataGraphPipelineShaderModuleCreateInfoARM
+{
+    using struct_type = VkDataGraphPipelineShaderModuleCreateInfoARM;
+
+    VkDataGraphPipelineShaderModuleCreateInfoARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+    format::HandleId module{ format::kNullHandleId };
+    StringDecoder pName;
+    StructPointerDecoder<Decoded_VkSpecializationInfo>* pSpecializationInfo{ nullptr };
+    StructPointerDecoder<Decoded_VkDataGraphPipelineConstantARM>* pConstants{ nullptr };
+};
+
+struct Decoded_VkDataGraphPipelineSessionCreateInfoARM
+{
+    using struct_type = VkDataGraphPipelineSessionCreateInfoARM;
+
+    VkDataGraphPipelineSessionCreateInfoARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+    format::HandleId dataGraphPipeline{ format::kNullHandleId };
+};
+
+struct Decoded_VkDataGraphPipelineSessionBindPointRequirementsInfoARM
+{
+    using struct_type = VkDataGraphPipelineSessionBindPointRequirementsInfoARM;
+
+    VkDataGraphPipelineSessionBindPointRequirementsInfoARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+    format::HandleId session{ format::kNullHandleId };
+};
+
+struct Decoded_VkDataGraphPipelineSessionBindPointRequirementARM
+{
+    using struct_type = VkDataGraphPipelineSessionBindPointRequirementARM;
+
+    VkDataGraphPipelineSessionBindPointRequirementARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+};
+
+struct Decoded_VkDataGraphPipelineSessionMemoryRequirementsInfoARM
+{
+    using struct_type = VkDataGraphPipelineSessionMemoryRequirementsInfoARM;
+
+    VkDataGraphPipelineSessionMemoryRequirementsInfoARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+    format::HandleId session{ format::kNullHandleId };
+};
+
+struct Decoded_VkBindDataGraphPipelineSessionMemoryInfoARM
+{
+    using struct_type = VkBindDataGraphPipelineSessionMemoryInfoARM;
+
+    VkBindDataGraphPipelineSessionMemoryInfoARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+    format::HandleId session{ format::kNullHandleId };
+    format::HandleId memory{ format::kNullHandleId };
+};
+
+struct Decoded_VkDataGraphPipelineInfoARM
+{
+    using struct_type = VkDataGraphPipelineInfoARM;
+
+    VkDataGraphPipelineInfoARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+    format::HandleId dataGraphPipeline{ format::kNullHandleId };
+};
+
+struct Decoded_VkDataGraphPipelinePropertyQueryResultARM
+{
+    using struct_type = VkDataGraphPipelinePropertyQueryResultARM;
+
+    VkDataGraphPipelinePropertyQueryResultARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+    PointerDecoder<uint8_t> pData;
+};
+
+struct Decoded_VkDataGraphPipelineIdentifierCreateInfoARM
+{
+    using struct_type = VkDataGraphPipelineIdentifierCreateInfoARM;
+
+    VkDataGraphPipelineIdentifierCreateInfoARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+    PointerDecoder<uint8_t> pIdentifier;
+};
+
+struct Decoded_VkDataGraphPipelineDispatchInfoARM
+{
+    using struct_type = VkDataGraphPipelineDispatchInfoARM;
+
+    VkDataGraphPipelineDispatchInfoARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+};
+
+struct Decoded_VkPhysicalDeviceDataGraphProcessingEngineARM
+{
+    using struct_type = VkPhysicalDeviceDataGraphProcessingEngineARM;
+
+    VkPhysicalDeviceDataGraphProcessingEngineARM* decoded_value{ nullptr };
+};
+
+struct Decoded_VkPhysicalDeviceDataGraphOperationSupportARM
+{
+    using struct_type = VkPhysicalDeviceDataGraphOperationSupportARM;
+
+    VkPhysicalDeviceDataGraphOperationSupportARM* decoded_value{ nullptr };
+
+    StringDecoder name;
+};
+
+struct Decoded_VkQueueFamilyDataGraphPropertiesARM
+{
+    using struct_type = VkQueueFamilyDataGraphPropertiesARM;
+
+    VkQueueFamilyDataGraphPropertiesARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+    Decoded_VkPhysicalDeviceDataGraphProcessingEngineARM* engine{ nullptr };
+    Decoded_VkPhysicalDeviceDataGraphOperationSupportARM* operation{ nullptr };
+};
+
+struct Decoded_VkDataGraphProcessingEngineCreateInfoARM
+{
+    using struct_type = VkDataGraphProcessingEngineCreateInfoARM;
+
+    VkDataGraphProcessingEngineCreateInfoARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+    StructPointerDecoder<Decoded_VkPhysicalDeviceDataGraphProcessingEngineARM>* pProcessingEngines{ nullptr };
+};
+
+struct Decoded_VkPhysicalDeviceQueueFamilyDataGraphProcessingEngineInfoARM
+{
+    using struct_type = VkPhysicalDeviceQueueFamilyDataGraphProcessingEngineInfoARM;
+
+    VkPhysicalDeviceQueueFamilyDataGraphProcessingEngineInfoARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+};
+
+struct Decoded_VkQueueFamilyDataGraphProcessingEnginePropertiesARM
+{
+    using struct_type = VkQueueFamilyDataGraphProcessingEnginePropertiesARM;
+
+    VkQueueFamilyDataGraphProcessingEnginePropertiesARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+};
+
+struct Decoded_VkDataGraphPipelineConstantTensorSemiStructuredSparsityInfoARM
+{
+    using struct_type = VkDataGraphPipelineConstantTensorSemiStructuredSparsityInfoARM;
+
+    VkDataGraphPipelineConstantTensorSemiStructuredSparsityInfoARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
 };
 
 struct Decoded_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM

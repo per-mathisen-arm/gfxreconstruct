@@ -1488,6 +1488,58 @@ template <> std::string ToString<VkCullModeFlagBits>(VkFlags vkFlags, ToStringFl
     return BitmaskToString<VkCullModeFlagBits>(vkFlags);
 }
 
+std::string VkDataGraphPipelineDispatchFlagBitsARMToString(const VkDataGraphPipelineDispatchFlagBitsARM value)
+{
+    return "Unhandled VkDataGraphPipelineDispatchFlagBitsARM";
+}
+
+std::string VkDataGraphPipelineDispatchFlagsARMToString(VkFlags64 vkFlags)
+{
+    return BitmaskToString<VkDataGraphPipelineDispatchFlagBitsARM>(vkFlags, VkDataGraphPipelineDispatchFlagBitsARMToString);
+}
+
+template <> std::string ToString<VkDataGraphPipelinePropertyARM>(const VkDataGraphPipelinePropertyARM& value, ToStringFlags, uint32_t, uint32_t)
+{
+    switch (value) {
+    case VK_DATA_GRAPH_PIPELINE_PROPERTY_CREATION_LOG_ARM: return "VK_DATA_GRAPH_PIPELINE_PROPERTY_CREATION_LOG_ARM";
+    case VK_DATA_GRAPH_PIPELINE_PROPERTY_IDENTIFIER_ARM: return "VK_DATA_GRAPH_PIPELINE_PROPERTY_IDENTIFIER_ARM";
+    default: break;
+    }
+    return "Unhandled VkDataGraphPipelinePropertyARM";
+}
+
+template <> std::string ToString<VkDataGraphPipelineSessionBindPointARM>(const VkDataGraphPipelineSessionBindPointARM& value, ToStringFlags, uint32_t, uint32_t)
+{
+    switch (value) {
+    case VK_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_TRANSIENT_ARM: return "VK_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_TRANSIENT_ARM";
+    default: break;
+    }
+    return "Unhandled VkDataGraphPipelineSessionBindPointARM";
+}
+
+template <> std::string ToString<VkDataGraphPipelineSessionBindPointTypeARM>(const VkDataGraphPipelineSessionBindPointTypeARM& value, ToStringFlags, uint32_t, uint32_t)
+{
+    switch (value) {
+    case VK_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_TYPE_MEMORY_ARM: return "VK_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_TYPE_MEMORY_ARM";
+    default: break;
+    }
+    return "Unhandled VkDataGraphPipelineSessionBindPointTypeARM";
+}
+
+std::string VkDataGraphPipelineSessionCreateFlagBitsARMToString(const VkDataGraphPipelineSessionCreateFlagBitsARM value)
+{
+    switch (value) {
+    case VK_DATA_GRAPH_PIPELINE_SESSION_CREATE_PROTECTED_BIT_ARM: return "VK_DATA_GRAPH_PIPELINE_SESSION_CREATE_PROTECTED_BIT_ARM";
+    default: break;
+    }
+    return "Unhandled VkDataGraphPipelineSessionCreateFlagBitsARM";
+}
+
+std::string VkDataGraphPipelineSessionCreateFlagsARMToString(VkFlags64 vkFlags)
+{
+    return BitmaskToString<VkDataGraphPipelineSessionCreateFlagBitsARM>(vkFlags, VkDataGraphPipelineSessionCreateFlagBitsARMToString);
+}
+
 template <> std::string ToString<VkDebugReportFlagBitsEXT>(const VkDebugReportFlagBitsEXT& value, ToStringFlags, uint32_t, uint32_t)
 {
     switch (value) {
@@ -3726,6 +3778,24 @@ template <> std::string ToString<VkPerformanceValueTypeINTEL>(const VkPerformanc
     default: break;
     }
     return "Unhandled VkPerformanceValueTypeINTEL";
+}
+
+template <> std::string ToString<VkPhysicalDeviceDataGraphOperationTypeARM>(const VkPhysicalDeviceDataGraphOperationTypeARM& value, ToStringFlags, uint32_t, uint32_t)
+{
+    switch (value) {
+    case VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_SPIRV_EXTENDED_INSTRUCTION_SET_ARM: return "VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_SPIRV_EXTENDED_INSTRUCTION_SET_ARM";
+    default: break;
+    }
+    return "Unhandled VkPhysicalDeviceDataGraphOperationTypeARM";
+}
+
+template <> std::string ToString<VkPhysicalDeviceDataGraphProcessingEngineTypeARM>(const VkPhysicalDeviceDataGraphProcessingEngineTypeARM& value, ToStringFlags, uint32_t, uint32_t)
+{
+    switch (value) {
+    case VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_DEFAULT_ARM: return "VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_DEFAULT_ARM";
+    default: break;
+    }
+    return "Unhandled VkPhysicalDeviceDataGraphProcessingEngineTypeARM";
 }
 
 template <> std::string ToString<VkPhysicalDeviceLayeredApiKHR>(const VkPhysicalDeviceLayeredApiKHR& value, ToStringFlags, uint32_t, uint32_t)
@@ -6133,6 +6203,64 @@ template <> std::string ToString<VkSystemAllocationScope>(const VkSystemAllocati
     default: break;
     }
     return "Unhandled VkSystemAllocationScope";
+}
+
+std::string VkTensorCreateFlagBitsARMToString(const VkTensorCreateFlagBitsARM value)
+{
+    switch (value) {
+    case VK_TENSOR_CREATE_MUTABLE_FORMAT_BIT_ARM: return "VK_TENSOR_CREATE_MUTABLE_FORMAT_BIT_ARM";
+    case VK_TENSOR_CREATE_PROTECTED_BIT_ARM: return "VK_TENSOR_CREATE_PROTECTED_BIT_ARM";
+    case VK_TENSOR_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_ARM: return "VK_TENSOR_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_ARM";
+    default: break;
+    }
+    return "Unhandled VkTensorCreateFlagBitsARM";
+}
+
+std::string VkTensorCreateFlagsARMToString(VkFlags64 vkFlags)
+{
+    return BitmaskToString<VkTensorCreateFlagBitsARM>(vkFlags, VkTensorCreateFlagBitsARMToString);
+}
+
+template <> std::string ToString<VkTensorTilingARM>(const VkTensorTilingARM& value, ToStringFlags, uint32_t, uint32_t)
+{
+    switch (value) {
+    case VK_TENSOR_TILING_OPTIMAL_ARM: return "VK_TENSOR_TILING_OPTIMAL_ARM";
+    case VK_TENSOR_TILING_LINEAR_ARM: return "VK_TENSOR_TILING_LINEAR_ARM";
+    default: break;
+    }
+    return "Unhandled VkTensorTilingARM";
+}
+
+std::string VkTensorUsageFlagBitsARMToString(const VkTensorUsageFlagBitsARM value)
+{
+    switch (value) {
+    case VK_TENSOR_USAGE_SHADER_BIT_ARM: return "VK_TENSOR_USAGE_SHADER_BIT_ARM";
+    case VK_TENSOR_USAGE_TRANSFER_SRC_BIT_ARM: return "VK_TENSOR_USAGE_TRANSFER_SRC_BIT_ARM";
+    case VK_TENSOR_USAGE_TRANSFER_DST_BIT_ARM: return "VK_TENSOR_USAGE_TRANSFER_DST_BIT_ARM";
+    case VK_TENSOR_USAGE_IMAGE_ALIASING_BIT_ARM: return "VK_TENSOR_USAGE_IMAGE_ALIASING_BIT_ARM";
+    case VK_TENSOR_USAGE_DATA_GRAPH_BIT_ARM: return "VK_TENSOR_USAGE_DATA_GRAPH_BIT_ARM";
+    default: break;
+    }
+    return "Unhandled VkTensorUsageFlagBitsARM";
+}
+
+std::string VkTensorUsageFlagsARMToString(VkFlags64 vkFlags)
+{
+    return BitmaskToString<VkTensorUsageFlagBitsARM>(vkFlags, VkTensorUsageFlagBitsARMToString);
+}
+
+std::string VkTensorViewCreateFlagBitsARMToString(const VkTensorViewCreateFlagBitsARM value)
+{
+    switch (value) {
+    case VK_TENSOR_VIEW_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_ARM: return "VK_TENSOR_VIEW_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_ARM";
+    default: break;
+    }
+    return "Unhandled VkTensorViewCreateFlagBitsARM";
+}
+
+std::string VkTensorViewCreateFlagsARMToString(VkFlags64 vkFlags)
+{
+    return BitmaskToString<VkTensorViewCreateFlagBitsARM>(vkFlags, VkTensorViewCreateFlagBitsARMToString);
 }
 
 template <> std::string ToString<VkTessellationDomainOrigin>(const VkTessellationDomainOrigin& value, ToStringFlags, uint32_t, uint32_t)
