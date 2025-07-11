@@ -5044,10 +5044,19 @@ HRESULT Dx12ReplayConsumerBase::OverrideSerialize(DxObjectInfo*            repla
     auto replay_library     = static_cast<ID3D12PipelineLibrary*>(replay_object->object);
     auto library_extra_info = GetExtraInfo<D3D12PipelineLibraryInfo>(replay_object);
 
-    SIZE_T adjusted_size = library_extra_info->serialized_size;
+    SIZE_T adjusted_size = DataSizeInBytes;
+    if ((library_extra_info != nullptr) && (library_extra_info->serialized_size > 0))
+    {
+        adjusted_size = library_extra_info->serialized_size;
+    }
 
     if (!pData->IsNull() && pData->GetOutputPointer())
     {
+        if (adjusted_size > DataSizeInBytes)
+        {
+            pData->AllocateOutputData(adjusted_size);
+        }
+
         return replay_library->Serialize(pData->GetOutputPointer(), adjusted_size);
     }
     else
@@ -6521,20 +6530,13 @@ void Dx12ReplayConsumerBase::PreCall_ID3D12PipelineLibrary_Serialize(const ApiCa
     if (!pData->IsNull())
     {
         SIZE_T alloc_size = std::max(DataSizeInBytes, current_size);
-        pData->AllocateOutputData(alloc_size);
-
         if (current_size != DataSizeInBytes)
         {
-            GFXRECON_LOG_WARNING("Size mismatch for object_id %llu: serialized_size (%zu) != DataSizeInBytes (%zu)",
-                                 object_info->capture_id,
-                                 current_size,
-                                 DataSizeInBytes);
-            if (current_size > DataSizeInBytes)
-            {
-                GFXRECON_LOG_INFO("Adjusted buffer size to %zu for object_id %llu due to cross-GPU difference",
-                                  alloc_size,
-                                  object_info->capture_id);
-            }
+            GFXRECON_LOG_DEBUG("Size mismatch for object_id %llu: serialized_size (%zu) != DataSizeInBytes (%zu), due "
+                               "to cross-GPU difference.",
+                               object_info->capture_id,
+                               current_size,
+                               DataSizeInBytes);
         }
     }
     else
