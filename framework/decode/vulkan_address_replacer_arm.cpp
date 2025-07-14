@@ -107,7 +107,7 @@ VulkanAddressReplacerARM::VulkanAddressReplacerARM(const VulkanDeviceInfo*      
 
     const VulkanPhysicalDeviceInfo* physical_device_info =
         object_table.GetVkPhysicalDeviceInfo(device_info_->parent_id);
-    get_device_address_fn_ = physical_device_info->parent_api_version >= VK_API_VERSION_1_2
+    get_device_address_fn_ = physical_device_info->capture_api_version >= VK_API_VERSION_1_2
                                  ? device_table->GetBufferDeviceAddress
                                  : device_table->GetBufferDeviceAddressKHR;
 

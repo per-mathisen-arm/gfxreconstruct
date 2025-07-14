@@ -470,7 +470,7 @@ void VulkanStateWriter::WriteSemaphoreState(const VulkanStateTable& state_table)
             // Query current semaphore value
             uint64_t          semaphore_value;
             format::ApiCallId signal_call_id;
-            if (device_wrapper->physical_device->instance_api_version >= VK_MAKE_VERSION(1, 2, 0))
+            if (device_wrapper->physical_device->instance_info.api_version >= VK_MAKE_VERSION(1, 2, 0))
             {
                 device_wrapper->layer_table.GetSemaphoreCounterValue(
                     device_wrapper->handle, wrapper->handle, &semaphore_value);
@@ -1405,9 +1405,9 @@ void VulkanStateWriter::WriteBufferDeviceAddressState(const VulkanStateTable& st
         if ((wrapper->device_id != format::kNullHandleId) && (wrapper->address != 0))
         {
             auto physical_device_wrapper = wrapper->bind_device->physical_device;
-            auto call_id                 = physical_device_wrapper->instance_api_version >= VK_MAKE_VERSION(1, 2, 0)
-                                               ? format::ApiCall_vkGetBufferDeviceAddress
-                                               : format::ApiCall_vkGetBufferDeviceAddressKHR;
+            auto call_id = physical_device_wrapper->instance_info.api_version >= VK_MAKE_VERSION(1, 2, 0)
+                               ? format::ApiCall_vkGetBufferDeviceAddress
+                               : format::ApiCall_vkGetBufferDeviceAddressKHR;
 
             parameter_stream_.Clear();
             encoder_.EncodeHandleIdValue(wrapper->bind_device->handle_id);
@@ -1528,7 +1528,7 @@ void VulkanStateWriter::WriteASInputMemoryState(ASInputBuffer& buffer)
     buffer.actual_address = mock_address_counter_;
 
     auto physical_device_wrapper = buffer.bind_device->physical_device;
-    auto call_id                 = physical_device_wrapper->instance_api_version >= VK_MAKE_VERSION(1, 2, 0)
+    auto call_id                 = physical_device_wrapper->instance_info.api_version >= VK_MAKE_VERSION(1, 2, 0)
                                        ? format::ApiCall_vkGetBufferDeviceAddress
                                        : format::ApiCall_vkGetBufferDeviceAddressKHR;
 
@@ -2413,7 +2413,7 @@ void VulkanStateWriter::WriteBufferDeviceAddressCalls(const VulkanStateTable& st
             util::VulkanDeviceTableDispatcher(GetDeviceTable(device)).GetBufferDeviceAddress(device, &info);
 
         auto physical_device_wrapper = wrapper->bind_device->physical_device;
-        auto call_id                 = physical_device_wrapper->instance_api_version >= VK_MAKE_VERSION(1, 2, 0)
+        auto call_id                 = physical_device_wrapper->instance_info.api_version >= VK_MAKE_VERSION(1, 2, 0)
                                            ? format::ApiCall_vkGetBufferDeviceAddress
                                            : format::ApiCall_vkGetBufferDeviceAddressKHR;
 

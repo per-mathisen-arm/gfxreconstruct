@@ -30,6 +30,7 @@
 #include "format/format.h"
 #include "generated/generated_vulkan_dispatch_table.h"
 #include "graphics/vulkan_device_util.h"
+#include "graphics/vulkan_instance_util.h"
 #include "graphics/vulkan_shader_group_handle.h"
 #include "util/defines.h"
 #include "util/spirv_parsing_util.h"
@@ -256,8 +257,7 @@ typedef VulkanObjectInfo<VkExternalComputeQueueNV>    VulkanExternalComputeQueue
 
 struct VulkanInstanceInfo : public VulkanObjectInfo<VkInstance>
 {
-    uint32_t                             api_version{ VK_MAKE_VERSION(1, 0, 0) };
-    std::vector<std::string>             enabled_extensions;
+    graphics::VulkanInstanceUtilInfo     util_info{};
     std::unordered_map<uint32_t, size_t> array_counts;
 
     // Capture and replay devices sorted in the order that they were originally retrieved from
@@ -270,9 +270,10 @@ struct VulkanInstanceInfo : public VulkanObjectInfo<VkInstance>
 
 struct VulkanPhysicalDeviceInfo : public VulkanObjectInfo<VkPhysicalDevice>
 {
-    VkInstance                           parent{ VK_NULL_HANDLE };
-    uint32_t                             parent_api_version{ 0 };
-    std::vector<std::string>             parent_enabled_extensions;
+    VkInstance parent{ VK_NULL_HANDLE };
+
+    graphics::VulkanInstanceUtilInfo parent_info{};
+
     std::unordered_map<uint32_t, size_t> array_counts;
 
     // Capture device properties.
@@ -520,6 +521,9 @@ struct VulkanPipelineInfo : public VulkanObjectInfoAsync<VkPipeline>
 
     // Is VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT enabled
     bool dynamic_vertex_binding_stride{ false };
+
+    // Grahpics pipeline library info
+    VkGraphicsPipelineLibraryFlagsEXT gpl_flags{ 0 };
 };
 
 struct VulkanDescriptorPoolInfo : public VulkanPoolInfo<VkDescriptorPool>
