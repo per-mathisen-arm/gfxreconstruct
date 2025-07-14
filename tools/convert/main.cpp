@@ -89,13 +89,14 @@ static void PrintUsage(const char* exe_name)
     GFXRECON_WRITE_CONSOLE("                  \tFrame ranges should be specified in ascending order and cannot "
                            "overlap. Frame numbering is zero-indexed and inclusive.");
     GFXRECON_WRITE_CONSOLE("                  \tExample: 0-2,5,8-10 will generate data for 7 frames.");
-    GFXRECON_WRITE_CONSOLE("  --log-level <level>\tSpecify highest level message to log. Options are:");
-    GFXRECON_WRITE_CONSOLE("                  \t\tdebug, info, warning, error, and fatal. Default is info.");
-    GFXRECON_WRITE_CONSOLE("  --verbose\t Request verbose output.")
+    GFXRECON_WRITE_CONSOLE("  --log-level <level>");
+    GFXRECON_WRITE_CONSOLE("                  \tSpecify highest level message to log. Options are:");
+    GFXRECON_WRITE_CONSOLE("                  \tdebug, info, warning, error, and fatal. Default is info.");
+    GFXRECON_WRITE_CONSOLE("  --verbose\t Request verbose output.");
     GFXRECON_WRITE_CONSOLE("  --checksum\t Show checksum of every data vector (ex pData field in a vkApiCall) with "
-                           "size bigger than --checksum-trigger")
+                           "size bigger than --checksum-trigger");
     GFXRECON_WRITE_CONSOLE("  --checksum-trigger\t If --checksum set, represents the minimum data vector length for "
-                           "which checksums are generated. Default value: 5.")
+                           "which checksums are generated. Default value: 5.");
 
 #if defined(WIN32) && defined(_DEBUG)
     GFXRECON_WRITE_CONSOLE("  --no-debug-popup\tDisable the 'Abort, Retry, Ignore' message box");
@@ -210,24 +211,23 @@ int main(int argc, const char** argv)
     gfxrecon::util::Log::Release();
     gfxrecon::util::Log::Init(log_settings);
 
-    const auto& positional_arguments = arg_parser.GetPositionalArguments();
-    std::string input_filename       = positional_arguments[0];
-    JsonFormat  output_format        = GetOutputFormat(arg_parser);
-    std::string output_filename      = GetOutputFileName(arg_parser, input_filename, output_format);
-    std::string filename_stem        = gfxrecon::util::filepath::GetFilenameStem(output_filename);
-    std::string output_dir           = gfxrecon::util::filepath::GetBasedir(output_filename);
-    std::string data_dir             = gfxrecon::util::filepath::Join(output_dir, filename_stem);
-    bool        dump_binaries        = arg_parser.IsOptionSet(kIncludeBinariesOption);
-    bool        expand_flags         = arg_parser.IsOptionSet(kExpandFlagsOption);
-    bool        file_per_frame       = arg_parser.IsOptionSet(kFilePerFrameOption);
-    bool        verbose              = arg_parser.IsOptionSet(kVerboseOption);
-    bool        checksum             = arg_parser.IsOptionSet(kChecksumOption);
-    bool        output_to_stdout     = output_filename == "stdout";
+    const auto&           positional_arguments = arg_parser.GetPositionalArguments();
+    std::string           input_filename       = positional_arguments[0];
+    JsonFormat            output_format        = GetOutputFormat(arg_parser);
+    std::string           output_filename      = GetOutputFileName(arg_parser, input_filename, output_format);
+    std::string           filename_stem        = gfxrecon::util::filepath::GetFilenameStem(output_filename);
+    std::string           output_dir           = gfxrecon::util::filepath::GetBasedir(output_filename);
+    std::string           data_dir             = gfxrecon::util::filepath::Join(output_dir, filename_stem);
+    std::vector<uint32_t> frame_indices        = GetFrameIndices(arg_parser);
+    bool                  frame_range_option   = !arg_parser.GetArgumentValue(kFrameRange).empty();
+    bool                  dump_binaries        = arg_parser.IsOptionSet(kIncludeBinariesOption);
+    bool                  expand_flags         = arg_parser.IsOptionSet(kExpandFlagsOption);
+    bool                  file_per_frame       = arg_parser.IsOptionSet(kFilePerFrameOption);
+    bool                  verbose              = arg_parser.IsOptionSet(kVerboseOption);
+    bool                  checksum             = arg_parser.IsOptionSet(kChecksumOption);
+    bool                  output_to_stdout     = output_filename == "stdout";
 
     uint32_t checksum_trigger = gfxrecon::util::ParseUintString(arg_parser.GetArgumentValue(kChecksumTriggerOption), 5);
-
-    std::vector<uint32_t> frame_indices      = GetFrameIndices(arg_parser);
-    bool                  frame_range_option = !arg_parser.GetArgumentValue(kFrameRange).empty();
 
     bool   is_asset_file = false;
     size_t last_dot_pos  = input_filename.find_last_of(".");
@@ -335,21 +335,25 @@ int main(int argc, const char** argv)
                     success  = false;
                     GFXRECON_LOG_ERROR("Failed to create temp file");
                 }
+
                 if (frame_indices.empty())
                 {
                     ret_code = 1;
                     success  = false;
                     GFXRECON_LOG_ERROR("Early exit as a result of invalid/empty frame range");
                 }
+
                 if (frame_indices.back() == file_processor.GetCurrentFrameNumber())
                 {
                     out_stream.Reset(out_file_handle);
+                    frame_indices.pop_back();
                 }
                 else
                 {
                     out_stream.Reset(tmp_file_handle);
                 }
             }
+            // If D3D12_SUPPORT was set, then add DX12 consumer/decoder
 #ifdef D3D12_SUPPORT
             Dx12JsonConsumer              dx12_json_consumer;
             gfxrecon::decode::Dx12Decoder dx12_decoder;
@@ -370,17 +374,17 @@ int main(int argc, const char** argv)
 
                 if (success && frame_range_option)
                 {
-                    if (frame_indices.front() < file_processor.GetCurrentFrameNumber())
+                    if (frame_indices.empty())
                     {
                         break;
                     }
 
-                    if (std::find(frame_indices.begin(), frame_indices.end(), file_processor.GetCurrentFrameNumber()) !=
-                        frame_indices.end())
+                    if (frame_indices.back() == file_processor.GetCurrentFrameNumber())
                     {
                         out_stream.Reset(out_file_handle);
                         json_filename = gfxrecon::util::filepath::InsertFilenamePostfix(
-                            output_filename, +"_" + FormatFrameNumber(file_processor.GetCurrentFrameNumber()));
+                            output_filename, +"_" + FormatFrameNumber(frame_indices.back()));
+                        frame_indices.pop_back();
                     }
                     else
                     {

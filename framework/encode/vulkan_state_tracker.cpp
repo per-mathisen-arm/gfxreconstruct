@@ -452,7 +452,9 @@ void VulkanStateTracker::TrackAccelerationStructureBuildCommand(
         {
             auto geometry = build_info.pGeometries != nullptr ? build_info.pGeometries + g : build_info.ppGeometries[g];
 
+            // scratch space for buffer-addresses. we extract and keep track of associated buffers.
             std::vector<VkDeviceAddress> to_extract;
+
             switch (geometry->geometryType)
             {
                 case VkGeometryTypeKHR::VK_GEOMETRY_TYPE_TRIANGLES_KHR:
@@ -503,16 +505,18 @@ void VulkanStateTracker::TrackAccelerationStructureBuildCommand(
                     device_address_trackers_[device_wrapper->handle].GetBufferByDeviceAddress(address));
 
                 GFXRECON_ASSERT(target_buffer_wrapper != nullptr);
+                if (target_buffer_wrapper != nullptr)
+                {
+                    vulkan_wrappers::ASInputBuffer& buffer = dst_command.input_buffers.emplace_back();
 
-                vulkan_wrappers::ASInputBuffer& buffer = dst_command.input_buffers.emplace_back();
-
-                buffer.capture_address    = address;
-                buffer.handle             = target_buffer_wrapper->handle;
-                buffer.handle_id          = target_buffer_wrapper->handle_id;
-                buffer.bind_device        = target_buffer_wrapper->bind_device;
-                buffer.queue_family_index = target_buffer_wrapper->queue_family_index;
-                buffer.size               = target_buffer_wrapper->size;
-                buffer.usage              = target_buffer_wrapper->usage;
+                    buffer.capture_address    = address;
+                    buffer.handle             = target_buffer_wrapper->handle;
+                    buffer.handle_id          = target_buffer_wrapper->handle_id;
+                    buffer.bind_device        = target_buffer_wrapper->bind_device;
+                    buffer.queue_family_index = target_buffer_wrapper->queue_family_index;
+                    buffer.size               = target_buffer_wrapper->size;
+                    buffer.usage              = target_buffer_wrapper->usage;
+                }
             }
         }
 
