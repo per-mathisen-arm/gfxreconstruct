@@ -436,26 +436,6 @@ class VulkanReplayConsumerBase : public VulkanConsumer
     void AddHandlesAsync(format::HandleId        parent_id,
                          const format::HandleId* ids,
                          size_t                  ids_len,
-                         void (CommonObjectInfoTable::*AddFunc)(T&&),
-                         std::function<handle_create_result_t<typename T::HandleType>()> create_function)
-    {
-        if (create_function)
-        {
-            std::shared_future<handle_create_result_t<typename T::HandleType>> result_future =
-                background_queue_.post(std::move(create_function));
-
-            // poll in case there are no worker-threads
-            background_queue_.poll();
-
-            handle_mapping::AddHandleArrayAsync(
-                parent_id, ids, ids_len, object_info_table_, AddFunc, std::move(result_future));
-        }
-    }
-
-    template <typename T>
-    void AddHandlesAsync(format::HandleId        parent_id,
-                         const format::HandleId* ids,
-                         size_t                  ids_len,
                          std::vector<T>&&        initial_infos,
                          void (CommonObjectInfoTable::*AddFunc)(T&&),
                          std::function<handle_create_result_t<typename T::HandleType>()> create_function)
@@ -1623,7 +1603,7 @@ class VulkanReplayConsumerBase : public VulkanConsumer
 
     const VulkanReplayOptions& options_;
 
-    VulkanReplayDumpResources* resource_dumper_{ nullptr };
+    std::unique_ptr<VulkanReplayDumpResources> resource_dumper_;
 
   private:
     void RaiseFatalError(const char* message) const;

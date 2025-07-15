@@ -222,8 +222,7 @@ class CommonCaptureManager
 
     uint64_t GetBlockIndex()
     {
-        auto thread_data = GetThreadData();
-        return thread_data->block_index_ == 0 ? 0 : thread_data->block_index_ - 1;
+        return block_index_ == 0 ? 0 : block_index_ - 1;
     }
 
     uint32_t GetFenceQueryDelay() const
@@ -444,12 +443,14 @@ class CommonCaptureManager
     {
         file_stream ? file_stream->CombineAndWrite<N>(buffers, GetThreadData()->GetScratchBuffer())
                     : file_stream_->CombineAndWrite<N>(buffers, GetThreadData()->GetScratchBuffer());
+
+        // Increment block index
+        ++block_index_;
     }
 
     void IncrementBlockIndex(uint64_t blocks)
     {
         block_index_ += blocks;
-        GetThreadData()->block_index_ = block_index_;
     }
 
     uint64_t GetGlobalBlockIndex()

@@ -397,7 +397,7 @@ void VulkanAddressReplacer::ProcessCmdBindDescriptorSets(VulkanCommandBufferInfo
 
         for (auto& desc_buffer_info : descriptor.buffer_info)
         {
-            auto* buffer_info = const_cast<VulkanBufferInfo*>(desc_buffer_info.buffer_info);
+            auto* buffer_info = const_cast<VulkanBufferInfo*>(desc_buffer_info.second.buffer_info);
             if (buffer_info == nullptr)
             {
                 continue;
@@ -426,10 +426,10 @@ void VulkanAddressReplacer::ProcessCmdBindDescriptorSets(VulkanCommandBufferInfo
             }
 
             VkDeviceAddress address =
-                buffer_info->replay_address + desc_buffer_info.offset + buffer_ref_info.buffer_offset;
+                buffer_info->replay_address + desc_buffer_info.second.offset + buffer_ref_info.buffer_offset;
             VkDeviceAddress range_end =
-                address +
-                std::min<VkDeviceSize>(buffer_info->replay_size - desc_buffer_info.offset, desc_buffer_info.range);
+                address + std::min<VkDeviceSize>(buffer_info->replay_size - desc_buffer_info.second.offset,
+                                                 desc_buffer_info.second.range);
             command_buffer_info->addresses_to_replace.insert(address);
 
             if (buffer_ref_info.array_stride)
@@ -1303,6 +1303,16 @@ bool VulkanAddressReplacer::init_pipeline()
         if (result != VK_SUCCESS)
         {
             GFXRECON_LOG_ERROR("VulkanAddressReplacer: pipeline creation failed");
+        }
+
+        if (set_debug_utils_object_name_fn_)
+        {
+            VkDebugUtilsObjectNameInfoEXT object_name_info = {};
+            object_name_info.sType                         = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+            object_name_info.objectType                    = VK_OBJECT_TYPE_PIPELINE;
+            object_name_info.objectHandle                  = VK_HANDLE_TO_UINT64(out_pipeline);
+            object_name_info.pObjectName                   = "VulkanAddressReplacer internal pipeline";
+            set_debug_utils_object_name_fn_(device_, &object_name_info);
         }
 
         if (compute_module != VK_NULL_HANDLE)

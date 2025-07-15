@@ -236,10 +236,10 @@ VulkanReplayConsumerBase::VulkanReplayConsumerBase(std::shared_ptr<application::
 
 VulkanReplayConsumerBase::~VulkanReplayConsumerBase()
 {
-    for (const std::pair<format::HandleId, std::pair<const VulkanDeviceInfo*, VkPipelineCache>>& elt :
-         tracked_pipeline_caches_)
+    for (const auto& [handle_id, cache_pair] : tracked_pipeline_caches_)
     {
-        SavePipelineCache(elt.first, elt.second.first, elt.second.second);
+        const auto& [device_info, pipeline_cache] = cache_pair;
+        SavePipelineCache(handle_id, device_info, pipeline_cache);
     }
 
     // Idle all devices before destroying other resources.
@@ -249,6 +249,10 @@ VulkanReplayConsumerBase::~VulkanReplayConsumerBase()
     micromap_builders_.clear();
     // free replacer internal vulkan-resources
     _device_address_replacers.clear();
+
+    // process queued async tasks
+    background_queue_.join_all();
+    main_thread_queue_.poll();
 
     // Cleanup screenshot resources before destroying device.
     object_info_table_->VisitVkDeviceInfo([this](const VulkanDeviceInfo* info) {
@@ -289,7 +293,6 @@ VulkanReplayConsumerBase::~VulkanReplayConsumerBase()
         graphics::ReleaseLoader(loader_handle_);
     }
 
-    delete resource_dumper_;
     resource_dumper_ = nullptr;
 
     CommonObjectInfoTable::ReleaseSingleton();
@@ -1441,8 +1444,10 @@ void VulkanReplayConsumerBase::ProcessInitImageCommand(format::HandleId         
 void VulkanReplayConsumerBase::SetFatalErrorHandler(std::function<void(const char*)> handler)
 {
     fatal_error_handler_ = handler;
-    assert(resource_dumper_);
-    resource_dumper_->DumpResourcesSetFatalErrorHandler(handler);
+    if (resource_dumper_)
+    {
+        resource_dumper_->DumpResourcesSetFatalErrorHandler(handler);
+    }
 }
 
 void VulkanReplayConsumerBase::RaiseFatalError(const char* message) const
@@ -2086,7 +2091,7 @@ void VulkanReplayConsumerBase::InitializeReplayDumpResources()
 {
     if (resource_dumper_ == nullptr)
     {
-        resource_dumper_ = new VulkanReplayDumpResources(options_, object_info_table_);
+        resource_dumper_ = std::make_unique<VulkanReplayDumpResources>(options_, object_info_table_);
         GFXRECON_ASSERT(resource_dumper_);
     }
 }
@@ -4624,9 +4629,9 @@ VkResult VulkanReplayConsumerBase::OverrideCreateDescriptorSetLayout(
             layout_info->bindings_layout.resize(binding_count);
             for (uint32_t i = 0; i < binding_count; ++i)
             {
-                layout_info->bindings_layout[i].type    = p_bindings[i].descriptorType;
-                layout_info->bindings_layout[i].count   = p_bindings[i].descriptorCount;
-                layout_info->bindings_layout[i].binding = p_bindings[i].binding;
+                layout_info->bindings_layout[i].type        = p_bindings[i].descriptorType;
+                layout_info->bindings_layout[i].binding     = p_bindings[i].binding;
+                layout_info->bindings_layout[i].stage_flags = p_bindings[i].stageFlags;
             }
         }
     }
@@ -4812,52 +4817,8 @@ VkResult VulkanReplayConsumerBase::OverrideAllocateDescriptorSets(
                                                                     std::forward_as_tuple());
                     assert(new_entry.second);
 
-                    new_entry.first->second.desc_type = layout_binding.type;
-
-                    switch (layout_binding.type)
-                    {
-                        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
-                        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
-                        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
-                        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
-                        {
-                            new_entry.first->second.image_info.resize(layout_binding.count);
-                        }
-                        break;
-
-                        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
-                        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
-                        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
-                        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
-                        {
-                            new_entry.first->second.buffer_info.resize(layout_binding.count);
-                        }
-                        break;
-
-                        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
-                        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
-                        {
-                            new_entry.first->second.texel_buffer_view_info.resize(layout_binding.count);
-                        }
-                        break;
-
-                        case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK:
-                        {
-                            new_entry.first->second.inline_uniform_block.resize(layout_binding.count);
-                        }
-                        break;
-
-                        case VK_DESCRIPTOR_TYPE_SAMPLER:
-                        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
-                        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
-                            break;
-
-                        default:
-                            GFXRECON_LOG_WARNING("%s() Unrecognized/Unhandled descriptor type (%s)",
-                                                 __func__,
-                                                 util::ToString<VkDescriptorType>(layout_binding.type).c_str());
-                            break;
-                    }
+                    new_entry.first->second.desc_type   = layout_binding.type;
+                    new_entry.first->second.stage_flags = layout_binding.stage_flags;
                 }
             }
         }
@@ -6908,60 +6869,6 @@ static VkDescriptorType SpvReflectToVkDescriptorType(SpvReflectDescriptorType ty
     }
 }
 
-static bool SPIRVReflectPerformReflectionOnShaderModule(VulkanShaderModuleInfo*       shader_info,
-                                                        size_t                        spirv_size,
-                                                        const uint32_t*               spirv_code,
-                                                        const VkPhysicalDeviceLimits& phys_dev_limits)
-{
-    assert(shader_info != nullptr);
-    assert(spirv_size);
-    assert(spirv_code != nullptr);
-
-    spv_reflect::ShaderModule reflection(spirv_size, spirv_code);
-    if (reflection.GetResult() != SPV_REFLECT_RESULT_SUCCESS)
-    {
-        GFXRECON_LOG_WARNING("Could not generate reflection data about shader module")
-        assert(0);
-        return false;
-    }
-
-    // Scan shader descriptor bindings
-    uint32_t         count  = 0;
-    SpvReflectResult result = reflection.EnumerateDescriptorBindings(&count, nullptr);
-    if (result != SPV_REFLECT_RESULT_SUCCESS)
-    {
-        GFXRECON_LOG_ERROR("Shader reflection on shader %" PRIu64 " failed", shader_info->capture_id);
-        assert(0);
-        return false;
-    }
-
-    if (count)
-    {
-        std::vector<SpvReflectDescriptorBinding*> bindings(count, nullptr);
-        result = reflection.EnumerateDescriptorBindings(&count, bindings.data());
-        if (result != SPV_REFLECT_RESULT_SUCCESS)
-        {
-            GFXRECON_LOG_ERROR("Shader reflection on shader %" PRIu64 " failed", shader_info->capture_id);
-            assert(0);
-            return false;
-        }
-
-        for (const auto binding : bindings)
-        {
-            VkDescriptorType type     = SpvReflectToVkDescriptorType(binding->descriptor_type);
-            bool             readonly = ((binding->decoration_flags & SPV_REFLECT_DECORATION_NON_WRITABLE) ==
-                             SPV_REFLECT_DECORATION_NON_WRITABLE);
-            const bool       is_array = binding->array.dims_count > 0;
-
-            shader_info->used_descriptors_info[binding->set].emplace(
-                binding->binding,
-                VulkanShaderModuleInfo::ShaderDescriptorInfo(
-                    type, readonly, binding->accessed, binding->count, is_array));
-        }
-    }
-    return true;
-}
-
 VkResult VulkanReplayConsumerBase::OverrideCreateShaderModule(
     PFN_vkCreateShaderModule                                      func,
     VkResult                                                      original_result,
@@ -6989,19 +6896,6 @@ VkResult VulkanReplayConsumerBase::OverrideCreateShaderModule(
         {
             // check for buffer-references, issue warning
             graphics::vulkan_check_buffer_references(original_info->pCode, original_info->codeSize, shader_module_info);
-
-            if (options_.dumping_resources)
-            {
-                const VulkanPhysicalDeviceInfo* phys_dev =
-                    object_info_table_->GetVkPhysicalDeviceInfo(device_info->parent_id);
-                assert(phys_dev);
-                assert(phys_dev->replay_device_info);
-
-                SPIRVReflectPerformReflectionOnShaderModule(shader_module_info,
-                                                            original_info->codeSize,
-                                                            original_info->pCode,
-                                                            phys_dev->replay_device_info->properties->limits);
-            }
         }
         return vk_res;
     }
@@ -7037,22 +6931,6 @@ VkResult VulkanReplayConsumerBase::OverrideCreateShaderModule(
     {
         // check for buffer-references, issue warning
         graphics::vulkan_check_buffer_references(original_info->pCode, original_info->codeSize, shader_module_info);
-
-        if (vk_res == VK_SUCCESS && options_.dumping_resources)
-        {
-            auto shader_info = reinterpret_cast<VulkanShaderModuleInfo*>(pShaderModule->GetConsumerData(0));
-            assert(shader_info);
-
-            const VulkanPhysicalDeviceInfo* phys_dev =
-                object_info_table_->GetVkPhysicalDeviceInfo(device_info->parent_id);
-            assert(phys_dev);
-            assert(phys_dev->replay_device_info);
-
-            SPIRVReflectPerformReflectionOnShaderModule(shader_info,
-                                                        override_info.codeSize,
-                                                        override_info.pCode,
-                                                        phys_dev->replay_device_info->properties->limits);
-        }
     }
     return vk_res;
 }
@@ -7609,6 +7487,12 @@ VkResult VulkanReplayConsumerBase::OverrideCreateSwapchainKHR(
         if (meta_info != nullptr)
         {
             SetSwapchainWindowSize(meta_info);
+
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
+            // On Android, SetSwapchainWindowSize will take care of non identity transformations by requesting the
+            // appropriate orientation with setRequestedOrientation
+            modified_create_info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+#endif
 
             const auto surface_info = object_info_table_->GetVkSurfaceKHRInfo(meta_info->surface);
 
@@ -9470,10 +9354,10 @@ VkResult VulkanReplayConsumerBase::OverrideCreateRayTracingPipelinesKHR(
                                                          &pPipelines->GetPointer()[createInfoCount]);
     }
 
-    // NOTE: this is almost never true, even on newest desktop-drivers
-    // TODO: consider removing all of the feature_rayTracingPipelineShaderGroupHandleCaptureReplay logic here
+    // NOTE: as of early 2025, rayTracingPipelineShaderGroupHandleCaptureReplay is not widely supported.
+    // e.g. newest nvidia desktop-drivers do not support this feature
     if (device_info->property_feature_info.feature_rayTracingPipelineShaderGroupHandleCaptureReplay &&
-        device_info->allocator->SupportsOpaqueDeviceAddresses())
+        !UseAddressReplacement(device_info))
     {
         // Modify pipeline create infos with capture replay flag and data.
         std::vector<VkRayTracingPipelineCreateInfoKHR>                 modified_create_infos;
@@ -9639,26 +9523,6 @@ VkResult VulkanReplayConsumerBase::OverrideCreateRayTracingPipelinesKHR(
 
     if (result >= 0)
     {
-        const Decoded_VkRayTracingPipelineCreateInfoKHR* create_info_meta = pCreateInfos->GetMetaStructPointer();
-
-        for (uint32_t i = 0; i < createInfoCount; ++i)
-        {
-            VulkanPipelineInfo* pipeline_info = reinterpret_cast<VulkanPipelineInfo*>(pPipelines->GetConsumerData(i));
-
-            const Decoded_VkPipelineShaderStageCreateInfo* stages_info_meta =
-                create_info_meta[i].pStages->GetMetaStructPointer();
-            const size_t stages_count = create_info_meta->pStages->GetLength();
-
-            for (size_t s = 0; s < stages_count; ++s)
-            {
-                VulkanShaderModuleInfo* module_info =
-                    object_info_table_->GetVkShaderModuleInfo(stages_info_meta[s].module);
-                assert(module_info);
-                assert(pipeline_info);
-
-                pipeline_info->shaders.insert({ pCreateInfos->GetPointer()->pStages[s].stage, *module_info });
-            }
-        }
         graphics::populate_shader_stages(pCreateInfos, pPipelines, GetObjectInfoTable());
     }
 
@@ -11070,9 +10934,10 @@ void VulkanReplayConsumerBase::UpdateDescriptorSetInfoWithTemplate(
 
         for (const auto& entry : template_info->entries)
         {
-            const VkDescriptorType type          = entry.descriptorType;
-            const uint32_t         binding_index = entry.dstBinding;
-            const uint32_t         count         = entry.descriptorCount;
+            const VkDescriptorType type              = entry.descriptorType;
+            const uint32_t         binding_index     = entry.dstBinding;
+            const uint32_t         count             = entry.descriptorCount;
+            const uint32_t         dst_array_element = entry.dstArrayElement;
 
             desc_set_info->descriptors[binding_index].desc_type = type;
 
@@ -11086,17 +10951,12 @@ void VulkanReplayConsumerBase::UpdateDescriptorSetInfoWithTemplate(
                     const Decoded_VkDescriptorImageInfo* img_desc_info = decoder->GetImageInfoMetaStructPointer();
                     assert(img_desc_info != nullptr);
 
-                    // Allocate a bit more
-                    if (desc_set_info->descriptors[binding_index].image_info.size() < count)
-                    {
-                        desc_set_info->descriptors[binding_index].image_info.resize(2 * count);
-                    }
-
                     for (uint32_t i = 0; i < count; ++i)
                     {
+                        const uint32_t             array_index = dst_array_element + i;
                         const VulkanImageViewInfo* img_view_info =
                             object_info_table_->GetVkImageViewInfo(img_desc_info[image_info_count].imageView);
-                        desc_set_info->descriptors[binding_index].image_info[i] = {
+                        desc_set_info->descriptors[binding_index].image_info[array_index] = {
                             img_view_info, img_desc_info[image_info_count].decoded_value->imageLayout
                         };
                         ++image_info_count;
@@ -11106,12 +10966,6 @@ void VulkanReplayConsumerBase::UpdateDescriptorSetInfoWithTemplate(
 
                 case VK_DESCRIPTOR_TYPE_SAMPLER:
                 {
-                    // Allocate a bit more
-                    if (desc_set_info->descriptors[binding_index].image_info.size() < count)
-                    {
-                        desc_set_info->descriptors[binding_index].image_info.resize(2 * count);
-                    }
-
                     image_info_count += count;
                 }
                 break;
@@ -11124,19 +10978,14 @@ void VulkanReplayConsumerBase::UpdateDescriptorSetInfoWithTemplate(
                     const Decoded_VkDescriptorBufferInfo* buf_desc_info = decoder->GetBufferInfoMetaStructPointer();
                     assert(buf_desc_info != nullptr);
 
-                    // Allocate a bit more
-                    if (desc_set_info->descriptors[binding_index].buffer_info.size() < count)
-                    {
-                        desc_set_info->descriptors[binding_index].buffer_info.resize(2 * count);
-                    }
-
                     for (uint32_t i = 0; i < count; ++i)
                     {
+                        const uint32_t          array_index = dst_array_element + i;
                         const VulkanBufferInfo* buf_info =
                             object_info_table_->GetVkBufferInfo(buf_desc_info[buffer_info_count].buffer);
                         assert(buf_info != nullptr);
 
-                        desc_set_info->descriptors[binding_index].buffer_info[i] = {
+                        desc_set_info->descriptors[binding_index].buffer_info[array_index] = {
                             buf_info,
                             buf_desc_info[buffer_info_count].decoded_value->offset,
                             buf_desc_info[buffer_info_count].decoded_value->range
@@ -11153,19 +11002,14 @@ void VulkanReplayConsumerBase::UpdateDescriptorSetInfoWithTemplate(
                     const format::HandleId* buffer_view_ids = decoder->GetTexelBufferViewHandleIdsPointer();
                     assert(buffer_view_ids != nullptr);
 
-                    // Allocate a bit more
-                    if (desc_set_info->descriptors[binding_index].texel_buffer_view_info.size() < count)
-                    {
-                        desc_set_info->descriptors[binding_index].texel_buffer_view_info.resize(2 * count);
-                    }
-
                     for (uint32_t i = 0; i < count; ++i)
                     {
+                        const uint32_t              array_index = dst_array_element + i;
                         const VulkanBufferViewInfo* buf_view_info =
                             object_info_table_->GetVkBufferViewInfo(buffer_view_ids[texel_buffer_view_count]);
                         assert(buf_view_info != nullptr);
 
-                        desc_set_info->descriptors[binding_index].texel_buffer_view_info[i] = buf_view_info;
+                        desc_set_info->descriptors[binding_index].texel_buffer_view_info[array_index] = buf_view_info;
 
                         ++texel_buffer_view_count;
                     }
@@ -11714,9 +11558,6 @@ void VulkanReplayConsumerBase::OverrideUpdateDescriptorSets(
                     case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
                     case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
                     {
-                        assert(desc_set_info->descriptors[binding].image_info.size() >=
-                               write->dstArrayElement + write->descriptorCount);
-
                         for (uint32_t i = 0; i < write->descriptorCount; ++i)
                         {
                             const uint32_t arr_idx = write->dstArrayElement + i;
@@ -11734,9 +11575,6 @@ void VulkanReplayConsumerBase::OverrideUpdateDescriptorSets(
                     case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
                     case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
                     {
-                        assert(desc_set_info->descriptors[binding].buffer_info.size() >=
-                               write->dstArrayElement + write->descriptorCount);
-
                         for (uint32_t i = 0; i < write->descriptorCount; ++i)
                         {
                             const uint32_t arr_idx = write->dstArrayElement + i;
@@ -11754,9 +11592,6 @@ void VulkanReplayConsumerBase::OverrideUpdateDescriptorSets(
                     case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
                     case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
                     {
-                        assert(desc_set_info->descriptors[binding].texel_buffer_view_info.size() >=
-                               write->dstArrayElement + write->descriptorCount);
-
                         for (uint32_t i = 0; i < write->descriptorCount; ++i)
                         {
                             const uint32_t arr_idx = write->dstArrayElement + i;
