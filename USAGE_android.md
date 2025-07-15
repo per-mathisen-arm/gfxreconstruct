@@ -714,8 +714,8 @@ queryable permission to apply.
 The `gfxrecon.py replay` command has the following usage:
 
 ```text
-usage: gfxrecon.py replay [-h] [-p LOCAL_FILE] [--version] [--log-level LEVEL]
-                          [--log-timestamps] [--log-file DEVICE_FILE]
+usage: gfxrecon.py replay [-h] [--push-file LOCAL_FILE] [--version]
+                          [--log-level LEVEL] [--log-timestamps] [--log-file DEVICE_FILE]
                           [--cpu-mask <binary-mask>] [--pause-frame N]
                           [--paused] [--screenshot-all] [--screenshots RANGES]
                           [--screenshot-format FORMAT] [--screenshot-dir DIR]
@@ -777,9 +777,10 @@ optional arguments:
               by <file>
   --cpu-mask <binary-mask>
               Set of CPU cores used by the replayer.
-              `binary-mask` is a succession of '0' and '1' that specifies
-              used/unused cores. For example '1010' activates the first and
-              third cores and deactivate all other cores.
+              `binary-mask` is a succession of '0' and '1' read from left
+              to right that specifies used/unused cores.
+              For example '10010' activates the first and
+              fourth cores and deactivate all other cores.
               If the option is not set, all cores can be used. If the option
               is set only for some cores, the other cores are not used.
   --screenshot-all
