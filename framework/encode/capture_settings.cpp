@@ -531,7 +531,7 @@ void CaptureSettings::ProcessOptions(OptionsMap* options, CaptureSettings* setti
     std::string trim_frames = FindOption(options, kOptionKeyCaptureFrames);
     if (!trim_frames.empty())
     {
-        ParseUintRangeList(trim_frames, &settings->trace_settings_.trim_ranges, "capture frames");
+        ParseUintRangeList(trim_frames, &settings->trace_settings_.trim_ranges, "capture frames", true, false);
         if (!settings->trace_settings_.trim_ranges.empty())
         {
             settings->trace_settings_.trim_boundary = TrimBoundary::kFrames;
@@ -660,7 +660,9 @@ void CaptureSettings::ProcessOptions(OptionsMap* options, CaptureSettings* setti
         FindOption(options, kOptionKeyScreenshotDir, settings->trace_settings_.screenshot_dir);
     ParseUintRangeList(FindOption(options, kOptionKeyScreenshotFrames),
                        &settings->trace_settings_.screenshot_ranges,
-                       "screenshot frames");
+                       "screenshot frames",
+                       true,
+                       false);
     settings->trace_settings_.screenshot_interval = ParseIntegerString(
         FindOption(options, kOptionKeyScreenshotInterval), settings->trace_settings_.screenshot_interval);
     if (settings->trace_settings_.screenshot_interval == 0)

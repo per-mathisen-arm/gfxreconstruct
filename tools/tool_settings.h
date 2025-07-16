@@ -705,7 +705,7 @@ GetScreenshotRanges(const gfxrecon::util::ArgumentParser& arg_parser)
         if (!value.empty())
         {
             std::vector<gfxrecon::util::UintRange> frame_ranges =
-                gfxrecon::util::GetUintRanges(value.c_str(), "screenshot frames");
+                gfxrecon::util::GetUintRanges(value.c_str(), "screenshot frames", true, false);
 
             for (uint32_t i = 0; i < frame_ranges.size(); ++i)
             {
@@ -730,7 +730,7 @@ GetTriggerScriptRanges(const gfxrecon::util::ArgumentParser& arg_parser)
     if (!value.empty())
     {
         std::vector<gfxrecon::util::UintRange> frame_ranges =
-            gfxrecon::util::GetUintRanges(value.c_str(), "trigger script frames");
+            gfxrecon::util::GetUintRanges(value.c_str(), "trigger script frames", true, false);
 
         for (uint32_t i = 0; i < frame_ranges.size(); ++i)
         {
@@ -988,7 +988,7 @@ static void GetReplayOptions(gfxrecon::decode::ReplayOptions&      options,
         if (!value.empty())
         {
             std::vector<gfxrecon::util::UintRange> block_ranges =
-                gfxrecon::util::GetUintRanges(value.c_str(), "Print block information");
+                gfxrecon::util::GetUintRanges(value.c_str(), "Print block information", true, false);
             options.block_index_from = block_ranges[0].first;
             options.block_index_to   = block_ranges[1].first;
         }
@@ -1194,13 +1194,13 @@ GetVulkanReplayOptions(const gfxrecon::util::ArgumentParser&           arg_parse
     {
         const std::string& skip_get_fence_ranges = arg_parser.GetArgumentValue(kSkipGetFenceRangesShortArgument);
         replay_options.skip_get_fence_ranges =
-            gfxrecon::util::GetUintRanges(skip_get_fence_ranges.c_str(), kSkipGetFenceRangesShortArgument);
+            gfxrecon::util::GetUintRanges(skip_get_fence_ranges.c_str(), kSkipGetFenceRangesShortArgument, true, false);
     }
     else if (arg_parser.IsArgumentSet(kSkipGetFenceRanges))
     {
         const std::string& skip_get_fence_ranges = arg_parser.GetArgumentValue(kSkipGetFenceRanges);
         replay_options.skip_get_fence_ranges =
-            gfxrecon::util::GetUintRanges(skip_get_fence_ranges.c_str(), kSkipGetFenceRanges);
+            gfxrecon::util::GetUintRanges(skip_get_fence_ranges.c_str(), kSkipGetFenceRanges, true, false);
     }
     else
     {

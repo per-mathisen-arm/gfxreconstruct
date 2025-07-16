@@ -216,8 +216,8 @@ class CaptureSettings
     static void ParseUintRangeList(const std::string&            value_string,
                                    std::vector<util::UintRange>* frames,
                                    const char*                   option_name,
-                                   bool                          check_overlap_range = true,
-                                   bool                          allow_zero          = false);
+                                   bool                          check_overlap_range,
+                                   bool                          allow_zero);
 
     static std::string ParseTrimKeyString(const std::string& value_string);
 
