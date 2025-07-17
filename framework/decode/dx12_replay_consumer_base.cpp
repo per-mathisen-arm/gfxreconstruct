@@ -3777,6 +3777,27 @@ HRESULT Dx12ReplayConsumerBase::CreateSwapChainForComposition(DxObjectInfo* repl
     pDesc->SwapEffect            = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
     pDesc->Flags                 = desc_pointer->Flags;
 
+    if (pDesc->Width == 0 || pDesc->Height == 0)
+    {
+        if (options_.windowed_width != 0 && options_.windowed_height != 0)
+        {
+            pDesc->Width  = options_.windowed_width;
+            pDesc->Height = options_.windowed_height;
+            GFXRECON_LOG_WARNING_ONCE(
+                "In CreateSwapChainForComposition, the Width or Height is 0, using default window height and width.");
+        }
+        else
+        {
+            int screen_width  = GetSystemMetrics(SM_CXSCREEN);
+            int screen_height = GetSystemMetrics(SM_CYSCREEN);
+            pDesc->Width      = screen_width;
+            pDesc->Height     = screen_height;
+            GFXRECON_LOG_WARNING_ONCE(
+                "In CreateSwapChainForComposition, the Width or Height is 0, using system screen height and width.");
+            ;
+        }
+    }
+
     IDXGISwapChain1* pSwapchain1 = nullptr;
 
     result = replay_object->CreateSwapChainForComposition(device, pDesc, restrict_to_output, &pSwapchain1);
@@ -3830,6 +3851,27 @@ HRESULT Dx12ReplayConsumerBase::CreateSwapChainForComposition(
     if ((options_.force_windowed) || (options_.force_windowed_origin))
     {
         full_screen_desc_ptr = nullptr;
+    }
+
+    if (desc_pointer->Width == 0 || desc_pointer->Height == 0)
+    {
+        if (options_.windowed_width != 0 && options_.windowed_height != 0)
+        {
+            desc_pointer->Width  = options_.windowed_width;
+            desc_pointer->Height = options_.windowed_height;
+            GFXRECON_LOG_WARNING_ONCE(
+                "In CreateSwapChainForComposition, the Width or Height is 0, using default window height and width.");
+        }
+        else
+        {
+            int screen_width     = GetSystemMetrics(SM_CXSCREEN);
+            int screen_height    = GetSystemMetrics(SM_CYSCREEN);
+            desc_pointer->Width  = screen_width;
+            desc_pointer->Height = screen_height;
+            GFXRECON_LOG_WARNING_ONCE(
+                "In CreateSwapChainForComposition, the Width or Height is 0, using system screen height and width.");
+            ;
+        }
     }
 
     desc_pointer->Scaling    = DXGI_SCALING_STRETCH;
