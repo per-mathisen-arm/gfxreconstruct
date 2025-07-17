@@ -5035,7 +5035,9 @@ void VulkanStateWriter::WriteTensorMemoryState(const VulkanStateTable& state_tab
             state_table.GetVulkanDeviceMemoryWrapper(wrapper->bind_memory_id);
         info.memory       = memory_wrapper->handle;
         info.memoryOffset = wrapper->bind_offset;
-
+        encoder_.EncodeHandleIdValue(memory_wrapper->parent_device->handle_id);
+        encoder_.EncodeUInt32Value(1);
+        EncodeStructPtr(&encoder_, &info);
         WriteFunctionCall(format::ApiCallId::ApiCall_vkBindDataGraphPipelineSessionMemoryARM, &parameter_stream_);
     });
     state_table.VisitWrappers([&](const vulkan_wrappers::TensorARMWrapper* wrapper) {
@@ -5049,7 +5051,7 @@ void VulkanStateWriter::WriteTensorMemoryState(const VulkanStateTable& state_tab
             state_table.GetVulkanDeviceMemoryWrapper(wrapper->bind_memory_id);
         info.memory       = memory_wrapper->handle;
         info.memoryOffset = wrapper->bind_offset;
-
+        encoder_.EncodeHandleIdValue(memory_wrapper->parent_device->handle_id);
         encoder_.EncodeUInt32Value(1);
         EncodeStructPtr(&encoder_, &info);
         encoder_.EncodeEnumValue(VK_SUCCESS);
