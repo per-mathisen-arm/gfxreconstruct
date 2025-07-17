@@ -102,11 +102,6 @@ class VulkanConsumerBase : public CommonConsumerBase
                                                                          const std::vector<format::HandleId>& children)
     {}
 
-    virtual void ProcessInitTensorCommand(format::HandleId device_id,
-                                          format::HandleId tensor_id,
-                                          uint64_t         data_size,
-                                          const uint8_t*   data)
-    {}
 };
 
 GFXRECON_END_NAMESPACE(decode)

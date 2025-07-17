@@ -134,6 +134,12 @@ class MetadataConsumerBase
         format::HandleId device_id, VkQueryType query_type, format::HandleId acceleration_structure_id)
     {}
 
+    virtual void ProcessInitTensorCommand(format::HandleId device_id,
+                                          format::HandleId tensor_id,
+                                          uint64_t         data_size,
+                                          const uint8_t*   data)
+    {}
+
   protected:
     uint64_t block_index_ = 0;
 };
