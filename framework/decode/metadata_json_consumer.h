@@ -168,12 +168,12 @@ class MetadataJsonConsumer : public Base
         FieldToJson(jdata["product_version"], info.ProductVersion, json_options);
         FieldToJson(jdata["file_version"], info.FileVersion, json_options);
         FieldToJson(jdata["app_version"], info.AppVersion, json_options);
-        FieldToJson(jdata["app_name"], info.AppName, json_options);
-        FieldToJson(jdata["company_name"], info.CompanyName, json_options);
-        FieldToJson(jdata["file_description"], info.FileDescription, json_options);
-        FieldToJson(jdata["internal_name"], info.InternalName, json_options);
-        FieldToJson(jdata["original_filename"], info.OriginalFilename, json_options);
-        FieldToJson(jdata["product_name"], info.ProductName, json_options);
+        FieldToJson(jdata["app_name"], util::NormalizeUtf8(info.AppName), json_options);
+        FieldToJson(jdata["company_name"], util::NormalizeUtf8(info.CompanyName), json_options);
+        FieldToJson(jdata["file_description"], util::NormalizeUtf8(info.FileDescription), json_options);
+        FieldToJson(jdata["internal_name"], util::NormalizeUtf8(info.InternalName), json_options);
+        FieldToJson(jdata["original_filename"], util::NormalizeUtf8(info.OriginalFilename), json_options);
+        FieldToJson(jdata["product_name"], util::NormalizeUtf8(info.ProductName), json_options);
         WriteBlockEnd();
     }
 
