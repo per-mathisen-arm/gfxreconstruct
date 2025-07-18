@@ -487,8 +487,6 @@ struct D3D12StateObjectPropertiesInfo : DxObjectExtraInfo
     static constexpr DxObjectInfoType kType         = DxObjectInfoType::kID3D12StateObjectPropertiesInfo;
     static constexpr char             kObjectType[] = "ID3D12StateObjectPropertiesInfo";
     D3D12StateObjectPropertiesInfo() : DxObjectExtraInfo(kType) {}
-
-    UINT64 stack_size_delta{ 0 };
 };
 
 GFXRECON_END_NAMESPACE(decode)

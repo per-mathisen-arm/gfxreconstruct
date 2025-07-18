@@ -109,8 +109,6 @@
     },
     "ID3D12StateObjectProperties": {
       "GetShaderIdentifier": "OverrideGetShaderIdentifier",
-      "GetShaderStackSize": "OverrideGetShaderStackSize",
-      "GetPipelineStackSize": "OverrideGetPipelineStackSize",
       "SetPipelineStackSize": "OverrideSetPipelineStackSize"
     },
     "ID3D12GraphicsCommandList": {
