@@ -3489,15 +3489,6 @@ VKAPI_ATTR void VKAPI_CALL vkQueueNotifyOutOfBandNV(
     VkQueue                                     queue,
     const VkOutOfBandQueueTypeInfoNV*           pQueueTypeInfo);
 
-VKAPI_ATTR VkResult VKAPI_CALL vkCreateDataGraphPipelinesARM(
-    VkDevice                                    device,
-    VkDeferredOperationKHR                      deferredOperation,
-    VkPipelineCache                             pipelineCache,
-    uint32_t                                    createInfoCount,
-    const VkDataGraphPipelineCreateInfoARM*     pCreateInfos,
-    const VkAllocationCallbacks*                pAllocator,
-    VkPipeline*                                 pPipelines);
-
 VKAPI_ATTR VkResult VKAPI_CALL vkCreateDataGraphPipelineSessionARM(
     VkDevice                                    device,
     const VkDataGraphPipelineSessionCreateInfoARM* pCreateInfo,

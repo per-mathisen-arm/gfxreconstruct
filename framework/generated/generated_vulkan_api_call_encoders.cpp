@@ -26479,67 +26479,6 @@ VKAPI_ATTR void VKAPI_CALL vkQueueNotifyOutOfBandNV(
 
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL vkCreateDataGraphPipelinesARM(
-    VkDevice                                    device,
-    VkDeferredOperationKHR                      deferredOperation,
-    VkPipelineCache                             pipelineCache,
-    uint32_t                                    createInfoCount,
-    const VkDataGraphPipelineCreateInfoARM*     pCreateInfos,
-    const VkAllocationCallbacks*                pAllocator,
-    VkPipeline*                                 pPipelines)
-{
-    VulkanCaptureManager* manager = VulkanCaptureManager::Get();
-    GFXRECON_ASSERT(manager != nullptr);
-    auto force_command_serialization = manager->GetForceCommandSerialization();
-    std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
-    std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
-    if (force_command_serialization)
-    {
-        exclusive_api_call_lock = VulkanCaptureManager::AcquireExclusiveApiCallLock();
-    }
-    else
-    {
-        shared_api_call_lock = VulkanCaptureManager::AcquireSharedApiCallLock();
-    }
-
-    bool omit_output_data = false;
-
-    CustomEncoderPreCall<format::ApiCallId::ApiCall_vkCreateDataGraphPipelinesARM>::Dispatch(manager, device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
-
-    auto handle_unwrap_memory = manager->GetHandleUnwrapMemory();
-    const VkDataGraphPipelineCreateInfoARM* pCreateInfos_unwrapped = vulkan_wrappers::UnwrapStructArrayHandles(pCreateInfos, createInfoCount, handle_unwrap_memory);
-
-    VkResult result = vulkan_wrappers::GetDeviceTable(device)->CreateDataGraphPipelinesARM(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos_unwrapped, pAllocator, pPipelines);
-
-    if (result >= 0)
-    {
-        vulkan_wrappers::CreateWrappedHandles<vulkan_wrappers::DeviceWrapper, vulkan_wrappers::DeferredOperationKHRWrapper, vulkan_wrappers::PipelineWrapper>(device, deferredOperation, pPipelines, createInfoCount, VulkanCaptureManager::GetUniqueId);
-    }
-    else
-    {
-        omit_output_data = true;
-    }
-
-    auto encoder = manager->BeginTrackedApiCallCapture(format::ApiCallId::ApiCall_vkCreateDataGraphPipelinesARM);
-    if (encoder)
-    {
-        encoder->EncodeVulkanHandleValue<vulkan_wrappers::DeviceWrapper>(device);
-        encoder->EncodeVulkanHandleValue<vulkan_wrappers::DeferredOperationKHRWrapper>(deferredOperation);
-        encoder->EncodeVulkanHandleValue<vulkan_wrappers::PipelineCacheWrapper>(pipelineCache);
-        encoder->EncodeUInt32Value(createInfoCount);
-        EncodeStructArray(encoder, pCreateInfos, createInfoCount);
-        EncodeStructPtr(encoder, pAllocator);
-        encoder->EncodeVulkanHandleArray<vulkan_wrappers::PipelineWrapper>(pPipelines, createInfoCount, omit_output_data);
-        encoder->EncodeEnumValue(result);
-        manager->EndGroupCreateApiCallCapture<VkDevice, VkDeferredOperationKHR, vulkan_wrappers::PipelineWrapper, VkDataGraphPipelineCreateInfoARM>(result, device, deferredOperation, createInfoCount, pPipelines, pCreateInfos);
-    }
-
-    CustomEncoderPostCall<format::ApiCallId::ApiCall_vkCreateDataGraphPipelinesARM>::Dispatch(manager, result, device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
-
-    return result;
-
-}
-
 VKAPI_ATTR VkResult VKAPI_CALL vkCreateDataGraphPipelineSessionARM(
     VkDevice                                    device,
     const VkDataGraphPipelineSessionCreateInfoARM* pCreateInfo,

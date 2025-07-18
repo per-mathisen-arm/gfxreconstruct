@@ -675,10 +675,12 @@ void VulkanStateWriter::WritePipelineState(const VulkanStateTable& state_table)
     std::set<util::MemoryOutputStream*>    processed_compute_pipelines;
     std::set<util::MemoryOutputStream*>    processed_ray_tracing_pipelines_nv;
     std::set<util::MemoryOutputStream*>    processed_ray_tracing_pipelines_khr;
+    std::set<util::MemoryOutputStream*>    processed_data_graph_pipelines_arm;
     std::vector<util::MemoryOutputStream*> graphics_pipelines;
     std::vector<util::MemoryOutputStream*> compute_pipelines;
     std::vector<util::MemoryOutputStream*> ray_tracing_pipelines_nv;
     std::vector<util::MemoryOutputStream*> ray_tracing_pipelines_khr;
+    std::vector<util::MemoryOutputStream*> data_graph_pipelines_arm;
 
     std::unordered_map<format::HandleId, const util::MemoryOutputStream*> temp_shaders;
     std::unordered_map<format::HandleId, const util::MemoryOutputStream*> temp_render_passes;
@@ -777,6 +779,15 @@ void VulkanStateWriter::WritePipelineState(const VulkanStateTable& state_table)
                 // vkCreateRayTracingPipelinesKHR. It needs to find a good way to destroy this VkDeferredOperation.
             }
         }
+        else if (wrapper->create_call_id == format::ApiCall_vkCreateDataGraphPipelinesARM)
+        {
+            if (processed_data_graph_pipelines_arm.find(wrapper->create_parameters.get()) ==
+                processed_data_graph_pipelines_arm.end())
+            {
+                data_graph_pipelines_arm.push_back(wrapper->create_parameters.get());
+                processed_data_graph_pipelines_arm.insert(wrapper->create_parameters.get());
+            }
+        }
 
         // Check for creation dependencies that no longer exist.
         for (const auto& entry : wrapper->shader_module_dependencies)
@@ -854,6 +865,11 @@ void VulkanStateWriter::WritePipelineState(const VulkanStateTable& state_table)
     for (const auto& entry : ray_tracing_pipelines_khr)
     {
         WriteFunctionCall(format::ApiCall_vkCreateRayTracingPipelinesKHR, entry);
+    }
+
+    for (const auto& entry : data_graph_pipelines_arm)
+    {
+        WriteFunctionCall(format::ApiCall_vkCreateDataGraphPipelinesARM, entry);
     }
 
     for (const auto& entry : temp_deferred_operation_join_command)

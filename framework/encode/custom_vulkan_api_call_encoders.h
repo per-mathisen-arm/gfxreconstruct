@@ -104,6 +104,14 @@ VKAPI_ATTR VkResult VKAPI_CALL vkCreateRayTracingPipelinesKHR(VkDevice          
                                                               const VkAllocationCallbacks*             pAllocator,
                                                               VkPipeline*                              pPipelines);
 
+VKAPI_ATTR VkResult VKAPI_CALL vkCreateDataGraphPipelinesARM(VkDevice                                device,
+                                                             VkDeferredOperationKHR                  deferredOperation,
+                                                             VkPipelineCache                         pipelineCache,
+                                                             uint32_t                                createInfoCount,
+                                                             const VkDataGraphPipelineCreateInfoARM* pCreateInfos,
+                                                             const VkAllocationCallbacks*            pAllocator,
+                                                             VkPipeline*                             pPipelines);
+
 VKAPI_ATTR VkResult VKAPI_CALL vkGetTensorOpaqueCaptureDescriptorDataARM(VkDevice,
                                                                          const VkTensorCaptureDescriptorDataInfoARM*,
                                                                          void*);
