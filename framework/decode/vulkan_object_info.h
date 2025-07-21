@@ -391,6 +391,7 @@ struct VulkanAndroidHardwareBufferPlaneInfo
 
 struct VulkanAndroidHardwareBufferInfo : public VulkanExternalMemoryInfo
 {
+    format::HandleId device_id{ format::kNullHandleId };
     format::HandleId memory_id{ format::kNullHandleId };
     AHardwareBuffer* hardware_buffer{ nullptr };
     uint8_t*         data{ nullptr };
@@ -454,6 +455,7 @@ struct VulkanImageInfo : public VulkanObjectInfo<VkImage>
     VkImageType           type{};
     VkFormat              format{};
     bool                  external_format{ false };
+    bool                  external_memory_android{ false };
     VkExtent3D            extent{ 0, 0, 0 };
     VkImageTiling         tiling{};
     VkSampleCountFlagBits sample_count{};
