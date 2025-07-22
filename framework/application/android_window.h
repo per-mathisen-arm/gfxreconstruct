@@ -36,6 +36,7 @@
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(application)
 extern ANativeWindow* tmp_window;
+
 class AndroidWindow : public decode::Window
 {
   public:

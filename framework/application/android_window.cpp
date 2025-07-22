@@ -36,6 +36,7 @@
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(application)
 ANativeWindow* tmp_window = nullptr;
+
 AndroidWindow::AndroidWindow(AndroidContext* android_context, ANativeWindow* window) :
     android_context_(android_context), window_(window), width_(0), height_(0), pre_transform_(0)
 {
@@ -165,21 +166,28 @@ decode::Window* AndroidWindowFactory::Create(
     tmp_window = nullptr;
     android_context_->requestNativeWindow(width, height);
 
+#ifdef GFXR_MULTI_WINDOW_REPLAY
+    tmp_window = nullptr;
+    android_context_->requestNativeWindow(width, height);
     AndroidWindow* tmpwin = nullptr;
     if (tmp_window != nullptr)
     {
         tmpwin = new AndroidWindow(android_context_, tmp_window);
-        GFXRECON_LOG_INFO("Got android window %p\n", tmp_window);
+        GFXRECON_LOG_INFO("Got android window %p", tmp_window);
     }
     else
     {
         GFXRECON_LOG_WARNING("Get android window failed");
     }
     return tmpwin;
+#else // !GFXR_MULTI_WINDOW_REPLAY
+    return android_context_->GetWindow();
+#endif
 }
 
 void AndroidWindowFactory::Destroy(decode::Window* window)
 {
+#ifdef GFXR_MULTI_WINDOW_REPLAY
     if (window)
     {
         ANativeWindow* native_window = nullptr;
@@ -195,6 +203,10 @@ void AndroidWindowFactory::Destroy(decode::Window* window)
         int32_t window_index = created_window_.at(window) - 1;
         android_context_->destroyNativeWindow(window_index);
     }
+#else // !GFXR_MULTI_WINDOW_REPLAY
+    // Standard replay app only has a single window whose lifetime is managed by AndroidContext.
+    GFXRECON_UNREFERENCED_PARAMETER(window);
+#endif
 }
 
 VkBool32 AndroidWindowFactory::GetPhysicalDevicePresentationSupport(const encode::VulkanInstanceTable* table,

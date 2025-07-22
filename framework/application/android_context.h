@@ -58,7 +58,9 @@ class AndroidContext : public WsiContext
     void InitWindow();
 
     void SetOrientation(ScreenOrientation orientation);
+
     void requestNativeWindow(int width, int height);
+
     void destroyNativeWindow(int window_index);
 
   private:

@@ -56,6 +56,13 @@ android {
             signingConfig signingConfigs.release
         }
     }
+    sourceSets {
+        main {
+            manifest.srcFile 'AndroidManifest.xml'
+            java.srcDirs = ['src']
+            res.srcDirs = ['res']
+        }
+    }
     externalNativeBuild {
         cmake {
             path "CMakeLists.txt"
