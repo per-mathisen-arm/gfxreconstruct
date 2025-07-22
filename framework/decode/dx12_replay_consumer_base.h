@@ -592,11 +592,16 @@ class Dx12ReplayConsumerBase : public Dx12Consumer
     template <typename T>
     void SetResourceDesc(HandlePointerDecoder<void*>* resource, StructPointerDecoder<T>* desc)
     {
-        GFXRECON_ASSERT(resource != nullptr);
+        if ((resource == nullptr) || resource->IsNull() || (desc == nullptr) || desc->IsNull())
+        {
+            return;
+        }
 
         auto resource_object_info = GetObjectInfo(*resource->GetPointer());
-
-        GFXRECON_ASSERT(resource_object_info != nullptr);
+        if (resource_object_info == nullptr)
+        {
+            return;
+        }
 
         if (resource_object_info->extra_info == nullptr)
         {
