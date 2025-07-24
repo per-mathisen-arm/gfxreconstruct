@@ -32,7 +32,6 @@ argc = len(sys.argv)
 # Supported commands
 valid_commands = [
     'install-apk',
-    'multiwin-replay',
     'replay'
 ]
 
@@ -43,7 +42,7 @@ valid_commands = [
 
 # Application info
 app_name = 'com.lunarg.gfxreconstruct.replay'
-app_activity = '"com.lunarg.gfxreconstruct.replay/android.app.NativeActivity"'
+app_activity = '"com.lunarg.gfxreconstruct.replay/.ReplayActivity"'
 multiwin_app_activity = '"com.lunarg.gfxreconstruct.replay/.ReplayActivity"'
 app_action = 'android.intent.action.MAIN'
 app_category = 'android.intent.category.LAUNCHER'
