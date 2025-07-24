@@ -14,6 +14,8 @@ add_library(native_app_glue STATIC
 # Refer to: https://github.com/android-ndk/ndk/issues/381.
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -u ANativeActivity_onCreate")
 
+add_definitions(-DGFXRECON_ENABLE_RELEASE_ASSERTS)
+
 include(../../framework/cmake-config/PlatformConfig.cmake)
 add_subdirectory(../../framework/util ${CMAKE_SOURCE_DIR}/../../framework/util/build/tools/replay/${ANDROID_ABI})
 add_subdirectory(../../framework/graphics ${CMAKE_SOURCE_DIR}/../../framework/graphics/build/tools/replay/${ANDROID_ABI})
