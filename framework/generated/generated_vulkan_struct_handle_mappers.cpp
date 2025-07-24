@@ -2409,7 +2409,7 @@ void MapPNextStructHandles(PNextNode* pnext, const CommonObjectInfoTable& object
     while (pnext)
     {
         void *wrapper = pnext->GetMetaStructPointer();
-        const auto* header = reinterpret_cast<const MetaStructHeader*>(pnext->GetMetaStructPointer());
+        const auto* header = reinterpret_cast<const VulkanMetaStructHeader*>(pnext->GetMetaStructPointer());
 
         switch (*header->sType)
         {
@@ -2528,7 +2528,7 @@ void MapPNextStructHandles(PNextNode* pnext, const CommonObjectInfoTable& object
             MapStructHandles(reinterpret_cast<Decoded_VkWriteDescriptorSetTensorARM*>(wrapper), object_info_table);
             break;
         }
-    pnext = header->pNext;
+        pnext = header->pNext;
     }
 }
 

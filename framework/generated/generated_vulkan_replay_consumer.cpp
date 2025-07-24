@@ -1129,19 +1129,19 @@ void VulkanReplayConsumer::Process_vkCreatePipelineLayout(
     StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
     HandlePointerDecoder<VkPipelineLayout>*     pPipelineLayout)
 {
-    VkDevice in_device = MapHandle<VulkanDeviceInfo>(device, &CommonObjectInfoTable::GetVkDeviceInfo);
-    const VkPipelineLayoutCreateInfo* in_pCreateInfo = pCreateInfo->GetPointer();
-    MapStructHandles(pCreateInfo->GetMetaStructPointer(), GetObjectInfoTable());
-    const VkAllocationCallbacks* in_pAllocator = GetAllocationCallbacks(pAllocator);
-    if (!pPipelineLayout->IsNull()) { pPipelineLayout->SetHandleLength(1); }
-    VkPipelineLayout* out_pPipelineLayout = pPipelineLayout->GetHandlePointer();
+    auto in_device = GetObjectInfoTable().GetVkDeviceInfo(device);
 
-    VkResult replay_result = GetDeviceTable(in_device)->CreatePipelineLayout(in_device, in_pCreateInfo, in_pAllocator, out_pPipelineLayout);
+    MapStructHandles(pCreateInfo->GetMetaStructPointer(), GetObjectInfoTable());
+    if (!pPipelineLayout->IsNull()) { pPipelineLayout->SetHandleLength(1); }
+    VulkanPipelineLayoutInfo handle_info;
+    pPipelineLayout->SetConsumerData(0, &handle_info);
+
+    VkResult replay_result = OverrideCreatePipelineLayout(GetDeviceTable(in_device->handle)->CreatePipelineLayout, returnValue, in_device, pCreateInfo, pAllocator, pPipelineLayout);
     CheckResult("vkCreatePipelineLayout", returnValue, replay_result, call_info);
 
-    AddHandle<VulkanPipelineLayoutInfo>(device, pPipelineLayout->GetPointer(), out_pPipelineLayout, &CommonObjectInfoTable::AddVkPipelineLayoutInfo);
+    AddHandle<VulkanPipelineLayoutInfo>(device, pPipelineLayout->GetPointer(), pPipelineLayout->GetHandlePointer(), std::move(handle_info), &CommonObjectInfoTable::AddVkPipelineLayoutInfo);
 
-    arm_features_->ProcessDeviceFaultData(replay_result, in_device, GetDeviceTable(in_device)->GetDeviceFaultInfoEXT);
+    arm_features_->ProcessDeviceFaultData(replay_result, in_device->handle, GetDeviceTable(in_device->handle)->GetDeviceFaultInfoEXT);
 }
 
 void VulkanReplayConsumer::Process_vkDestroyPipelineLayout(

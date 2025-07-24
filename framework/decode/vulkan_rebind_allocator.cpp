@@ -1891,9 +1891,15 @@ bool VulkanRebindAllocator::TranslateMemoryRange(const ResourceAllocInfo* resour
     assert((src_offset != nullptr) && (dst_offset != nullptr) && (data_size));
 
     VkDeviceSize resource_start = resource_alloc_info->original_offset;
+
+    // This should correspond to the offset to the end of the resource at capture time.
+    //
+    // However, if the rebind size is smaller than the original size, we don't want data_size to be big enough to cause
+    // an overflow, so the original size is artifically clamped to the rebind size.
     VkDeviceSize resource_end =
-        resource_start + (resource_alloc_info->original_size != 0 ? resource_alloc_info->original_size
-                                                                  : resource_alloc_info->rebind_size);
+        resource_start + (resource_alloc_info->original_size != 0
+                              ? std::min(resource_alloc_info->original_size, resource_alloc_info->rebind_size)
+                              : resource_alloc_info->rebind_size);
 
     // Range ends are exclusive.
     if ((resource_end <= original_start) || (original_end <= resource_start))
