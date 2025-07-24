@@ -344,6 +344,10 @@ class CommonCaptureManager
     {
         return accel_struct_padding_;
     }
+    bool GetDisableMetaCommandSetting() const
+    {
+        return disable_meta_command_;
+    }
     bool GetForceFifoPresentModeSetting() const
     {
         return force_fifo_present_mode_;
@@ -548,6 +552,7 @@ class CommonCaptureManager
     std::vector<uint32_t>                   screenshot_indices_;
     bool                                    disable_dxr_;
     uint32_t                                accel_struct_padding_;
+    bool                                    disable_meta_command_;
     bool                                    iunknown_wrapping_;
     bool                                    force_command_serialization_;
     bool                                    queue_zero_only_;

@@ -1292,16 +1292,16 @@ GetCreateResourceAllocatorFunc(const gfxrecon::util::ArgumentParser&    arg_pars
                                const std::string&                       filename,
                                const gfxrecon::decode::DxReplayOptions& replay_options)
 {
-    gfxrecon::decode::CreateDx12ResourceAllocator func  = CreateDxDefaultAllocator;
+    gfxrecon::decode::CreateDx12ResourceAllocator func  = CreateDxRebindAllocator;
     const auto&                                   value = arg_parser.GetArgumentValue(kMemoryPortabilityShortOption);
 
     if (!value.empty())
     {
-        if (gfxrecon::util::platform::StringCompareNoCase(kMemoryTranslationRebind, value.c_str()) == 0)
+        if (gfxrecon::util::platform::StringCompareNoCase(kMemoryTranslationNone, value.c_str()) == 0)
         {
-            func = CreateDxRebindAllocator;
+            func = CreateDxDefaultAllocator;
         }
-        else if (gfxrecon::util::platform::StringCompareNoCase(kMemoryTranslationNone, value.c_str()) != 0)
+        else if (gfxrecon::util::platform::StringCompareNoCase(kMemoryTranslationRebind, value.c_str()) != 0)
         {
             GFXRECON_LOG_FATAL("Unrecognized memory translation option \"%s\"", value.c_str());
             exit(EXIT_FAILURE);
@@ -1397,6 +1397,12 @@ static gfxrecon::decode::DxReplayOptions GetDxReplayOptions(const gfxrecon::util
     replay_options.screenshot_format      = GetScreenshotFormat(arg_parser);
     replay_options.screenshot_dir         = GetScreenshotDir(arg_parser);
     replay_options.screenshot_file_prefix = arg_parser.GetArgumentValue(kScreenshotFilePrefixArgument);
+
+    const auto& value = arg_parser.GetArgumentValue(kWsiArgument);
+    if (gfxrecon::util::platform::StringCompareNoCase(kWsiPlatformHeadless, value.c_str()) == 0)
+    {
+        replay_options.headless = true;
+    }
     return replay_options;
 }
 #endif
