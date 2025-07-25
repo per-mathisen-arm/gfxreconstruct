@@ -5276,36 +5276,6 @@ VkResult VulkanReplayConsumerBase::OverrideAllocateMemory(
         std::unique_ptr<void, std::function<void(void*)>> host_memory_pointer_guard(
             nullptr, [&](void* memory) { util::platform::FreeRawMemory(memory, host_pointer_memory_size); });
 
-#if defined(VK_USE_PLATFORM_ANDROID_KHR)
-        // If image is not VK_NULL_HANDLE and the memory is not an imported Android Hardware Buffer
-        auto dedicated_alloc_info =
-            graphics::vulkan_struct_get_pnext<VkMemoryDedicatedAllocateInfo>(modified_allocate_info);
-        auto import_ahb_info =
-            graphics::vulkan_struct_get_pnext<VkImportAndroidHardwareBufferInfoANDROID>(modified_allocate_info);
-        if (dedicated_alloc_info != nullptr && dedicated_alloc_info->image != VK_NULL_HANDLE &&
-            import_ahb_info == nullptr)
-        {
-            // allocationSize needs to be equal to VkMemoryDedicatedAllocateInfo::image VkMemoryRequirements::size
-            VkMemoryRequirements memory_requirements = {};
-            VkDevice             device              = device_info->handle;
-            GetDeviceTable(device)->GetImageMemoryRequirements(
-                device, dedicated_alloc_info->image, &memory_requirements);
-            modified_allocate_info->allocationSize = memory_requirements.size;
-        }
-
-        // On the other hand, if it is importing an Android Hardware Buffer
-        if (import_ahb_info)
-        {
-            // allocationSize needs to be equal to VkAndroidHardwareBufferPropertiesANDROID::allocationSize
-            VkAndroidHardwareBufferPropertiesANDROID properties = {};
-            properties.sType = VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_PROPERTIES_ANDROID;
-            VkDevice device  = device_info->handle;
-            GetDeviceTable(device)->GetAndroidHardwareBufferPropertiesANDROID(
-                device, import_ahb_info->buffer, &properties);
-            modified_allocate_info->allocationSize = properties.allocationSize;
-        }
-#endif
-
         bool uses_android_hardware_buffer = false;
 
         uint64_t external_buffer_id = 0;

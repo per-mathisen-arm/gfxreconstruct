@@ -163,8 +163,6 @@ decode::Window* AndroidWindowFactory::Create(
     GFXRECON_UNREFERENCED_PARAMETER(width);
     GFXRECON_UNREFERENCED_PARAMETER(height);
     GFXRECON_UNREFERENCED_PARAMETER(force_windowed);
-    tmp_window = nullptr;
-    android_context_->requestNativeWindow(width, height);
 
 #ifdef GFXR_MULTI_WINDOW_REPLAY
     tmp_window = nullptr;
@@ -200,7 +198,7 @@ void AndroidWindowFactory::Destroy(decode::Window* window)
             GFXRECON_LOG_ERROR("Couldn't release Android native window %p from window %p", native_window, window)
         }
 
-        int32_t window_index = created_window_.at(window) - 1;
+        int32_t window_index = created_window_.at(window);
         android_context_->destroyNativeWindow(window_index);
     }
 #else // !GFXR_MULTI_WINDOW_REPLAY

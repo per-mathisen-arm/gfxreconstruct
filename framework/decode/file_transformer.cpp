@@ -730,7 +730,12 @@ bool FileTransformer::ProcessMetaData(const format::MetaDataHeader& meta_header)
         case format::MetaDataType::kCreateHardwareBufferCommand_deprecated:
         {
             format::CreateHardwareBufferCommandHeader header;
-            header.meta_header = meta_header;
+            header.meta_header.block_header.size = meta_header.block_header.size + sizeof(header) -
+                                                   sizeof(format::CreateHardwareBufferCommandHeader_deprecated);
+            header.meta_header.block_header.type = meta_header.block_header.type;
+            header.meta_header.meta_data_id      = format::MakeMetaDataId(
+                format::GetMetaDataApi(meta_header.meta_data_id), format::MetaDataType::kCreateHardwareBufferCommand);
+            header.device_id = format::kNullHandleId;
 
             uint32_t usage = 0;
 
@@ -980,10 +985,15 @@ bool FileTransformer::ProcessMetaData(const format::MetaDataHeader& meta_header)
 
             return false;
         }
-        case format::MetaDataType::kCreateHardwareBufferCommand:
+        case format::MetaDataType::kCreateHardwareBufferCommand_deprecated2:
         {
             format::CreateHardwareBufferCommandHeader header;
-            header.meta_header = meta_header;
+            header.meta_header.block_header.size = meta_header.block_header.size + sizeof(header) -
+                                                   sizeof(format::CreateHardwareBufferCommandHeader_deprecated2);
+            header.meta_header.block_header.type = meta_header.block_header.type;
+            header.meta_header.meta_data_id      = format::MakeMetaDataId(
+                format::GetMetaDataApi(meta_header.meta_data_id), format::MetaDataType::kCreateHardwareBufferCommand);
+            header.device_id = format::kNullHandleId;
 
             bool success = ReadBytes(&header.thread_id, sizeof(header.thread_id));
             success      = success && ReadBytes(&header.memory_id, sizeof(header.memory_id));
@@ -1123,6 +1133,31 @@ bool FileTransformer::ProcessMetaData(const format::MetaDataHeader& meta_header)
             if (success)
             {
                 return ProcessExecuteBlocksFromFile(header);
+            }
+
+            return false;
+        }
+
+        case format::MetaDataType::kCreateHardwareBufferCommand:
+        {
+            format::CreateHardwareBufferCommandHeader header;
+            header.meta_header = meta_header;
+
+            bool success = ReadBytes(&header.thread_id, sizeof(header.thread_id));
+            success      = success && ReadBytes(&header.device_id, sizeof(header.device_id));
+            success      = success && ReadBytes(&header.memory_id, sizeof(header.memory_id));
+            success      = success && ReadBytes(&header.buffer_id, sizeof(header.buffer_id));
+            success      = success && ReadBytes(&header.format, sizeof(header.format));
+            success      = success && ReadBytes(&header.width, sizeof(header.width));
+            success      = success && ReadBytes(&header.height, sizeof(header.height));
+            success      = success && ReadBytes(&header.stride, sizeof(header.stride));
+            success      = success && ReadBytes(&header.usage, sizeof(header.usage));
+            success      = success && ReadBytes(&header.layers, sizeof(header.layers));
+            success      = success && ReadBytes(&header.planes, sizeof(header.planes));
+
+            if (success)
+            {
+                return ProcessCreateHardwareBufferCommand(header);
             }
 
             return false;
