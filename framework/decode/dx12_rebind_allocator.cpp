@@ -27,12 +27,6 @@
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(decode)
 
-template <typename T>
-static T AlignUp(T val, T alignment)
-{
-    return (val + alignment - 1) & ~(alignment - 1);
-}
-
 Dx12RebindAllocator::Dx12RebindAllocator() : allocator_(nullptr), device_(nullptr) {}
 
 HRESULT Dx12RebindAllocator::Initialize(const IUnknown* adapter, const void* pvDevice)
@@ -97,6 +91,26 @@ void Dx12RebindAllocator::Destroy()
     }
 
     device_ = nullptr;
+}
+
+D3D12_HEAP_PROPERTIES
+Dx12RebindAllocator::GetReplayCustomHeapProperties(const D3D12_CPU_PAGE_PROPERTY cpu_page_property)
+{
+    D3D12_HEAP_PROPERTIES heap_props;
+    if (cpu_page_property == D3D12_CPU_PAGE_PROPERTY_WRITE_BACK)
+    {
+        heap_props = device_->GetCustomHeapProperties(1, D3D12_HEAP_TYPE_READBACK);
+    }
+    else if (cpu_page_property == D3D12_CPU_PAGE_PROPERTY_WRITE_COMBINE)
+    {
+        heap_props = device_->GetCustomHeapProperties(1, D3D12_HEAP_TYPE_UPLOAD);
+    }
+    else
+    {
+        heap_props = device_->GetCustomHeapProperties(1, D3D12_HEAP_TYPE_DEFAULT);
+    }
+
+    return heap_props;
 }
 
 void Dx12RebindAllocator::SetReplayResourceCompatibility(const format::HandleId    heap_capture_id,
@@ -215,10 +229,8 @@ Dx12RebindAllocator::GetReplayResourceDescAllocationInfo(const D3D12_RESOURCE_DE
             alloc_info = device_->GetResourceAllocationInfo(0, 1, resource_desc);
         }
 
-        if (alloc_info.Alignment && resource_desc->Alignment && alloc_info.Alignment != resource_desc->Alignment)
-        {
-            const_cast<D3D12_RESOURCE_DESC*>(resource_desc)->Alignment = alloc_info.Alignment;
-        }
+        // Alignment is set to 0, the runtime will set it to the correct value
+        const_cast<D3D12_RESOURCE_DESC*>(resource_desc)->Alignment = 0;
 
         if (resource_desc->Dimension == D3D12_RESOURCE_DIMENSION_BUFFER)
         {
@@ -263,10 +275,8 @@ Dx12RebindAllocator::GetReplayResourceDescAllocationInfo1(const D3D12_RESOURCE_D
             alloc_info = device_->GetResourceAllocationInfo(0, 1, desc);
         }
 
-        if (alloc_info.Alignment && resource_desc->Alignment && alloc_info.Alignment != resource_desc->Alignment)
-        {
-            const_cast<D3D12_RESOURCE_DESC1*>(resource_desc)->Alignment = alloc_info.Alignment;
-        }
+        // Alignment is set to 0, the runtime will set it to the correct value
+        const_cast<D3D12_RESOURCE_DESC1*>(resource_desc)->Alignment = 0;
 
         if (resource_desc->Dimension == D3D12_RESOURCE_DIMENSION_BUFFER)
         {
@@ -327,11 +337,18 @@ HRESULT Dx12RebindAllocator::CreateHeap(format::HandleId            capture_id,
                                         REFIID                      riid,
                                         _COM_Outptr_opt_ void**     ppvHeap)
 {
-    if (pDesc != nullptr)
+    if (pDesc == nullptr)
     {
-        heap_id_desc_.emplace(capture_id, *pDesc);
+        return E_INVALIDARG;
     }
 
+    if (pDesc->Properties.Type == D3D12_HEAP_TYPE_CUSTOM)
+    {
+        D3D12_HEAP_PROPERTIES heap_props = GetReplayCustomHeapProperties(pDesc->Properties.CPUPageProperty);
+        const_cast<D3D12_HEAP_DESC*>(pDesc)->Properties = heap_props;
+    }
+
+    heap_id_desc_.emplace(capture_id, *pDesc);
     const_cast<D3D12_HEAP_DESC*>(pDesc)->SizeInBytes = D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT;
 
     HRESULT result = device_->CreateHeap(pDesc, riid, ppvHeap);
@@ -345,11 +362,18 @@ HRESULT Dx12RebindAllocator::CreateHeap1(format::HandleId                       
                                          REFIID                                   riid,
                                          _COM_Outptr_opt_ void**                  ppvHeap)
 {
-    if (pDesc != nullptr)
+    if (pDesc == nullptr)
     {
-        heap_id_desc_.emplace(capture_id, *pDesc);
+        return E_INVALIDARG;
     }
 
+    if (pDesc->Properties.Type == D3D12_HEAP_TYPE_CUSTOM)
+    {
+        D3D12_HEAP_PROPERTIES heap_props = GetReplayCustomHeapProperties(pDesc->Properties.CPUPageProperty);
+        const_cast<D3D12_HEAP_DESC*>(pDesc)->Properties = heap_props;
+    }
+
+    heap_id_desc_.emplace(capture_id, *pDesc);
     const_cast<D3D12_HEAP_DESC*>(pDesc)->SizeInBytes = D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT;
 
     graphics::dx12::ID3D12Device4ComPtr device4;
@@ -379,7 +403,9 @@ HRESULT Dx12RebindAllocator::CreateCommittedResource(_In_ const D3D12_HEAP_PROPE
     {
         if (device_ != nullptr)
         {
-            result = device_->CreateCommittedResource(pHeapProperties,
+            D3D12_HEAP_PROPERTIES heap_props = GetReplayCustomHeapProperties(pHeapProperties->CPUPageProperty);
+
+            result = device_->CreateCommittedResource(&heap_props,
                                                       HeapFlags,
                                                       pDesc,
                                                       InitialResourceState,
@@ -439,7 +465,8 @@ HRESULT Dx12RebindAllocator::CreatePlacedResource(format::HandleId              
 
     if (allocator_ != nullptr)
     {
-        if (HeapOffset != 0)
+        // If the HeapOffset is 0 and it is not a multi-sample resource, an aliasing resource needs be created.
+        if ((HeapOffset != 0) || (pDesc->SampleDesc.Count > 1))
         {
             result = allocator_->CreateResource(&alloc_desc,
                                                 pDesc,
@@ -478,8 +505,8 @@ HRESULT Dx12RebindAllocator::CreatePlacedResource(format::HandleId              
                 D3D12_RESOURCE_ALLOCATION_INFO replay_alloc_info = GetReplayResourceDescAllocationInfo(pDesc);
                 if (replay_alloc_info.SizeInBytes != 0 && replay_alloc_info.SizeInBytes != UINT64_MAX)
                 {
-                    alloc_info.SizeInBytes =
-                        AlignUp<UINT64>(replay_alloc_info.SizeInBytes, D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT);
+                    alloc_info.SizeInBytes = replay_alloc_info.SizeInBytes;
+                    alloc_info.Alignment   = replay_alloc_info.Alignment;
                 }
                 else
                 {
@@ -569,7 +596,9 @@ HRESULT Dx12RebindAllocator::CreateCommittedResource1(_In_ const D3D12_HEAP_PROP
         device_->QueryInterface(IID_PPV_ARGS(&device4));
         if (device4 != nullptr)
         {
-            result = device4->CreateCommittedResource1(pHeapProperties,
+            D3D12_HEAP_PROPERTIES heap_props = GetReplayCustomHeapProperties(pHeapProperties->CPUPageProperty);
+
+            result = device4->CreateCommittedResource1(&heap_props,
                                                        HeapFlags,
                                                        pDesc,
                                                        InitialResourceState,
@@ -630,7 +659,8 @@ HRESULT Dx12RebindAllocator::CreatePlacedResource1(format::HandleId             
 
     if (allocator_ != nullptr)
     {
-        if (HeapOffset != 0)
+        // If the HeapOffset is 0 and it is not a multi-sample resource, an aliasing resource needs be created.
+        if ((HeapOffset != 0) || (pDesc->SampleDesc.Count > 1))
         {
             result = allocator_->CreateResource2(&alloc_desc,
                                                  pDesc,
@@ -669,8 +699,8 @@ HRESULT Dx12RebindAllocator::CreatePlacedResource1(format::HandleId             
                 D3D12_RESOURCE_ALLOCATION_INFO replay_alloc_info = GetReplayResourceDescAllocationInfo1(pDesc);
                 if (replay_alloc_info.SizeInBytes != 0 && replay_alloc_info.SizeInBytes != UINT64_MAX)
                 {
-                    alloc_info.SizeInBytes =
-                        AlignUp<UINT64>(replay_alloc_info.SizeInBytes, D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT);
+                    alloc_info.SizeInBytes = replay_alloc_info.SizeInBytes;
+                    alloc_info.Alignment   = replay_alloc_info.Alignment;
                 }
                 else
                 {
@@ -766,7 +796,9 @@ HRESULT Dx12RebindAllocator::CreateCommittedResource2(_In_ const D3D12_HEAP_PROP
         device_->QueryInterface(IID_PPV_ARGS(&device8));
         if (device8 != nullptr)
         {
-            result = device8->CreateCommittedResource2(pHeapProperties,
+            D3D12_HEAP_PROPERTIES heap_props = GetReplayCustomHeapProperties(pHeapProperties->CPUPageProperty);
+
+            result = device8->CreateCommittedResource2(&heap_props,
                                                        HeapFlags,
                                                        pDesc,
                                                        InitialResourceState,
@@ -830,7 +862,8 @@ HRESULT Dx12RebindAllocator::CreatePlacedResource2(format::HandleId             
 
     if (allocator_ != nullptr)
     {
-        if (HeapOffset != 0)
+        // If the HeapOffset is 0 and it is not a multi-sample resource, an aliasing resource needs be created.
+        if ((HeapOffset != 0) || (pDesc->SampleDesc.Count > 1))
         {
             result = allocator_->CreateResource3(&alloc_desc,
                                                  pDesc,
@@ -871,8 +904,8 @@ HRESULT Dx12RebindAllocator::CreatePlacedResource2(format::HandleId             
                 D3D12_RESOURCE_ALLOCATION_INFO replay_alloc_info = GetReplayResourceDescAllocationInfo1(pDesc);
                 if (replay_alloc_info.SizeInBytes != 0 && replay_alloc_info.SizeInBytes != UINT64_MAX)
                 {
-                    alloc_info.SizeInBytes =
-                        AlignUp<UINT64>(replay_alloc_info.SizeInBytes, D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT);
+                    alloc_info.SizeInBytes = replay_alloc_info.SizeInBytes;
+                    alloc_info.Alignment   = replay_alloc_info.Alignment;
                 }
                 else
                 {
@@ -982,7 +1015,9 @@ HRESULT Dx12RebindAllocator::CreateCommittedResource3(_In_ const D3D12_HEAP_PROP
         device_->QueryInterface(IID_PPV_ARGS(&device10));
         if (device10 != nullptr)
         {
-            result = device10->CreateCommittedResource3(pHeapProperties,
+            D3D12_HEAP_PROPERTIES heap_props = GetReplayCustomHeapProperties(pHeapProperties->CPUPageProperty);
+
+            result = device10->CreateCommittedResource3(&heap_props,
                                                         HeapFlags,
                                                         pDesc,
                                                         InitialLayout,

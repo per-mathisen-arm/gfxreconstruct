@@ -187,6 +187,8 @@ class Dx12RebindAllocator : public Dx12ResourceAllocator
 
     D3D12_RESOURCE_ALLOCATION_INFO GetReplayResourceDescAllocationInfo1(const D3D12_RESOURCE_DESC1* resource_desc);
 
+    D3D12_HEAP_PROPERTIES GetReplayCustomHeapProperties(const D3D12_CPU_PAGE_PROPERTY cpu_page_property);
+
     void SetReplayResourceCompatibility(const format::HandleId    heap_capture_id,
                                         const ID3D12Heap*         heap,
                                         const UINT64              Heap_offset,

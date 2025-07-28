@@ -256,15 +256,6 @@ struct IDXGISwapChainInfo : public DxgiWrapperInfo
     void*                  hdr_metadata{ nullptr };
 };
 
-struct ID3D12ObjectInfo : public DxgiWrapperInfo
-{};
-
-struct ID3D12DeviceChildInfo : public DxgiWrapperInfo
-{};
-
-struct ID3D12PageableInfo : public DxgiWrapperInfo
-{};
-
 struct IDXGIDeviceInfo : public DxgiWrapperInfo
 {};
 
@@ -453,7 +444,10 @@ struct ID3D12HeapInfo : public DxWrapperInfo
 };
 
 struct ID3D12MetaCommandInfo : public DxWrapperInfo
-{};
+{
+    bool                                      was_initialized{ false };
+    std::unique_ptr<util::MemoryOutputStream> initialize_parameters;
+};
 
 struct ID3D12ShaderCacheSessionInfo : public DxWrapperInfo
 {};
@@ -561,6 +555,18 @@ struct ID3D12DSRDeviceFactoryInfo : public DxWrapperInfo
 {};
 
 struct ID3D12ManualWriteTrackingResourceInfo : public DxWrapperInfo
+{};
+
+struct ID3D12WorkGraphPropertiesInfo : public DxWrapperInfo
+{};
+
+struct ID3D12PageableToolsInfo : public DxWrapperInfo
+{};
+
+struct ID3D12DeviceToolsInfo : public DxWrapperInfo
+{};
+
+struct ID3D12GBVDiagnosticsInfo : public DxWrapperInfo
 {};
 
 struct AgsContextInfo : public DxWrapperInfo

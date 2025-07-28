@@ -1,5 +1,6 @@
 /*
 ** Copyright (c) 2021 LunarG, Inc.
+** Copyright (c) 2025 Advanced Micro Devices, Inc. All rights reserved.
 **
 ** Permission is hereby granted, free of charge, to any person obtaining a
 ** copy of this software and associated documentation files (the "Software"),
@@ -837,6 +838,14 @@ Dx12ResourceDataUtil::ExecuteCopyCommandList(ID3D12Resource*                    
     }
 
     return result;
+}
+
+void Dx12ResourceDataUtil::InitializeMetaCommand(ID3D12MetaCommand* pMetaCommand,
+                                                 const void*        pInitializationParametersData,
+                                                 SIZE_T             InitializationParametersDataSizeInBytes)
+{
+    command_list_->InitializeMetaCommand(
+        pMetaCommand, pInitializationParametersData, InitializationParametersDataSizeInBytes);
 }
 
 HRESULT
