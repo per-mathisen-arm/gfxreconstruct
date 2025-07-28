@@ -97,7 +97,6 @@ def CreateReplayParser():
     parser.add_argument('--log-file', metavar='DEVICE_FILE', help='Write log messages to a file at the specified path instead of logcat (forwarded to replay tool)')
     parser.add_argument('--pause-frame', metavar='N', help='Pause after replaying frame number N (forwarded to replay tool)')
     parser.add_argument('--paused', action='store_true', default=False, help='Pause after replaying the first frame (same as "--pause-frame 1"; forwarded to replay tool)')
-    parser.add_argument('--cpu-mask', metavar='binary_mask', help='Set of CPU cores used by the replayer. `binary-mask` is a succession of "0" and "1" that specifies used/unused cores. For example "1010" activates the first and third cores and deactivate all other cores. If the option is not set, all cores can be used. If the option is set only for some cores, the other cores are not used. (forwarded to replay tool)')
     parser.add_argument('--trigger-script-path', metavar='DEVICE_FILE', help='Path to the script needed to trigger)')
     parser.add_argument('--trigger-script-frame', metavar='RANGES', help='Frame ranges to trigger the script.)')
     parser.add_argument('--cpu-mask', metavar='binary_mask', help='Set of CPU cores used by the replayer. `binary-mask` is a succession of "0" and "1" that specifies used/unused cores read from left to right. For example "10010" activates the first and fourth cores and deactivate all other cores. If the option is not set, all cores can be used. If the option is set only for some cores, the other cores are not used. (forwarded to replay tool)')
@@ -192,7 +191,7 @@ def MakeExtrasString(args):
     elif args.screenshots:
         arg_list.append('--screenshots')
         arg_list.append('{}'.format(args.screenshots))
-    
+
     if args.screenshot_interval:
         arg_list.append('--screenshot-interval')
         arg_list.append('{}'.format(args.screenshot_interval))
@@ -341,14 +340,14 @@ def MakeExtrasString(args):
 
     if args.dump_resources_dump_all_image_subresources:
         arg_list.append('--dump-resources-dump-all-image-subresources')
-        
+
     if args.dump_resources_dump_raw_images:
         arg_list.append('--dump-resources-dump-raw-images')
 
     if args.marking_layers:
         arg_list.append('--marking-layers')
         arg_list.append('{}'.format(args.marking_layers))
-        
+
     if args.dump_resources_dump_separate_alpha:
         arg_list.append('--dump-resources-dump-separate-alpha')
 
