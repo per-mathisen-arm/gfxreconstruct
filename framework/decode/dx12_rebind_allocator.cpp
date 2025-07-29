@@ -46,19 +46,7 @@ HRESULT Dx12RebindAllocator::Initialize(const IUnknown* adapter, const void* pvD
 
 void Dx12RebindAllocator::Destroy()
 {
-    // Release custom pool before allocation
-    for (auto& pool : resource_id_custom_pool_)
-    {
-        pool.second.Reset();
-    }
-    resource_id_custom_pool_.clear();
-
-    for (auto& pool : heap_id_custom_pool_)
-    {
-        pool.second.Reset();
-    }
-    heap_id_custom_pool_.clear();
-
+    // The order of release is Resource->allocation->custom pool
     for (auto& alloc : resource_id_allocation_)
     {
         alloc.second.Reset();
@@ -70,6 +58,12 @@ void Dx12RebindAllocator::Destroy()
         alloc.second.Reset();
     }
     heap_id_aliasing_allocation_.clear();
+
+    for (auto& pool : heap_id_custom_pool_)
+    {
+        pool.second.Reset();
+    }
+    heap_id_custom_pool_.clear();
 
     for (auto& recreated_heap : resource_id_recreated_heap_)
     {
@@ -129,7 +123,7 @@ void Dx12RebindAllocator::SetReplayResourceCompatibility(const format::HandleId 
     if (heap_id_desc_.find(heap_capture_id) == heap_id_desc_.end())
     {
         D3D12_HEAP_DESC heap_desc = const_cast<ID3D12Heap*>(heap)->GetDesc();
-        heap_id_desc_.emplace(heap_capture_id, heap_desc);
+        heap_id_desc_.insert_or_assign(heap_capture_id, heap_desc);
     }
 
     // remove SHARED and SHARED_CROSS_ADAPTER flags that are not allowed on real heaps
@@ -156,52 +150,29 @@ void Dx12RebindAllocator::SetReplayResourceCompatibility(const format::HandleId 
     allocation_desc.HeapType       = heap_id_desc_[heap_capture_id].Properties.Type;
     allocation_desc.ExtraHeapFlags = heap_id_desc_[heap_capture_id].Flags;
 
-    D3D12_HEAP_PROPERTIES heap_properties = {};
-    D3D12_HEAP_FLAGS      heap_flags      = {};
-    heap_flags                            = heap_id_desc_[heap_capture_id].Flags;
-    heap_properties                       = heap_id_desc_[heap_capture_id].Properties;
-
-    ComPtr<D3D12MA::Pool> custom_pool = nullptr;
-    D3D12MA::CPOOL_DESC   pool_desc{ heap_properties, heap_flags };
-    pool_desc.HeapFlags |= D3D12MA_RECOMMENDED_HEAP_FLAGS;
-
-    if (heap_id_desc_[heap_capture_id].SizeInBytes < D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT)
-    {
-        pool_desc.BlockSize = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
-    }
-
     if (allocation_desc.HeapType == D3D12_HEAP_TYPE_CUSTOM)
     {
-        if (Heap_offset == 0)
+        auto                  cpu_page_property = heap_id_desc_[heap_capture_id].Properties.CPUPageProperty;
+        D3D12_HEAP_PROPERTIES heap_properties   = GetReplayCustomHeapProperties(cpu_page_property);
+        D3D12_HEAP_FLAGS      heap_flags        = heap_id_desc_[heap_capture_id].Flags;
+
+        ComPtr<D3D12MA::Pool> custom_pool = nullptr;
+        D3D12MA::CPOOL_DESC   pool_desc{ heap_properties, heap_flags };
+
+        if (heap_id_custom_pool_.find(heap_capture_id) != heap_id_custom_pool_.end())
+        {
+            allocation_desc.CustomPool = heap_id_custom_pool_[heap_capture_id].Get();
+        }
+        else
         {
             if (S_OK == allocator_->CreatePool(&pool_desc, &custom_pool))
             {
                 allocation_desc.CustomPool = custom_pool.Get();
-                // This may release old custom_pool and save new custom_pool
-                heap_id_custom_pool_.emplace(heap_capture_id, std::move(custom_pool));
+                heap_id_custom_pool_.insert_or_assign(heap_capture_id, std::move(custom_pool));
             }
             else
             {
                 GFXRECON_LOG_FATAL("Failed to create custom pool for for resource using D3D12_HEAP_TYPE_CUSTOM!");
-            }
-        }
-        else
-        {
-            if (heap_id_custom_pool_.find(heap_capture_id) != heap_id_custom_pool_.end())
-            {
-                allocation_desc.CustomPool = heap_id_custom_pool_[heap_capture_id].Get();
-            }
-            else
-            {
-                if (S_OK == allocator_->CreatePool(&pool_desc, &custom_pool))
-                {
-                    allocation_desc.CustomPool = custom_pool.Get();
-                    heap_id_custom_pool_.emplace(heap_capture_id, std::move(custom_pool));
-                }
-                else
-                {
-                    GFXRECON_LOG_FATAL("Failed to create custom pool for for resource using D3D12_HEAP_TYPE_CUSTOM!");
-                }
             }
         }
     }
@@ -293,19 +264,7 @@ Dx12RebindAllocator::GetReplayResourceDescAllocationInfo1(const D3D12_RESOURCE_D
 
 ULONG Dx12RebindAllocator::Release(IUnknown* object, format::HandleId object_id)
 {
-    // Release custom pool before allocation
-    if (resource_id_custom_pool_.find(object_id) != resource_id_custom_pool_.end())
-    {
-        resource_id_custom_pool_[object_id] = nullptr;
-        resource_id_custom_pool_.erase(object_id);
-    }
-
-    if (heap_id_custom_pool_.find(object_id) != heap_id_custom_pool_.end())
-    {
-        heap_id_custom_pool_[object_id] = nullptr;
-        heap_id_custom_pool_.erase(object_id);
-    }
-
+    // The order of release is Resource->allocation->custom pool
     if (resource_id_allocation_.find(object_id) != resource_id_allocation_.end())
     {
         resource_id_allocation_[object_id] = nullptr;
@@ -316,6 +275,12 @@ ULONG Dx12RebindAllocator::Release(IUnknown* object, format::HandleId object_id)
     {
         heap_id_aliasing_allocation_[object_id] = nullptr;
         heap_id_aliasing_allocation_.erase(object_id);
+    }
+
+    if (heap_id_custom_pool_.find(object_id) != heap_id_custom_pool_.end())
+    {
+        heap_id_custom_pool_[object_id] = nullptr;
+        heap_id_custom_pool_.erase(object_id);
     }
 
     if (resource_id_recreated_heap_.find(object_id) != resource_id_recreated_heap_.end())
@@ -349,7 +314,7 @@ HRESULT Dx12RebindAllocator::CreateHeap(format::HandleId            capture_id,
         const_cast<D3D12_HEAP_DESC*>(pDesc)->Properties = heap_props;
     }
 
-    heap_id_desc_.emplace(capture_id, *pDesc);
+    heap_id_desc_.insert_or_assign(capture_id, *pDesc);
     const_cast<D3D12_HEAP_DESC*>(pDesc)->SizeInBytes = D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT;
 
     HRESULT result = device_->CreateHeap(pDesc, riid, ppvHeap);
@@ -374,7 +339,7 @@ HRESULT Dx12RebindAllocator::CreateHeap1(format::HandleId                       
         const_cast<D3D12_HEAP_DESC*>(pDesc)->Properties = heap_props;
     }
 
-    heap_id_desc_.emplace(capture_id, *pDesc);
+    heap_id_desc_.insert_or_assign(capture_id, *pDesc);
     const_cast<D3D12_HEAP_DESC*>(pDesc)->SizeInBytes = D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT;
 
     graphics::dx12::ID3D12Device4ComPtr device4;
@@ -419,7 +384,7 @@ HRESULT Dx12RebindAllocator::CreateCommittedResource(_In_ const D3D12_HEAP_PROPE
     {
         if (allocator_ != nullptr)
         {
-            alloc_desc.Flags          = D3D12MA::ALLOCATION_FLAGS::ALLOCATION_FLAG_NONE;
+            alloc_desc.Flags          = D3D12MA::ALLOCATION_FLAGS::ALLOCATION_FLAG_COMMITTED;
             alloc_desc.HeapType       = pHeapProperties->Type;
             alloc_desc.ExtraHeapFlags = HeapFlags;
 
@@ -434,13 +399,7 @@ HRESULT Dx12RebindAllocator::CreateCommittedResource(_In_ const D3D12_HEAP_PROPE
             if (SUCCEEDED(result))
             {
                 auto resource_id = *(ppvResource->GetPointer());
-                resource_id_allocation_.emplace(resource_id, std::move(allocation));
-
-                if (alloc_desc.CustomPool != nullptr)
-                {
-                    ComPtr<D3D12MA::Pool> custom_pool = alloc_desc.CustomPool;
-                    resource_id_custom_pool_.emplace(resource_id, std::move(custom_pool));
-                }
+                resource_id_allocation_.insert_or_assign(resource_id, std::move(allocation));
             }
         }
     }
@@ -518,7 +477,7 @@ HRESULT Dx12RebindAllocator::CreatePlacedResource(format::HandleId              
                 if (SUCCEEDED(result))
                 {
                     // This may release old allocation and save new allocation
-                    heap_id_aliasing_allocation_.emplace(heap_capture_id, allocation);
+                    heap_id_aliasing_allocation_.insert_or_assign(heap_capture_id, allocation);
                     aliasing_alloc = allocation.Get();
                 }
             }
@@ -544,13 +503,7 @@ HRESULT Dx12RebindAllocator::CreatePlacedResource(format::HandleId              
         if (SUCCEEDED(result))
         {
             auto resource_id = *(ppvResource->GetPointer());
-            resource_id_allocation_.emplace(resource_id, std::move(allocation));
-
-            if (alloc_desc.CustomPool != nullptr)
-            {
-                ComPtr<D3D12MA::Pool> custom_pool = alloc_desc.CustomPool;
-                resource_id_custom_pool_.emplace(resource_id, std::move(custom_pool));
-            }
+            resource_id_allocation_.insert_or_assign(resource_id, std::move(allocation));
         }
     }
 
@@ -595,11 +548,23 @@ HRESULT Dx12RebindAllocator::CreateCommittedResource1(_In_ const D3D12_HEAP_PROP
     {
         graphics::dx12::ID3D12Device4ComPtr device4;
         device_->QueryInterface(IID_PPV_ARGS(&device4));
-        if (device4 != nullptr)
+        assert(device4 != nullptr);
+        if (pHeapProperties->Type == D3D12_HEAP_TYPE_CUSTOM)
         {
             D3D12_HEAP_PROPERTIES heap_props = GetReplayCustomHeapProperties(pHeapProperties->CPUPageProperty);
 
             result = device4->CreateCommittedResource1(&heap_props,
+                                                       HeapFlags,
+                                                       pDesc,
+                                                       InitialResourceState,
+                                                       pOptimizedClearValue,
+                                                       pProtectedSession,
+                                                       riidResource,
+                                                       ppvResource->GetHandlePointer());
+        }
+        else
+        {
+            result = device4->CreateCommittedResource1(pHeapProperties,
                                                        HeapFlags,
                                                        pDesc,
                                                        InitialResourceState,
@@ -613,7 +578,7 @@ HRESULT Dx12RebindAllocator::CreateCommittedResource1(_In_ const D3D12_HEAP_PROP
     {
         if (allocator_ != nullptr)
         {
-            alloc_desc.Flags          = D3D12MA::ALLOCATION_FLAGS::ALLOCATION_FLAG_NONE;
+            alloc_desc.Flags          = D3D12MA::ALLOCATION_FLAGS::ALLOCATION_FLAG_COMMITTED;
             alloc_desc.HeapType       = pHeapProperties->Type;
             alloc_desc.ExtraHeapFlags = HeapFlags;
 
@@ -628,13 +593,7 @@ HRESULT Dx12RebindAllocator::CreateCommittedResource1(_In_ const D3D12_HEAP_PROP
             if (SUCCEEDED(result))
             {
                 auto resource_id = *(ppvResource->GetPointer());
-                resource_id_allocation_.emplace(resource_id, std::move(allocation));
-
-                if (alloc_desc.CustomPool != nullptr)
-                {
-                    ComPtr<D3D12MA::Pool> custom_pool = alloc_desc.CustomPool;
-                    resource_id_custom_pool_.emplace(resource_id, std::move(custom_pool));
-                }
+                resource_id_allocation_.insert_or_assign(resource_id, std::move(allocation));
             }
         }
     }
@@ -712,7 +671,7 @@ HRESULT Dx12RebindAllocator::CreatePlacedResource1(format::HandleId             
                 if (SUCCEEDED(result))
                 {
                     // This may release old allocation and save new allocation
-                    heap_id_aliasing_allocation_.emplace(heap_capture_id, allocation);
+                    heap_id_aliasing_allocation_.insert_or_assign(heap_capture_id, allocation);
                     aliasing_alloc = allocation.Get();
                 }
             }
@@ -738,13 +697,7 @@ HRESULT Dx12RebindAllocator::CreatePlacedResource1(format::HandleId             
         if (SUCCEEDED(result))
         {
             auto resource_id = *(ppvResource->GetPointer());
-            resource_id_allocation_.emplace(resource_id, std::move(allocation));
-
-            if (alloc_desc.CustomPool != nullptr)
-            {
-                ComPtr<D3D12MA::Pool> custom_pool = alloc_desc.CustomPool;
-                resource_id_custom_pool_.emplace(resource_id, std::move(custom_pool));
-            }
+            resource_id_allocation_.insert_or_assign(resource_id, std::move(allocation));
         }
     }
 
@@ -795,11 +748,23 @@ HRESULT Dx12RebindAllocator::CreateCommittedResource2(_In_ const D3D12_HEAP_PROP
     {
         graphics::dx12::ID3D12Device8ComPtr device8;
         device_->QueryInterface(IID_PPV_ARGS(&device8));
-        if (device8 != nullptr)
+        assert(device8 != nullptr);
+        if (pHeapProperties->Type == D3D12_HEAP_TYPE_CUSTOM)
         {
             D3D12_HEAP_PROPERTIES heap_props = GetReplayCustomHeapProperties(pHeapProperties->CPUPageProperty);
 
             result = device8->CreateCommittedResource2(&heap_props,
+                                                       HeapFlags,
+                                                       pDesc,
+                                                       InitialResourceState,
+                                                       pOptimizedClearValue,
+                                                       pProtectedSession,
+                                                       riidResource,
+                                                       ppvResource->GetHandlePointer());
+        }
+        else
+        {
+            result = device8->CreateCommittedResource2(pHeapProperties,
                                                        HeapFlags,
                                                        pDesc,
                                                        InitialResourceState,
@@ -813,7 +778,7 @@ HRESULT Dx12RebindAllocator::CreateCommittedResource2(_In_ const D3D12_HEAP_PROP
     {
         if (allocator_ != nullptr)
         {
-            alloc_desc.Flags          = D3D12MA::ALLOCATION_FLAGS::ALLOCATION_FLAG_NONE;
+            alloc_desc.Flags          = D3D12MA::ALLOCATION_FLAGS::ALLOCATION_FLAG_COMMITTED;
             alloc_desc.HeapType       = pHeapProperties->Type;
             alloc_desc.ExtraHeapFlags = HeapFlags;
 
@@ -828,13 +793,7 @@ HRESULT Dx12RebindAllocator::CreateCommittedResource2(_In_ const D3D12_HEAP_PROP
             if (SUCCEEDED(result))
             {
                 auto resource_id = *(ppvResource->GetPointer());
-                resource_id_allocation_.emplace(resource_id, std::move(allocation));
-
-                if (alloc_desc.CustomPool != nullptr)
-                {
-                    ComPtr<D3D12MA::Pool> custom_pool = alloc_desc.CustomPool;
-                    resource_id_custom_pool_.emplace(resource_id, std::move(custom_pool));
-                }
+                resource_id_allocation_.insert_or_assign(resource_id, std::move(allocation));
             }
         }
     }
@@ -917,7 +876,7 @@ HRESULT Dx12RebindAllocator::CreatePlacedResource2(format::HandleId             
                 if (SUCCEEDED(result))
                 {
                     // This may release old allocation and save new allocation
-                    heap_id_aliasing_allocation_.emplace(heap_capture_id, allocation);
+                    heap_id_aliasing_allocation_.insert_or_assign(heap_capture_id, allocation);
                     aliasing_alloc = allocation.Get();
                 }
             }
@@ -945,13 +904,7 @@ HRESULT Dx12RebindAllocator::CreatePlacedResource2(format::HandleId             
         if (SUCCEEDED(result))
         {
             auto resource_id = *(ppvResource->GetPointer());
-            resource_id_allocation_.emplace(resource_id, std::move(allocation));
-
-            if (alloc_desc.CustomPool != nullptr)
-            {
-                ComPtr<D3D12MA::Pool> custom_pool = alloc_desc.CustomPool;
-                resource_id_custom_pool_.emplace(resource_id, std::move(custom_pool));
-            }
+            resource_id_allocation_.insert_or_assign(resource_id, std::move(allocation));
         }
     }
 
@@ -1014,11 +967,25 @@ HRESULT Dx12RebindAllocator::CreateCommittedResource3(_In_ const D3D12_HEAP_PROP
     {
         graphics::dx12::ID3D12Device10ComPtr device10;
         device_->QueryInterface(IID_PPV_ARGS(&device10));
-        if (device10 != nullptr)
+        assert(device10 != nullptr);
+        if (pHeapProperties->Type == D3D12_HEAP_TYPE_CUSTOM)
         {
             D3D12_HEAP_PROPERTIES heap_props = GetReplayCustomHeapProperties(pHeapProperties->CPUPageProperty);
 
             result = device10->CreateCommittedResource3(&heap_props,
+                                                        HeapFlags,
+                                                        pDesc,
+                                                        InitialLayout,
+                                                        pOptimizedClearValue,
+                                                        pProtectedSession,
+                                                        NumCastableFormats,
+                                                        pCastableFormats,
+                                                        riidResource,
+                                                        ppvResource->GetHandlePointer());
+        }
+        else
+        {
+            result = device10->CreateCommittedResource3(pHeapProperties,
                                                         HeapFlags,
                                                         pDesc,
                                                         InitialLayout,
@@ -1034,7 +1001,7 @@ HRESULT Dx12RebindAllocator::CreateCommittedResource3(_In_ const D3D12_HEAP_PROP
     {
         if (allocator_ != nullptr)
         {
-            alloc_desc.Flags          = D3D12MA::ALLOCATION_FLAGS::ALLOCATION_FLAG_NONE;
+            alloc_desc.Flags          = D3D12MA::ALLOCATION_FLAGS::ALLOCATION_FLAG_COMMITTED;
             alloc_desc.HeapType       = pHeapProperties->Type;
             alloc_desc.ExtraHeapFlags = HeapFlags;
 
@@ -1051,13 +1018,7 @@ HRESULT Dx12RebindAllocator::CreateCommittedResource3(_In_ const D3D12_HEAP_PROP
             if (SUCCEEDED(result))
             {
                 auto resource_id = *(ppvResource->GetPointer());
-                resource_id_allocation_.emplace(resource_id, std::move(allocation));
-
-                if (alloc_desc.CustomPool != nullptr)
-                {
-                    ComPtr<D3D12MA::Pool> custom_pool = alloc_desc.CustomPool;
-                    resource_id_custom_pool_.emplace(resource_id, std::move(custom_pool));
-                }
+                resource_id_allocation_.insert_or_assign(resource_id, std::move(allocation));
             }
         }
     }
@@ -1174,7 +1135,7 @@ void Dx12RebindAllocator::UpdateTileMappings(ID3D12CommandQueue*                
                 }
             }
 
-            heap_id_desc_.emplace(heap_capture_id, heap_desc);
+            heap_id_desc_.insert_or_assign(heap_capture_id, heap_desc);
         }
 
         // creat heap
@@ -1186,7 +1147,7 @@ void Dx12RebindAllocator::UpdateTileMappings(ID3D12CommandQueue*                
             if (hr == S_OK)
             {
                 pNewHeap = heap.Get();
-                heap_id_recreated_heap_.emplace(heap_capture_id, heap);
+                heap_id_recreated_heap_.insert_or_assign(heap_capture_id, heap);
                 resource_id_recreated_heap_[resource_capture_id].push_back(std::move(heap));
             }
             else

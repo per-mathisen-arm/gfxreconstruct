@@ -219,7 +219,6 @@ class Dx12RebindAllocator : public Dx12ResourceAllocator
     std::unordered_map<format::HandleId, ComPtr<D3D12MA::Allocation>>     heap_id_aliasing_allocation_;
     std::unordered_map<format::HandleId, ComPtr<D3D12MA::Allocation>>     resource_id_allocation_;
     std::unordered_map<format::HandleId, ComPtr<D3D12MA::Pool>>           heap_id_custom_pool_;
-    std::unordered_map<format::HandleId, ComPtr<D3D12MA::Pool>>           resource_id_custom_pool_;
     std::unordered_map<format::HandleId, D3D12_HEAP_DESC>                 heap_id_desc_;
     std::unordered_map<format::HandleId, ComPtr<ID3D12Heap>>              heap_id_recreated_heap_;
     std::unordered_map<format::HandleId, std::vector<ComPtr<ID3D12Heap>>> resource_id_recreated_heap_;
