@@ -156,5 +156,4 @@ target_link_libraries(gfxrecon_decode
                       vulkan_registry
                       vulkan_memory_allocator
                       platform_specific
-                      nlohmann_json
                       spirv-reflect-static)

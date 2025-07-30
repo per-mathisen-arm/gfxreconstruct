@@ -70,7 +70,6 @@ target_include_directories(gfxrecon_util
                            PUBLIC
                                ${GFXRECON_SOURCE_DIR}/external/precompiled/android/include
                                ${GFXRECON_SOURCE_DIR}/external/stb
-                               ${GFXRECON_SOURCE_DIR}/external/nlohmann/include
                                ${GFXRECON_SOURCE_DIR}/framework)
 
 target_link_libraries(gfxrecon_util
@@ -78,6 +77,7 @@ target_link_libraries(gfxrecon_util
                           vulkan_registry
                           spirv_registry
                           spirv-reflect-static
+                          nlohmann_json::nlohmann_json
                           ${GFXRECON_SOURCE_DIR}/external/precompiled/android/lib/${ANDROID_ABI}/liblz4_static.a
                           ${GFXRECON_SOURCE_DIR}/external/precompiled/android/lib/${ANDROID_ABI}/libzstd.a
                           z)
