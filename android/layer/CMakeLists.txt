@@ -7,6 +7,8 @@ find_package(nlohmann_json REQUIRED)
 
 project(VkLayer_gfxreconstruct)
 
+add_definitions(-DGFXRECON_ENABLE_RELEASE_ASSERTS)
+
 include(../framework/cmake-config/PlatformConfig.cmake)
 add_subdirectory(../framework/util ${PROJECT_SOURCE_DIR}/../framework/util/build/layer/${ANDROID_ABI})
 add_subdirectory(../framework/graphics ${PROJECT_SOURCE_DIR}/../framework/graphics/build/layer/${ANDROID_ABI})
