@@ -52,7 +52,6 @@ class DecodePNextStructGeneratorOptions(VulkanBaseGeneratorOptions):
             protect_feature,
             extra_headers=extra_headers
         )
-        self.begin_end_file_data.common_api_headers = []
 
 
 class DecodePNextStructGenerator(VulkanBaseGenerator, KhronosDecodeExtendedStructGenerator):

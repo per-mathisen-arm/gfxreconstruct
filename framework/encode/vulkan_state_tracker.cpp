@@ -516,10 +516,9 @@ void VulkanStateTracker::TrackAccelerationStructureBuildCommand(
 
                     VkBaseOutStructure* pNextStruct = (VkBaseOutStructure*)(geometry->geometry.triangles.pNext);
 
-                    VkAccelerationStructureTrianglesOpacityMicromapEXT* micromap_struct =
-                        graphics::GetPNextStruct<VkAccelerationStructureTrianglesOpacityMicromapEXT>(
-                            &(geometry->geometry.triangles),
-                            VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_TRIANGLES_OPACITY_MICROMAP_EXT);
+                    auto micromap_struct =
+                        graphics::vulkan_struct_get_pnext<VkAccelerationStructureTrianglesOpacityMicromapEXT>(
+                            &(geometry->geometry.triangles));
                     if (micromap_struct != nullptr)
                     {
                         to_extract.push_back(micromap_struct->indexBuffer.deviceAddress);

@@ -156,11 +156,11 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsCallback(VkDebugUtilsMessageSeve
 
 VulkanReplayConsumerBase::VulkanReplayConsumerBase(std::shared_ptr<application::Application> application,
                                                    const VulkanReplayOptions&                options) :
-    loader_handle_(nullptr),
-    get_instance_proc_addr_(nullptr), create_instance_proc_(nullptr), application_(application), options_(options),
-    loading_trim_state_(false), replaying_trimmed_capture_(false), have_imported_semaphores_(false), fps_info_(nullptr),
-    device_fault_supported_(false), device_fault_vendor_data_supported_(false),
-    device_fault_vendor_binary_dump_v1_header_size_(56), omitted_pipeline_cache_data_(false),
+    options_(options),
+    loader_handle_(nullptr), get_instance_proc_addr_(nullptr), create_instance_proc_(nullptr),
+    application_(application), loading_trim_state_(false), replaying_trimmed_capture_(false), fps_info_(nullptr),
+    have_imported_semaphores_(false), omitted_pipeline_cache_data_(false), device_fault_supported_(false),
+    device_fault_vendor_data_supported_(false), device_fault_vendor_binary_dump_v1_header_size_(56),
     use_acceleration_structure_builder_(false)
 {
     object_info_table_ = CommonObjectInfoTable::GetSingleton();
@@ -2888,8 +2888,7 @@ bool VulkanReplayConsumerBase::CheckCommandBufferInfoForFrameBoundary(
                     auto image_info      = object_info_table_->GetVkImageInfo(image_view_info->image_id);
 
                     // Only screenshot images that are color attachments.
-                    if ((image_info->usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) !=
-                        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
+                    if (!graphics::ImageHasUsage(image_info->usage, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT))
                     {
                         continue;
                     }
@@ -3109,7 +3108,8 @@ void VulkanReplayConsumerBase::ModifyCreateInstanceInfo(
 
         // All VK_KHR_get_physical_device_properties2 functionalities are included in Vulkan 1.1,
         // otherwise always enable it if available.
-        if (modified_create_info.pApplicationInfo->apiVersion < VK_MAKE_VERSION(1, 1, 0))
+        if (modified_create_info.pApplicationInfo != nullptr &&
+            modified_create_info.pApplicationInfo->apiVersion < VK_MAKE_VERSION(1, 1, 0))
         {
             feature_util::EnableExtensionIfSupported(
                 available_extensions, &modified_extensions, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -10645,7 +10645,7 @@ void VulkanReplayConsumerBase::OverrideFrameBoundaryANDROID(PFN_vkFrameBoundaryA
     VkSemaphore semaphore = semaphore_info ? semaphore_info->handle : VK_NULL_HANDLE;
     VkImage     image     = image_info ? image_info->handle : VK_NULL_HANDLE;
 
-    if (screenshot_handler_ != nullptr)
+    if (screenshot_handler_ != nullptr && !options_.screenshot_ignore_frameBoundaryAndroid)
     {
         if (screenshot_handler_->IsScreenshotFrame() && image_info != nullptr)
         {
