@@ -50,6 +50,10 @@
     "VkIndirectExecutionSetCreateInfoEXT",
     "VkIndirectCommandsTokenDataEXT",
     "VkIndirectCommandsLayoutTokenEXT",
+    "VkCopyMemoryToImageInfo",
+    "VkMemoryToImageCopy",
+    "VkCopyImageToMemoryInfo",
+    "VkImageToMemoryCopy",
     "VkDataGraphPipelineConstantARM",
     "VkDescriptorGetInfoEXT"
   ]

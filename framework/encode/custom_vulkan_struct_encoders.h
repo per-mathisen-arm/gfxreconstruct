@@ -49,6 +49,8 @@ void EncodeStruct(ParameterEncoder* encoder, const VkAccelerationStructureGeomet
 void EncodeStruct(ParameterEncoder* encoder, const VkPushDescriptorSetWithTemplateInfoKHR& value);
 void EncodeStruct(ParameterEncoder* encoder, const VkIndirectExecutionSetCreateInfoEXT& value);
 void EncodeStruct(ParameterEncoder* encoder, const VkIndirectCommandsLayoutTokenEXT& value);
+void EncodeStruct(ParameterEncoder* encoder, const VkCopyMemoryToImageInfo& value);
+void EncodeStruct(ParameterEncoder* encoder, const VkCopyImageToMemoryInfo& value);
 void EncodeStruct(ParameterEncoder* encoder, const VkDataGraphPipelineConstantARM& value);
 void EncodeStruct(ParameterEncoder* encoder, const VkDescriptorGetInfoEXT& value);
 
