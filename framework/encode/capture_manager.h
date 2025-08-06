@@ -368,6 +368,10 @@ class CommonCaptureManager
     {
         return use_asset_file_;
     }
+    bool GetIgnoreFrameBoundaryAndroid() const
+    {
+        return ignore_frame_boundary_android_;
+    }
 
     util::Compressor* GetCompressor()
     {
@@ -569,6 +573,7 @@ class CommonCaptureManager
     bool                                    write_assets_;
     bool                                    previous_write_assets_;
     bool                                    write_state_files_;
+    bool                                    ignore_frame_boundary_android_;
 
     struct
     {

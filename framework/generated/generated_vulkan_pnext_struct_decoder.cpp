@@ -27,6 +27,15 @@
 **
 */
 
+#include "vulkan/vulkan.h"
+#include "vk_video/vulkan_video_codec_h264std.h"
+#include "vk_video/vulkan_video_codec_h264std_decode.h"
+#include "vk_video/vulkan_video_codec_h264std_encode.h"
+#include "vk_video/vulkan_video_codec_h265std.h"
+#include "vk_video/vulkan_video_codec_h265std_decode.h"
+#include "vk_video/vulkan_video_codec_h265std_encode.h"
+#include "vk_video/vulkan_video_codecs_common.h"
+
 #include "decode/custom_vulkan_struct_decoders.h"
 #include "decode/decode_allocator.h"
 #include "decode/vulkan_pnext_node.h"
