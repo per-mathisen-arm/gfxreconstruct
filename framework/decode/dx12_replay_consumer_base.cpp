@@ -855,16 +855,16 @@ void Dx12ReplayConsumerBase::MapGpuDescriptorHandle(D3D12_GPU_DESCRIPTOR_HANDLE&
 
 void Dx12ReplayConsumerBase::MapGpuDescriptorHandle(uint8_t* dst_handle_ptr, const uint8_t* src_handle_ptr)
 {
+    D3D12_GPU_DESCRIPTOR_HANDLE handle = {};
+
     if (support_memory_allocator_)
     {
-        D3D12_GPU_DESCRIPTOR_HANDLE gpu_desc_handle = {};
-        gpu_desc_handle.ptr                         = *reinterpret_cast<const UINT64*>(src_handle_ptr);
-        MapGpuDescriptorHandle(gpu_desc_handle);
-        *reinterpret_cast<UINT64*>(dst_handle_ptr) = gpu_desc_handle.ptr;
+        handle.ptr = *reinterpret_cast<const UINT64*>(src_handle_ptr);
+        MapGpuDescriptorHandle(handle);
+        *reinterpret_cast<UINT64*>(dst_handle_ptr) = handle.ptr;
         return;
     }
 
-    D3D12_GPU_DESCRIPTOR_HANDLE handle = {};
     util::platform::MemoryCopy(&handle.ptr,
                                sizeof(D3D12_GPU_DESCRIPTOR_HANDLE::ptr),
                                src_handle_ptr,
@@ -883,16 +883,16 @@ void Dx12ReplayConsumerBase::MapCpuDescriptorHandle(D3D12_CPU_DESCRIPTOR_HANDLE&
 
 void Dx12ReplayConsumerBase::MapCpuDescriptorHandle(uint8_t* dst_handle_ptr, const uint8_t* src_handle_ptr)
 {
+    D3D12_CPU_DESCRIPTOR_HANDLE handle = {};
+
     if (support_memory_allocator_)
     {
-        D3D12_CPU_DESCRIPTOR_HANDLE cpu_desc_handle = {};
-        cpu_desc_handle.ptr                         = *reinterpret_cast<const UINT64*>(src_handle_ptr);
-        MapCpuDescriptorHandle(cpu_desc_handle);
-        *reinterpret_cast<UINT64*>(dst_handle_ptr) = cpu_desc_handle.ptr;
+        handle.ptr = *reinterpret_cast<const UINT64*>(src_handle_ptr);
+        MapCpuDescriptorHandle(handle);
+        *reinterpret_cast<UINT64*>(dst_handle_ptr) = handle.ptr;
         return;
     }
 
-    D3D12_CPU_DESCRIPTOR_HANDLE handle = {};
     util::platform::MemoryCopy(&handle.ptr,
                                sizeof(D3D12_CPU_DESCRIPTOR_HANDLE::ptr),
                                src_handle_ptr,
