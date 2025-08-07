@@ -45,7 +45,7 @@ class VulkanAddressReplacerARM : public VulkanAddressReplacerBase
     VulkanAddressReplacerARM() = default;
 
     VulkanAddressReplacerARM(const VulkanDeviceInfo*              device_info,
-                             const encode::VulkanDeviceTable*     device_table,
+                             const graphics::VulkanDeviceTable*   device_table,
                              const decode::CommonObjectInfoTable& object_table);
 
     //! prevent copying
@@ -160,7 +160,7 @@ class VulkanAddressReplacerARM : public VulkanAddressReplacerBase
                  VkPipelineStageFlags dst_stage,
                  VkAccessFlags        dst_access);
 
-    const encode::VulkanDeviceTable*                               device_table_      = nullptr;
+    const graphics::VulkanDeviceTable*                             device_table_      = nullptr;
     const VulkanDeviceInfo*                                        device_info_       = nullptr;
     const decode::CommonObjectInfoTable*                           object_table_      = nullptr;
     VkPhysicalDeviceMemoryProperties                               memory_properties_ = {};

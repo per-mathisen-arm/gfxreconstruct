@@ -699,7 +699,7 @@ inline void InitializeState<VkDevice, vulkan_wrappers::ImageWrapper, VkImageCrea
     }
     else
     {
-        const VulkanDeviceTable* device_table = vulkan_wrappers::GetDeviceTable(parent_handle);
+        const graphics::VulkanDeviceTable* device_table = vulkan_wrappers::GetDeviceTable(parent_handle);
         VkMemoryRequirements     image_mem_reqs;
         assert(wrapper->handle != VK_NULL_HANDLE);
         device_table->GetImageMemoryRequirements(parent_handle, wrapper->handle, &image_mem_reqs);
@@ -873,7 +873,7 @@ inline void InitializePoolObjectState(VkDevice                               par
     wrapper->create_call_id    = create_call_id;
     wrapper->create_parameters = std::move(create_parameters);
 
-    wrapper->level = alloc_info->level;
+    // Some CommandBufferWrapper's info is initialized in OverrideAllocateCommandBuffers.
 }
 
 inline void InitializePoolObjectState(VkDevice                               parent_handle,

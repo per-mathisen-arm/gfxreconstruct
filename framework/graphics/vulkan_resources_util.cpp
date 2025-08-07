@@ -777,8 +777,8 @@ bool NextRowTexelCoordinates(VkImageType       imageType,
 
 VulkanResourcesUtil::VulkanResourcesUtil(VkDevice                                device,
                                          VkPhysicalDevice                        physical_device,
-                                         const encode::VulkanDeviceTable&        device_table,
-                                         const encode::VulkanInstanceTable&      instance_table,
+                                         const graphics::VulkanDeviceTable&      device_table,
+                                         const graphics::VulkanInstanceTable&    instance_table,
                                          const VkPhysicalDeviceMemoryProperties& memory_properties) :
     device_(device),
     device_table_(device_table), physical_device_(physical_device), instance_table_(instance_table),
@@ -825,7 +825,10 @@ uint64_t VulkanResourcesUtil::GetImageResourceSizesOptimal(VkImage              
                                                            std::vector<uint64_t>* subresource_sizes,
                                                            bool                   all_layers_per_level)
 {
-    GFXRECON_ASSERT(mip_levels <= 1 + floor(log2(std::max(std::max(extent.width, extent.height), extent.depth))));
+    if (mip_levels > 1 + floor(log2(std::max(std::max(extent.width, extent.height), extent.depth))))
+    {
+        GFXRECON_LOG_WARNING_ONCE("%s(): too many mip_levels for extent", __func__);
+    }
 
     if (subresource_sizes != nullptr)
     {
@@ -1824,8 +1827,8 @@ VkResult VulkanResourcesUtil::ReadImageResources(const std::vector<ImageResource
         VkImageAspectFlags        transition_aspect   = VK_IMAGE_ASPECT_NONE;
         std::vector<VkDeviceSize> level_sizes;
 
-        VkDevice                         device       = VK_NULL_HANDLE;
-        const encode::VulkanDeviceTable* device_table = nullptr;
+        VkDevice                           device       = VK_NULL_HANDLE;
+        const graphics::VulkanDeviceTable* device_table = nullptr;
 
         image_resource_tmp_data_t& operator=(image_resource_tmp_data_t other)
         {
@@ -1878,7 +1881,7 @@ VkResult VulkanResourcesUtil::ReadImageResources(const std::vector<ImageResource
         tmp_data[i].device       = device_;
         tmp_data[i].device_table = &device_table_;
 
-        VkFormat dst_format = img.dst_format == VK_FORMAT_UNDEFINED ? img.dst_format : img.format;
+        VkFormat dst_format = img.dst_format != VK_FORMAT_UNDEFINED ? img.dst_format : img.format;
 
         GFXRECON_ASSERT(img.level_count <=
                         1 + floor(log2(std::max(std::max(img.extent.width, img.extent.height), img.extent.depth))));
@@ -1989,8 +1992,9 @@ VkResult VulkanResourcesUtil::ReadImageResources(const std::vector<ImageResource
                                       &tmp_data[i].resolve_memory);
                 if (result != VK_SUCCESS)
                 {
-                    GFXRECON_ASSERT(false);
-                    return result;
+                    // free temporary resource, continue
+                    tmp_data[i] = {};
+                    continue;
                 }
             }
 
@@ -2012,7 +2016,7 @@ VkResult VulkanResourcesUtil::ReadImageResources(const std::vector<ImageResource
                                                  img.queue_family_index);
             }
 
-            VkFormat dst_format = img.dst_format == VK_FORMAT_UNDEFINED ? img.dst_format : img.format;
+            VkFormat dst_format = img.dst_format != VK_FORMAT_UNDEFINED ? img.dst_format : img.format;
 
             // Blit image to change dimensions or convert format
             if (tmp_data[i].use_blit)
@@ -2025,12 +2029,12 @@ VkResult VulkanResourcesUtil::ReadImageResources(const std::vector<ImageResource
                                    img.type,
                                    img.tiling,
                                    img.extent,
-                                   tmp_data[i].scaled_extent,
+                                   tmp_data[i].scaling_supported ? tmp_data[i].scaled_extent : img.extent,
                                    img.level_count,
                                    img.layer_count,
                                    img.aspect,
                                    img.queue_family_index,
-                                   img.scale,
+                                   tmp_data[i].scaling_supported ? img.scale : 1.0f,
                                    tmp_data[i].scaled_image,
                                    tmp_data[i].scaled_image_memory);
 
@@ -2038,7 +2042,9 @@ VkResult VulkanResourcesUtil::ReadImageResources(const std::vector<ImageResource
 
                 if (result != VK_SUCCESS)
                 {
-                    return result;
+                    // free temporary resource, continue
+                    tmp_data[i] = {};
+                    continue;
                 }
             }
 
@@ -2049,7 +2055,7 @@ VkResult VulkanResourcesUtil::ReadImageResources(const std::vector<ImageResource
                                 copy_image,
                                 staging_buffer_.buffer,
                                 tmp_data[i].staging_offset,
-                                tmp_data[i].scaled_extent,
+                                tmp_data[i].scaling_supported ? tmp_data[i].scaled_extent : img.extent,
                                 img.level_count,
                                 img.layer_count,
                                 img.aspect,
@@ -2121,7 +2127,10 @@ VkResult VulkanResourcesUtil::ReadImageResources(const std::vector<ImageResource
         for (uint32_t i = start_idx; i < end_idx; ++i)
         {
             const auto& img = image_resources[i];
-            auto* out_ptr   = reinterpret_cast<const uint8_t*>(staging_buffer_.mapped_ptr) + tmp_data[i].staging_offset;
+            auto*       out_ptr =
+                tmp_data[i].resource_size > 0
+                          ? reinterpret_cast<const uint8_t*>(staging_buffer_.mapped_ptr) + tmp_data[i].staging_offset
+                          : nullptr;
             if (call_back)
             {
                 call_back(img, out_ptr, tmp_data[i].resource_size);
@@ -2148,9 +2157,12 @@ VkResult VulkanResourcesUtil::ReadImageResource(const VulkanResourcesUtil::Image
     return ReadImageResources(
         { image_resource },
         [&out_data](const ImageResource& img, const void* data, size_t num_bytes) {
-            const auto* ptr = reinterpret_cast<const uint8_t*>(data);
-            out_data.clear();
-            out_data.insert(out_data.end(), ptr, ptr + num_bytes);
+            if (data != nullptr)
+            {
+                const auto* ptr = reinterpret_cast<const uint8_t*>(data);
+                out_data.clear();
+                out_data.insert(out_data.end(), ptr, ptr + num_bytes);
+            }
         },
         0);
 }

@@ -38,8 +38,8 @@ class VulkanAddressReplacerBase
     VulkanAddressReplacerBase() = default;
 
     VulkanAddressReplacerBase(const VulkanDeviceInfo*              device_info,
-                              const encode::VulkanDeviceTable*     device_table,
-                              const encode::VulkanInstanceTable*   instance_table,
+                              const graphics::VulkanDeviceTable*   device_table,
+                              const graphics::VulkanInstanceTable* instance_table,
                               const decode::CommonObjectInfoTable& object_table);
 
     VulkanAddressReplacerBase(const VulkanAddressReplacerBase&) = delete;

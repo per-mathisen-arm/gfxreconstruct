@@ -127,7 +127,7 @@ struct DisplayKHRWrapper : public HandleWrapper<VkDisplayKHR>
 // handle wrapper, which will filter duplicate handle retrievals and ensure that the wrapper is destroyed.
 struct PhysicalDeviceWrapper : public HandleWrapper<VkPhysicalDevice>
 {
-    VulkanInstanceTable*             layer_table_ref{ nullptr };
+    graphics::VulkanInstanceTable*   layer_table_ref{ nullptr };
     std::vector<DisplayKHRWrapper*>  child_displays;
     graphics::VulkanInstanceUtilInfo instance_info{};
 
@@ -148,7 +148,7 @@ struct PhysicalDeviceWrapper : public HandleWrapper<VkPhysicalDevice>
 
 struct InstanceWrapper : public HandleWrapper<VkInstance>
 {
-    VulkanInstanceTable                 layer_table;
+    graphics::VulkanInstanceTable       layer_table;
     std::vector<PhysicalDeviceWrapper*> child_physical_devices;
     bool                                have_device_properties{ false };
     uint32_t                            api_version{ VK_MAKE_VERSION(1, 0, 0) };
@@ -156,12 +156,12 @@ struct InstanceWrapper : public HandleWrapper<VkInstance>
 
 struct QueueWrapper : public HandleWrapper<VkQueue>
 {
-    VulkanDeviceTable* layer_table_ref{ nullptr };
+    graphics::VulkanDeviceTable* layer_table_ref{ nullptr };
 };
 
 struct DeviceWrapper : public HandleWrapper<VkDevice>
 {
-    VulkanDeviceTable          layer_table;
+    graphics::VulkanDeviceTable layer_table;
     PhysicalDeviceWrapper*     physical_device{ nullptr };
     std::vector<QueueWrapper*> child_queues;
 
@@ -399,7 +399,7 @@ struct MicromapEXTWrapper;
 struct CommandPoolWrapper;
 struct CommandBufferWrapper : public HandleWrapper<VkCommandBuffer>
 {
-    VulkanDeviceTable* layer_table_ref{ nullptr };
+    graphics::VulkanDeviceTable* layer_table_ref{ nullptr };
 
     // Members for general wrapper support.
     // Pool from which command buffer was allocated. The command buffer must be removed from the pool's allocation list

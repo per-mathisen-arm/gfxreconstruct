@@ -130,24 +130,30 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsCallback(VkDebugUtilsMessageSeve
 {
     GFXRECON_UNREFERENCED_PARAMETER(pUserData);
 
-    if ((pCallbackData != nullptr) && (pCallbackData->pMessageIdName != nullptr) &&
-        (pCallbackData->pMessage != nullptr))
+    // Allow pCallbackData->pMessageIdName to be nullptr by defining a default string for message id name
+    const char* message_id_name = "(nullptr)";
+    if ((pCallbackData != nullptr) && (pCallbackData->pMessageIdName != nullptr))
+    {
+        message_id_name = pCallbackData->pMessageIdName;
+    }
+
+    if ((pCallbackData != nullptr) && (pCallbackData->pMessage != nullptr))
     {
         if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
         {
-            GFXRECON_LOG_ERROR("DEBUG MESSENGER: %s: %s", pCallbackData->pMessageIdName, pCallbackData->pMessage);
+            GFXRECON_LOG_ERROR("DEBUG MESSENGER: %s: %s", message_id_name, pCallbackData->pMessage);
         }
         else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
         {
-            GFXRECON_LOG_WARNING("DEBUG MESSENGER: %s: %s", pCallbackData->pMessageIdName, pCallbackData->pMessage);
+            GFXRECON_LOG_WARNING("DEBUG MESSENGER: %s: %s", message_id_name, pCallbackData->pMessage);
         }
         else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
         {
-            GFXRECON_LOG_INFO("DEBUG MESSENGER: %s: %s", pCallbackData->pMessageIdName, pCallbackData->pMessage);
+            GFXRECON_LOG_INFO("DEBUG MESSENGER: %s: %s", message_id_name, pCallbackData->pMessage);
         }
         else
         {
-            GFXRECON_LOG_DEBUG("DEBUG MESSENGER: %s: %s", pCallbackData->pMessageIdName, pCallbackData->pMessage);
+            GFXRECON_LOG_DEBUG("DEBUG MESSENGER: %s: %s", message_id_name, pCallbackData->pMessage);
         }
     }
 
@@ -1728,43 +1734,43 @@ void VulkanReplayConsumerBase::InitializeLoader()
 
 void VulkanReplayConsumerBase::AddInstanceTable(VkInstance instance)
 {
-    encode::VulkanDispatchKey dispatch_key = encode::GetVulkanDispatchKey(instance);
+    graphics::VulkanDispatchKey dispatch_key = graphics::GetVulkanDispatchKey(instance);
 
     get_device_proc_addrs_[dispatch_key] =
         reinterpret_cast<PFN_vkGetDeviceProcAddr>(get_instance_proc_addr_(instance, "vkGetDeviceProcAddr"));
     create_device_procs_[dispatch_key] =
         reinterpret_cast<PFN_vkCreateDevice>(get_instance_proc_addr_(instance, "vkCreateDevice"));
 
-    encode::VulkanInstanceTable& table = instance_tables_[dispatch_key];
-    encode::LoadVulkanInstanceTable(get_instance_proc_addr_, instance, &table);
+    graphics::VulkanInstanceTable& table = instance_tables_[dispatch_key];
+    graphics::LoadVulkanInstanceTable(get_instance_proc_addr_, instance, &table);
 }
 
 void VulkanReplayConsumerBase::AddDeviceTable(VkDevice device, PFN_vkGetDeviceProcAddr gpa)
 {
-    encode::VulkanDeviceTable& table = device_tables_[encode::GetVulkanDispatchKey(device)];
-    encode::LoadVulkanDeviceTable(gpa, device, &table);
+    graphics::VulkanDeviceTable& table = device_tables_[graphics::GetVulkanDispatchKey(device)];
+    graphics::LoadVulkanDeviceTable(gpa, device, &table);
 }
 
 PFN_vkGetDeviceProcAddr VulkanReplayConsumerBase::GetDeviceAddrProc(VkPhysicalDevice physical_device)
 {
-    return get_device_proc_addrs_[encode::GetVulkanDispatchKey(physical_device)];
+    return get_device_proc_addrs_[graphics::GetVulkanDispatchKey(physical_device)];
 }
 
 PFN_vkCreateDevice VulkanReplayConsumerBase::GetCreateDeviceProc(VkPhysicalDevice physical_device)
 {
-    return create_device_procs_[encode::GetVulkanDispatchKey(physical_device)];
+    return create_device_procs_[graphics::GetVulkanDispatchKey(physical_device)];
 }
 
-const encode::VulkanInstanceTable* VulkanReplayConsumerBase::GetInstanceTable(const void* handle) const
+const graphics::VulkanInstanceTable* VulkanReplayConsumerBase::GetInstanceTable(const void* handle) const
 {
-    auto table = instance_tables_.find(encode::GetVulkanDispatchKey(handle));
+    auto table = instance_tables_.find(graphics::GetVulkanDispatchKey(handle));
     assert(table != instance_tables_.end());
     return (table != instance_tables_.end()) ? &table->second : nullptr;
 }
 
-const encode::VulkanDeviceTable* VulkanReplayConsumerBase::GetDeviceTable(const void* handle) const
+const graphics::VulkanDeviceTable* VulkanReplayConsumerBase::GetDeviceTable(const void* handle) const
 {
-    auto table = device_tables_.find(encode::GetVulkanDispatchKey(handle));
+    auto table = device_tables_.find(graphics::GetVulkanDispatchKey(handle));
     assert(table != device_tables_.end());
     return (table != device_tables_.end()) ? &table->second : nullptr;
 }
@@ -3048,7 +3054,10 @@ void VulkanReplayConsumerBase::ModifyCreateInstanceInfo(
     {
         const auto current_extension    = replay_create_info->ppEnabledExtensionNames[i];
         const bool is_surface_extension = kSurfaceExtensions.find(current_extension) != kSurfaceExtensions.end();
-        if (!util::platform::StringCompare(current_extension, VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME))
+        const bool is_forced =
+            util::platform::StringCompare(current_extension, VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME) == 0 ||
+            util::platform::StringCompare(current_extension, VK_EXT_DEBUG_UTILS_EXTENSION_NAME) == 0;
+        if (is_forced)
         {
             // Will always be added if available
             continue;
@@ -3139,6 +3148,42 @@ void VulkanReplayConsumerBase::ModifyCreateInstanceInfo(
                              "extension availability.");
     }
 
+    // We want to create a debug messenger unconditionally so that
+    // debug messages from layers are displayed during replay.
+    // Note that if the app also included one or more VkDebugUtilsMessengerCreateInfoEXT structs
+    // in the pNext chain, those messengers will also be created.
+    if (feature_util::IsSupportedExtension(available_extensions, VK_EXT_DEBUG_UTILS_EXTENSION_NAME))
+    {
+        modified_extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+
+        // Set pfnUserCallback for all debug messengers down the pNext chain
+        VkDebugUtilsMessengerCreateInfoEXT* pnext_callback_info =
+            graphics::vulkan_struct_get_pnext<VkDebugUtilsMessengerCreateInfoEXT>(&modified_create_info);
+        while (pnext_callback_info != nullptr)
+        {
+            pnext_callback_info->pfnUserCallback = DebugUtilsCallback;
+            pnext_callback_info =
+                graphics::vulkan_struct_get_pnext<VkDebugUtilsMessengerCreateInfoEXT>(pnext_callback_info);
+        }
+
+        create_state.messenger_create_info             = { VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
+        create_state.messenger_create_info.pNext       = modified_create_info.pNext;
+        create_state.messenger_create_info.flags       = 0;
+        create_state.messenger_create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_FLAG_BITS_MAX_ENUM_EXT;
+        create_state.messenger_create_info.messageSeverity = options_.debug_message_severity;
+        create_state.messenger_create_info.pfnUserCallback = DebugUtilsCallback;
+        create_state.messenger_create_info.pUserData       = nullptr;
+
+        // We chain the debug messenger create info here to catch debug messages
+        // emitted during vkCreateInstance()/vkDestroyInstance()
+        modified_create_info.pNext = &create_state.messenger_create_info;
+    }
+    else
+    {
+        GFXRECON_LOG_WARNING("Failed to create debug utils callback. "
+                             "VK_EXT_debug_utils extension is not available for the replay instance.");
+    }
+
     // Enable validation layer and create a debug messenger if the enable_validation_layer replay option is set.
     std::vector<VkLayerProperties> available_layers;
     if (feature_util::GetInstanceLayers(instance_layer_proc, &available_layers) == VK_SUCCESS)
@@ -3148,33 +3193,6 @@ void VulkanReplayConsumerBase::ModifyCreateInstanceInfo(
             if (feature_util::IsSupportedLayer(available_layers, kValidationLayerName))
             {
                 modified_layers.push_back(kValidationLayerName);
-
-                // Create a debug util messenger if replay was run with the enable_validation_layer option and the
-                // VK_EXT_debug_utils extension is available. Note that if the app also included one or more
-                // VkDebugUtilsMessengerCreateInfoEXT structs in the pNext chain, those messengers will also be
-                // created.
-                if (feature_util::IsSupportedExtension(available_extensions, VK_EXT_DEBUG_UTILS_EXTENSION_NAME))
-                {
-                    modified_extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-
-                    create_state.messenger_create_info = { VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
-                    create_state.messenger_create_info.pNext       = modified_create_info.pNext;
-                    create_state.messenger_create_info.flags       = 0;
-                    create_state.messenger_create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
-                                                                     VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-                    create_state.messenger_create_info.messageSeverity =
-                        VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-                    create_state.messenger_create_info.pfnUserCallback = DebugUtilsCallback;
-                    create_state.messenger_create_info.pUserData       = nullptr;
-
-                    modified_create_info.pNext = &create_state.messenger_create_info;
-                }
-                else
-                {
-                    GFXRECON_LOG_WARNING(
-                        "Failed to create debug utils callback for the validation layer enabled by replay option "
-                        "'--validate'. VK_EXT_debug_utils extension is not available for the replay instance.");
-                }
             }
             else
             {
@@ -3270,6 +3288,17 @@ VulkanReplayConsumerBase::OverrideCreateInstance(VkResult original_result,
         auto instance_info = reinterpret_cast<VulkanInstanceInfo*>(pInstance->GetConsumerData(0));
         assert(instance_info);
         PostCreateInstanceUpdateState(*replay_instance, create_state.modified_create_info, *instance_info);
+
+        // Register debug callback here to catch all messages that are
+        // emitted during calls that _aren't_ vkCreateInstance()/vkDestroyInstance()
+        if (create_state.messenger_create_info.pfnUserCallback != nullptr)
+        {
+            GetInstanceTable(*replay_instance)
+                ->CreateDebugUtilsMessengerEXT(*replay_instance,
+                                               &create_state.messenger_create_info,
+                                               GetAllocationCallbacks(pAllocator),
+                                               &debug_messenger_);
+        }
     }
 
     return result;
@@ -3551,12 +3580,12 @@ VkResult VulkanReplayConsumerBase::PostCreateDeviceUpdateState(VulkanPhysicalDev
 
     uint32_t                              tool_count                          = 0;
     PFN_vkGetPhysicalDeviceToolProperties get_physical_device_tool_properties = nullptr;
-    if (instance_table->GetPhysicalDeviceToolProperties != gfxrecon::encode::noop::vkGetPhysicalDeviceToolProperties)
+    if (instance_table->GetPhysicalDeviceToolProperties != gfxrecon::graphics::noop::vkGetPhysicalDeviceToolProperties)
     {
         get_physical_device_tool_properties = instance_table->GetPhysicalDeviceToolProperties;
     }
     else if (instance_table->GetPhysicalDeviceToolPropertiesEXT !=
-             gfxrecon::encode::noop::vkGetPhysicalDeviceToolPropertiesEXT)
+             gfxrecon::graphics::noop::vkGetPhysicalDeviceToolPropertiesEXT)
     {
         get_physical_device_tool_properties = instance_table->GetPhysicalDeviceToolPropertiesEXT;
     }
@@ -4194,7 +4223,7 @@ VkResult VulkanReplayConsumerBase::OverrideGetFenceStatus(PFN_vkGetFenceStatus  
     // future calls might use the resources depending on that fence...
     if (original_result == VK_SUCCESS && result == VK_NOT_READY)
     {
-        const encode::VulkanDeviceTable* device_table = GetDeviceTable(device);
+        const graphics::VulkanDeviceTable* device_table = GetDeviceTable(device);
         GFXRECON_ASSERT(device_table != nullptr);
 
         result = device_table->WaitForFences(device, 1, &fence, VK_TRUE, UINT64_MAX);
@@ -6072,17 +6101,40 @@ VulkanReplayConsumerBase::OverrideCreateBuffer(PFN_vkCreateBuffer               
 {
     GFXRECON_UNREFERENCED_PARAMETER(original_result);
 
-    assert((device_info != nullptr) && (pCreateInfo != nullptr) && (pBuffer != nullptr) && !pBuffer->IsNull() &&
-           (pBuffer->GetHandlePointer() != nullptr));
+    GFXRECON_ASSERT((device_info != nullptr) && (pCreateInfo != nullptr) && (pBuffer != nullptr) &&
+                    !pBuffer->IsNull() && (pBuffer->GetHandlePointer() != nullptr));
 
     auto allocator = device_info->allocator.get();
-    assert(allocator != nullptr);
+    GFXRECON_ASSERT(allocator != nullptr);
 
     VkResult                              result = VK_SUCCESS;
     VulkanResourceAllocator::ResourceData allocator_data;
-    auto                                  replay_buffer      = pBuffer->GetHandlePointer();
-    auto                                  capture_id         = (*pBuffer->GetPointer());
-    auto                                  replay_create_info = pCreateInfo->GetPointer();
+    auto                                  replay_buffer = pBuffer->GetHandlePointer();
+    auto                                  capture_id    = (*pBuffer->GetPointer());
+
+    // We may need to update the create info struct, so make a copy of it for now.
+    auto               replay_create_info   = pCreateInfo->GetPointer();
+    VkBufferCreateInfo modified_create_info = *replay_create_info;
+
+    VkExternalMemoryBufferCreateInfo* external_memory =
+        graphics::vulkan_struct_get_pnext<VkExternalMemoryBufferCreateInfo>(&modified_create_info);
+
+    if (external_memory && external_memory->handleTypes & VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT)
+    {
+        // If external memory exists and is for an Opaque FD, we need to strip out the structure
+        // since during replay we convert the allocate memory to a standard memory type.
+        if (external_memory->handleTypes == VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT)
+        {
+            GFXRECON_LOG_INFO("OverrideCreateBuffer removing VkExternalMemoryBufferCreateInfo");
+            graphics::vulkan_struct_remove_pnext<VkExternalMemoryBufferCreateInfo>(&modified_create_info);
+        }
+        // Otherwise, just strip out the flag
+        else
+        {
+            GFXRECON_LOG_INFO("OverrideCreateBuffer filtering OPAQUE_FD flag in VkExternalMemoryBufferCreateInfo");
+            external_memory->handleTypes &= ~VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+        }
+    }
 
     // Check for a buffer device address.
     bool uses_address = false;
@@ -6126,7 +6178,6 @@ VulkanReplayConsumerBase::OverrideCreateBuffer(PFN_vkCreateBuffer               
             address_usage_flags |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
         }
     }
-    VkBufferCreateInfo modified_create_info = (*replay_create_info);
 
     VkBufferOpaqueCaptureAddressCreateInfo address_info = {
         VK_STRUCTURE_TYPE_BUFFER_OPAQUE_CAPTURE_ADDRESS_CREATE_INFO
@@ -6157,19 +6208,10 @@ VulkanReplayConsumerBase::OverrideCreateBuffer(PFN_vkCreateBuffer               
         result = allocator->CreateBuffer(
             &modified_create_info, GetAllocationCallbacks(pAllocator), capture_id, replay_buffer, &allocator_data);
     }
-    else if (force_address)
-    {
-        VkBufferCreateInfo modified_create_info = (*replay_create_info);
-        /*
-        modified_create_info.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-        */
-        result = allocator->CreateBuffer(
-            &modified_create_info, GetAllocationCallbacks(pAllocator), capture_id, replay_buffer, &allocator_data);
-    }
     else
     {
         result = allocator->CreateBuffer(
-            replay_create_info, GetAllocationCallbacks(pAllocator), capture_id, replay_buffer, &allocator_data);
+            &modified_create_info, GetAllocationCallbacks(pAllocator), capture_id, replay_buffer, &allocator_data);
     }
 
     if ((result == VK_SUCCESS) && (replay_create_info != nullptr) && ((*replay_buffer) != VK_NULL_HANDLE))
@@ -6242,16 +6284,19 @@ VulkanReplayConsumerBase::OverrideCreateImage(PFN_vkCreateImage                 
 {
     GFXRECON_UNREFERENCED_PARAMETER(original_result);
 
-    assert((device_info != nullptr) && (pCreateInfo != nullptr) && (pImage != nullptr) &&
-           (pImage->GetHandlePointer() != nullptr));
+    GFXRECON_ASSERT((device_info != nullptr) && (pCreateInfo != nullptr) && (pImage != nullptr) &&
+                    (pImage->GetHandlePointer() != nullptr));
 
     auto allocator = device_info->allocator.get();
-    assert(allocator != nullptr);
+    GFXRECON_ASSERT(allocator != nullptr);
+    GFXRECON_ASSERT(pCreateInfo != nullptr);
 
     VulkanResourceAllocator::ResourceData allocator_data;
     auto                                  replay_image         = pImage->GetHandlePointer();
     auto                                  capture_id           = (*pImage->GetPointer());
-    auto                                  modified_create_info = *pCreateInfo->GetPointer();
+
+    auto              replay_create_info   = pCreateInfo->GetPointer();
+    VkImageCreateInfo modified_create_info = *replay_create_info;
 
     if ((replaying_trimmed_capture_ || options_.dumping_resources) &&
         (modified_create_info.usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) == 0)
@@ -6318,28 +6363,46 @@ VulkanReplayConsumerBase::OverrideCreateImage(PFN_vkCreateImage                 
         }
     }
 
-    auto* create_info = const_cast<VkImageCreateInfo*>(pCreateInfo->GetPointer());
-    // The original image might be external.
-    auto* external_memory = graphics::vulkan_struct_get_pnext<VkExternalMemoryImageCreateInfo>(create_info);
-    // The external memory might be an unknown format.
-    auto* external_format     = graphics::vulkan_struct_get_pnext<VkExternalFormatANDROID>(create_info);
+    // The original image might be external and it might be an unknown format, so perform any
+    // work necessary to handle these scenarios.
+    auto* external_memory = graphics::vulkan_struct_get_pnext<VkExternalMemoryImageCreateInfo>(&modified_create_info);
+    auto* external_format = graphics::vulkan_struct_get_pnext<VkExternalFormatANDROID>(&modified_create_info);
     bool  has_external_format = external_format != nullptr && external_format->externalFormat != 0;
-    if (create_info->format == VK_FORMAT_UNDEFINED && external_memory != nullptr && has_external_format)
+    if (external_memory != nullptr)
     {
-        // In this case, the image has been sampled at capture time and format is now RGBA8_UNORM.
-        create_info->format             = VK_FORMAT_R8G8B8A8_UNORM;
-        external_format->externalFormat = 0;
+        if (modified_create_info.format == VK_FORMAT_UNDEFINED && has_external_format)
+        {
+            // In this case, the image has been sampled at capture time and format is now RGBA8_UNORM.
+            modified_create_info.format     = VK_FORMAT_R8G8B8A8_UNORM;
+            external_format->externalFormat = 0;
+        }
+
+        if (external_memory->handleTypes & VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT)
+        {
+            // If external memory exists and is for an Opaque FD, we need to strip out the structure
+            // since during replay we convert the allocate memory to a standard memory type.
+            if (external_memory->handleTypes == VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT)
+            {
+                GFXRECON_LOG_INFO("OverrideCreateImage removing VkExternalMemoryImageCreateInfo");
+                graphics::vulkan_struct_remove_pnext<VkExternalMemoryImageCreateInfo>(&modified_create_info);
+                external_memory = nullptr;
+            }
+            // Otherwise, just strip out the flag
+            else
+            {
+                GFXRECON_LOG_INFO("OverrideCreateImage filtering OPAQUE_FD flag in VkExternalMemoryImageCreateInfo");
+                external_memory->handleTypes &= ~VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+            }
+        }
     }
 
     VkResult result = allocator->CreateImage(
         &modified_create_info, GetAllocationCallbacks(pAllocator), capture_id, replay_image, &allocator_data);
 
-    auto replay_create_info = pCreateInfo->GetPointer();
-
-    if ((result == VK_SUCCESS) && (replay_create_info != nullptr) && ((*replay_image) != VK_NULL_HANDLE))
+    if ((result == VK_SUCCESS) && ((*replay_image) != VK_NULL_HANDLE))
     {
         auto image_info = reinterpret_cast<VulkanImageInfo*>(pImage->GetConsumerData(0));
-        assert(image_info != nullptr);
+        GFXRECON_ASSERT(image_info != nullptr);
 
         image_info->allocator_data = allocator_data;
         image_info->usage          = modified_create_info.usage;
@@ -8891,7 +8954,7 @@ VkResult VulkanReplayConsumerBase::OverrideGetSemaphoreCounterValue(PFN_vkGetSem
 
         // At least one of the two functions is available, because to call any of vkGetSemaphoreCounterValue{KHR} you
         // either have instance version >= 1.2 or VK_KHR_timeline_semaphore activated
-        if (device_table->WaitSemaphores != encode::noop::vkWaitSemaphores)
+        if (device_table->WaitSemaphores != graphics::noop::vkWaitSemaphores)
         {
             result = device_table->WaitSemaphores(device, &wait_info, UINT64_MAX);
         }

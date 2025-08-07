@@ -54,6 +54,7 @@ typedef uint64_t AddressEncodeType;
 typedef uint8_t  CharEncodeType;  // Encoding type for UTF-8 strings.
 typedef uint16_t WCharEncodeType; // Encoding type for LPCWSTR (UTF-16) strings.
 typedef uint32_t FormatEncodeType;
+typedef uint32_t D3D_FEATURE_LEVELEncodeType;
 
 typedef HandleEncodeType HandleId;
 typedef uint64_t         ThreadId;
@@ -793,6 +794,34 @@ struct ExecuteBlocksFromFile
 
     // Number of characters in file name
     uint32_t filename_length;
+};
+
+struct ViewRelativeLocation
+{
+    format::HandleId session_id;
+    format::HandleId space_id;
+
+    // Locate status
+    uint64_t flags;
+
+    // Orientation
+    float qx;
+    float qy;
+    float qz;
+    float qw;
+
+    // Position
+    float x;
+    float y;
+    float z;
+};
+
+struct ViewRelativeLocationCmd
+{
+    MetaDataHeader   meta_header;
+    format::ThreadId thread_id;
+
+    ViewRelativeLocation location;
 };
 
 struct InitializeMetaCommand
