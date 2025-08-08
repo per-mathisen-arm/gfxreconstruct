@@ -98,7 +98,7 @@ VulkanAddressReplacerARM::acceleration_structure_asset_t::~acceleration_structur
 }
 
 VulkanAddressReplacerARM::VulkanAddressReplacerARM(const VulkanDeviceInfo*              device_info,
-                                                   const encode::VulkanDeviceTable*     device_table,
+                                                   const graphics::VulkanDeviceTable*   device_table,
                                                    const decode::CommonObjectInfoTable& object_table) :
     device_table_(device_table),
     device_info_(device_info), object_table_(&object_table)

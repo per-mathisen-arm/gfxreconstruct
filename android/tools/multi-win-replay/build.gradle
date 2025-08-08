@@ -36,13 +36,13 @@ android {
     }
     signingConfigs {
         debug {
-            storeFile file('keystore')
+            storeFile file('../../keystore')
             storePassword 'GfxReconKey'
             keyAlias 'key-gfxrecon'
             keyPassword 'GfxReconKey'
         }
         release {
-            storeFile file('keystore')
+            storeFile file('../../keystore')
             storePassword 'GfxReconKey'
             keyPassword 'GfxReconKey'
             keyAlias 'key-gfxrecon'
@@ -67,6 +67,9 @@ android {
         cmake {
             path "CMakeLists.txt"
         }
+    }
+    androidResources {
+        ignoreAssetsPattern "XrLayer_gfxreconstruct.json"
     }
 }
 

@@ -392,12 +392,13 @@ int main(int argc, const char** argv)
         {
             bool detected_d3d12  = false;
             bool detected_vulkan = false;
-            gfxrecon::decode::DetectAPIs(input_filename, detected_d3d12, detected_vulkan);
+            bool detected_openxr = false;
+            gfxrecon::decode::DetectAPIs(input_filename, detected_d3d12, detected_vulkan, detected_openxr);
 
             if ((!detected_d3d12) && (!detected_vulkan))
             {
                 // Detect with no block limit
-                gfxrecon::decode::DetectAPIs(input_filename, detected_d3d12, detected_vulkan, true);
+                gfxrecon::decode::DetectAPIs(input_filename, detected_d3d12, detected_vulkan, detected_openxr, true);
             }
 
             if (detected_d3d12)
@@ -412,6 +413,12 @@ int main(int argc, const char** argv)
                 // Run all vulkan optimizations
                 RunVulkanOptimizations(input_filename, output_filename, vulkan_options);
             }
+#ifdef ENABLE_OPENXR_SUPPORT
+            else if (detected_openxr)
+            {
+                GFXRECON_LOG_INFO("No optimizations defined for OpenXR capture files");
+            }
+#endif
             else
             {
                 GFXRECON_LOG_ERROR("Could not detect graphics API. Aborting optimization.")

@@ -165,6 +165,8 @@ GFXRECON_BEGIN_NAMESPACE(encode)
 #define FORCE_FIFO_PRESENT_MODE_UPPER                        "FORCE_FIFO_PRESENT_MODE"
 #define IGNORE_FRAME_BOUNDARY_ANDROID_LOWER                  "ignore_frame_boundary_android"
 #define IGNORE_FRAME_BOUNDARY_ANDROID_UPPER                  "IGNORE_FRAME_BOUNDARY_ANDROID"
+#define SKIP_THREADS_WITH_INVALID_DATA_LOWER                 "skip_threads_with_invalid_data"
+#define SKIP_THREADS_WITH_INVALID_DATA_UPPER                 "SKIP_THREADS_WITH_INVALID_DATA"
 
 #if defined(__ANDROID__)
 #define GFXRECON_ENV_VAR_PREFIX "debug.gfxrecon."
@@ -181,10 +183,12 @@ const char CaptureSettings::kDefaultCaptureFileName[] = "gfxrecon_capture" GFXRE
 
 #define GFXRECON_OPTION_STR(OPTION) GFXRECON_ENV_VAR_PREFIX GFXRECON_EVALUATOR(OPTION, GFXRECON_POSTFIX)
 
+// Common capture settings
 const char kCaptureCompressionTypeEnvVar[]                   = GFXRECON_OPTION_STR(CAPTURE_COMPRESSION_TYPE);
 const char kCaptureFileFlushEnvVar[]                         = GFXRECON_OPTION_STR(CAPTURE_FILE_FLUSH);
 const char kCaptureFileNameEnvVar[]                          = GFXRECON_OPTION_STR(CAPTURE_FILE_NAME);
 const char kCaptureFileUseTimestampEnvVar[]                  = GFXRECON_OPTION_STR(CAPTURE_FILE_USE_TIMESTAMP);
+const char kCaptureUseAssetFileEnvVar[]                      = GFXRECON_OPTION_STR(CAPTURE_USE_ASSET_FILE);
 const char kLogAllowIndentsEnvVar[]                          = GFXRECON_OPTION_STR(LOG_ALLOW_INDENTS);
 const char kLogBreakOnErrorEnvVar[]                          = GFXRECON_OPTION_STR(LOG_BREAK_ON_ERROR);
 const char kLogDetailedEnvVar[]                              = GFXRECON_OPTION_STR(LOG_DETAILED);
@@ -205,11 +209,6 @@ const char kScreenshotIntervalEnvVar[]                       = GFXRECON_OPTION_S
 const char kCaptureFramesEnvVar[]                            = GFXRECON_OPTION_STR(CAPTURE_FRAMES);
 const char kCaptureDrawCallsEnvVar[]                         = GFXRECON_OPTION_STR(CAPTURE_DRAW_CALLS);
 const char kQuitAfterFramesEnvVar[]                          = GFXRECON_OPTION_STR(QUIT_AFTER_CAPTURE_FRAMES);
-const char kCaptureTriggerEnvVar[]                           = GFXRECON_OPTION_STR(CAPTURE_TRIGGER);
-const char kCaptureTriggerFramesEnvVar[]                     = GFXRECON_OPTION_STR(CAPTURE_TRIGGER_FRAMES);
-const char kCaptureIUnknownWrappingEnvVar[]                  = GFXRECON_OPTION_STR(CAPTURE_IUNKNOWN_WRAPPING);
-const char kCaptureQueueSubmitsEnvVar[]                      = GFXRECON_OPTION_STR(CAPTURE_QUEUE_SUBMITS);
-const char kCaptureUseAssetFileEnvVar[]                      = GFXRECON_OPTION_STR(CAPTURE_USE_ASSET_FILE);
 const char kPageGuardCopyOnMapEnvVar[]                       = GFXRECON_OPTION_STR(PAGE_GUARD_COPY_ON_MAP);
 const char kPageGuardSeparateReadEnvVar[]                    = GFXRECON_OPTION_STR(PAGE_GUARD_SEPARATE_READ);
 const char kPageGuardPersistentMemoryEnvVar[]                = GFXRECON_OPTION_STR(PAGE_GUARD_PERSISTENT_MEMORY);
@@ -219,6 +218,10 @@ const char kPageGuardExternalMemoryEnvVar[]                  = GFXRECON_OPTION_S
 const char kPageGuardUnblockSIGSEGVEnvVar[]                  = GFXRECON_OPTION_STR(PAGE_GUARD_UNBLOCK_SIGSEGV);
 const char kPageGuardSignalHandlerWatcherEnvVar[]            = GFXRECON_OPTION_STR(PAGE_GUARD_SIGNAL_HANDLER_WATCHER);
 const char kPageGuardSignalHandlerWatcherMaxRestoresEnvVar[] = GFXRECON_OPTION_STR(PAGE_GUARD_SIGNAL_HANDLER_WATCHER_MAX_RESTORES);
+const char kCaptureTriggerEnvVar[]                           = GFXRECON_OPTION_STR(CAPTURE_TRIGGER);
+const char kCaptureTriggerFramesEnvVar[]                     = GFXRECON_OPTION_STR(CAPTURE_TRIGGER_FRAMES);
+const char kCaptureIUnknownWrappingEnvVar[]                  = GFXRECON_OPTION_STR(CAPTURE_IUNKNOWN_WRAPPING);
+const char kCaptureQueueSubmitsEnvVar[]                      = GFXRECON_OPTION_STR(CAPTURE_QUEUE_SUBMITS);
 const char kDebugLayerEnvVar[]                               = GFXRECON_OPTION_STR(DEBUG_LAYER);
 const char kDebugDeviceLostEnvVar[]                          = GFXRECON_OPTION_STR(DEBUG_DEVICE_LOST);
 const char kDebugSetObjectsNameEnvVar[]                      = GFXRECON_OPTION_STR(DEBUG_SET_OBJECTS_NAME);
@@ -240,8 +243,10 @@ const char kBufferUsagesToIgnoreEnvVar[]                     = GFXRECON_OPTION_S
 const char kCapturePackageNameEnvVar[]                       = GFXRECON_OPTION_STR(CAPTURE_PACKAGE_NAME);
 const char kForceFifoPresentModeEnvVar[]                     = GFXRECON_OPTION_STR(FORCE_FIFO_PRESENT_MODE);
 const char kIgnoreFrameBoundaryAndroidEnvVar[]               = GFXRECON_OPTION_STR(IGNORE_FRAME_BOUNDARY_ANDROID);
+const char kSkipThreadsWithInvalidDataEnvVar[]               = GFXRECON_OPTION_STR(SKIP_THREADS_WITH_INVALID_DATA);
 
 #if defined(__ANDROID__)
+// Android-specific capture options
 const char kCaptureAndroidTriggerEnvVar[]                    = GFXRECON_OPTION_STR(CAPTURE_ANDROID_TRIGGER);
 const char kCaptureAndroidDumpAssetsEnvVar[]                 = GFXRECON_OPTION_STR(CAPTURE_ANDROID_DUMP_ASSETS);
 #endif
@@ -308,6 +313,7 @@ const std::string kOptionBufferUsagesToIgnore                        = std::stri
 const std::string kOptionCapturePackageName                          = std::string(kSettingsFilter) + std::string(CAPTURE_PACKAGE_NAME_LOWER);
 const std::string kOptionForceFifoPresentModeEnvVar                  = std::string(kSettingsFilter) + std::string(FORCE_FIFO_PRESENT_MODE_LOWER);
 const std::string kOptionIgnoreFrameBoundaryAndroid                  = std::string(kSettingsFilter) + std::string(IGNORE_FRAME_BOUNDARY_ANDROID_LOWER);
+const std::string kOptionSkipThreadsWithInvalidData                  = std::string(kSettingsFilter) + std::string(SKIP_THREADS_WITH_INVALID_DATA_LOWER);
 
 #if defined(GFXRECON_ENABLE_LZ4_COMPRESSION)
 const format::CompressionType kDefaultCompressionType = format::CompressionType::kLz4;
@@ -493,6 +499,8 @@ void CaptureSettings::LoadOptionsEnvVar(OptionsMap* options)
     LoadSingleOptionEnvVar(options, kForceFifoPresentModeEnvVar, kOptionForceFifoPresentModeEnvVar);
 
     LoadSingleOptionEnvVar(options, kIgnoreFrameBoundaryAndroidEnvVar, kOptionIgnoreFrameBoundaryAndroid);
+
+    LoadSingleOptionEnvVar(options, kSkipThreadsWithInvalidDataEnvVar, kOptionSkipThreadsWithInvalidData);
 }
 
 void CaptureSettings::LoadOptionsFile(OptionsMap* options)
@@ -743,6 +751,11 @@ void CaptureSettings::ProcessOptions(OptionsMap* options, CaptureSettings* setti
     settings->trace_settings_.ignore_frame_boundary_android =
         ParseBoolString(FindOption(options, kOptionIgnoreFrameBoundaryAndroid),
                         settings->trace_settings_.ignore_frame_boundary_android);
+
+    // Skip threads with invalid data
+    settings->trace_settings_.skip_threads_with_invalid_data =
+        ParseBoolString(FindOption(options, kOptionSkipThreadsWithInvalidData),
+                        settings->trace_settings_.skip_threads_with_invalid_data);
 }
 
 void CaptureSettings::ProcessLogOptions(OptionsMap* options, CaptureSettings* settings)

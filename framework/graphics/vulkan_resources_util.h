@@ -33,7 +33,6 @@
 
 #include <functional>
 #include <vector>
-#include <unordered_map>
 
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(graphics)
@@ -51,8 +50,8 @@ class VulkanResourcesUtil
 
     VulkanResourcesUtil(VkDevice                                device,
                         VkPhysicalDevice                        physical_device,
-                        const encode::VulkanDeviceTable&        device_table,
-                        const encode::VulkanInstanceTable&      instance_table,
+                        const graphics::VulkanDeviceTable&      device_table,
+                        const VulkanInstanceTable&              instance_table,
                         const VkPhysicalDeviceMemoryProperties& memory_properties);
 
     ~VulkanResourcesUtil();
@@ -163,7 +162,7 @@ class VulkanResourcesUtil
      * @param   buffer_resources    an array of BufferResource-structs
      * @param   callback            a callback-function, consuming data from staging-buffer
      * @param   staging_buffer_size target size for the staging-buffer in bytes. we might allocate a larger buffer,
-     *                                   depending on largest resource-size
+     *                              depending on largest resource-size
      */
     void ReadBufferResources(const std::vector<BufferResource>&   buffer_resources,
                              const ReadBufferResourcesCallbackFn& callback,
@@ -297,9 +296,9 @@ class VulkanResourcesUtil
     };
 
     VkDevice                                device_;
-    const encode::VulkanDeviceTable&        device_table_;
+    const graphics::VulkanDeviceTable&      device_table_;
     VkPhysicalDevice                        physical_device_;
-    const encode::VulkanInstanceTable&      instance_table_;
+    const VulkanInstanceTable&              instance_table_;
     const VkPhysicalDeviceMemoryProperties& memory_properties_;
 
     struct command_assets_t

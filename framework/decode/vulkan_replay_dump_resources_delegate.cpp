@@ -30,8 +30,8 @@
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(decode)
 
-bool DefaultVulkanDumpResourcesDelegate::IsImageDumpable(const encode::VulkanInstanceTable* instance_table,
-                                                         const VulkanImageInfo*             image_info)
+bool DefaultVulkanDumpResourcesDelegate::IsImageDumpable(const graphics::VulkanInstanceTable* instance_table,
+                                                         const VulkanImageInfo*               image_info)
 {
     GFXRECON_ASSERT(instance_table != nullptr);
     GFXRECON_ASSERT(image_info != nullptr);
@@ -60,8 +60,8 @@ bool DefaultVulkanDumpResourcesDelegate::IsImageDumpable(const encode::VulkanIns
     return true;
 }
 
-void DefaultVulkanDumpResourcesDelegate::DumpDrawCallInfo(const VulkanDumpDrawCallInfo&      draw_call_info,
-                                                          const encode::VulkanInstanceTable* instance_table)
+void DefaultVulkanDumpResourcesDelegate::DumpDrawCallInfo(const VulkanDumpDrawCallInfo&        draw_call_info,
+                                                          const graphics::VulkanInstanceTable* instance_table)
 {
     switch (draw_call_info.type)
     {
@@ -487,7 +487,7 @@ DefaultVulkanDumpResourcesDelegate::GenerateIndexBufferFilename(const VulkanDump
 }
 
 void DefaultVulkanDumpResourcesDelegate::GenerateOutputJsonDrawCallInfo(
-    const VulkanDumpDrawCallInfo& draw_call_info, const encode::VulkanInstanceTable* instance_table)
+    const VulkanDumpDrawCallInfo& draw_call_info, const graphics::VulkanInstanceTable* instance_table)
 {
     if (options_.dump_resources_json_per_command)
     {
@@ -1363,7 +1363,7 @@ std::string DefaultVulkanDumpResourcesDelegate::GenerateDispatchTraceRaysInlineU
 }
 
 void DefaultVulkanDumpResourcesDelegate::GenerateOutputJsonDispatchInfo(
-    const VulkanDumpDrawCallInfo& draw_call_info, const encode::VulkanInstanceTable* instance_table)
+    const VulkanDumpDrawCallInfo& draw_call_info, const graphics::VulkanInstanceTable* instance_table)
 {
     if (draw_call_info.disp_param == nullptr)
     {
@@ -1839,7 +1839,7 @@ void DefaultVulkanDumpResourcesDelegate::GenerateOutputJsonDispatchInfo(
 }
 
 void DefaultVulkanDumpResourcesDelegate::GenerateOutputJsonTraceRaysIndex(
-    const VulkanDumpDrawCallInfo& draw_call_info, const encode::VulkanInstanceTable* instance_table)
+    const VulkanDumpDrawCallInfo& draw_call_info, const graphics::VulkanInstanceTable* instance_table)
 {
     if (draw_call_info.tr_param == nullptr)
     {

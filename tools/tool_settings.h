@@ -31,6 +31,7 @@
 #include "generated/generated_dx12_decoder.h"
 #endif
 #include "decode/file_processor.h"
+
 #include "decode/vulkan_default_allocator.h"
 #include "decode/vulkan_realign_allocator.h"
 #include "decode/vulkan_rebind_allocator.h"
@@ -39,11 +40,20 @@
 #include "decode/vulkan_resource_tracking_consumer.h"
 #include "decode/vulkan_tracked_object_info_table.h"
 #include "generated/generated_vulkan_decoder.h"
+
+#ifdef ENABLE_OPENXR_SUPPORT
+#include "generated/generated_openxr_decoder.h"
+#endif
+
 #include "util/argument_parser.h"
 #include "util/logging.h"
 #include "util/platform.h"
 #include "util/options.h"
 #include "util/strings.h"
+
+#ifdef ENABLE_OPENXR_SUPPORT
+#include "openxr/openxr.h"
+#endif
 
 #include "vulkan/vulkan_core.h"
 
@@ -64,6 +74,7 @@ const char kHelpLongOption[]                     = "--help";
 const char kVersionOption[]                      = "--version";
 const char kLogLevelArgument[]                   = "--log-level";
 const char kLogTimestampsOption[]                = "--log-timestamps";
+const char kDebugMessageSeverityArgument[]       = "--debug-messenger-level";
 const char kLogFileArgument[]                    = "--log-file";
 const char kLogDebugView[]                       = "--log-debugview";
 const char kNoDebugPopup[]                       = "--no-debug-popup";
@@ -198,12 +209,6 @@ const char kMemoryTranslationRebind[]  = "rebind";
 const char kSwapchainVirtual[]   = "virtual";
 const char kSwapchainCaptured[]  = "captured";
 const char kSwapchainOffscreen[] = "offscreen";
-
-#if defined(WIN32)
-const char kApiFamilyVulkan[] = "vulkan";
-const char kApiFamilyD3D12[]  = "d3d12";
-const char kApiFamilyAll[]    = "all";
-#endif
 
 const char kScreenshotFormatBmp[] = "bmp";
 const char kScreenshotFormatPng[] = "png";
@@ -1125,6 +1130,32 @@ GetVulkanReplayOptions(const gfxrecon::util::ArgumentParser&           arg_parse
         replay_options.virtual_swapchain_skip_blit = true;
     }
 
+    const std::string debug_severity_string = arg_parser.GetArgumentValue(kDebugMessageSeverityArgument);
+    if (!debug_severity_string.empty())
+    {
+        if (gfxrecon::util::platform::StringCompareNoCase("debug", debug_severity_string.c_str()))
+        {
+            replay_options.debug_message_severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT;
+        }
+        else if (gfxrecon::util::platform::StringCompareNoCase("info", debug_severity_string.c_str()))
+        {
+            replay_options.debug_message_severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
+        }
+        else if (gfxrecon::util::platform::StringCompareNoCase("warning", debug_severity_string.c_str()))
+        {
+            replay_options.debug_message_severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
+        }
+        else if (gfxrecon::util::platform::StringCompareNoCase("error", debug_severity_string.c_str()))
+        {
+            replay_options.debug_message_severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+        }
+        else
+        {
+            GFXRECON_LOG_WARNING("Ignoring unrecognized debug messenger severity option value \"%s\"",
+                                 debug_severity_string.c_str());
+        }
+    }
+
     replay_options.replace_shader_dir = arg_parser.GetArgumentValue(kShaderReplaceArgument);
     replay_options.create_resource_allocator =
         GetCreateResourceAllocatorFunc(arg_parser, filename, replay_options, tracked_object_info_table);
@@ -1430,6 +1461,13 @@ static void PrintVersion(const char* exe_name)
                            VK_VERSION_MAJOR(VK_HEADER_VERSION_COMPLETE),
                            VK_VERSION_MINOR(VK_HEADER_VERSION_COMPLETE),
                            VK_VERSION_PATCH(VK_HEADER_VERSION_COMPLETE));
+
+#ifdef ENABLE_OPENXR_SUPPORT
+    GFXRECON_WRITE_CONSOLE("  OpenXR Header Version %u.%u.%u",
+                           XR_VERSION_MAJOR(XR_CURRENT_API_VERSION),
+                           XR_VERSION_MINOR(XR_CURRENT_API_VERSION),
+                           XR_VERSION_PATCH(XR_CURRENT_API_VERSION));
+#endif
 }
 
 static bool CheckOptionPrintVersion(const char* exe_name, const gfxrecon::util::ArgumentParser& arg_parser)

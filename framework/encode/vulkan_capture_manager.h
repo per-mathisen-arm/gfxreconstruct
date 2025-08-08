@@ -84,7 +84,7 @@ class VulkanCaptureManager : public ApiCaptureManager
     // the appropriate resource cleanup.
     static void CheckVkCreateInstanceStatus(VkResult result);
 
-    static const VulkanLayerTable* GetLayerTable() { return &vulkan_layer_table_; }
+    static const graphics::VulkanLayerTable* GetLayerTable() { return &vulkan_layer_table_; }
 
     void InitVkInstance(VkInstance* instance, PFN_vkGetInstanceProcAddr gpa);
 
@@ -417,6 +417,12 @@ class VulkanCaptureManager : public ApiCaptureManager
                                                 VkQueryType          queryType,
                                                 VkQueryPool          queryPool,
                                                 uint32_t             firstQuery);
+
+    VkResult OverrideAllocateCommandBuffers(VkDevice                           device,
+                                            const VkCommandBufferAllocateInfo* pAllocateInfo,
+                                            VkCommandBuffer*                   pCommandBuffers);
+
+    VkResult OverrideBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo);
 
     void PostProcess_vkEnumeratePhysicalDevices(VkResult          result,
                                                 VkInstance        instance,
@@ -1350,6 +1356,14 @@ class VulkanCaptureManager : public ApiCaptureManager
     void
     PreProcess_vkBindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo* pBindInfos);
 
+#ifdef ENABLE_OPENXR_SUPPORT
+    void PreProcess_vkDestroyFence(VkDevice device, VkFence fence, const VkAllocationCallbacks* pAllocator);
+    void PreProcess_vkResetFences(VkDevice device, uint32_t fenceCount, const VkFence* pFences);
+    void PreProcess_vkGetFenceStatus(VkDevice device, VkFence fence);
+    void PreProcess_vkWaitForFences(
+        VkDevice device, uint32_t fenceCount, const VkFence* pFences, VkBool32 waitAll, uint64_t timeout);
+#endif
+
     void PostProcess_vkSetPrivateData(VkResult          result,
                                       VkDevice          device,
                                       VkObjectType      objectType,
@@ -1376,7 +1390,8 @@ class VulkanCaptureManager : public ApiCaptureManager
     void PostProcess_vkAllocateCommandBuffers(VkDevice                           device,
                                               const VkCommandBufferAllocateInfo* pAllocateInfo,
                                               VkCommandBuffer*                   pCommandBuffers);
-    void PostProcess_vkCreateFence(VkDevice                     device,
+    void PostProcess_vkCreateFence(VkResult                     result,
+                                   VkDevice                     device,
                                    const VkFenceCreateInfo*     pCreateInfo,
                                    const VkAllocationCallbacks* pAllocator,
                                    VkFence*                     pFence);
@@ -1750,6 +1765,18 @@ class VulkanCaptureManager : public ApiCaptureManager
                                                  VkDevice                            device,
                                                  const VkDebugUtilsObjectTagInfoEXT* pTagInfo);
 
+#if ENABLE_OPENXR_SUPPORT
+    void PostProcess_vkImportFenceWin32HandleKHR(VkResult                               result,
+                                                 VkDevice                               device,
+                                                 const VkImportFenceWin32HandleInfoKHR* pImportFenceWin32HandleInfo);
+    void
+    PostProcess_vkImportFenceFdKHR(VkResult result, VkDevice device, const VkImportFenceFdInfoKHR* pImportFenceFdInfo);
+
+    void AddValidFence(VkFence fence);
+    void RemoveValidFence(VkFence fence);
+    bool IsValidFence(VkFence fence);
+#endif
+
 #if defined(__ANDROID__)
     void OverrideGetPhysicalDeviceSurfacePresentModesKHR(uint32_t* pPresentModeCount, VkPresentModeKHR* pPresentModes);
 #endif
@@ -1900,7 +1927,7 @@ class VulkanCaptureManager : public ApiCaptureManager
     void MapMemoryWriteFixShadowMemoryCmd(format::HandleId memory_id, uint64_t map_memory, uint64_t shadow_memory);
 
     static VulkanCaptureManager*                    singleton_;
-    static VulkanLayerTable                         vulkan_layer_table_;
+    static graphics::VulkanLayerTable               vulkan_layer_table_;
     std::set<vulkan_wrappers::DeviceMemoryWrapper*> mapped_memory_; // Track mapped memory for unassisted tracking mode.
     std::unique_ptr<VulkanStateTracker>             state_tracker_;
     std::vector<const char*>                        faked_extensions_;
@@ -1913,6 +1940,10 @@ class VulkanCaptureManager : public ApiCaptureManager
     bool enable_hardwarebuffer_format_conversion_ = false;
     // format conversion is bound to a specific device instance
     std::unordered_map<VkDevice, std::unique_ptr<util::AHardwareBufferFormatConverter>> ahb_format_converter_;
+#endif
+
+#if ENABLE_OPENXR_SUPPORT
+    std::set<VkFence> valid_fences_;
 #endif
 };
 

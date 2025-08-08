@@ -99,6 +99,8 @@ class VulkanApiCallEncodersBodyGenerator(VulkanBaseGenerator, KhronosApiCallEnco
             warn_file=warn_file,
             diag_file=diag_file
         )
+        KhronosApiCallEncodersGenerator.__init__(self, check_write=['vkWaitForPresentKHR'])
+
 
     def beginFile(self, gen_opts):
         """Method override."""
