@@ -271,6 +271,29 @@ class VulkanCaptureManager : public ApiCaptureManager
     bool GetDescriptorUpdateTemplateInfo(VkDescriptorUpdateTemplate update_template,
                                          const UpdateTemplateInfo** info) const;
 
+    bool CheckWriteWaitForPresentKHR(
+        VkResult result, VkDevice device, VkSwapchainKHR swapchain, graphics::PresentId present_id, uint64_t timeout)
+    {
+        if (IsCaptureModeWrite())
+        {
+            // During trimming, WaitForPresent's QueuePresent couldn't be written since it's before trim frame range.
+            // In this case, skip writing the WaitForPresent.
+            auto wrapper = vulkan_wrappers::GetWrapper<vulkan_wrappers::SwapchainKHRWrapper>(swapchain);
+            GFXRECON_ASSERT(wrapper != nullptr);
+            auto entry = wrapper->record_queue_present_ids_not_written.find(present_id);
+            if (entry != wrapper->record_queue_present_ids_not_written.end())
+            {
+                GFXRECON_LOG_WARNING(
+                    "Skip writing WaitForPresent(Swapchain: %" PRIu64 ", Present Id: %" PRIu64
+                    ") because its QueuePresent is before trim frame range. The QueuePresent isn't written.",
+                    swapchain,
+                    present_id);
+                return false;
+            }
+        }
+        return true;
+    }
+
     static VkResult OverrideCreateInstance(const VkInstanceCreateInfo*  pCreateInfo,
                                            const VkAllocationCallbacks* pAllocator,
                                            VkInstance*                  pInstance);
@@ -625,6 +648,21 @@ class VulkanCaptureManager : public ApiCaptureManager
                 pPresentInfo->waitSemaphoreCount, pPresentInfo->pWaitSemaphores, 0, nullptr);
             state_tracker_->TrackPresentedImages(
                 pPresentInfo->swapchainCount, pPresentInfo->pSwapchains, pPresentInfo->pImageIndices, queue);
+        }
+
+        if (IsCaptureModeTrack())
+        {
+            if (auto* present_ids = graphics::vulkan_struct_get_pnext<VkPresentIdKHR>(pPresentInfo))
+            {
+                for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i)
+                {
+                    auto wrapper =
+                        vulkan_wrappers::GetWrapper<vulkan_wrappers::SwapchainKHRWrapper>(pPresentInfo->pSwapchains[i]);
+                    GFXRECON_ASSERT(wrapper);
+
+                    wrapper->record_queue_present_ids_not_written.insert(present_ids->pPresentIds[i]);
+                }
+            }
         }
 
         EndFrame(current_lock);
@@ -1356,7 +1394,7 @@ class VulkanCaptureManager : public ApiCaptureManager
     void
     PreProcess_vkBindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo* pBindInfos);
 
-#ifdef ENABLE_OPENXR_SUPPORT
+#if ENABLE_OPENXR_SUPPORT
     void PreProcess_vkDestroyFence(VkDevice device, VkFence fence, const VkAllocationCallbacks* pAllocator);
     void PreProcess_vkResetFences(VkDevice device, uint32_t fenceCount, const VkFence* pFences);
     void PreProcess_vkGetFenceStatus(VkDevice device, VkFence fence);
