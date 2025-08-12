@@ -4025,7 +4025,7 @@ void VulkanCaptureManager::PostProcess_vkCreateShaderModule(VkResult            
     }
 }
 
-#ifdef ENABLE_OPENXR_SUPPORT
+#if ENABLE_OPENXR_SUPPORT
 void VulkanCaptureManager::PreProcess_vkDestroyFence(VkDevice                     device,
                                                      VkFence                      fence,
                                                      const VkAllocationCallbacks* pAllocator)
@@ -4789,6 +4789,7 @@ void VulkanCaptureManager::PostProcess_vkCreatePipelineCache(VkDevice           
         SetObjectName<PipelineCacheWrapper>(device, *pPipelineCache);
     }
 }
+
 void VulkanCaptureManager::PostProcess_vkCreatePipelineLayout(VkDevice                          device,
                                                               const VkPipelineLayoutCreateInfo* pCreateInfo,
                                                               const VkAllocationCallbacks*      pAllocator,

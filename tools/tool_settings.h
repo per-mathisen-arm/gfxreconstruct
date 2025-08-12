@@ -41,7 +41,7 @@
 #include "decode/vulkan_tracked_object_info_table.h"
 #include "generated/generated_vulkan_decoder.h"
 
-#ifdef ENABLE_OPENXR_SUPPORT
+#if ENABLE_OPENXR_SUPPORT
 #include "generated/generated_openxr_decoder.h"
 #endif
 
@@ -51,7 +51,7 @@
 #include "util/options.h"
 #include "util/strings.h"
 
-#ifdef ENABLE_OPENXR_SUPPORT
+#if ENABLE_OPENXR_SUPPORT
 #include "openxr/openxr.h"
 #endif
 
@@ -1462,7 +1462,7 @@ static void PrintVersion(const char* exe_name)
                            VK_VERSION_MINOR(VK_HEADER_VERSION_COMPLETE),
                            VK_VERSION_PATCH(VK_HEADER_VERSION_COMPLETE));
 
-#ifdef ENABLE_OPENXR_SUPPORT
+#if ENABLE_OPENXR_SUPPORT
     GFXRECON_WRITE_CONSOLE("  OpenXR Header Version %u.%u.%u",
                            XR_VERSION_MAJOR(XR_CURRENT_API_VERSION),
                            XR_VERSION_MINOR(XR_CURRENT_API_VERSION),
