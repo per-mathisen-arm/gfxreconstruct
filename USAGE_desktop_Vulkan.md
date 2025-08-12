@@ -585,6 +585,7 @@ gfxrecon-replay         [-h | --help] [--version] [--cpu-mask <binary-mask>] [--
                         [--log-level <level>] [--log-file <file>] [--log-debugview]
                         [--api <api>]
                         [--preload-measurement-range]
+                        [--debug-messenger-level <level>]
                         [--no-debug-popup] [--use-colorspace-fallback]
                         [--wait-before-present]
                         [--dump-resources <submit-index,command-index,draw-call-index>]
@@ -617,6 +618,10 @@ Optional arguments:
   --log-file <file>     Write log messages to a file at the specified path.
                         Default is: Empty string (file logging disabled).
   --log-debugview       Log messages with OutputDebugStringA. Windows only.
+  --debug-messenger-level <level>
+                        Specify highest debug messenger severity level. Options
+                        are: debug, info, warning, and error. Default is
+                        warning.
   --cpu-mask <binary-mask>
                         Set of CPU cores used by the replayer.
                         `binary-mask` is a succession of '0' and '1' read from left

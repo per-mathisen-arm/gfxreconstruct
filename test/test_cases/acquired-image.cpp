@@ -1,6 +1,5 @@
 /*
 ** Copyright (c) 2025 LunarG, Inc.
-** Copyright (c) 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 **
 ** Permission is hereby granted, free of charge, to any person obtaining a
 ** copy of this software and associated documentation files (the "Software"),
@@ -21,20 +20,28 @@
 ** DEALINGS IN THE SOFTWARE.
 */
 
-#ifdef GFXR_MULTI_WINDOW_REPLAY
+#include <gtest/gtest.h>
 
-#include <jni.h>
-#include <android/log.h>
-#include "application/android_window.h"
-#include <android/native_window_jni.h>
-#include "util/logging.h"
+#include "verify-gfxr.h"
 
-extern "C" JNIEXPORT void JNICALL Java_com_lunarg_gfxreconstruct_replay_ReplayActivity_setSurface(JNIEnv* env,
-                                                                                                  jobject obj,
-                                                                                                  jobject surface)
+#define TEST_APP_NAME "acquired-image"
+#define TEST_APP_PREFIX "gfxrecon-testapp-"
+
+char const* const APP_RUN_DIRECTORY = TEST_APP_NAME;
+
+#ifdef WIN32
+char const* const APP_PATH = TEST_APP_PREFIX TEST_APP_NAME ".exe";
+#else
+char const* const APP_PATH = TEST_APP_PREFIX TEST_APP_NAME;
+#endif
+
+#ifdef __APPLE__
+char const* const KNOWN_GFXR_PATH = TEST_APP_NAME "_macos.gfxr";
+#else
+char const* const KNOWN_GFXR_PATH = TEST_APP_NAME ".gfxr";
+#endif
+
+TEST(AcquiredImage, CorrectGFXR)
 {
-    gfxrecon::application::tmp_window = ANativeWindow_fromSurface(env, surface);
-    GFXRECON_LOG_INFO("Created new window %p from surface %p", gfxrecon::application::tmp_window, surface);
+    verify_gfxr(APP_RUN_DIRECTORY, APP_PATH, KNOWN_GFXR_PATH);
 }
-
-#endif // GFXR_MULTI_WINDOW_REPLAY
