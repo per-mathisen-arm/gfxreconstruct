@@ -447,6 +447,7 @@ add_subdirectory(framework)
 if (NOT BUILD_STATIC)
     add_subdirectory(layer)
 endif ()
+add_subdirectory(external/spirv-simulator)
 add_subdirectory(tools)
 
 if (GFXRECON_INCLUDE_TEST_APPS)

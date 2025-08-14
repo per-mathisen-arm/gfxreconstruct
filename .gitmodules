@@ -18,3 +18,6 @@
 	path = external/OpenXR-Docs
 	url = https://github.com/KhronosGroup/OpenXR-Docs.git
 	shallow = true
+[submodule "external/spirv-simulator"]
+	path = external/spirv-simulator
+	url = https://github.com/ARM-software/spirv-simulator
