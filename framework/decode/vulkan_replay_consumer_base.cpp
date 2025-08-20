@@ -2624,6 +2624,7 @@ void VulkanReplayConsumerBase::InitializeResourceAllocator(const VulkanPhysicalD
     functions.create_fence                                = device_table->CreateFence;
     functions.wait_for_fences                             = device_table->WaitForFences;
     functions.destroy_fence                               = device_table->DestroyFence;
+    functions.get_android_hardware_buffer_properties      = device_table->GetAndroidHardwareBufferPropertiesANDROID;
 
     if (physical_device_info->parent_info.api_version >= VK_MAKE_VERSION(1, 1, 0))
     {
