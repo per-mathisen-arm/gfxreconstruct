@@ -1705,6 +1705,29 @@ class VulkanReplayConsumerBase : public VulkanConsumer
         PFN_vkGetDeviceMemoryOpaqueCaptureAddressKHR                          func,
         const VulkanDeviceInfo*                                               device_info,
         StructPointerDecoder<Decoded_VkDeviceMemoryOpaqueCaptureAddressInfo>* pInfo);
+    VkResult OverrideCreateTensorARM(PFN_vkCreateTensorARM                                func,
+                                     VkResult                                             result,
+                                     const VulkanDeviceInfo*                              device_info,
+                                     StructPointerDecoder<Decoded_VkTensorCreateInfoARM>* pCreateInfo,
+                                     StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
+                                     HandlePointerDecoder<VkTensorARM>*                   tensor);
+
+    void OverrideDestroyTensorARM(PFN_vkDestroyTensorARM                               func,
+                                  VulkanDeviceInfo*                                    device,
+                                  VulkanTensorARMInfo*                                 tensor,
+                                  StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator);
+
+    VkResult OverrideBindTensorMemoryARM(PFN_vkBindTensorMemoryARM                                func,
+                                         VkResult                                                 result,
+                                         const VulkanDeviceInfo*                                  device_info,
+                                         uint32_t                                                 bind_info_count,
+                                         StructPointerDecoder<Decoded_VkBindTensorMemoryInfoARM>* pBindInfos);
+
+    void
+    OverrideGetTensorMemoryRequirementsARM(PFN_vkGetTensorMemoryRequirementsARM                             func,
+                                           const VulkanDeviceInfo*                                          device_info,
+                                           StructPointerDecoder<Decoded_VkTensorMemoryRequirementsInfoARM>* pInfo,
+                                           StructPointerDecoder<Decoded_VkMemoryRequirements2>* pMemoryRequirements);
 
     VkResult OverrideGetPastPresentationTimingGOOGLE(
         PFN_vkGetPastPresentationTimingGOOGLE                         func,
