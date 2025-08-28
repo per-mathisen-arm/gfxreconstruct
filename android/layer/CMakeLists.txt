@@ -78,8 +78,8 @@ if (GFXRECON_ENABLE_OPENXR)
         "name": "XR_APILAYER_LUNARG_gfxreconstruct",
         "library_path": "libVkLayer_gfxreconstruct.so",
         "api_version" : "${XR_VERSION}",
-        "implementation_version" : "${GFXRECONSTRUCT_LAYER_JSON_VERSION}",
-        "description": "GFXReconstruct Capture Layer Version ${GFXRECONSTRUCT_VERSION_STRING}",
+        "implementation_version" : "${GFXRECONSTRUCT_ARM_VERSION_INT}",
+        "description": "GFXReconstruct Capture Layer Version ${GFXRECONSTRUCT_VERSION_STRING_ARM}",
         "disable_environment" : "GFXRECON_DISABLE"
     }
 }

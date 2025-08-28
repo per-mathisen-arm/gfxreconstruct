@@ -63,6 +63,8 @@ if (GIT_SHA1)
     endif()
 endif()
 
+include(GenerateVersionARM)
+
 # Adds all the configure time information into project_version_temp.h.in
 configure_file("${GFXRECON_SOURCE_DIR}/project_version.h.in" "${CMAKE_BINARY_DIR}/project_version_temp.h.in")
 

@@ -59,8 +59,6 @@ set(GFXRECONSTRUCT_PROJECT_VERSION_PATCH 5)
 set(GFXRECON_PROJECT_VERSION_SHA1 "unknown-build-source")
 set(GFXRECONSTRUCT_PROJECT_BUILD_TYPE "${CMAKE_BUILD_TYPE}")
 
-
-
 option(BUILD_STATIC "Build static binaries for HPC clusters (will not build the tracer library)" OFF)
 
 if (NOT DEFINED HEADLESS)
@@ -75,19 +73,18 @@ set(GIT_BRANCH "")
 if (GIT_REFSPEC)
     string(REGEX REPLACE ".*/(.+)$" "\\1" GIT_BRANCH ${GIT_REFSPEC})
     string(COMPARE EQUAL ${GIT_BRANCH} "master" GIT_IS_MASTER)
-    string(COMPARE EQUAL ${GIT_BRANCH} "release-internal" GIT_IS_RELEASE)
     string(REGEX MATCH "^vulkan-sdk-[0-9]+\.[0-9]+\.[0-9]+$" GIT_IS_SDK ${GIT_BRANCH})
 
-    if (GIT_IS_MASTER OR GIT_IS_SDK OR GIT_IS_RELEASE)
+    if (GIT_IS_MASTER OR GIT_IS_SDK)
         if (GIT_TAG)
             set(GIT_BRANCH ${GIT_TAG})
         else ()
             set(GIT_BRANCH "")
-        endif()
-        if(NOT DEFINED GFXRECON_PROJECT_VERSION_DESIGNATION)
-            set(GFXRECON_PROJECT_VERSION_DESIGNATION "-release-internal")
-        endif()
-    elseif(NOT DEFINED GFXRECON_PROJECT_VERSION_DESIGNATION)
+        endif ()
+        if (NOT DEFINED GFXRECON_PROJECT_VERSION_DESIGNATION)
+            set(GFXRECON_PROJECT_VERSION_DESIGNATION "")
+        endif ()
+    elseif (NOT DEFINED GFXRECON_PROJECT_VERSION_DESIGNATION)
         set(GFXRECON_PROJECT_VERSION_DESIGNATION "-dev")
     endif ()
 elseif (GIT_TAG)
@@ -113,6 +110,8 @@ if (GIT_SHA1)
         string(CONCAT GFXRECON_PROJECT_VERSION_SHA1 ${GFXRECON_PROJECT_VERSION_SHA1} "*")
     endif ()
 endif ()
+
+include(GenerateVersionARM) 
 
 # Adds all the configure time information into project_version_temp.h.in
 configure_file("${PROJECT_SOURCE_DIR}/project_version.h.in" "${CMAKE_BINARY_DIR}/project_version_temp.h.in")

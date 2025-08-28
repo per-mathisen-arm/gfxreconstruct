@@ -95,7 +95,9 @@ class VulkanEntryBase
         return singleton_;
     }
 
-    static const VkLayerProperties kLayerProps;
+    // Returns layer properties with version string built at runtime to avoid
+    // recompiles when the version text changes.
+    static const VkLayerProperties& GetLayerProps();
 
     struct VulkanLayerExtensionProps
     {

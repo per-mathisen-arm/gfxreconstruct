@@ -129,7 +129,7 @@ VkResult LayerVulkanEntry::EnumerateDeviceExtensionProperties(VkPhysicalDevice  
 {
     VkResult result = VK_SUCCESS;
 
-    if ((pLayerName != nullptr) && (util::platform::StringCompare(pLayerName, kLayerProps.layerName) == 0))
+    if ((pLayerName != nullptr) && (util::platform::StringCompare(pLayerName, GetLayerProps().layerName) == 0))
     {
         if (pPropertyCount != nullptr)
         {
@@ -233,7 +233,7 @@ VkResult LayerVulkanEntry::EnumerateInstanceExtensionProperties(const char*     
 {
     VkResult result = VK_SUCCESS;
 
-    if ((pLayerName != nullptr) && (util::platform::StringCompare(pLayerName, kLayerProps.layerName) == 0))
+    if ((pLayerName != nullptr) && (util::platform::StringCompare(pLayerName, GetLayerProps().layerName) == 0))
     {
         if (pPropertyCount != nullptr)
         {
@@ -382,17 +382,29 @@ GFXRECON_END_NAMESPACE(vulkan_layer)
 #if ENABLE_OPENXR_SUPPORT
 GFXRECON_BEGIN_NAMESPACE(openxr_layer)
 
-const XrApiLayerProperties kLayerProps = {
-    XR_TYPE_API_LAYER_PROPERTIES,
-    nullptr,
-    GFXRECON_PROJECT_OPENXR_LAYER_NAME,
-    XR_CURRENT_API_VERSION,
-    VK_MAKE_VERSION(GFXRECON_PROJECT_VERSION_MAJOR, GFXRECON_PROJECT_VERSION_MINOR, GFXRECON_PROJECT_VERSION_PATCH),
-    GFXRECON_PROJECT_DESCRIPTION
-    " Version " GFXRECON_VERSION_STR(GFXRECON_PROJECT_VERSION_MAJOR) "." GFXRECON_VERSION_STR(
-        GFXRECON_PROJECT_VERSION_MINOR) "." GFXRECON_VERSION_STR(GFXRECON_PROJECT_VERSION_PATCH)
-        GFXRECON_PROJECT_VERSION_DESIGNATION
-};
+static const XrApiLayerProperties& GetOpenXrLayerProps()
+{
+    static XrApiLayerProperties props{};
+    static bool                 initialized = false;
+    if (!initialized)
+    {
+        props.type = XR_TYPE_API_LAYER_PROPERTIES;
+        props.next = nullptr;
+        // Copy name and description into the fixed-size arrays; ensure null termination.
+        constexpr size_t name_capacity = sizeof(props.layerName);
+        std::strncpy(props.layerName, GFXRECON_PROJECT_OPENXR_LAYER_NAME, name_capacity);
+        props.layerName[name_capacity - 1] = '\0';
+        props.layerVersion                 = GFXRECONSTRUCT_VERSION_INT_ARM;
+        props.specVersion                  = XR_CURRENT_API_VERSION;
+        const std::string description =
+            std::string(GFXRECON_PROJECT_DESCRIPTION " Version ") + GetProjectVersionString();
+        constexpr size_t desc_capacity = sizeof(props.description);
+        std::strncpy(props.description, description.c_str(), desc_capacity);
+        props.description[desc_capacity - 1] = '\0';
+        initialized                          = true;
+    }
+    return props;
+}
 
 struct OpenXrInstanceInfo
 {
@@ -453,20 +465,16 @@ XRAPI_ATTR XrResult XRAPI_CALL EnumerateApiLayerProperties(uint32_t             
 {
     XrResult result = XR_ERROR_FUNCTION_UNSUPPORTED;
 
-    if (properties == nullptr)
+    if (propertyCountOutput != nullptr)
     {
-        if (propertyCountOutput != nullptr)
-        {
-            *propertyCountOutput = 1;
-        }
+        *propertyCountOutput = 1;
     }
-    else
+
+    if (properties != nullptr && propertyCapacityInput >= 1)
     {
-        if (propertyCapacityInput >= 1)
-        {
-            util::platform::MemoryCopy(properties, sizeof(*properties), &kLayerProps, sizeof(kLayerProps));
-            *propertyCountOutput = 1;
-        }
+        const XrApiLayerProperties& props = GetOpenXrLayerProps();
+        util::platform::MemoryCopy(properties, sizeof(*properties), &props, sizeof(props));
+        result = XR_SUCCESS;
     }
 
     return result;

@@ -25,3 +25,20 @@ allprojects {
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
+
+rootProject.ext.getGfxreconVersionInfo = { buildType ->
+    def proc = ["cmake", "-P", "../cmake/GenerateVersionARM.cmake", "-BUILD_TYPE=${buildType}"].execute(null, rootProject.rootDir)
+    def output = new StringWriter()
+    proc.waitForProcessOutput(output, output)
+    def versionName = "unknown"
+    def versionCode = 1
+    output.toString().eachLine { line ->
+        if (line.contains("GFXRECON_VERSION_STRING_ARM=")) {
+            versionName = line.split("=", 2)[1].trim()
+        }
+        if (line.contains("GFXRECON_VERSION_INT_ARM=")) {
+            versionCode = line.split("=", 2)[1].trim().toInteger()
+        }
+    }
+    return [versionName, versionCode]
+}

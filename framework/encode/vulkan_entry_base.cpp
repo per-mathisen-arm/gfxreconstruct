@@ -56,15 +56,28 @@ void VulkanEntryBase::DestroySingleton()
     }
 }
 
-const VkLayerProperties VulkanEntryBase::kLayerProps = {
-    GFXRECON_PROJECT_VULKAN_LAYER_NAME,
-    VK_HEADER_VERSION_COMPLETE,
-    VK_MAKE_VERSION(GFXRECON_PROJECT_VERSION_MAJOR, GFXRECON_PROJECT_VERSION_MINOR, GFXRECON_PROJECT_VERSION_PATCH),
-    GFXRECON_PROJECT_DESCRIPTION
-    " Version " GFXRECON_VERSION_STR(GFXRECON_PROJECT_VERSION_MAJOR) "." GFXRECON_VERSION_STR(
-        GFXRECON_PROJECT_VERSION_MINOR) "." GFXRECON_VERSION_STR(GFXRECON_PROJECT_VERSION_PATCH)
-        GFXRECON_PROJECT_VERSION_DESIGNATION
-};
+const VkLayerProperties& VulkanEntryBase::GetLayerProps()
+{
+    // Build the description string at runtime so version string changes do not trigger widespread rebuilds.
+    static const std::string description =
+        std::string(GFXRECON_PROJECT_DESCRIPTION " Version ") + GetProjectVersionString();
+
+    static VkLayerProperties props{};
+    static bool              initialized = false;
+    if (!initialized)
+    {
+        constexpr size_t layer_name_capacity = sizeof(props.layerName);
+        std::strncpy(props.layerName, GFXRECON_PROJECT_VULKAN_LAYER_NAME, layer_name_capacity);
+        props.layerName[layer_name_capacity - 1] = '\0';
+        props.specVersion                        = VK_HEADER_VERSION_COMPLETE;
+        props.implementationVersion              = GFXRECONSTRUCT_VERSION_INT_ARM;
+        constexpr size_t desc_capacity           = sizeof(props.description);
+        std::strncpy(props.description, description.c_str(), desc_capacity);
+        props.description[desc_capacity - 1] = '\0';
+        initialized                          = true;
+    }
+    return props;
+}
 
 const std::vector<VulkanEntryBase::VulkanLayerExtensionProps> VulkanEntryBase::kVulkanInstanceExtensionProps = {
     { VkExtensionProperties{ VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_EXT_DEBUG_UTILS_SPEC_VERSION },
@@ -294,7 +307,8 @@ VkResult VulkanEntryBase::EnumerateInstanceLayerProperties(uint32_t* pPropertyCo
     {
         if ((pPropertyCount != nullptr) && (*pPropertyCount >= 1))
         {
-            util::platform::MemoryCopy(pProperties, sizeof(*pProperties), &kLayerProps, sizeof(kLayerProps));
+            const VkLayerProperties& props = GetLayerProps();
+            util::platform::MemoryCopy(pProperties, sizeof(*pProperties), &props, sizeof(props));
             *pPropertyCount = 1;
         }
         else

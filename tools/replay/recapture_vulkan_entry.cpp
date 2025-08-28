@@ -125,7 +125,7 @@ VkResult RecaptureVulkanEntry::EnumerateDeviceExtensionProperties(VkPhysicalDevi
 {
     VkResult result = VK_SUCCESS;
 
-    if ((pLayerName != nullptr) && (util::platform::StringCompare(pLayerName, kLayerProps.layerName) == 0))
+    if ((pLayerName != nullptr) && (util::platform::StringCompare(pLayerName, GetLayerProps().layerName) == 0))
     {
         if (pPropertyCount != nullptr)
         {
@@ -187,7 +187,7 @@ VkResult RecaptureVulkanEntry::EnumerateInstanceExtensionProperties(const char* 
 {
     VkResult result = VK_SUCCESS;
 
-    if ((pLayerName != nullptr) && (util::platform::StringCompare(pLayerName, kLayerProps.layerName) == 0))
+    if ((pLayerName != nullptr) && (util::platform::StringCompare(pLayerName, GetLayerProps().layerName) == 0))
     {
         if (pPropertyCount != nullptr)
         {
