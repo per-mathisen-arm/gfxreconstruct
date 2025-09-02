@@ -55,8 +55,8 @@ void Dx12RayTracingModifier::Process_ID3D12Resource_GetGPUVirtualAddress(const A
         iter->second.start_virtual_address = return_value;
         iter->second.end_virtual_address   = return_value + iter->second.desc.Width;
 
-        min_gpu_va_  = std::min(min_gpu_va_, return_value);
-        max_gpu_va_  = std::max(max_gpu_va_, return_value + iter->second.desc.Width);
+        min_gpu_va_ = std::min(min_gpu_va_, return_value);
+        max_gpu_va_ = std::max(max_gpu_va_, return_value + iter->second.desc.Width);
 
         gpu_virtual_address_resource_[return_value] = iter->second;
         if ((iter->second.initial_state & D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE) ==
@@ -152,8 +152,8 @@ void Dx12RayTracingModifier::Process_ID3D12DescriptorHeap_GetGPUDescriptorHandle
 
     descriptor_start_address_info_[return_value.decoded_value->ptr] = heap_info;
 
-    min_gpu_descriptor_ = std::min(min_gpu_descriptor_, (*return_value.decoded_value).ptr);
-    max_gpu_descriptor_ = std::max(max_gpu_descriptor_, (*return_value.decoded_value).ptr + descriptor_size);
+    min_gpu_descriptor_           = std::min(min_gpu_descriptor_, (*return_value.decoded_value).ptr);
+    max_gpu_descriptor_           = std::max(max_gpu_descriptor_, (*return_value.decoded_value).ptr + descriptor_size);
     min_gpu_descriptor_alignment_ = std::min(min_gpu_descriptor_alignment_, increment);
 }
 
