@@ -248,7 +248,7 @@ VkResult VulkanRebindAllocator::CreateBuffer(const VkBufferCreateInfo*    create
 
     if ((create_info != nullptr) && (buffer != nullptr) && (allocator_data != nullptr))
     {
-        result = functions_.create_buffer(device_, create_info, nullptr, buffer);
+        result = functions_.create_buffer(device_, create_info, allocator_->GetAllocationCallbacks(), buffer);
 
         if (result >= 0)
         {
@@ -314,7 +314,7 @@ VkResult VulkanRebindAllocator::CreateImage(const VkImageCreateInfo*     create_
 
     if ((create_info != nullptr) && (image != nullptr) && (allocator_data != nullptr))
     {
-        result = functions_.create_image(device_, create_info, allocation_callbacks, image);
+        result = functions_.create_image(device_, create_info, allocator_->GetAllocationCallbacks(), image);
 
         if (result >= 0)
         {
@@ -383,7 +383,7 @@ VkResult VulkanRebindAllocator::CreateVideoSession(const VkVideoSessionCreateInf
 
     if ((create_info != nullptr) && (session != nullptr) && (allocator_data != nullptr))
     {
-        result = functions_.create_video_session(device_, create_info, allocation_callbacks, session);
+        result = functions_.create_video_session(device_, create_info, allocator_->GetAllocationCallbacks(), session);
 
         if (result >= 0)
         {
@@ -612,7 +612,7 @@ void VulkanRebindAllocator::FreeMemory(VkDeviceMemory               memory,
 
         if (memory_alloc_info->ahb)
         {
-            functions_.free_memory(device_, memory_alloc_info->ahb_memory, nullptr);
+            functions_.free_memory(device_, memory_alloc_info->ahb_memory, allocator_->GetAllocationCallbacks());
         }
 
         for (const auto& entry : memory_alloc_info->original_objects)
@@ -2525,13 +2525,14 @@ VkResult VulkanRebindAllocator::CreateTensor(const VkTensorCreateInfoARM* create
                                              VkTensorARM*                 tensor,
                                              ResourceData*                allocator_data)
 {
+    GFXRECON_UNREFERENCED_PARAMETER(allocation_callbacks);
     GFXRECON_UNREFERENCED_PARAMETER(capture_id);
 
     VkResult result = VK_ERROR_INITIALIZATION_FAILED;
 
     if ((create_info != nullptr) && (tensor != nullptr) && (allocator_data != nullptr))
     {
-        result = functions_.create_tensor(device_, create_info, allocation_callbacks, tensor);
+        result = functions_.create_tensor(device_, create_info, allocator_->GetAllocationCallbacks(), tensor);
 
         if (result >= 0)
         {
@@ -2554,6 +2555,8 @@ void VulkanRebindAllocator::DestroyTensor(VkTensorARM                  tensor,
                                           const VkAllocationCallbacks* allocation_callbacks,
                                           ResourceData                 allocator_data)
 {
+    GFXRECON_UNREFERENCED_PARAMETER(allocation_callbacks);
+
     if (allocator_data != 0)
     {
         auto resource_alloc_info = reinterpret_cast<ResourceAllocInfo*>(allocator_data);
@@ -2578,7 +2581,7 @@ void VulkanRebindAllocator::DestroyTensor(VkTensorARM                  tensor,
         delete resource_alloc_info;
     }
 
-    functions_.destroy_tensor(device_, tensor, allocation_callbacks);
+    functions_.destroy_tensor(device_, tensor, allocator_->GetAllocationCallbacks());
 }
 
 VkResult VulkanRebindAllocator::BindTensorMemory(uint32_t                         bind_info_count,
