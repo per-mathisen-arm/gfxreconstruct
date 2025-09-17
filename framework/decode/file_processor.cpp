@@ -216,7 +216,7 @@ bool FileProcessor::ContinueDecoding()
 
 bool FileProcessor::ProcessFileHeader()
 {
-    bool               success = false;
+    bool success = false;
 
     ActiveFiles& active_file = active_files_[file_stack_.front().filename];
 
@@ -932,7 +932,7 @@ bool FileProcessor::ProcessMetaData(const format::BlockHeader& block_header, for
         {
             if (decoder->SupportsMetaDataId(meta_data_id))
             {
-                decoder->DispatchShaderGroupHandleCommand(header, locations.data());
+                decoder->DispatchFixShaderGroupHandleCommand(header, locations.data());
             }
         }
     }
