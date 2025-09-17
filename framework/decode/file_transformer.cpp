@@ -22,7 +22,6 @@
 
 #include "file_transformer.h"
 
-#include "format/format_arm.h"
 #include "format/format_util.h"
 #include "util/logging.h"
 #include "util/platform.h"
@@ -171,16 +170,17 @@ bool FileTransformer::Process()
 bool FileTransformer::ProcessFileHeader()
 {
     bool               success = false;
+    format::FileHeader file_header{};
 
-    if (ReadBytes(&file_header_, sizeof(file_header_)))
+    if (ReadBytes(&file_header, sizeof(file_header)))
     {
-        success = format::ValidateFileHeader(file_header_);
+        success = format::ValidateFileHeader(file_header);
 
         if (success)
         {
-            file_options_.resize(file_header_.num_options);
+            file_options_.resize(file_header.num_options);
 
-            size_t option_data_size = file_header_.num_options * sizeof(format::FileOptionPair);
+            size_t option_data_size = file_header.num_options * sizeof(format::FileOptionPair);
 
             success = ReadBytes(file_options_.data(), option_data_size);
 
@@ -205,7 +205,7 @@ bool FileTransformer::ProcessFileHeader()
             if (success)
             {
                 // Write header to output file.
-                success = WriteFileHeader(file_header_, file_options_);
+                success = WriteFileHeader(file_header, file_options_);
             }
         }
         else
@@ -588,8 +588,7 @@ bool FileTransformer::ProcessMethodCall(const format::MethodCallHeader& header, 
 
 bool FileTransformer::ProcessMetaData(const format::MetaDataHeader& meta_header)
 {
-    auto meta_data_id = format::arm::MetaDataType::GetVersionedMetaDataId(file_header_, meta_header.meta_data_id);
-    format::MetaDataType meta_data_type = format::GetMetaDataType(meta_data_id);
+    format::MetaDataType meta_data_type = format::GetMetaDataType(meta_header.meta_data_id);
 
     switch (meta_data_type)
     {
@@ -1079,7 +1078,7 @@ bool FileTransformer::ProcessMetaData(const format::MetaDataHeader& meta_header)
 
             return false;
         }
-        case format::arm::MetaDataType::kFixDescriptorDataCommand:
+        case format::MetaDataType::kFixDescriptorDataCommand:
         {
             format::FixDescriptorDataCommandHeader header;
             header.meta_header = meta_header;
@@ -1092,7 +1091,7 @@ bool FileTransformer::ProcessMetaData(const format::MetaDataHeader& meta_header)
             }
             return false;
         }
-        case format::arm::MetaDataType::kFixShadowMemoryCommand:
+        case format::MetaDataType::kFixShadowMemoryCommand:
         {
             format::FixShadowMemoryCommand header;
             header.meta_header = meta_header;
@@ -1163,7 +1162,7 @@ bool FileTransformer::ProcessMetaData(const format::MetaDataHeader& meta_header)
 
             return false;
         }
-        case format::arm::MetaDataType::kFixShaderGroupHandleCommand:
+        case format::MetaDataType::kFixShaderGroupHandleCommand:
         {
             format::FixShaderGroupHandleCommandHeader header;
             header.meta_header = meta_header;
@@ -1178,7 +1177,7 @@ bool FileTransformer::ProcessMetaData(const format::MetaDataHeader& meta_header)
 
             return false;
         }
-        case format::arm::MetaDataType::kInitTensorCommand:
+        case format::MetaDataType::kInitTensorCommand:
         {
             format::InitTensorCommandHeader header;
             header.meta_header = meta_header;
@@ -1192,7 +1191,7 @@ bool FileTransformer::ProcessMetaData(const format::MetaDataHeader& meta_header)
             }
             return false;
         }
-        case format::arm::MetaDataType::kFillMemoryResourceAddressCommand:
+        case format::MetaDataType::kFillMemoryResourceAddressCommand:
         {
             format::FillMemoryResourceAddressCommandHeader header;
             header.meta_header = meta_header;

@@ -25,7 +25,6 @@
 #include "dx12_file_optimizer.h"
 
 #include "format/format_util.h"
-#include "format/format_arm.h"
 
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 
@@ -153,7 +152,7 @@ bool Dx12FileOptimizer::AddFillMemoryResourceAddressCommand()
     format::FillMemoryResourceAddressCommandHeader ra_header;
     ra_header.meta_header.block_header.type = format::BlockType::kMetaDataBlock;
     ra_header.meta_header.meta_data_id      = format::MakeMetaDataId(
-        format::ApiFamilyId::ApiFamily_D3D12, format::arm::MetaDataType::kFillMemoryResourceAddressCommand);
+        format::ApiFamilyId::ApiFamily_D3D12, format::MetaDataType::kFillMemoryResourceAddressCommand);
     ra_header.thread_id              = 1;
     ra_header.resource_address_count = resource_addresses_iter_->second.size();
 
@@ -344,8 +343,7 @@ bool Dx12FileOptimizer::ProcessMethodCall(const format::MethodCallHeader& header
 
 bool Dx12FileOptimizer::ProcessMetaData(const format::MetaDataHeader& meta_header)
 {
-    auto meta_data_id = format::arm::MetaDataType::GetVersionedMetaDataId(file_header_, meta_header.meta_data_id);
-    format::MetaDataType meta_data_type = format::GetMetaDataType(meta_data_id);
+    format::MetaDataType meta_data_type = format::GetMetaDataType(meta_header.meta_data_id);
 
     // If needed, add a FillMemoryResourceValueCommand before the fill memory command.
     if ((meta_data_type == format::MetaDataType::kFillMemoryCommand) ||
@@ -409,7 +407,7 @@ bool Dx12FileOptimizer::ProcessMetaData(const format::MetaDataHeader& meta_heade
 
         return true;
     }
-    else if (meta_data_type == format::arm::MetaDataType::kFillMemoryResourceAddressCommand)
+    else if (meta_data_type == format::MetaDataType::kFillMemoryResourceAddressCommand)
     {
         // Total number of bytes remaining to be read for the current block.
         const uint64_t unread_bytes =
