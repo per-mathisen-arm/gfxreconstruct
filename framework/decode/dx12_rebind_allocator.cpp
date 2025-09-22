@@ -177,6 +177,13 @@ void Dx12RebindAllocator::SetReplayResourceCompatibility(const format::HandleId 
         }
     }
 
+    // prevent it creating with `CreateCommittedResource` for ALLOW_SHADER_ATOMICS flag
+    if ((allocation_desc.ExtraHeapFlags & D3D12_HEAP_FLAG_ALLOW_SHADER_ATOMICS) != 0 &&
+        (resource_desc->Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS) == 0)
+    {
+        allocation_desc.ExtraHeapFlags &= ~D3D12_HEAP_FLAG_ALLOW_SHADER_ATOMICS;
+    }
+
     // don't create resources non-resident
     allocation_desc.ExtraHeapFlags &= ~D3D12_HEAP_FLAG_CREATE_NOT_RESIDENT;
 }
