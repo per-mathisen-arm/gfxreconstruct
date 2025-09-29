@@ -509,6 +509,10 @@ VkAttachmentFeedbackLoopInfoEXT* TrackStruct(const VkAttachmentFeedbackLoopInfoE
 VkCalibratedTimestampInfoKHR* TrackStruct(const VkCalibratedTimestampInfoKHR* value, HandleUnwrapMemory* unwrap_memory);
 VkSetDescriptorBufferOffsetsInfoEXT* TrackStruct(const VkSetDescriptorBufferOffsetsInfoEXT* value, HandleUnwrapMemory* unwrap_memory);
 VkBindDescriptorBufferEmbeddedSamplersInfoEXT* TrackStruct(const VkBindDescriptorBufferEmbeddedSamplersInfoEXT* value, HandleUnwrapMemory* unwrap_memory);
+VkCopyMemoryIndirectInfoKHR* TrackStruct(const VkCopyMemoryIndirectInfoKHR* value, HandleUnwrapMemory* unwrap_memory);
+VkCopyMemoryToImageIndirectInfoKHR* TrackStruct(const VkCopyMemoryToImageIndirectInfoKHR* value, HandleUnwrapMemory* unwrap_memory);
+VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR* TrackStruct(const VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR* value, HandleUnwrapMemory* unwrap_memory);
+VkPhysicalDeviceCopyMemoryIndirectPropertiesKHR* TrackStruct(const VkPhysicalDeviceCopyMemoryIndirectPropertiesKHR* value, HandleUnwrapMemory* unwrap_memory);
 VkVideoEncodeIntraRefreshCapabilitiesKHR* TrackStruct(const VkVideoEncodeIntraRefreshCapabilitiesKHR* value, HandleUnwrapMemory* unwrap_memory);
 VkVideoEncodeSessionIntraRefreshCreateInfoKHR* TrackStruct(const VkVideoEncodeSessionIntraRefreshCreateInfoKHR* value, HandleUnwrapMemory* unwrap_memory);
 VkVideoEncodeIntraRefreshInfoKHR* TrackStruct(const VkVideoEncodeIntraRefreshInfoKHR* value, HandleUnwrapMemory* unwrap_memory);
@@ -804,6 +808,10 @@ VkScreenSurfaceCreateInfoQNX* TrackStruct(const VkScreenSurfaceCreateInfoQNX* va
 VkPhysicalDeviceColorWriteEnableFeaturesEXT* TrackStruct(const VkPhysicalDeviceColorWriteEnableFeaturesEXT* value, HandleUnwrapMemory* unwrap_memory);
 VkPipelineColorWriteCreateInfoEXT* TrackStruct(const VkPipelineColorWriteCreateInfoEXT* value, HandleUnwrapMemory* unwrap_memory);
 VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT* TrackStruct(const VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT* value, HandleUnwrapMemory* unwrap_memory);
+VkPhysicalDeviceVideoEncodeRgbConversionFeaturesVALVE* TrackStruct(const VkPhysicalDeviceVideoEncodeRgbConversionFeaturesVALVE* value, HandleUnwrapMemory* unwrap_memory);
+VkVideoEncodeRgbConversionCapabilitiesVALVE* TrackStruct(const VkVideoEncodeRgbConversionCapabilitiesVALVE* value, HandleUnwrapMemory* unwrap_memory);
+VkVideoEncodeProfileRgbConversionInfoVALVE* TrackStruct(const VkVideoEncodeProfileRgbConversionInfoVALVE* value, HandleUnwrapMemory* unwrap_memory);
+VkVideoEncodeSessionRgbConversionCreateInfoVALVE* TrackStruct(const VkVideoEncodeSessionRgbConversionCreateInfoVALVE* value, HandleUnwrapMemory* unwrap_memory);
 VkPhysicalDeviceImageViewMinLodFeaturesEXT* TrackStruct(const VkPhysicalDeviceImageViewMinLodFeaturesEXT* value, HandleUnwrapMemory* unwrap_memory);
 VkImageViewMinLodCreateInfoEXT* TrackStruct(const VkImageViewMinLodCreateInfoEXT* value, HandleUnwrapMemory* unwrap_memory);
 VkPhysicalDeviceMultiDrawFeaturesEXT* TrackStruct(const VkPhysicalDeviceMultiDrawFeaturesEXT* value, HandleUnwrapMemory* unwrap_memory);

@@ -318,6 +318,9 @@ struct VulkanPhysicalDeviceInfo : public VulkanObjectInfo<VkPhysicalDevice>
 
     // When Non-null, the GetVkObject will recur on the alias Id
     format::HandleId vulkan_alias{ format::kNullHandleId };
+
+    // keep track of queried surface-formats
+    std::optional<std::vector<VkSurfaceFormatKHR>> surface_formats;
 };
 
 struct VulkanDeviceInfo : public VulkanObjectInfo<VkDevice>

@@ -7423,6 +7423,70 @@ VkBindDescriptorBufferEmbeddedSamplersInfoEXT* TrackStruct(const VkBindDescripto
     return unwrapped_struct;
 }
 
+VkCopyMemoryIndirectInfoKHR* TrackStruct(const VkCopyMemoryIndirectInfoKHR* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkCopyMemoryIndirectInfoKHR* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkCopyMemoryToImageIndirectInfoKHR* TrackStruct(const VkCopyMemoryToImageIndirectInfoKHR* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkCopyMemoryToImageIndirectInfoKHR* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+    if (unwrapped_struct->pImageSubresources)
+    {
+        unwrapped_struct->pImageSubresources = vulkan_wrappers::MakeUnwrapStructs(unwrapped_struct->pImageSubresources, unwrapped_struct->copyCount, unwrap_memory);
+    }
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR* TrackStruct(const VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkPhysicalDeviceCopyMemoryIndirectPropertiesKHR* TrackStruct(const VkPhysicalDeviceCopyMemoryIndirectPropertiesKHR* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkPhysicalDeviceCopyMemoryIndirectPropertiesKHR* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
 VkVideoEncodeIntraRefreshCapabilitiesKHR* TrackStruct(const VkVideoEncodeIntraRefreshCapabilitiesKHR* value, HandleUnwrapMemory* unwrap_memory)
 {
     if (value == nullptr)
@@ -12045,6 +12109,66 @@ VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT* TrackStruct(const VkPhysica
     }
 
     VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkPhysicalDeviceVideoEncodeRgbConversionFeaturesVALVE* TrackStruct(const VkPhysicalDeviceVideoEncodeRgbConversionFeaturesVALVE* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkPhysicalDeviceVideoEncodeRgbConversionFeaturesVALVE* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkVideoEncodeRgbConversionCapabilitiesVALVE* TrackStruct(const VkVideoEncodeRgbConversionCapabilitiesVALVE* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkVideoEncodeRgbConversionCapabilitiesVALVE* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkVideoEncodeProfileRgbConversionInfoVALVE* TrackStruct(const VkVideoEncodeProfileRgbConversionInfoVALVE* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkVideoEncodeProfileRgbConversionInfoVALVE* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkVideoEncodeSessionRgbConversionCreateInfoVALVE* TrackStruct(const VkVideoEncodeSessionRgbConversionCreateInfoVALVE* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkVideoEncodeSessionRgbConversionCreateInfoVALVE* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
 
 
     unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
@@ -16972,6 +17096,14 @@ void* TrackStruct(const void* value, HandleUnwrapMemory* unwrap_memory)
             return TrackStruct(reinterpret_cast<const VkSetDescriptorBufferOffsetsInfoEXT*>(value), unwrap_memory);
         case VK_STRUCTURE_TYPE_BIND_DESCRIPTOR_BUFFER_EMBEDDED_SAMPLERS_INFO_EXT:
             return TrackStruct(reinterpret_cast<const VkBindDescriptorBufferEmbeddedSamplersInfoEXT*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_COPY_MEMORY_INDIRECT_INFO_KHR:
+            return TrackStruct(reinterpret_cast<const VkCopyMemoryIndirectInfoKHR*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_COPY_MEMORY_TO_IMAGE_INDIRECT_INFO_KHR:
+            return TrackStruct(reinterpret_cast<const VkCopyMemoryToImageIndirectInfoKHR*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COPY_MEMORY_INDIRECT_FEATURES_KHR:
+            return TrackStruct(reinterpret_cast<const VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COPY_MEMORY_INDIRECT_PROPERTIES_KHR:
+            return TrackStruct(reinterpret_cast<const VkPhysicalDeviceCopyMemoryIndirectPropertiesKHR*>(value), unwrap_memory);
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_INTRA_REFRESH_CAPABILITIES_KHR:
             return TrackStruct(reinterpret_cast<const VkVideoEncodeIntraRefreshCapabilitiesKHR*>(value), unwrap_memory);
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_SESSION_INTRA_REFRESH_CREATE_INFO_KHR:
@@ -17562,6 +17694,14 @@ void* TrackStruct(const void* value, HandleUnwrapMemory* unwrap_memory)
             return TrackStruct(reinterpret_cast<const VkPipelineColorWriteCreateInfoEXT*>(value), unwrap_memory);
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVES_GENERATED_QUERY_FEATURES_EXT:
             return TrackStruct(reinterpret_cast<const VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_ENCODE_RGB_CONVERSION_FEATURES_VALVE:
+            return TrackStruct(reinterpret_cast<const VkPhysicalDeviceVideoEncodeRgbConversionFeaturesVALVE*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_RGB_CONVERSION_CAPABILITIES_VALVE:
+            return TrackStruct(reinterpret_cast<const VkVideoEncodeRgbConversionCapabilitiesVALVE*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_PROFILE_RGB_CONVERSION_INFO_VALVE:
+            return TrackStruct(reinterpret_cast<const VkVideoEncodeProfileRgbConversionInfoVALVE*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_SESSION_RGB_CONVERSION_CREATE_INFO_VALVE:
+            return TrackStruct(reinterpret_cast<const VkVideoEncodeSessionRgbConversionCreateInfoVALVE*>(value), unwrap_memory);
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_VIEW_MIN_LOD_FEATURES_EXT:
             return TrackStruct(reinterpret_cast<const VkPhysicalDeviceImageViewMinLodFeaturesEXT*>(value), unwrap_memory);
         case VK_STRUCTURE_TYPE_IMAGE_VIEW_MIN_LOD_CREATE_INFO_EXT:

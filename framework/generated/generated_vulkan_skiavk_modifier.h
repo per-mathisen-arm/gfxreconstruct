@@ -2620,6 +2620,15 @@ class VulkanSkiaModifier : public util::VulkanModifierBase
         const ApiCallInfo&                          call_info,
         format::HandleId                            commandBuffer,
         StructPointerDecoder<Decoded_VkBindDescriptorBufferEmbeddedSamplersInfoEXT>* pBindDescriptorBufferEmbeddedSamplersInfo){ CheckSkiavk(commandBuffer);}
+    virtual void Process_vkCmdCopyMemoryIndirectKHR(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        StructPointerDecoder<Decoded_VkCopyMemoryIndirectInfoKHR>* pCopyMemoryIndirectInfo){ CheckSkiavk(commandBuffer);}
+
+    virtual void Process_vkCmdCopyMemoryToImageIndirectKHR(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        StructPointerDecoder<Decoded_VkCopyMemoryToImageIndirectInfoKHR>* pCopyMemoryToImageIndirectInfo){ CheckSkiavk(commandBuffer);}
     virtual void Process_vkFrameBoundaryANDROID(
         const ApiCallInfo&                          call_info,
         format::HandleId                            device,
