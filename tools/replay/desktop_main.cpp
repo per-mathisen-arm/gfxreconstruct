@@ -174,6 +174,7 @@ int main(int argc, const char** argv)
 
             uint32_t measurement_start_frame = 0;
             uint32_t measurement_end_frame   = 0;
+            bool     has_mfr                 = false;
 
             bool        quit_after_measurement_frame_range = false;
             bool        flush_measurement_frame_range      = false;
@@ -183,7 +184,7 @@ int main(int argc, const char** argv)
 
             if (vulkan_replay_options.enable_vulkan)
             {
-                GetMeasurementFrameRange(arg_parser, measurement_start_frame, measurement_end_frame);
+                has_mfr = GetMeasurementFrameRange(arg_parser, measurement_start_frame, measurement_end_frame);
                 GetMeasurementFilename(arg_parser, measurement_file_name);
                 quit_after_measurement_frame_range = vulkan_replay_options.quit_after_measurement_frame_range;
                 flush_measurement_frame_range      = vulkan_replay_options.flush_measurement_frame_range;
@@ -198,8 +199,12 @@ int main(int argc, const char** argv)
                 }
             }
 
+            // Arm specific
+            has_mfr = true;
+
             gfxrecon::graphics::FpsInfo fps_info(static_cast<uint64_t>(measurement_start_frame),
                                                  static_cast<uint64_t>(measurement_end_frame),
+                                                 has_mfr,
                                                  quit_after_measurement_frame_range,
                                                  flush_measurement_frame_range,
                                                  flush_inside_measurement_range,

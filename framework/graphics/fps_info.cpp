@@ -36,6 +36,7 @@ GFXRECON_BEGIN_NAMESPACE(graphics)
 
 FpsInfo::FpsInfo(uint64_t               measurement_start_frame,
                  uint64_t               measurement_end_frame,
+                 bool                   has_measurement_range,
                  bool                   quit_after_range,
                  bool                   flush_measurement_range,
                  bool                   flush_inside_measurement_range,
@@ -46,17 +47,22 @@ FpsInfo::FpsInfo(uint64_t               measurement_start_frame,
     start_time_(0),
     replay_start_time_(0), replay_end_time_(0), measurement_start_time_(0), measurement_end_time_(0),
     measurement_start_boot_time_(0), measurement_end_boot_time_(0), measurement_start_process_time_(0),
-    measurement_end_process_time_(0), replay_start_frame_(0), measurement_start_frame_(measurement_start_frame),
-    measurement_end_frame_(measurement_end_frame), quit_after_range_(quit_after_range),
-    flush_measurement_range_(flush_measurement_range), flush_inside_measurement_range_(flush_inside_measurement_range),
-    started_measurement_(false), ended_measurement_(false), preload_measurement_range_(preload_measurement_range),
+    measurement_end_process_time_(0), has_measurement_range_(has_measurement_range), replay_start_frame_(0),
+    measurement_start_frame_(measurement_start_frame), measurement_end_frame_(measurement_end_frame),
+    quit_after_range_(quit_after_range), flush_measurement_range_(flush_measurement_range),
+    flush_inside_measurement_range_(flush_inside_measurement_range), started_measurement_(false),
+    ended_measurement_(false), preload_measurement_range_(preload_measurement_range),
     measurement_file_name_(measurement_file_name), frame_start_time_(0), frame_durations_(),
     quit_after_frame_(quit_after_frame), quit_frame_(quit_frame)
 {
-    if (util::filepath::IsFile(measurement_file_name_))
+    if (has_measurement_range_)
     {
-        GFXRECON_LOG_WARNING("Removing existing file at measurement file location: %s", measurement_file_name_.c_str());
-        std::remove(measurement_file_name_.c_str());
+        if (util::filepath::IsFile(measurement_file_name_))
+        {
+            GFXRECON_LOG_WARNING("Removing existing file at measurement file location: %s",
+                                 measurement_file_name_.c_str());
+            std::remove(measurement_file_name_.c_str());
+        }
     }
 }
 
@@ -164,49 +170,52 @@ void FpsInfo::LogMeasurements()
                            measurement_end_frame_);
 
     // Save measurements to file
-
-    nlohmann::json file_content = { { "frame_range",
-                                      { { "start_frame", measurement_start_frame_ },
-                                        { "end_frame", measurement_end_frame_ },
-                                        { "frame_count", measured_frames },
-                                        { "start_time_boot", measurement_start_boot_time_ },
-                                        { "start_time_process", measurement_start_process_time_ },
-                                        { "start_time_monotonic", start_time_monotonic },
-                                        { "end_time_boot", measurement_end_boot_time_ },
-                                        { "end_time_process", measurement_end_process_time_ },
-                                        { "end_time_monotonic", end_time_monotonic },
-                                        { "duration", measured_time },
-                                        { "fps", measured_fps },
-                                        { "frame_durations", frame_durations_ } } } };
-
-    FILE*   file_pointer = nullptr;
-    int32_t result       = util::platform::FileOpen(&file_pointer, measurement_file_name_.c_str(), "w");
-    if (result == 0)
+    if (has_measurement_range_)
     {
-        const std::string json_string = file_content.dump(util::kJsonIndentWidth);
+        nlohmann::json file_content = { { "frame_range",
+                                          { { "start_frame", measurement_start_frame_ },
+                                            { "end_frame", measurement_end_frame_ },
+                                            { "frame_count", measured_frames },
+                                            { "start_time_boot", measurement_start_boot_time_ },
+                                            { "start_time_process", measurement_start_process_time_ },
+                                            { "start_time_monotonic", start_time_monotonic },
+                                            { "end_time_boot", measurement_end_boot_time_ },
+                                            { "end_time_process", measurement_end_process_time_ },
+                                            { "end_time_monotonic", end_time_monotonic },
+                                            { "duration", measured_time },
+                                            { "fps", measured_fps },
+                                            { "frame_durations", frame_durations_ } } } };
 
-        const bool success = util::platform::FileWrite(json_string.data(), json_string.size(), file_pointer);
-        util::platform::FileClose(file_pointer);
-
-        // It either writes a fully valid file, or it doesn't write anything !
-        if (!success)
+        FILE*   file_pointer = nullptr;
+        int32_t result       = util::platform::FileOpen(&file_pointer, measurement_file_name_.c_str(), "w");
+        if (result == 0)
         {
-            GFXRECON_LOG_ERROR("Failed to write to measurements file '%s'.", measurement_file_name_.c_str());
+            const std::string json_string = file_content.dump(util::kJsonIndentWidth);
 
-            // Try to delete the partial file from disk using <cstdio>
-            const int remove_result = std::remove(measurement_file_name_.c_str());
-            if (remove_result != 0)
+            const bool success = util::platform::FileWrite(json_string.data(), json_string.size(), file_pointer);
+            util::platform::FileClose(file_pointer);
+
+            // It either writes a fully valid file, or it doesn't write anything !
+            if (!success)
             {
-                GFXRECON_LOG_ERROR("Failed to remove measurements file '%s' (Error %i).",
-                                   measurement_file_name_.c_str(),
-                                   remove_result);
+                GFXRECON_LOG_ERROR("Failed to write to measurements file '%s'.", measurement_file_name_.c_str());
+
+                // Try to delete the partial file from disk using <cstdio>
+                const int remove_result = std::remove(measurement_file_name_.c_str());
+                if (remove_result != 0)
+                {
+                    GFXRECON_LOG_ERROR("Failed to remove measurements file '%s' (Error %i).",
+                                       measurement_file_name_.c_str(),
+                                       remove_result);
+                }
             }
         }
-    }
-    else
-    {
-        GFXRECON_LOG_ERROR("Failed to open measurements file '%s' (Error %i).", measurement_file_name_.c_str(), result);
-        GFXRECON_LOG_ERROR("%s", std::strerror(result));
+        else
+        {
+            GFXRECON_LOG_ERROR(
+                "Failed to open measurements file '%s' (Error %i).", measurement_file_name_.c_str(), result);
+            GFXRECON_LOG_ERROR("%s", std::strerror(result));
+        }
     }
 }
 

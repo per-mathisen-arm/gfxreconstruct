@@ -38,6 +38,7 @@ class FpsInfo
   public:
     explicit FpsInfo(uint64_t         measurement_start_frame        = 1,
                      uint64_t         measurement_end_frame          = std::numeric_limits<uint64_t>::max(),
+                     bool             has_measurement_range          = false,
                      bool             quit_after_range               = false,
                      bool             flush_measurement_range        = false,
                      bool             flush_inside_measurement_range = false,
@@ -77,6 +78,8 @@ class FpsInfo
 
     uint64_t measurement_start_frame_;
     uint64_t measurement_end_frame_;
+
+    bool has_measurement_range_;
 
     bool quit_after_range_;
     bool flush_measurement_range_;

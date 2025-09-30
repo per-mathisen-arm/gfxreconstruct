@@ -69,8 +69,8 @@ const char kLayerProperty[]      = "debug.vulkan.layers";
 
 const int32_t kSwipeDistance = 200;
 
-void        ProcessAppCmd(struct android_app* app, int32_t cmd);
-int32_t     ProcessInputEvent(struct android_app* app, AInputEvent* event);
+void    ProcessAppCmd(struct android_app* app, int32_t cmd);
+int32_t ProcessInputEvent(struct android_app* app, AInputEvent* event);
 
 static std::unique_ptr<gfxrecon::decode::FileProcessor> file_processor;
 
@@ -196,7 +196,7 @@ void android_main(struct android_app* app)
 
                 uint32_t measurement_start_frame;
                 uint32_t measurement_end_frame;
-                GetMeasurementFrameRange(arg_parser, measurement_start_frame, measurement_end_frame);
+                bool     has_mfr = GetMeasurementFrameRange(arg_parser, measurement_start_frame, measurement_end_frame);
 
                 std::string measurement_file_name;
                 GetMeasurementFilename(arg_parser, measurement_file_name);
@@ -210,8 +210,12 @@ void android_main(struct android_app* app)
                     GetQuitAfterFrame(arg_parser, quit_frame);
                 }
 
+                // Arm specific
+                has_mfr = true;
+
                 gfxrecon::graphics::FpsInfo fps_info(static_cast<uint64_t>(measurement_start_frame),
                                                      static_cast<uint64_t>(measurement_end_frame),
+                                                     has_mfr,
                                                      replay_options.quit_after_measurement_frame_range,
                                                      replay_options.flush_measurement_frame_range,
                                                      replay_options.flush_inside_measurement_range,
