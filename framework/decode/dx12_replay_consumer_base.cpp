@@ -125,7 +125,7 @@ Dx12ReplayConsumerBase::Dx12ReplayConsumerBase(std::shared_ptr<application::Appl
     options_(options), current_message_length_(0), info_queue_(nullptr), resource_data_util_(nullptr),
     frame_buffer_renderer_(nullptr), debug_layer_enabled_(false), set_auto_breadcrumbs_enablement_(false),
     set_breadcrumb_context_enablement_(false), set_page_fault_enablement_(false), loading_trim_state_(false),
-    fps_info_(nullptr), unique_proxy_window_id_counter_(0), frame_end_marker_count_(0)
+    unique_proxy_window_id_counter_(0), frame_end_marker_count_(0)
 {
     assert(options_.create_resource_allocator != nullptr);
 
@@ -335,10 +335,6 @@ void Dx12ReplayConsumerBase::ProcessStateEndMarker(uint64_t frame_number)
 {
     GFXRECON_UNREFERENCED_PARAMETER(frame_number);
     loading_trim_state_ = false;
-    if (fps_info_ != nullptr)
-    {
-        fps_info_->ProcessStateEndMarker(frame_number);
-    }
 
     // The accel_struct_builder_ is no longer needed after the trim state load is complete.
     accel_struct_builder_ = nullptr;
