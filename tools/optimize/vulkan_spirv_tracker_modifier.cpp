@@ -1903,7 +1903,7 @@ void VulkanSpirvTrackModifier::executeDispatchDraw(format::HandleId commandBuffe
         {
             continue;
         }
-        SPIRVSimulator::InputData input;
+        SPIRVSimulator::SimulationData input;
 
         input.entry_point_op_name = stage.pName;
 
@@ -1972,13 +1972,13 @@ void VulkanSpirvTrackModifier::executeDispatchDraw(format::HandleId commandBuffe
                           util::ToString<VkShaderStageFlagBits>(stage.stageFlagBit).c_str());
         SPIRVSimulator::SPIRVSimulator simulator(module_info.pCode, input, true);
         simulator.Run();
-        outputSimulator(simulator);
+        outputSimulator(input);
     }
 }
 
-void VulkanSpirvTrackModifier::outputSimulator(const SPIRVSimulator::SPIRVSimulator& simulator)
+void VulkanSpirvTrackModifier::outputSimulator(const SPIRVSimulator::SimulationData& data)
 {
-    auto physical_address_data = simulator.GetPhysicalAddressData();
+    auto physical_address_data = data.physical_address_data;
 
     GFXRECON_LOG_INFO("     >>>>>>>>>>>>> Pointers to pbuffers: >>>>>>>>>>>>>");
     for (const auto& pointer_t : physical_address_data)

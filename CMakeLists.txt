@@ -429,6 +429,8 @@ target_include_directories(vulkan_memory_allocator SYSTEM INTERFACE ${PROJECT_SO
 
 if(MSVC)
     add_subdirectory(external/D3D12MemoryAllocator)
+else()
+    add_subdirectory(external/spirv-simulator)
 endif()
 
 # SPIRV-Reflect included as submodule -> libspirv-reflect-static.a
@@ -447,7 +449,6 @@ add_subdirectory(framework)
 if (NOT BUILD_STATIC)
     add_subdirectory(layer)
 endif ()
-add_subdirectory(external/spirv-simulator)
 add_subdirectory(tools)
 
 if (GFXRECON_INCLUDE_TEST_APPS)

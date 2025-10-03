@@ -413,7 +413,7 @@ class VulkanSpirvTrackModifier : public util::VulkanModifierBase
 
     void executeCommandBuffer(format::HandleId commandBuffer_id);
     void executeDispatchDraw(format::HandleId commandBuffer_id, VkPipelineBindPoint bindPoint);
-    void outputSimulator(const SPIRVSimulator::SPIRVSimulator& simulator);
+    void outputSimulator(const SPIRVSimulator::SimulationData& data);
 
     void resetRecording(format::HandleId commandBuffer);
 
