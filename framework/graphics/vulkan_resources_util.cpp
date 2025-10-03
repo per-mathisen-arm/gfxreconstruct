@@ -108,20 +108,98 @@ void GetFormatAspects(VkFormat format, std::vector<VkImageAspectFlagBits>* aspec
     }
 }
 
-VkImageAspectFlags GetFormatAspectMask(VkFormat format)
+void AspectFlagsToFlagBits(VkImageAspectFlags aspect_mask, std::vector<VkImageAspectFlagBits>& aspects)
 {
+    if ((aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) == VK_IMAGE_ASPECT_COLOR_BIT)
+    {
+        aspects.push_back(VK_IMAGE_ASPECT_COLOR_BIT);
+    }
+
+    if ((aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) == VK_IMAGE_ASPECT_DEPTH_BIT)
+    {
+        aspects.push_back(VK_IMAGE_ASPECT_DEPTH_BIT);
+    }
+
+    if ((aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) == VK_IMAGE_ASPECT_STENCIL_BIT)
+    {
+        aspects.push_back(VK_IMAGE_ASPECT_STENCIL_BIT);
+    }
+
+    if ((aspect_mask & VK_IMAGE_ASPECT_METADATA_BIT) == VK_IMAGE_ASPECT_METADATA_BIT)
+    {
+        aspects.push_back(VK_IMAGE_ASPECT_METADATA_BIT);
+    }
+
+    if ((aspect_mask & VK_IMAGE_ASPECT_PLANE_0_BIT) == VK_IMAGE_ASPECT_PLANE_0_BIT)
+    {
+        aspects.push_back(VK_IMAGE_ASPECT_PLANE_0_BIT);
+    }
+
+    if ((aspect_mask & VK_IMAGE_ASPECT_PLANE_1_BIT) == VK_IMAGE_ASPECT_PLANE_1_BIT)
+    {
+        aspects.push_back(VK_IMAGE_ASPECT_PLANE_1_BIT);
+    }
+
+    if ((aspect_mask & VK_IMAGE_ASPECT_PLANE_2_BIT) == VK_IMAGE_ASPECT_PLANE_2_BIT)
+    {
+        aspects.push_back(VK_IMAGE_ASPECT_PLANE_2_BIT);
+    }
+
+    if ((aspect_mask & VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT) == VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT)
+    {
+        aspects.push_back(VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT);
+    }
+
+    if ((aspect_mask & VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT) == VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT)
+    {
+        aspects.push_back(VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT);
+    }
+
+    if ((aspect_mask & VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT) == VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT)
+    {
+        aspects.push_back(VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT);
+    }
+
+    if ((aspect_mask & VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT) == VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT)
+    {
+        aspects.push_back(VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT);
+    }
+
+    if ((aspect_mask & VK_IMAGE_ASPECT_PLANE_0_BIT_KHR) == VK_IMAGE_ASPECT_PLANE_0_BIT_KHR)
+    {
+        aspects.push_back(VK_IMAGE_ASPECT_PLANE_0_BIT_KHR);
+    }
+
+    if ((aspect_mask & VK_IMAGE_ASPECT_PLANE_1_BIT_KHR) == VK_IMAGE_ASPECT_PLANE_1_BIT_KHR)
+    {
+        aspects.push_back(VK_IMAGE_ASPECT_PLANE_1_BIT_KHR);
+    }
+
+    if ((aspect_mask & VK_IMAGE_ASPECT_PLANE_2_BIT_KHR) == VK_IMAGE_ASPECT_PLANE_2_BIT_KHR)
+    {
+        aspects.push_back(VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
+    }
+}
+
+VkImageAspectFlags GetFormatAspects(VkFormat format)
+{
+    VkImageAspectFlags aspects = VK_IMAGE_ASPECT_NONE;
+
     switch (format)
     {
         case VK_FORMAT_D16_UNORM_S8_UINT:
         case VK_FORMAT_D24_UNORM_S8_UINT:
         case VK_FORMAT_D32_SFLOAT_S8_UINT:
-            return VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+            aspects = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+            break;
         case VK_FORMAT_D16_UNORM:
         case VK_FORMAT_X8_D24_UNORM_PACK32:
         case VK_FORMAT_D32_SFLOAT:
-            return VK_IMAGE_ASPECT_DEPTH_BIT;
+            aspects = VK_IMAGE_ASPECT_DEPTH_BIT;
+            break;
         case VK_FORMAT_S8_UINT:
-            return VK_IMAGE_ASPECT_STENCIL_BIT;
+            aspects = VK_IMAGE_ASPECT_STENCIL_BIT;
+            break;
         case VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM:
         case VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM:
         case VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM:
@@ -134,7 +212,8 @@ VkImageAspectFlags GetFormatAspectMask(VkFormat format)
         case VK_FORMAT_G16_B16_R16_3PLANE_420_UNORM:
         case VK_FORMAT_G16_B16_R16_3PLANE_422_UNORM:
         case VK_FORMAT_G16_B16_R16_3PLANE_444_UNORM:
-            return VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT;
+            aspects = VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT;
+            break;
         case VK_FORMAT_G8_B8R8_2PLANE_420_UNORM:
         case VK_FORMAT_G8_B8R8_2PLANE_422_UNORM:
         case VK_FORMAT_G8_B8R8_2PLANE_444_UNORM_EXT:
@@ -147,10 +226,14 @@ VkImageAspectFlags GetFormatAspectMask(VkFormat format)
         case VK_FORMAT_G16_B16R16_2PLANE_420_UNORM:
         case VK_FORMAT_G16_B16R16_2PLANE_422_UNORM:
         case VK_FORMAT_G16_B16R16_2PLANE_444_UNORM_EXT:
-            return VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT;
+            aspects = VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT;
+            break;
         default:
-            return VK_IMAGE_ASPECT_COLOR_BIT;
+            aspects = VK_IMAGE_ASPECT_COLOR_BIT;
+            break;
     }
+
+    return aspects;
 }
 
 VkFormat GetImageAspectFormat(VkFormat format, VkImageAspectFlagBits aspect)
@@ -1704,7 +1787,7 @@ VkResult VulkanResourcesUtil::ResolveImage(VkCommandBuffer   command_buffer,
 
         if (command_buffer != VK_NULL_HANDLE)
         {
-            VkImageAspectFlags aspect_mask = GetFormatAspectMask(format);
+            VkImageAspectFlags aspect_mask = GetFormatAspects(format);
 
             uint32_t             num_barriers = 1;
             VkImageMemoryBarrier memory_barriers[2];
@@ -2025,7 +2108,7 @@ VkResult VulkanResourcesUtil::ReadImageResources(const std::vector<ImageResource
             {
                 // Depth and stencil aspects need to be transitioned together, so get full aspect
                 // mask for image.
-                tmp_data[i].transition_aspect = GetFormatAspectMask(img.format);
+                tmp_data[i].transition_aspect = GetFormatAspects(img.format);
             }
 
             if (img.sample_count == VK_SAMPLE_COUNT_1_BIT && img.layout != VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)

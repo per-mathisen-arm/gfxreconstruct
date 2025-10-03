@@ -321,7 +321,9 @@ void GetFormatAspects(VkFormat                            format,
                       std::vector<VkImageAspectFlagBits>* aspects,
                       bool*                               combined_depth_stencil = nullptr);
 
-VkImageAspectFlags GetFormatAspectMask(VkFormat format);
+void AspectFlagsToFlagBits(VkImageAspectFlags aspect_mask, std::vector<VkImageAspectFlagBits>& aspects);
+
+VkImageAspectFlags GetFormatAspects(VkFormat format);
 
 VkFormat GetImageAspectFormat(VkFormat format, VkImageAspectFlagBits aspect);
 
