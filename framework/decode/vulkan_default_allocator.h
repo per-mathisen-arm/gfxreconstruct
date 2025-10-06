@@ -334,7 +334,7 @@ class VulkanDefaultAllocator : public VulkanResourceAllocator
 
     virtual bool SupportsExternalMemory() override { return true; }
 
-    virtual size_t GetBufferSize(VulkanResourceAllocator::ResourceData alloc_data) override
+    virtual size_t GetBufferSize(VulkanResourceAllocator::ResourceData alloc_data) const override
     {
         ResourceAllocInfo* alloc_info = reinterpret_cast<ResourceAllocInfo*>(alloc_data);
         GFXRECON_ASSERT(alloc_info != nullptr);

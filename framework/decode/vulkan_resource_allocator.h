@@ -380,7 +380,7 @@ class VulkanResourceAllocator
 
     virtual bool SupportsExternalMemory() = 0;
 
-    virtual size_t GetBufferSize(VulkanResourceAllocator::ResourceData alloc_data) { return 0; }
+    virtual size_t GetBufferSize(VulkanResourceAllocator::ResourceData alloc_data) const { return 0; }
 
     virtual bool SupportBindVideoSessionMemory() = 0;
 

@@ -447,7 +447,7 @@ class VulkanResourceAllocatorMock : public gfxrecon::decode::VulkanResourceAlloc
     virtual bool SupportsExternalMemory() { return true; }
 
     std::function<size_t(VulkanResourceAllocator::ResourceData)> OnGetBufferSize;
-    virtual size_t GetBufferSize(VulkanResourceAllocator::ResourceData alloc_data)
+    virtual size_t GetBufferSize(VulkanResourceAllocator::ResourceData alloc_data) const
     {
         return OnGetBufferSize(alloc_data);
     }
