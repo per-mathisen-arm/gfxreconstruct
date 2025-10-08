@@ -931,18 +931,15 @@ VkResult VulkanVirtualSwapchain::QueuePresentKHR(VkResult                       
                                      1 };
         VkImageCopy image_copy   = { subresource, offset, subresource, offset, image_extent };
 
-        if (!swapchain_options_.virtual_swapchain_skip_blit)
-        {
-            // NOTE: vkCmdCopyImage works on Queues of types including Graphics, Compute
-            //       and Transfer.  So should work on any queues we get a vkQueuePresentKHR from.
-            device_table_->CmdCopyImage(command_buffer,
-                                        virtual_image.image,
-                                        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                                        replay_image,
-                                        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                        1,
-                                        &image_copy);
-        }
+        // NOTE: vkCmdCopyImage works on Queues of types including Graphics, Compute
+        //       and Transfer.  So should work on any queues we get a vkQueuePresentKHR from.
+        device_table_->CmdCopyImage(command_buffer,
+                                    virtual_image.image,
+                                    VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                    replay_image,
+                                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                    1,
+                                    &image_copy);
 
         final_barrier_virtual_image.image                         = virtual_image.image;
         final_barrier_virtual_image.subresourceRange.layerCount   = swapchain_info->image_array_layers;
