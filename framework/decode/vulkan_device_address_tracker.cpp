@@ -118,13 +118,10 @@ void VulkanDeviceAddressTracker::RemoveAccelerationStructure(
     if (acceleration_structure_info != nullptr)
     {
         acceleration_structure_handles_.erase(acceleration_structure_info->handle);
-
         auto* buffer_info = GetBufferByHandle(acceleration_structure_info->buffer);
 
-        // associated buffer has already queried a device-address, meaning we also got the AS device-address
         if (buffer_info != nullptr)
         {
-            // if not already present, keep track of AS<->VkBuffer association
             buffer_info->acceleration_structures[acceleration_structure_info->capture_address].erase(
                 acceleration_structure_info);
         }
@@ -228,21 +225,17 @@ VulkanDeviceAddressTracker::GetShadowBufferInfo(VkDeviceAddress device_address) 
 {
     if (!shadow_address_map_.empty())
     {
-        // find first address equal or greater
         auto address_it = shadow_address_map_.lower_bound(device_address);
 
         if (address_it == shadow_address_map_.end() || address_it->first > device_address)
         {
-            // not found
             if (address_it == shadow_address_map_.begin())
             {
                 return nullptr;
             }
 
-            // decrement iterator, now pointing to the first VkDeviceAddress that is lower than device_address
             address_it--;
         }
-        // found_address is lower or equal to device_address
         const auto& [found_address, buffer_handle] = *address_it;
         const VulkanBufferInfo* found_buffer       = shadow_info_table_.at(buffer_handle);
 
