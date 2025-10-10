@@ -36,7 +36,8 @@
       "CreateCommandSignature": "OverrideCreateCommandSignature",
       "CreateCommandList": "OverrideCreateCommandList",
       "CreateRootSignature": "OverrideCreateRootSignature",
-      "GetResourceTiling": "OverrideGetResourceTiling"
+      "GetResourceTiling": "OverrideGetResourceTiling",
+      "OpenSharedHandle": "OverrideOpenSharedHandle"
     },
     "ID3D12Device1": {
       "CreatePipelineLibrary": "OverrideCreatePipelineLibrary",
