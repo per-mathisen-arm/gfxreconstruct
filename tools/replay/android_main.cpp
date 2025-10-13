@@ -236,6 +236,7 @@ void android_main(struct android_app* app)
                 application->SetPauseFrame(GetPauseFrame(arg_parser));
                 application->SetTriggerScriptName(GetTriggerScriptName(arg_parser));
                 application->SetTriggerScriptFrame(GetTriggerScriptRanges(arg_parser));
+                application->SetStreamlineAnnotate(replay_options.streamline_annotate);
 
 #if ENABLE_OPENXR_SUPPORT
                 gfxrecon::decode::OpenXrReplayOptions  openxr_replay_options = {};

@@ -88,6 +88,8 @@ class Application final
         }
     }
 
+    void SetStreamlineAnnotate(bool streamline_annotate) { streamline_annotate_ = streamline_annotate; }
+
     void SetTriggerScriptName(std::string trigger_script_name) { trigger_script_name_ = trigger_script_name; }
 
     void HandleScriptTrigger(uint32_t frame);
@@ -121,6 +123,7 @@ class Application final
     bool                                                         trigger_script_;    ///< Indicates that this run will trigger script at certain frames.
     std::string                                                  trigger_script_name_;   ///< Path to the triggered script.
     std::vector<std::pair<uint32_t,uint32_t>>                    trigger_script_frames_; ///< Frame ranges to trigger script.
+    bool                                                         streamline_annotate_;   ///< Set if the application should annotate frames using gator for Streamline
     std::unordered_map<std::string, std::unique_ptr<WsiContext>> wsi_contexts_;      ///< Loaded WSI contexts from CLI and VkInstanceCreateInfo
     std::string                                                  cli_wsi_extension_; ///< WSI extension selected on CLI, empty string if no CLI selection
     graphics::FpsInfo*                                           fps_info_;          ///< A optional FPS info object that logs the FPS across a configured framerange.

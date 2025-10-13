@@ -327,6 +327,7 @@ int main(int argc, const char** argv)
             application->SetPauseFrame(GetPauseFrame(arg_parser));
             application->SetTriggerScriptName(GetTriggerScriptName(arg_parser));
             application->SetTriggerScriptFrame(GetTriggerScriptRanges(arg_parser));
+            application->SetStreamlineAnnotate(vulkan_replay_options.streamline_annotate);
             application->SetFpsInfo(&fps_info);
             application->Run();
 
