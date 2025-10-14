@@ -4161,12 +4161,12 @@ void Dx12ReplayConsumerBase::DestroyObjectExtraInfo(DxObjectInfo* info, bool rel
 
             for (const auto& entry : resource_info->mapped_memory_info)
             {
-                auto& mapped_info = entry.second;
-                auto  entry       = mapped_memory_.find(mapped_info.memory_id);
-                if (entry != mapped_memory_.end())
+                auto& mapped_info      = entry.second;
+                auto  mapped_memory_it = mapped_memory_.find(mapped_info.memory_id);
+                if (mapped_memory_it != mapped_memory_.end())
                 {
-                    entry->second.ref_count -= mapped_info.count;
-                    if (entry->second.ref_count == 0)
+                    mapped_memory_it->second.ref_count -= mapped_info.count;
+                    if (mapped_memory_it->second.ref_count == 0)
                     {
                         mapped_memory_.erase(mapped_info.memory_id);
                     }
