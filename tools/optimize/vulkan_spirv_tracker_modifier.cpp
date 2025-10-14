@@ -498,6 +498,11 @@ void VulkanSpirvTrackModifier::Process_vkAllocateDescriptorSets(
         return;
     }
 
+    if (returnValue != VK_SUCCESS)
+    {
+        return;
+    }
+
     const Decoded_VkDescriptorSetAllocateInfo* alloc_info = pAllocateInfo->GetMetaStructPointer();
 
     const auto* meta_count_info =
