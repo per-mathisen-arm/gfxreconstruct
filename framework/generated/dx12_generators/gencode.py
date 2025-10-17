@@ -57,6 +57,7 @@ from dx12_enum_to_json_header_generator import Dx12EnumToJsonHeaderGenerator
 from dx12_call_id_to_string_header_generator import Dx12CallIdToStringHeaderGenerator
 from dx12_struct_decoders_to_json_header_generator import Dx12StructDecodersToJsonHeaderGenerator
 from dx12_struct_decoders_to_json_body_generator import Dx12StructDecodersToJsonBodyGenerator
+from dx12_device_prune_header_generator import Dx12DevicePruneHeaderGenerator,Dx12DevicePruneHeaderGeneratorOptions
 
 # JSON files for customizing code generation
 # @todo Review the file of blacklisted functions and determine if each generator
@@ -241,6 +242,23 @@ def make_gen_opts(args):
             filename='generated_dx12_consumer.h',
             directory=directory,
             constructor_args='',
+            blacklists=blacklists,
+            platform_types=platform_types,
+            prefix_text=prefix_strings + py_prefix_strings,
+            protect_file=True,
+            protect_feature=False
+        )
+    ]
+
+    py_prefix_strings[-4] = py_prefix_strings1.format(
+        'dx12_device_prune_header_generator.py'
+    )
+    gen_opts['generated_dx12_device_prune_consumer.h'] = [
+        Dx12DevicePruneHeaderGenerator,
+        Dx12DevicePruneHeaderGeneratorOptions(
+            filename='generated_dx12_device_prune_consumer.h',
+            directory=directory,
+            constructor_args='const std::unordered_set<uint64_t>& targets',
             blacklists=blacklists,
             platform_types=platform_types,
             prefix_text=prefix_strings + py_prefix_strings,

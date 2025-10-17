@@ -62,6 +62,7 @@ GENERATE_TARGETS = [
     'generated_dx12_struct_decoders_to_json.h',
     'generated_dx12_struct_decoders_to_json.cpp',
     'generated_dx12_call_id_to_string.h',
+    'generated_dx12_device_prune_consumer.h',
 ]
 
 WINDOWS_SDK_SOURCE_LIST = [

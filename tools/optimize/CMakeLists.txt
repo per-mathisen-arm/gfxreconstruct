@@ -57,6 +57,8 @@ target_sources(gfxrecon-optimize
                    $<$<BOOL:${D3D12_SUPPORT}>:${CMAKE_CURRENT_LIST_DIR}/dx12_redundancy_modifier.cpp>
                    $<$<BOOL:${D3D12_SUPPORT}>:${CMAKE_CURRENT_LIST_DIR}/dx12_resource_value_tracking_consumer.h>
                    $<$<BOOL:${D3D12_SUPPORT}>:${CMAKE_CURRENT_LIST_DIR}/dx12_resource_value_tracking_consumer.cpp>
+                   $<$<AND:$<BOOL:${GFXRECON_TOCPP_SUPPORT}>,$<BOOL:${D3D12_SUPPORT}>>:${PROJECT_SOURCE_DIR}/framework/generated/generated_dx12_device_prune_consumer.h>
+                   $<$<BOOL:${D3D12_SUPPORT}>:${CMAKE_CURRENT_LIST_DIR}/dx12_device_prune_consumer.cpp>
                    $<$<BOOL:${D3D12_SUPPORT}>:${CMAKE_CURRENT_LIST_DIR}/block_skipping_file_processor.h>
                    $<$<BOOL:${D3D12_SUPPORT}>:${CMAKE_CURRENT_LIST_DIR}/block_skipping_file_processor.cpp>
                    ${CMAKE_CURRENT_LIST_DIR}/../platform_debug_helper.cpp

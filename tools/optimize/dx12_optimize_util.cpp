@@ -34,6 +34,7 @@
 #include "decode/dx12_resource_value_tracker.h"
 #include "decode/file_processor.h"
 #include "../tool_settings.h"
+#include "generated/generated_dx12_device_prune_consumer.h"
 
 #ifdef GFXRECON_AGS_SUPPORT
 #include "decode/custom_ags_consumer_base.h"
@@ -467,6 +468,38 @@ GetDx12OptimizationData(const std::string& input_filename, const decode::Dx12Opt
         auto redundancy_modifier_consumer = std::make_unique<gfxrecon::decode::Dx12RedundancyModifier>();
         auto raytracing_modifier_consumer = std::make_unique<gfxrecon::decode::Dx12RayTracingModifier>();
 
+        std::unique_ptr<gfxrecon::decode::Dx12DevicePruneConsumer> device_prune_consumer;
+        if (!options.remove_device_ids.empty())
+        {
+            GFXRECON_LOG_WARNING("Start device prune");
+            device_prune_consumer =
+                std::make_unique<gfxrecon::decode::Dx12DevicePruneConsumer>(options.remove_device_ids);
+            decoder.AddConsumer(device_prune_consumer.get());
+
+            file_processor.AddDecoder(&decoder);
+            file_processor.ProcessAllFrames();
+
+            if (file_processor.GetErrorState() != gfxrecon::decode::FileProcessor::kErrorNone)
+            {
+                throw std::runtime_error("Failed to scan input file for optimizations");
+            }
+
+            if (device_prune_consumer->FoundAny())
+            {
+                const auto& pruned = device_prune_consumer->GetBlocks();
+                for (auto b : pruned)
+                {
+                    result->unreferenced_device_blocks.insert(b);
+                }
+                GFXRECON_WRITE_CONSOLE("Device prune: found %" PRIu64 " blocks to remove.", pruned.size());
+            }
+            else
+            {
+                GFXRECON_WRITE_CONSOLE("Device prune: specified device ids not found.");
+            }
+            return result;
+        }
+
         decoder.AddConsumer(&resref_consumer);
         decoder.AddConsumer(redundancy_modifier_consumer.get());
         decoder.AddConsumer(raytracing_modifier_consumer.get());
@@ -506,7 +539,8 @@ void ApplyDx12OptimizationData(const std::string&                     input_file
     const bool can_remove_unused_blocks = !dx12_opt_data->unreferenced_blocks.empty();
 
     // Early exit if no optimization can be done
-    if (dx12_opt_data->modifiers.empty() && !can_remove_unused_blocks)
+    if (dx12_opt_data->modifiers.empty() && !can_remove_unused_blocks &&
+        dx12_opt_data->unreferenced_device_blocks.empty())
     {
         GFXRECON_WRITE_CONSOLE("Nothing to optimize. Exiting.");
         return;
@@ -521,6 +555,7 @@ void ApplyDx12OptimizationData(const std::string&                     input_file
     {
         file_optimizer.SetUnreferencedBlocks(dx12_opt_data->unreferenced_blocks);
         file_optimizer.SetRemovedThreads(removed_threads_ids);
+        file_optimizer.SetUnreferencedDeviceBlocks(dx12_opt_data->unreferenced_device_blocks);
 
         file_optimizer.Process();
 

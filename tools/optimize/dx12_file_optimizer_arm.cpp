@@ -28,6 +28,38 @@
 
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 
+void Dx12FileOptimizerARM::SetUnreferencedDeviceBlocks(const std::unordered_set<uint64_t>& unreferenced_device_blocks)
+{
+    unreferenced_device_blocks_ = unreferenced_device_blocks;
+}
+
+bool Dx12FileOptimizerARM::ProcessUnreferencedDeviceFunction(const format::FunctionCallHeader& header,
+                                                             uint64_t                          block_index)
+{
+    unreferenced_device_blocks_.erase(block_index);
+    const uint64_t unread_bytes = header.block_header.size - sizeof(header) + sizeof(header.block_header);
+
+    if (!SkipBytes(unread_bytes))
+    {
+        HandleBlockReadError(kErrorSeekingFile, "Failed to skip function call block data");
+        return false;
+    }
+    return true;
+}
+
+bool Dx12FileOptimizerARM::ProcessUnreferencedDeviceMethod(const format::MethodCallHeader& header, uint64_t block_index)
+{
+    unreferenced_device_blocks_.erase(block_index);
+    const uint64_t unread_bytes = header.block_header.size - sizeof(header) + sizeof(header.block_header);
+
+    if (!SkipBytes(unread_bytes))
+    {
+        HandleBlockReadError(kErrorSeekingFile, "Failed to skip method call block data");
+        return false;
+    }
+    return true;
+}
+
 void Dx12FileOptimizerARM::WriteMethodCall(format::ApiCallId               call_id,
                                            format::HandleId                call_object_id,
                                            format::ThreadId                thread_id,
@@ -101,6 +133,15 @@ void Dx12FileOptimizerARM::WriteMethodCall(format::ApiCallId               call_
     WriteBytes(data_pointer, data_size);
 }
 
+bool Dx12FileOptimizerARM::ProcessFunctionCall(const format::FunctionCallHeader& header)
+{
+    if (unreferenced_device_blocks_.find(GetCurrentBlockIndex()) != unreferenced_device_blocks_.end())
+    {
+        return ProcessUnreferencedDeviceFunction(header, GetCurrentBlockIndex());
+    }
+    return FileOptimizer::ProcessFunctionCall(header);
+}
+
 bool Dx12FileOptimizerARM::ProcessMethodCall(const format::MethodCallHeader& header, uint64_t block_index)
 {
     if (removed_threads_ids_.find(header.thread_id) != removed_threads_ids_.end())
@@ -111,6 +152,11 @@ bool Dx12FileOptimizerARM::ProcessMethodCall(const format::MethodCallHeader& hea
     if (unreferenced_blocks_.find(block_index) != unreferenced_blocks_.end())
     {
         return FileOptimizer::ProcessMethodCall(header, block_index);
+    }
+
+    if (unreferenced_device_blocks_.find(block_index) != unreferenced_device_blocks_.end())
+    {
+        return ProcessUnreferencedDeviceMethod(header, block_index);
     }
 
     size_t parameter_buffer_size =

@@ -41,12 +41,17 @@ class Dx12FileOptimizerARM : public FileOptimizer
         std::unordered_set<uint64_t>         unreferenced_blocks;
         decode::UnreferencedPsoCreationCalls calls_info{};
 
+        std::unordered_set<uint64_t> unreferenced_device_blocks;
+
         std::vector<std::unique_ptr<util::Dx12ModifierBase>> modifiers;
     };
 
     Dx12FileOptimizerARM(Dx12OptimizationData* optimization_data) : optimization_data_(optimization_data) {}
 
+    void SetUnreferencedDeviceBlocks(const std::unordered_set<uint64_t>& unreferenced_device_blocks);
+
   private:
+    virtual bool ProcessFunctionCall(const format::FunctionCallHeader& header) override;
     virtual bool ProcessMethodCall(const format::MethodCallHeader& header, uint64_t block_index = 0) override;
     virtual bool ProcessMarker(const format::Marker& marker) override;
 
@@ -58,6 +63,8 @@ class Dx12FileOptimizerARM : public FileOptimizer
     ProcessFillMemoryResourceValueCommand(const format::FillMemoryResourceValueCommandHeader& header) override;
     virtual bool
     ProcessFillMemoryResourceAddressCommand(const format::FillMemoryResourceAddressCommandHeader& header) override;
+    bool ProcessUnreferencedDeviceFunction(const format::FunctionCallHeader& header, uint64_t block_index);
+    bool ProcessUnreferencedDeviceMethod(const format::MethodCallHeader& header, uint64_t block_index);
 
     void WriteMethodCall(format::ApiCallId               call_id,
                          format::HandleId                call_object_id,
@@ -69,6 +76,9 @@ class Dx12FileOptimizerARM : public FileOptimizer
     Dx12OptimizationData* optimization_data_;
     decode::Dx12Decoder   decoder;
     uint64_t              frames_removed = 0;
+
+  protected:
+    std::unordered_set<uint64_t> unreferenced_device_blocks_;
 };
 
 GFXRECON_END_NAMESPACE(gfxrecon)
