@@ -521,7 +521,7 @@ void Dx12JsonConsumer::Process_ID3D12Resource_GetHeapProperties(
         FieldToJson(args["pHeapProperties"], pHeapProperties, options);
         if (!pHeapFlags->IsNull())
         {
-            FieldToJson_D3D12_HEAP_FLAGS(args["pHeapFlags"], *pHeapFlags->GetPointer(), options);
+            FieldToJson_D3D12_HEAP_FLAGS(args["pHeapFlags"], (pHeapFlags && pHeapFlags->GetPointer() != nullptr) ? (*pHeapFlags->GetPointer()) : NULL, options);
         }
         else
         {
@@ -1872,7 +1872,7 @@ void Dx12JsonConsumer::Process_ID3D12CommandQueue_UpdateTileMappings(
         FieldToJson(args["NumRanges"], NumRanges, options);
         if (!pRangeFlags->IsNull())
         {
-            FieldToJson_D3D12_TILE_RANGE_FLAGS(args["pRangeFlags"], *pRangeFlags->GetPointer(), options);
+            FieldToJson_D3D12_TILE_RANGE_FLAGS(args["pRangeFlags"], (pRangeFlags && pRangeFlags->GetPointer() != nullptr) ? (*pRangeFlags->GetPointer()) : NULL, options);
         }
         else
         {
