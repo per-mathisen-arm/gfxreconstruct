@@ -58,7 +58,9 @@ void decode::VulkanDeviceAddressTracker::TrackBuffer(const decode::VulkanBufferI
 
         if (buffer_info->capture_id == format::kNullHandleId)
         {
-            shadow_info_table_[buffer_info->handle] = const_cast<VulkanBufferInfo*>(buffer_info);
+            shadow_info_table_[buffer_info->handle]           = const_cast<VulkanBufferInfo*>(buffer_info);
+            shadow_address_map_[buffer_info->capture_address] = buffer_info->handle;
+            shadow_address_map_[buffer_info->replay_address]  = buffer_info->handle;
         }
     }
 }
@@ -237,7 +239,12 @@ VulkanDeviceAddressTracker::GetShadowBufferInfo(VkDeviceAddress device_address) 
             address_it--;
         }
         const auto& [found_address, buffer_handle] = *address_it;
-        const VulkanBufferInfo* found_buffer       = shadow_info_table_.at(buffer_handle);
+        const VulkanBufferInfo* found_buffer       = nullptr;
+
+        if (auto result = shadow_info_table_.find(buffer_handle); result != shadow_info_table_.end())
+        {
+            found_buffer = result->second;
+        }
 
         if (found_buffer != nullptr)
         {
