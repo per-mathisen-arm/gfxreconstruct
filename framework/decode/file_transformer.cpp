@@ -435,7 +435,7 @@ bool FileTransformer::ReadCompressedParameterBuffer(size_t  compressed_buffer_si
         size_t uncompressed_size = compressor_->Decompress(compressed_buffer_size,
                                                            compressed_parameter_buffer_.data(),
                                                            expected_uncompressed_size,
-                                                           &parameter_buffer_);
+                                                           parameter_buffer_.data());
         if ((0 < uncompressed_size) && (uncompressed_size == expected_uncompressed_size))
         {
             *uncompressed_buffer_size = uncompressed_size;
@@ -675,7 +675,7 @@ bool FileTransformer::ProcessMetaData(const format::MetaDataHeader& meta_header)
 
             bool success = ReadBytes(&header.thread_id, sizeof(header.thread_id));
             success      = success && ReadBytes(&header.device_id, sizeof(header.device_id));
-            success      = success && ReadBytes(&header.max_resource_size, sizeof(header.max_resource_size));
+            success      = success && ReadBytes(&header.total_copy_size, sizeof(header.total_copy_size));
             success      = success && ReadBytes(&header.max_copy_size, sizeof(header.max_copy_size));
 
             if (success)

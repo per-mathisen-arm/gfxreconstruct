@@ -192,11 +192,6 @@ class VulkanCppStructGenerator(VulkanBaseGenerator):
         self.is_header = genOpts.is_header
         self.newline()
 
-    def need_feature_generation(self):
-        if self.struct_names:
-            return True
-        return False
-
     def is_union(self, value):
         if value not in self.registry.typedict:
             return False

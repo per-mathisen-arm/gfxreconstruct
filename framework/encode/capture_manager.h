@@ -518,8 +518,10 @@ class CommonCaptureManager
                                   uint64_t                     num_of_locations,
                                   format::AddressLocationInfo* locations);
 
-    void
-    WriteBeginResourceInitCmd(format::ApiFamilyId api_family, format::HandleId device_id, uint64_t max_resource_size);
+    void WriteBeginResourceInitCmd(format::ApiFamilyId api_family,
+                                   format::HandleId    device_id,
+                                   uint64_t            total_copy_size,
+                                   uint64_t            max_resource_size);
 
     void WriteEndResourceInitCmd(format::ApiFamilyId api_family, format::HandleId device_id);
 
