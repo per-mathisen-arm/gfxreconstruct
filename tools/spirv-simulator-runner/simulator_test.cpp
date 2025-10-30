@@ -48,7 +48,7 @@
 #include <unordered_set>
 #include <vector>
 
-const char kOptions[]   = "-h|--help,--version";
+const char kOptions[]   = "-h|--help,--version,--verbose";
 const char kArguments[] = "--gpu,--set-replay-options,--set-replay-options";
 
 static void PrintUsage(const char* exe_name)
@@ -63,20 +63,20 @@ static void PrintUsage(const char* exe_name)
 
     GFXRECON_WRITE_CONSOLE("");
     GFXRECON_WRITE_CONSOLE("Usage:");
-    GFXRECON_WRITE_CONSOLE("  %s [-h | --help] [--version] <input-file>", app_name.c_str());
+    GFXRECON_WRITE_CONSOLE("  %s [-h | --help] [--version] [--verbose] <input-file>", app_name.c_str());
     GFXRECON_WRITE_CONSOLE("");
     GFXRECON_WRITE_CONSOLE("Required arguments:");
     GFXRECON_WRITE_CONSOLE("  <input-file>\t\tThe path to input GFXReconstruct capture file to be processed.");
     GFXRECON_WRITE_CONSOLE("");
 }
 
-void GetSpirvSimulatorData(const std::string& input_filename)
+void GetSpirvSimulatorData(const std::string& input_filename, bool verbose)
 {
     gfxrecon::decode::FileProcessor file_processor;
     if (file_processor.Initialize(input_filename))
     {
         gfxrecon::decode::VulkanDecoder decoder;
-        auto spirv_tracker_modifier_consumer = std::make_unique<gfxrecon::decode::VulkanSpirvTrackModifier>();
+        auto spirv_tracker_modifier_consumer = std::make_unique<gfxrecon::decode::VulkanSpirvTrackModifier>(verbose);
 
         decoder.AddConsumer(spirv_tracker_modifier_consumer.get());
 
@@ -132,7 +132,7 @@ int main(int argc, const char** argv)
         }
         else if (detected_vulkan)
         {
-            GetSpirvSimulatorData(input_filename);
+            GetSpirvSimulatorData(input_filename, arg_parser.IsOptionSet(kVerboseOption));
         }
         else
         {

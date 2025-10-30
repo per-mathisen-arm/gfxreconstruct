@@ -47,7 +47,7 @@ GFXRECON_BEGIN_NAMESPACE(decode)
 class VulkanSpirvTrackModifier : public util::VulkanModifierBase
 {
   public:
-    VulkanSpirvTrackModifier();
+    VulkanSpirvTrackModifier(bool verbose = false);
 
     virtual bool CanOptimize() override;
 
@@ -136,12 +136,6 @@ class VulkanSpirvTrackModifier : public util::VulkanModifierBase
                                               HandlePointerDecoder<VkShaderModule>* pShaderModule) override;
 
     virtual void
-    Process_vkDestroyShaderModule(const ApiCallInfo&                                   call_info,
-                                  format::HandleId                                     device,
-                                  format::HandleId                                     shaderModule,
-                                  StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator) override;
-
-    virtual void
     Process_vkCreateDescriptorSetLayout(const ApiCallInfo&                                             call_info,
                                         VkResult                                                       returnValue,
                                         format::HandleId                                               device,
@@ -165,6 +159,19 @@ class VulkanSpirvTrackModifier : public util::VulkanModifierBase
                                                                   format::HandleId              layout,
                                                                   uint32_t                      binding,
                                                                   PointerDecoder<VkDeviceSize>* pOffset) override;
+
+    virtual void Process_vkCreateDescriptorPool(const ApiCallInfo&                                        call_info,
+                                                VkResult                                                  returnValue,
+                                                format::HandleId                                          device,
+                                                StructPointerDecoder<Decoded_VkDescriptorPoolCreateInfo>* pCreateInfo,
+                                                StructPointerDecoder<Decoded_VkAllocationCallbacks>*      pAllocator,
+                                                HandlePointerDecoder<VkDescriptorPool>* pDescriptorPool) override;
+
+    virtual void
+    Process_vkDestroyDescriptorPool(const ApiCallInfo&                                   call_info,
+                                    format::HandleId                                     device,
+                                    format::HandleId                                     descriptorPool,
+                                    StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator) override;
 
     virtual void
     Process_vkAllocateDescriptorSets(const ApiCallInfo&                                         call_info,
@@ -351,6 +358,11 @@ class VulkanSpirvTrackModifier : public util::VulkanModifierBase
                                        uint32_t           groupCountY,
                                        uint32_t           groupCountZ) override;
 
+    virtual void Process_vkCmdDispatchIndirect(const ApiCallInfo& call_info,
+                                               format::HandleId   commandBuffer,
+                                               format::HandleId   buffer,
+                                               VkDeviceSize       offset) override;
+
     virtual void Process_vkCmdDraw(const ApiCallInfo& call_info,
                                    format::HandleId   commandBuffer,
                                    uint32_t           vertexCount,
@@ -499,9 +511,14 @@ class VulkanSpirvTrackModifier : public util::VulkanModifierBase
     struct SetLayoutInfo : public ObjectInfo
     {
         VkDescriptorSetLayoutCreateFlags flags;
-        std::vector<Binding>             bindings;
+        // binding num -> binding info
+        std::map<uint32_t, Binding> bindings;
         // descriptorSetLayout size when creating for descriptor buffer. Unused otherwise.
         VkDeviceSize                  size;
+    };
+
+    struct DescriptorPoolInfo : public ObjectInfo
+    {
         std::vector<format::HandleId> descriptorSets;
     };
 
@@ -535,10 +552,22 @@ class VulkanSpirvTrackModifier : public util::VulkanModifierBase
         std::map<uint32_t, DescriptorArray> binding_descriptor_array;
     };
 
+    struct DynamicBindingRef
+    {
+        uint32_t         set;
+        uint32_t         binding;
+        uint32_t         start_index;
+        uint32_t         elementCount;
+        VkDescriptorType type;
+    };
+
     struct PipelineLayoutInfo : public ObjectInfo
     {
         // index:set number -> setLayout Id
         std::vector<format::HandleId>    setLayouts;
+        // set number -> dynamic Ref
+        std::unordered_map<uint32_t, std::vector<DynamicBindingRef>> dynamicBindingRef;
+
         std::vector<VkPushConstantRange> pushConstantRanges;
         struct Range
         {
@@ -602,9 +631,9 @@ class VulkanSpirvTrackModifier : public util::VulkanModifierBase
     struct AccelerationStructureBuildInfo
     {
         // per geometry
-        std::vector<format::HandleId> instance_buffers;
-        std::vector<uint32_t>         primitive_counts;
-        std::vector<uint32_t>         primitive_offsets;
+        std::vector<std::pair<format::HandleId, uint64_t>> instance_buffers;
+        std::vector<uint32_t>                              primitive_counts;
+        std::vector<uint32_t>                              primitive_offsets;
     };
 
     struct PushConstantData
@@ -623,6 +652,14 @@ class VulkanSpirvTrackModifier : public util::VulkanModifierBase
         format::HandleId layout;
     };
 
+    struct DynamicBindingOffsetMap
+    {
+        uint32_t         set;
+        format::HandleId layout;
+        // binding -> offsets array, ordered map
+        std::map<uint32_t, std::vector<uint32_t>> binding_offsets;
+    };
+
     struct CommandBufferRecording
     {
         format::HandleId    command_buffer = 0;
@@ -633,8 +670,10 @@ class VulkanSpirvTrackModifier : public util::VulkanModifierBase
 
         // bind point -> pipeline handle
         std::unordered_map<VkPipelineBindPoint, format::HandleId> pipelines;
-        // bind point -> descriptor set binding
-        std::unordered_map<VkPipelineBindPoint, std::vector<DescriptorSetMap>> bind_descriptor_sets;
+        // bind point -> array of descriptorSet map
+        std::unordered_map<VkPipelineBindPoint, std::vector<DescriptorSetMap>> descriptor_sets;
+        // bind point -> array of DynamicBindingOffset map
+        std::unordered_map<VkPipelineBindPoint, std::vector<DynamicBindingOffsetMap>> dynamic_offsets;
 
         std::vector<DescriptorBufferBindingInfo> descriptor_buffers;
 
@@ -661,6 +700,12 @@ class VulkanSpirvTrackModifier : public util::VulkanModifierBase
 
         // set num -> descriptorSet handle
         std::unordered_map<uint64_t, format::HandleId> descriptor_set_map;
+        // dynamic offsets
+        std::vector<uint32_t> dynamic_offsets;
+        // set num -> array of dynamic offsets. Auxiliary function
+        std::map<uint32_t, std::vector<uint32_t>> dynamic_offsets_perSet;
+        // set num -> binding -> dynamic offset count, used to check compatibility
+        std::unordered_map<uint32_t, std::unordered_map<uint32_t, uint32_t>> dynamic_offsets_count;
         // set num -> DescriptorBufferOffset
         std::unordered_map<uint64_t, DescriptorBufferOffset> descriptorOffsets;
     };
@@ -718,6 +763,7 @@ class VulkanSpirvTrackModifier : public util::VulkanModifierBase
     std::unordered_map<format::HandleId, PipelineLayoutInfo>        pipeline_layout_entries_;
     std::unordered_map<format::HandleId, ShaderModuleInfo>          shader_module_entries_;
     std::unordered_map<format::HandleId, SetLayoutInfo>             set_layout_entries_;
+    std::unordered_map<format::HandleId, DescriptorPoolInfo>        descriptor_pool_entries_;
     std::unordered_map<format::HandleId, DescriptorSetInfo>         descriptor_set_entries_;
 
     // buffer device address -> buffer handle
@@ -740,6 +786,10 @@ class VulkanSpirvTrackModifier : public util::VulkanModifierBase
     std::unordered_map<uint64_t, SubmitInfo>             submit_entries_;
     std::unordered_map<format::HandleId, SemaphoreState> semaphore_state;
     std::deque<uint64_t>                                 ready_submits; // submit index
+
+    // for internal debug
+    uint64_t global_draw_index = 0;
+    bool     m_verbose         = false;
 };
 
 GFXRECON_END_NAMESPACE(decode)
