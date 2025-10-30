@@ -208,8 +208,8 @@ bool FileTransformer::ProcessFileHeader()
                 format::FileHeader modified_header = file_header_;
 
                 // Set the output trace version to the optimizer version.
-                modified_header.major_version = GFXRECON_TRACE_VERSION_MAJOR;
-                modified_header.minor_version = GFXRECON_TRACE_VERSION_MINOR;
+                modified_header.major_version = GFXRECON_CURRENT_FILE_MAJOR;
+                modified_header.minor_version = GFXRECON_CURRENT_FILE_MINOR;
 
                 // Write header to output file.
                 success = WriteFileHeader(modified_header, file_options_);
