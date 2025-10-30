@@ -323,6 +323,7 @@ bool FileProcessor::ContinueDecoding()
 bool FileProcessor::ProcessFileHeader()
 {
     bool success = false;
+    file_header_ = format::FileHeader();
 
     assert(file_stack_.front().active_file);
 
@@ -332,6 +333,12 @@ bool FileProcessor::ProcessFileHeader()
 
         if (success)
         {
+            auto file_version = GFXRECON_MAKE_FILE_VERSION(file_header_.major_version, file_header_.minor_version);
+            if (file_version >= GFXRECON_EXPLICIT_FRAME_MARKER_FILE_VERSION)
+            {
+                capture_uses_frame_markers_ = true;
+            }
+
             file_options_.resize(file_header_.num_options);
 
             size_t option_data_size = file_header_.num_options * sizeof(format::FileOptionPair);
@@ -554,28 +561,16 @@ bool FileProcessor::ProcessBlocks()
                 }
                 else if (base_type == format::BlockType::kAnnotation)
                 {
-                    if (annotation_handler_ != nullptr)
+                    format::AnnotationType annotation_type = format::AnnotationType::kUnknown;
+                    success                                = block_buffer.Read(annotation_type);
+
+                    if (success)
                     {
-                        format::AnnotationType annotation_type = format::AnnotationType::kUnknown;
-
-                        success = block_buffer.Read(annotation_type);
-
-                        if (success)
-                        {
-                            success = ProcessAnnotation(block_buffer, annotation_type);
-                        }
-                        else
-                        {
-                            HandleBlockReadError(kErrorReadingBlockHeader, "Failed to read annotation block header");
-                        }
+                        success = ProcessAnnotation(block_buffer, annotation_type);
                     }
                     else
                     {
-                        // If there is no annotation handler to process the annotation, we can skip the annotation
-                        // block.
-                        GFXRECON_CHECK_CONVERSION_DATA_LOSS(size_t, block_buffer.Header().size);
-                        // Replacing the result of SkipBytes. The BlockBuffer read succeeded, so skip would.
-                        success = true;
+                        HandleBlockReadError(kErrorReadingBlockHeader, "Failed to read annotation block header");
                     }
                 }
                 else
@@ -2827,10 +2822,15 @@ bool FileProcessor::ProcessFrameMarker(BlockBuffer& block_buffer, format::Marker
         {
             capture_uses_frame_markers_ = true;
             current_frame_number_       = kFirstFrame;
+
             if (fps_info_ != nullptr)
             {
                 fps_info_->ProcessFirstFrameEndMarker();
             }
+
+            GFXRECON_LOG_WARNING("Explicit frame markers found in file format (0.0) file w/ gfxrecon-version < "
+                                 "(1.0.1). Patch input file format with "
+                                 "'gfxrecon-file-version-patch'");
         }
 
         // Make sure to increment the frame number on the way out.
@@ -2928,8 +2928,24 @@ bool FileProcessor::ProcessAnnotation(BlockBuffer& block_buffer, format::Annotat
                     data.assign(data_start, std::next(data_start, static_cast<size_t>(data_length)));
                 }
 
-                assert(annotation_handler_ != nullptr);
-                annotation_handler_->ProcessAnnotation(block_index_, annotation_type, label, data);
+                // We can infer the presence of frame markers from the operations version
+                if (annotation_type == gfxrecon::format::AnnotationType::kJson &&
+                    label.compare(gfxrecon::format::kAnnotationLabelOperation) == 0)
+                {
+                    // There is an operations annotation containing the version of the capture tool.
+                    format::GfxrVersion version = format::ParseVersionFromOperations(data.c_str());
+                    if (version.SupportsFrameMarkers())
+                    {
+                        assert(current_frame_number_ == kFirstFrame);
+                        capture_uses_frame_markers_  = true;
+                        file_supports_frame_markers_ = true;
+                    }
+                }
+
+                if (annotation_handler_)
+                {
+                    annotation_handler_->ProcessAnnotation(block_index_, annotation_type, label, data);
+                }
             }
             else
             {
