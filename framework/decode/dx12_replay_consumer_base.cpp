@@ -2031,7 +2031,8 @@ void Dx12ReplayConsumerBase::InitializeResourceAllocator(const IUnknown*        
         if (support_memory_allocator_)
         {
             resource_value_mapper_ = nullptr;
-            GFXRECON_LOG_DEBUG("DXR gfxr must be optimized for replaying with the rebind mode.");
+            GFXRECON_LOG_DEBUG_ONCE(
+                "Using resource rebind mode, DXR gfxr must be optimized; resource value mapper disabled.");
         }
     }
     else
@@ -6468,10 +6469,6 @@ void Dx12ReplayConsumerBase::PostReplay()
         {
             GFXRECON_LOG_INFO_ONCE(
                 "This capture contains DXR and/or ExecuteIndirect workloads, but has not been optimized.");
-        }
-        else
-        {
-            GFXRECON_LOG_INFO_ONCE("This capture has not been optimized.")
         }
         GFXRECON_LOG_INFO_ONCE(
             "Use gfxrecon-optimize to obtain an optimized capture with improved playback performance.");
