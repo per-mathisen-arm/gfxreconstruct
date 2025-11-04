@@ -1568,6 +1568,29 @@ static gfxrecon::decode::DxReplayOptions GetDxReplayOptions(const gfxrecon::util
     {
         replay_options.headless = true;
     }
+
+    auto swapchain_option = arg_parser.GetArgumentValue(kSwapchainOption);
+
+    if (swapchain_option.empty())
+    {
+        replay_options.swapchain_option = gfxrecon::util::SwapchainOption::kCaptured;
+    }
+    else
+    {
+        if (gfxrecon::util::platform::StringCompareNoCase(kSwapchainVirtual, swapchain_option.c_str()) == 0)
+        {
+            GFXRECON_LOG_WARNING("Dx12 replay does not support virtual swapchains. Use captured instead.");
+        }
+        else if (gfxrecon::util::platform::StringCompareNoCase(kSwapchainOffscreen, swapchain_option.c_str()) == 0)
+        {
+            replay_options.swapchain_option = gfxrecon::util::SwapchainOption::kOffscreen;
+        }
+        else if (gfxrecon::util::platform::StringCompareNoCase(kSwapchainCaptured, swapchain_option.c_str()) != 0)
+        {
+            GFXRECON_LOG_WARNING("Ignoring unrecognized \"--swapchain\" option: %s", swapchain_option.c_str());
+        }
+    }
+
     return replay_options;
 }
 #endif

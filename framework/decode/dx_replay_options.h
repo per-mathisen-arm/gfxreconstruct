@@ -45,15 +45,16 @@ static constexpr uint32_t kDefaultBatchingMemoryUsage = 80;
 
 struct DxReplayOptions : public ReplayOptions
 {
-    bool                 enable_d3d12{ true };
-    bool                 enable_d3d12_two_pass_replay{ false };
-    bool                 use_cached_psos{ false };
-    std::vector<int32_t> AllowedDebugMessages;
-    std::vector<int32_t> DeniedDebugMessages;
-    bool                 override_object_names{ false };
-    bool                 ags_inject_markers{ false };
-    int32_t              memory_usage{ kDefaultBatchingMemoryUsage };
-    bool                 headless{ false };
+    bool                  enable_d3d12{ true };
+    bool                  enable_d3d12_two_pass_replay{ false };
+    bool                  use_cached_psos{ false };
+    std::vector<int32_t>  AllowedDebugMessages;
+    std::vector<int32_t>  DeniedDebugMessages;
+    bool                  override_object_names{ false };
+    bool                  ags_inject_markers{ false };
+    int32_t               memory_usage{ kDefaultBatchingMemoryUsage };
+    bool                  headless{ false };
+    util::SwapchainOption swapchain_option{ util::SwapchainOption::kCaptured };
 
     CreateDx12ResourceAllocator create_resource_allocator;
 };

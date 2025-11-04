@@ -207,6 +207,18 @@ static void PrintUsage(const char* exe_name)
     GFXRECON_WRITE_CONSOLE("  --dump-resources-dir <dir>");
     GFXRECON_WRITE_CONSOLE("          \t\tDirectory to write dump resources output files.");
     GFXRECON_WRITE_CONSOLE("          \t\tDefault is the current working directory.");
+    GFXRECON_WRITE_CONSOLE("  --swapchain <mode>\tChoose a swapchain mode to replay.");
+    GFXRECON_WRITE_CONSOLE("          \t\tAvailable modes are:");
+    GFXRECON_WRITE_CONSOLE("          \t\t    %s\tVirtual Swapchain of images which match", kSwapchainVirtual);
+    GFXRECON_WRITE_CONSOLE("          \t\t         \tthe swapchain in effect at capture time and");
+    GFXRECON_WRITE_CONSOLE("          \t\t         \twhich are copied to the underlying swapchain of the");
+    GFXRECON_WRITE_CONSOLE("          \t\t         \timplementation being replayed on.");
+    GFXRECON_WRITE_CONSOLE("          \t\t         \tThis is only available and default for Vulkan.");
+    GFXRECON_WRITE_CONSOLE("          \t\t    %s\tUse the swapchain indices stored in the ", kSwapchainCaptured);
+    GFXRECON_WRITE_CONSOLE("          \t\t         \tcapture directly on the swapchain setup for replay.");
+    GFXRECON_WRITE_CONSOLE("          \t\t         \tThis is default for D3D12.");
+    GFXRECON_WRITE_CONSOLE("          \t\t    %s\tDisable creating swapchains, surfaces", kSwapchainOffscreen);
+    GFXRECON_WRITE_CONSOLE("          \t\t         \tand windows. To see rendering, add the --screenshots option.");
 #if defined(WIN32)
     GFXRECON_WRITE_CONSOLE("")
     GFXRECON_WRITE_CONSOLE("Windows only:")
@@ -264,16 +276,6 @@ static void PrintUsage(const char* exe_name)
     GFXRECON_WRITE_CONSOLE("          \t\t         \tto different allocations with different");
     GFXRECON_WRITE_CONSOLE("          \t\t         \toffsets.  Uses VMA to manage allocations");
     GFXRECON_WRITE_CONSOLE("          \t\t         \tand suballocations.");
-    GFXRECON_WRITE_CONSOLE("  --swapchain <mode>\tChoose a swapchain mode to replay.");
-    GFXRECON_WRITE_CONSOLE("          \t\tAvailable modes are:");
-    GFXRECON_WRITE_CONSOLE("          \t\t    %s\tVirtual Swapchain of images which match", kSwapchainVirtual);
-    GFXRECON_WRITE_CONSOLE("          \t\t         \tthe swapchain in effect at capture time and");
-    GFXRECON_WRITE_CONSOLE("          \t\t         \twhich are copied to the underlying swapchain of the");
-    GFXRECON_WRITE_CONSOLE("          \t\t         \timplementation being replayed on. This is default.");
-    GFXRECON_WRITE_CONSOLE("          \t\t    %s\tUse the swapchain indices stored in the ", kSwapchainCaptured);
-    GFXRECON_WRITE_CONSOLE("          \t\t         \tcapture directly on the swapchain setup for replay.");
-    GFXRECON_WRITE_CONSOLE("          \t\t    %s\tDisable creating swapchains, surfaces", kSwapchainOffscreen);
-    GFXRECON_WRITE_CONSOLE("          \t\t         \tand windows. To see rendering, add the --screenshots option.");
     GFXRECON_WRITE_CONSOLE("  --present-mode <mode>\tSet swapchain's VkPresentModeKHR.");
     GFXRECON_WRITE_CONSOLE("          \t\tAvailable modes are:");
     GFXRECON_WRITE_CONSOLE("          \t\t\t%s: Present mode used at capture time.", kPresentModeCapture);

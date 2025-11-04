@@ -247,6 +247,7 @@ struct DxgiSwapchainInfo : DxObjectExtraInfo
     };                           ///< The command queue that was used to create the swapchain.
     bool is_fullscreen{ false }; ///< Swapchain full screen flag.
     bool is_headless{ false };
+    bool is_offscreen{ false }; ///< Swapchain offscreen flag.
 };
 
 struct D3D12CommandQueueInfo : DxObjectExtraInfo

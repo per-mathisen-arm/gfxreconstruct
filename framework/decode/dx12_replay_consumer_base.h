@@ -35,6 +35,7 @@
 #include "decode/dx12_resource_allocator.h"
 #include "decode/dx12_rebind_allocator.h"
 #include "decode/dx12_dump_resources.h"
+#include "decode/dx12_offscreen_swapchain.h"
 #include "decode/window.h"
 #include "format/format.h"
 #include "format/format_arm.h"
@@ -1332,6 +1333,25 @@ class Dx12ReplayConsumerBase : public Dx12Consumer
                                   DxObjectInfo*                           restrict_to_output_info,
                                   HandlePointerDecoder<IDXGISwapChain1*>* swapchain);
 
+    // Create offscreen swapchain for IDXGIFactory::CreateSwapChain
+    HRESULT
+    CreateSwapChainForOffscreen(DxObjectInfo*                          replay_object_info,
+                                HRESULT                                original_result,
+                                DxObjectInfo*                          device_info,
+                                DXGI_SWAP_CHAIN_DESC*                  desc,
+                                HandlePointerDecoder<IDXGISwapChain*>* swapchain);
+
+    // Create offscreen swapchain for IDXGIFactory2::CreateSwapChainForHwnd,
+    // IDXGIFactory2::CreateSwapChainForComposition and IDXGIFactory2::CreateSwapChainForCoreWindow
+    HRESULT
+    CreateSwapChainForOffscreen(DxObjectInfo*                           replay_object_info,
+                                HRESULT                                 original_result,
+                                DxObjectInfo*                           device_info,
+                                uint64_t                                hwnd_id,
+                                DXGI_SWAP_CHAIN_DESC1*                  desc,
+                                DXGI_SWAP_CHAIN_FULLSCREEN_DESC*        full_screen_desc,
+                                HandlePointerDecoder<IDXGISwapChain1*>* swapchain);
+
     void SetSwapchainInfo(DxObjectInfo* info,
                           Window*       window,
                           uint64_t      hwnd_id,
@@ -1339,7 +1359,8 @@ class Dx12ReplayConsumerBase : public Dx12Consumer
                           uint32_t      image_count,
                           IUnknown*     queue_iunknown,
                           bool          windowed,
-                          bool          headless = false);
+                          bool          headless  = false,
+                          bool          offscreen = false);
 
     void ResetSwapchainImages(DxObjectInfo* info, uint32_t buffer_count, uint32_t width, uint32_t height);
 

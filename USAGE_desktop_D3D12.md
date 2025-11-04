@@ -345,6 +345,12 @@ Optional arguments:
                         Directory to write dump resources output files. Default is the current working directory.
   --dump-resources-modifiable-state-only
                         Only dump resources that are in a modifiable state set by D3D12 ResourceBarrier
+  --swapchain MODE      Choose a swapchain mode to replay. Available modes are:
+                            captured    Use the swapchain indices stored in the
+                                        capture directly on the swapchain setup for replay.
+                                        This is default.
+                            offscreen   Disable creating swapchains, surfaces
+                                        and windows. To see rendering, add the --screenshots option.
 ```
 
 
