@@ -532,6 +532,7 @@ void Dx12RayTracingModifier::Process_ID3D12GraphicsCommandList4_BuildRaytracingA
 
     Process_BuildRaytracingAccelerationStructure(
         call_info, object_id, pDesc->GetPointer(), NumPostbuildInfoDescs, pPostbuildInfoDescs->GetPointer());
+    opt_fillmem_ = true;
 }
 
 void Dx12RayTracingModifier::Process_BuildRaytracingAccelerationStructure(
@@ -873,6 +874,8 @@ void Dx12RayTracingModifier::ProcessInitDx12AccelerationStructureCommand(
 
         Process_CopyRaytracingAccelerationStructure(call_info, object_id, dst_address, src_address, mode);
     }
+
+    opt_fillmem_ = true;
 }
 
 void Dx12RayTracingModifier::Process_ID3D12GraphicsCommandList4_CopyRaytracingAccelerationStructure(
@@ -1297,6 +1300,7 @@ void Dx12RayTracingModifier::Process_ID3D12GraphicsCommandList_ExecuteIndirect(c
         }
 
         command_list_related_infos_[object_id].related_resource_values[pArgumentBuffer] = resource_value;
+        opt_fillmem_                                                                    = true;
     }
 }
 
@@ -1377,6 +1381,8 @@ void Dx12RayTracingModifier::Process_ID3D12GraphicsCommandList4_DispatchRays(
         resource_value.type   = ResourceValueType::kShaderIdentifier;
         command_list_related_infos_[object_id].related_resource_values[caller_table_id] = resource_value;
     }
+
+    opt_fillmem_ = true;
 }
 
 void Dx12RayTracingModifier::Process_ID3D12Device_CreateCommandList(const ApiCallInfo&           call_info,
@@ -2180,8 +2186,13 @@ void Dx12RayTracingModifier::AddPrebuildInfoResourceValueCommand()
     }
 }
 
-void Dx12RayTracingModifier::AddFillMemoryResourceAddressCommand(uint64_t object_id)
+void Dx12RayTracingModifier::AddFillMemoryResourceAddressCommand(const uint64_t object_id)
 {
+    if (opt_fillmem_ == false)
+    {
+        return;
+    }
+
     auto resource_addresses_iter = fill_cmd_resource_addresses_.find(GetCurrentBlockIndex());
     if (resource_addresses_iter != fill_cmd_resource_addresses_.end() && !resource_addresses_iter->second.empty())
     {
@@ -2266,8 +2277,12 @@ void Dx12RayTracingModifier::CreateDeviceAndCheckRayTracingSupport()
 
 bool Dx12RayTracingModifier::CanOptimize()
 {
-    GFXRECON_WRITE_CONSOLE("Optimizing %zu FillMemoryCommand blocks for DXR/EI replay.",
-                           fill_cmd_resource_addresses_.size());
+    if (opt_fillmem_ && (fill_cmd_resource_addresses_.size() > 0))
+    {
+        GFXRECON_WRITE_CONSOLE("Optimizing %zu FillMemoryCommand blocks for DXR/EI replay.",
+                               fill_cmd_resource_addresses_.size());
+    }
+
     return true;
 }
 
