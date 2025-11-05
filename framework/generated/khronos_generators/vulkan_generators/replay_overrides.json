@@ -164,10 +164,10 @@
     "vkCmdPushConstants": "OverrideCmdPushConstants",
     "vkGetPastPresentationTimingGOOGLE": "OverrideGetPastPresentationTimingGOOGLE",
     "vkGetRefreshCycleDurationGOOGLE": "OverrideGetRefreshCycleDurationGOOGLE",
-    "vkCmdBindDescriptorSets" : "OverrideCmdBindDescriptorSets",
-    "vkCmdBindDescriptorSets2KHR" : "OverrideCmdBindDescriptorSets2",
-    "vkCmdBindDescriptorSets2" : "OverrideCmdBindDescriptorSets2",
-    "vkCmdExecuteCommands" : "OverrideCmdExecuteCommands",
+    "vkCmdBindDescriptorSets": "OverrideCmdBindDescriptorSets",
+    "vkCmdBindDescriptorSets2KHR": "OverrideCmdBindDescriptorSets2",
+    "vkCmdBindDescriptorSets2": "OverrideCmdBindDescriptorSets2",
+    "vkCmdExecuteCommands": "OverrideCmdExecuteCommands",
     "vkGetDescriptorEXT": "OverrideGetDescriptorEXT",
     "vkCmdBindDescriptorBuffersEXT": "OverrideCmdBindDescriptorBuffersEXT",
     "vkCreateSamplerYcbcrConversion": "OverrideCreateSamplerYcbcrConversion",
@@ -188,11 +188,14 @@
     "vkGetMemoryFdKHR": "OverrideGetMemoryFdKHR",
     "vkGetDeviceMemoryOpaqueCaptureAddress": "OverrideGetDeviceMemoryOpaqueCaptureAddress",
     "vkGetDeviceMemoryOpaqueCaptureAddressKHR": "OverrideGetDeviceMemoryOpaqueCaptureAddress",
-    "vkGetPhysicalDeviceSurfaceFormatsKHR" : "OverrideGetPhysicalDeviceSurfaceFormatsKHR",
-    "vkGetPhysicalDeviceSurfaceFormats2KHR" : "OverrideGetPhysicalDeviceSurfaceFormats2KHR",
+    "vkGetPhysicalDeviceSurfaceFormatsKHR": "OverrideGetPhysicalDeviceSurfaceFormatsKHR",
+    "vkGetPhysicalDeviceSurfaceFormats2KHR": "OverrideGetPhysicalDeviceSurfaceFormats2KHR",
     "vkCreateTensorARM": "OverrideCreateTensorARM",
     "vkDestroyTensorARM": "OverrideDestroyTensorARM",
     "vkBindTensorMemoryARM": "OverrideBindTensorMemoryARM",
-    "vkGetTensorMemoryRequirementsARM": "OverrideGetTensorMemoryRequirementsARM"
+    "vkGetTensorMemoryRequirementsARM": "OverrideGetTensorMemoryRequirementsARM",
+    "vkCreateDataGraphPipelineSessionARM": "OverrideCreateDataGraphPipelineSessionARM",
+    "vkDestroyDataGraphPipelineSessionARM": "OverrideDestroyDataGraphPipelineSessionARM",
+    "vkBindDataGraphPipelineSessionMemoryARM": "OverrideBindDataGraphPipelineSessionMemoryARM"
   }
 }
