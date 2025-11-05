@@ -1527,8 +1527,9 @@ VkResult DispatchTraceRaysDumpingContext::DumpDescriptors(uint64_t qs_index,
                                 continue;
                             }
 
-                            auto&       new_dumped_image   = std::get<DumpedImage>(new_dumped_desc.dumped_resource);
-                            const auto& dumped_descs_entry = dumped_descriptors.image_descriptors.find(img_info);
+                            auto& new_dumped_image         = std::get<DumpedImage>(new_dumped_desc.dumped_resource);
+                            const DescriptorLocation loc   = { desc_set_index, desc_binding_index, array_index };
+                            const auto& dumped_descs_entry = dumped_descriptors.image_descriptors.find(loc);
                             if (dumped_descs_entry == dumped_descriptors.image_descriptors.end())
                             {
                                 VulkanDelegateDumpResourceContext res_info = res_info_base;
@@ -1559,7 +1560,7 @@ VkResult DispatchTraceRaysDumpingContext::DumpDescriptors(uint64_t qs_index,
 
                                 delegate_.DumpResource(res_info);
 
-                                dumped_descriptors.image_descriptors.emplace(img_info, new_dumped_image);
+                                dumped_descriptors.image_descriptors.emplace(loc, new_dumped_image);
                             }
                             else
                             {
@@ -1606,7 +1607,8 @@ VkResult DispatchTraceRaysDumpingContext::DumpDescriptors(uint64_t qs_index,
                             size,
                             resource_type);
 
-                        const auto& dumped_desc_entry = dumped_descriptors.buffer_descriptors.find(buffer_info);
+                        const DescriptorLocation loc = { desc_set_index, desc_binding_index, array_index };
+                        const auto&              dumped_desc_entry = dumped_descriptors.buffer_descriptors.find(loc);
                         if (dumped_desc_entry == dumped_descriptors.buffer_descriptors.end())
                         {
                             const auto& new_dumped_buffer = std::get<DumpedBuffer>(new_dumped_desc.dumped_resource);
@@ -1634,7 +1636,7 @@ VkResult DispatchTraceRaysDumpingContext::DumpDescriptors(uint64_t qs_index,
 
                             delegate_.DumpResource(res_info);
 
-                            dumped_descriptors.buffer_descriptors.emplace(buffer_info, new_dumped_buffer);
+                            dumped_descriptors.buffer_descriptors.emplace(loc, new_dumped_buffer);
                         }
                         else
                         {
@@ -1682,7 +1684,8 @@ VkResult DispatchTraceRaysDumpingContext::DumpDescriptors(uint64_t qs_index,
                             size,
                             resource_type);
 
-                        const auto dumped_desc_entry = dumped_descriptors.buffer_descriptors.find(buffer_info);
+                        const DescriptorLocation loc = { desc_set_index, desc_binding_index, array_index };
+                        const auto               dumped_desc_entry = dumped_descriptors.buffer_descriptors.find(loc);
                         if (dumped_desc_entry == dumped_descriptors.buffer_descriptors.end())
                         {
                             const auto& new_dumped_buffer = std::get<DumpedBuffer>(new_dumped_desc.dumped_resource);
@@ -1710,7 +1713,7 @@ VkResult DispatchTraceRaysDumpingContext::DumpDescriptors(uint64_t qs_index,
 
                             delegate_.DumpResource(res_info);
 
-                            dumped_descriptors.buffer_descriptors.emplace(buffer_info, new_dumped_buffer);
+                            dumped_descriptors.buffer_descriptors.emplace(loc, new_dumped_buffer);
                         }
                         else
                         {
