@@ -199,6 +199,7 @@ bool CompressionConverter::ProcessMetaData(const format::MetaDataHeader& meta_he
         case format::MetaDataType::kInitSubresourceCommand:
         case format::MetaDataType::kInitDx12AccelerationStructureCommand:
         case format::MetaDataType::kFillMemoryResourceValueCommand:
+        case format::arm::MetaDataType::kGetDx12AccelerationStructureSizeCommand:
         case format::arm::MetaDataType::kFillMemoryResourceAddressCommand:
         case format::arm::MetaDataType::kInitTensorCommand:
         {
@@ -572,6 +573,74 @@ bool CompressionConverter::ProcessInitDx12AccelerationStructureCommand(
     {
         HandleBlockReadError(kErrorReadingBlockHeader,
                              "Failed to read init DX12 acceleration structure meta-data block header");
+    }
+
+    return true;
+}
+
+bool CompressionConverter::ProcessGetDx12AccelerationStructureSizeCommand(
+    const format::arm::GetDx12AccelerationStructureSizeCommandHeader& header)
+{
+    format::arm::GetDx12AccelerationStructureSizeCommandHeader input_cmd = header;
+
+    bool success = true;
+
+    if (success)
+    {
+        GFXRECON_CHECK_CONVERSION_DATA_LOSS(size_t, input_cmd.inputs_data_size);
+
+        size_t data_size = static_cast<size_t>(input_cmd.inputs_data_size);
+
+        if (format::IsBlockCompressed(input_cmd.meta_header.block_header.type))
+        {
+            size_t uncompressed_size = 0;
+            size_t compressed_size   = static_cast<size_t>(input_cmd.meta_header.block_header.size) -
+                                     (sizeof(input_cmd) - sizeof(input_cmd.meta_header.block_header));
+
+            if (!ReadCompressedParameterBuffer(compressed_size, data_size, &uncompressed_size))
+            {
+                HandleBlockReadError(kErrorReadingCompressedBlockData,
+                                     "Failed to read get DX12 acceleration structure size meta-data block");
+                return false;
+            }
+
+            assert(uncompressed_size == data_size);
+        }
+        else
+        {
+            if (!ReadParameterBuffer(data_size))
+            {
+                HandleBlockReadError(kErrorReadingBlockData,
+                                     "Failed to read get DX12 acceleration structure size meta-data block");
+                return false;
+            }
+        }
+
+        const auto&    buffer       = GetParameterBuffer();
+        const uint8_t* data_address = buffer.data();
+
+        PrepMetadataBlock(input_cmd.meta_header, input_cmd.meta_header.meta_data_id, data_address, data_size);
+
+        // Calculate size of packet with compressed or uncompressed data size.
+        input_cmd.meta_header.block_header.size = format::GetMetaDataBlockBaseSize(input_cmd) + data_size;
+
+        if (!WriteBytes(&input_cmd, sizeof(input_cmd)))
+        {
+            HandleBlockWriteError(kErrorWritingBlockHeader,
+                                  "Failed to write get DX12 acceleration structure size meta-data block header");
+            return false;
+        }
+        if (!WriteBytes(data_address, data_size))
+        {
+            HandleBlockWriteError(kErrorWritingBlockData,
+                                  "Failed to write get DX12 acceleration structure size meta-data block");
+            return false;
+        }
+    }
+    else
+    {
+        HandleBlockReadError(kErrorReadingBlockHeader,
+                             "Failed to read get DX12 acceleration structure size meta-data block header");
     }
 
     return true;

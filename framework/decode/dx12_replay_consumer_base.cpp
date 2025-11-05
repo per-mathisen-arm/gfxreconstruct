@@ -826,6 +826,82 @@ void Dx12ReplayConsumerBase::ProcessInitDx12AccelerationStructureCommand(
     dxr_workload_ = true;
 }
 
+void Dx12ReplayConsumerBase::ProcessGetDx12AccelerationStructureSizeCommand(
+    const format::arm::GetDx12AccelerationStructureSizeCommandHeader&                   command_header,
+    StructPointerDecoder<Decoded_D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS>* input_descs)
+{
+    auto device_object_info = GetObjectInfo(command_header.device_id);
+    if ((device_object_info == nullptr) || (device_object_info->object == nullptr))
+    {
+        return;
+    }
+
+    graphics::dx12::ID3D12Device5ComPtr device5_ptr = nullptr;
+    device_object_info->object->QueryInterface(IID_PPV_ARGS(&device5_ptr));
+    GFXRECON_ASSERT(device5_ptr);
+
+    D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO replay_info = {};
+    D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS  inputs      = *input_descs->GetPointer();
+
+    UINT64 result_data_max_size = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BYTE_ALIGNMENT;
+
+    device5_ptr->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &replay_info);
+    result_data_max_size = std::max(result_data_max_size, replay_info.ResultDataMaxSizeInBytes);
+
+    inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_UPDATE;
+    device5_ptr->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &replay_info);
+    result_data_max_size = std::max(result_data_max_size, replay_info.ResultDataMaxSizeInBytes);
+
+    inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_COMPACTION;
+    device5_ptr->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &replay_info);
+    result_data_max_size = std::max(result_data_max_size, replay_info.ResultDataMaxSizeInBytes);
+
+    inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
+    device5_ptr->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &replay_info);
+    result_data_max_size = std::max(result_data_max_size, replay_info.ResultDataMaxSizeInBytes);
+
+    inputs.Flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_COMPACTION;
+    device5_ptr->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &replay_info);
+    result_data_max_size = std::max(result_data_max_size, replay_info.ResultDataMaxSizeInBytes);
+
+    if (command_header.num_instance_descs > 0)
+    {
+        inputs.Type          = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
+        inputs.NumDescs      = command_header.num_instance_descs;
+        inputs.InstanceDescs = 0;
+
+        inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
+        device5_ptr->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &replay_info);
+        result_data_max_size = std::max(result_data_max_size, replay_info.ResultDataMaxSizeInBytes);
+
+        inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_UPDATE;
+        device5_ptr->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &replay_info);
+        result_data_max_size = std::max(result_data_max_size, replay_info.ResultDataMaxSizeInBytes);
+
+        inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_COMPACTION;
+        device5_ptr->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &replay_info);
+        result_data_max_size = std::max(result_data_max_size, replay_info.ResultDataMaxSizeInBytes);
+
+        inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
+        device5_ptr->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &replay_info);
+        result_data_max_size = std::max(result_data_max_size, replay_info.ResultDataMaxSizeInBytes);
+
+        inputs.Flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_COMPACTION;
+        device5_ptr->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &replay_info);
+        result_data_max_size = std::max(result_data_max_size, replay_info.ResultDataMaxSizeInBytes);
+    }
+
+    auto accel_struct_builder = GetAccelerationStructureBuilder(device_object_info);
+    if (support_memory_allocator_ && (accel_struct_builder != nullptr))
+    {
+        auto accel_struct_id      = command_header.resource_id;
+        auto accel_struct_address = command_header.acceleration_structure_address;
+
+        accel_struct_builder->SetPrebuildInfo(accel_struct_id, accel_struct_address, result_data_max_size, gpu_va_map_);
+        return;
+    }
+}
+
 void Dx12ReplayConsumerBase::ProcessSetSwapchainImageStateQueueSubmit(ID3D12CommandQueue* command_queue,
                                                                       DxObjectInfo*       swapchain_info,
                                                                       uint32_t            current_buffer_index)
@@ -5425,7 +5501,6 @@ void Dx12ReplayConsumerBase::OverrideGetRaytracingAccelerationStructurePrebuildI
     auto accel_struct_builder = GetAccelerationStructureBuilder(device5_object_info);
     if (support_memory_allocator_ && (accel_struct_builder != nullptr))
     {
-        accel_struct_builder->SetPrebuildInfo(capture_info, &replay_info, gpu_va_map_);
         return;
     }
 

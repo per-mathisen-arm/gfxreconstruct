@@ -37,6 +37,7 @@
 #include "decode/dx12_dump_resources.h"
 #include "decode/window.h"
 #include "format/format.h"
+#include "format/format_arm.h"
 #include "generated/generated_dx12_consumer.h"
 #include "graphics/dx12_gpu_va_map.h"
 #include "graphics/dx12_resource_data_util.h"
@@ -117,6 +118,10 @@ class Dx12ReplayConsumerBase : public Dx12Consumer
         const format::InitDx12AccelerationStructureCommandHeader&             command_header,
         const std::vector<format::InitDx12AccelerationStructureGeometryDesc>& geometry_descs,
         const uint8_t*                                                        build_inputs_data) override;
+
+    virtual void ProcessGetDx12AccelerationStructureSizeCommand(
+        const format::arm::GetDx12AccelerationStructureSizeCommandHeader&                   command_header,
+        StructPointerDecoder<Decoded_D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS>* input_descs) override;
 
     virtual void ProcessInitializeMetaCommand(const format::InitializeMetaCommand& command_header,
                                               const uint8_t*                       parameters_data) override;

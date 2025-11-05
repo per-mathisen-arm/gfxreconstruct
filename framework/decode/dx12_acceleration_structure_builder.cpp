@@ -355,24 +355,14 @@ void Dx12AccelerationStructureBuilder::ExecuteCopy(D3D12_GPU_VIRTUAL_ADDRESS    
     GFXRECON_ASSERT(SUCCEEDED(hr));
 }
 
-void Dx12AccelerationStructureBuilder::SetPrebuildInfo(
-    D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO* capture_prebuild_info,
-    D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO* replay_prebuild_info,
-    graphics::Dx12GpuVaMap&                                gpu_va_map)
+void Dx12AccelerationStructureBuilder::SetPrebuildInfo(const format::HandleId  capture_accel_struct_id,
+                                                       const uint64_t          capture_accel_struct_address,
+                                                       const uint64_t          replay_accel_struct_max_size,
+                                                       graphics::Dx12GpuVaMap& gpu_va_map)
 {
-    if ((capture_prebuild_info->ResultDataMaxSizeInBytes == 0) &&
-        (capture_prebuild_info->ScratchDataSizeInBytes == 0) &&
-        (capture_prebuild_info->UpdateScratchDataSizeInBytes == 0))
+    if ((capture_accel_struct_id != 0) && (capture_accel_struct_address != 0) && (replay_accel_struct_max_size != 0))
     {
-        prebuild_info_ = *replay_prebuild_info;
-    }
-    else if ((capture_prebuild_info->ResultDataMaxSizeInBytes != 0) &&
-             (capture_prebuild_info->ScratchDataSizeInBytes == 0) &&
-             (capture_prebuild_info->UpdateScratchDataSizeInBytes != 0))
-    {
-        uint64_t capture_accel_struct_address = capture_prebuild_info->ResultDataMaxSizeInBytes;
-        uint64_t capture_accel_struct_id      = capture_prebuild_info->UpdateScratchDataSizeInBytes;
-        uint64_t replay_accel_struct_size     = replay_prebuild_info->ResultDataMaxSizeInBytes;
+        uint64_t replay_accel_struct_size = replay_accel_struct_max_size;
         replay_accel_struct_size = util::platform::AlignValue<D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BYTE_ALIGNMENT>(
             replay_accel_struct_size);
 
@@ -408,6 +398,17 @@ void Dx12AccelerationStructureBuilder::SetPrebuildInfo(
                                capture_accel_struct_address);
         }
     }
+    else if ((capture_accel_struct_id != 0) && (capture_accel_struct_address == 0) &&
+             (replay_accel_struct_max_size != 0))
+    {
+        // If the capture acceleration structure address is zero, it means we will reuse the trace resources.
+        prebuild_info_.ResultDataMaxSizeInBytes = replay_accel_struct_max_size;
+    }
+    else
+    {
+        GFXRECON_LOG_ERROR("Invalid parameters to recreate acceleration structure buffer for VA %" PRIu64,
+                           capture_accel_struct_address);
+    }
 }
 
 const D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO Dx12AccelerationStructureBuilder::GetLastPrebuildInfo()
@@ -440,14 +441,10 @@ void Dx12AccelerationStructureBuilder::PreBuildRaytracingAccelerationStructure(
     auto recreated_va_size_map_iter = recreated_accel_struct_va_size_.find(build_desc->DestAccelerationStructureData);
     if (recreated_va_size_map_iter != recreated_accel_struct_va_size_.end())
     {
-        if (recreated_va_size_map_iter->second.second < prebuild_info.ResultDataMaxSizeInBytes)
-        {
-            GFXRECON_LOG_DEBUG("Building acceleration structure dest VA %" PRIu64 " size %" PRIu64
-                               " is smaller than required size %" PRIu64 ", Build may fail.",
-                               recreated_va_size_map_iter->second.first,
-                               recreated_va_size_map_iter->second.second,
-                               prebuild_info.ResultDataMaxSizeInBytes);
-        }
+        // Last minute validation: storage buffer should be bigger than the acceleration structure size, the size
+        // provided as an input in Create*Resource calls and the actual size retrieved from GetASBuildSizes query.
+        // Assume all these sizes should satisfy the above condition.
+        GFXRECON_ASSERT(prebuild_info.ResultDataMaxSizeInBytes > recreated_va_size_map_iter->second.second);
     }
 
     scratch_size = util::platform::AlignValue<D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BYTE_ALIGNMENT>(scratch_size);

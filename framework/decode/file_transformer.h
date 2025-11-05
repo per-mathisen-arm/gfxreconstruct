@@ -24,6 +24,7 @@
 #define GFXRECON_DECODE_FILE_TRANSFORMER_H
 
 #include "format/format.h"
+#include "format/format_arm.h"
 #include "util/defines.h"
 #include "util/compressor.h"
 
@@ -152,6 +153,8 @@ class FileTransformer
     virtual bool ProcessExeFileInfoCommand(const format::ExeFileInfoBlock& header);
     virtual bool
     ProcessInitDx12AccelerationStructureCommand(const format::InitDx12AccelerationStructureCommandHeader& header);
+    virtual bool ProcessGetDx12AccelerationStructureSizeCommand(
+        const format::arm::GetDx12AccelerationStructureSizeCommandHeader& header);
     virtual bool ProcessFillMemoryResourceValueCommand(const format::FillMemoryResourceValueCommandHeader& header);
     virtual bool ProcessDxgiAdapterInfoCommand(const format::DxgiAdapterInfoCommandHeader& header);
     virtual bool ProcessDriverInfoCommand(const format::DriverInfoBlock& header);

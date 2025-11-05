@@ -27,6 +27,7 @@
 #include "decode/struct_pointer_decoder.h"
 #include "decode/stat_consumer_base.h"
 #include "format/format.h"
+#include "format/format_arm.h"
 
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(decode)
@@ -210,6 +211,11 @@ class StatDecoderBase : public ApiDecoder
         const format::InitDx12AccelerationStructureCommandHeader&             command_header,
         const std::vector<format::InitDx12AccelerationStructureGeometryDesc>& geometry_descs,
         const uint8_t*                                                        build_inputs_data) override
+    {}
+
+    virtual void DispatchGetDx12AccelerationStructureSizeCommand(
+        const format::arm::GetDx12AccelerationStructureSizeCommandHeader& command_header,
+        const uint8_t*                                                    inputs_data) override
     {}
 
     virtual void

@@ -950,6 +950,26 @@ bool FileTransformer::ProcessMetaData(const format::MetaDataHeader& meta_header)
 
             return false;
         }
+        case format::arm::MetaDataType::kGetDx12AccelerationStructureSizeCommand:
+        {
+            format::arm::GetDx12AccelerationStructureSizeCommandHeader header;
+            header.meta_header = meta_header;
+
+            bool success = ReadBytes(&header.thread_id, sizeof(header.thread_id));
+            success      = success && ReadBytes(&header.device_id, sizeof(header.device_id));
+            success      = success && ReadBytes(&header.resource_id, sizeof(header.resource_id));
+            success      = success &&
+                      ReadBytes(&header.acceleration_structure_address, sizeof(header.acceleration_structure_address));
+            success = success && ReadBytes(&header.num_instance_descs, sizeof(header.num_instance_descs));
+            success = success && ReadBytes(&header.inputs_data_size, sizeof(header.inputs_data_size));
+
+            if (success)
+            {
+                return ProcessGetDx12AccelerationStructureSizeCommand(header);
+            }
+
+            return false;
+        }
         case format::MetaDataType::kFillMemoryResourceValueCommand:
         {
             format::FillMemoryResourceValueCommandHeader header;
@@ -1547,6 +1567,23 @@ bool FileTransformer::ProcessExeFileInfoCommand(const format::ExeFileInfoBlock& 
 }
 bool FileTransformer::ProcessInitDx12AccelerationStructureCommand(
     const format::InitDx12AccelerationStructureCommandHeader& header)
+{
+    if (!WriteBytes(&header, sizeof(header)))
+    {
+        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write meta-data block header");
+        return false;
+    }
+
+    if (!CopyBytes(header.meta_header.block_header.size + sizeof(header.meta_header.block_header) - sizeof(header)))
+    {
+        HandleBlockCopyError(kErrorCopyingBlockData, "Failed to copy meta-data block data");
+        return false;
+    }
+
+    return true;
+}
+bool FileTransformer::ProcessGetDx12AccelerationStructureSizeCommand(
+    const format::arm::GetDx12AccelerationStructureSizeCommandHeader& header)
 {
     if (!WriteBytes(&header, sizeof(header)))
     {

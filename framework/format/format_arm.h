@@ -26,6 +26,7 @@ inline constexpr format::MetaDataType kFixShaderGroupHandleCommand      = Create
 inline constexpr format::MetaDataType kFixDescriptorDataCommand         = CreateMetaDataTypeARM(2);
 inline constexpr format::MetaDataType kFixShadowMemoryCommand           = CreateMetaDataTypeARM(3);
 inline constexpr format::MetaDataType kFillMemoryResourceAddressCommand = CreateMetaDataTypeARM(4);
+inline constexpr format::MetaDataType kGetDx12AccelerationStructureSizeCommand = CreateMetaDataTypeARM(5);
 
 // Enums used in ARM builds up to r4p1 release that are not reserved upstream
 enum class ConflictingMetaDataTypes : MetaDataTypeUnderlyingType
@@ -74,6 +75,22 @@ inline MetaDataId GetVersionedMetaDataId(const format::FileHeader& trace_header,
 }
 
 GFXRECON_END_NAMESPACE(MetaDataType)
+
+struct GetDx12AccelerationStructureSizeCommandHeader
+{
+    MetaDataHeader   meta_header{};
+    ThreadId         thread_id;
+    format::HandleId device_id{ 0 };
+    format::HandleId resource_id{ 0 };
+    uint64_t         acceleration_structure_address{ 0 };
+    uint64_t         num_instance_descs{ 0 };
+    uint64_t         inputs_data_size{ 0 };
+
+    // In the capture file, accel struct data is written in the following order:
+    // GetDx12AccelerationStructureSizeCommandHeader
+    // data() { D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUT }
+};
+
 GFXRECON_END_NAMESPACE(arm)
 GFXRECON_END_NAMESPACE(format)
 GFXRECON_END_NAMESPACE(gfxrecon)

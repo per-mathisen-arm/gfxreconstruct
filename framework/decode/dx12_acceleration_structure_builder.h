@@ -49,9 +49,10 @@ class Dx12AccelerationStructureBuilder
                const std::vector<format::InitDx12AccelerationStructureGeometryDesc>& init_geometry_descs,
                const uint8_t*                                                        build_inputs_data);
 
-    void SetPrebuildInfo(D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO* capture_prebuild_info,
-                         D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO* replay_prebuild_info,
-                         graphics::Dx12GpuVaMap&                                gpu_va_map);
+    void SetPrebuildInfo(const format::HandleId  capture_accel_struct_id,
+                         const uint64_t          capture_accel_struct_address,
+                         const uint64_t          replay_accel_struct_max_size,
+                         graphics::Dx12GpuVaMap& gpu_va_map);
 
     const D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO GetLastPrebuildInfo();
 

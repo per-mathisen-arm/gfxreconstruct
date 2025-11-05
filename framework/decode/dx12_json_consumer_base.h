@@ -54,6 +54,9 @@ class Dx12JsonConsumerBase : public Dx12Consumer
         const format::InitDx12AccelerationStructureCommandHeader&             command_header,
         const std::vector<format::InitDx12AccelerationStructureGeometryDesc>& geometry_descs,
         const uint8_t*                                                        build_inputs_data) override;
+    virtual void ProcessGetDx12AccelerationStructureSizeCommand(
+        const format::arm::GetDx12AccelerationStructureSizeCommandHeader&                   command_header,
+        StructPointerDecoder<Decoded_D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS>* input_descs) override;
     virtual void
     ProcessFillMemoryResourceValueCommand(const format::FillMemoryResourceValueCommandHeader& command_header,
                                           const uint8_t*                                      data) override;

@@ -306,6 +306,21 @@ void Dx12DecoderBase::DispatchInitDx12AccelerationStructureCommand(
     }
 }
 
+void Dx12DecoderBase::DispatchGetDx12AccelerationStructureSizeCommand(
+    const format::arm::GetDx12AccelerationStructureSizeCommandHeader& command_header, const uint8_t* inputs_data)
+{
+    size_t bytes_read       = 0;
+    size_t inputs_data_size = static_cast<size_t>(command_header.inputs_data_size);
+
+    StructPointerDecoder<Decoded_D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS> input_desc;
+    bytes_read += input_desc.Decode((inputs_data + bytes_read), (inputs_data_size - bytes_read));
+
+    for (auto consumer : consumers_)
+    {
+        consumer->ProcessGetDx12AccelerationStructureSizeCommand(command_header, &input_desc);
+    }
+}
+
 void Dx12DecoderBase::DispatchGetDxgiAdapterInfo(const format::DxgiAdapterInfoCommandHeader& dx12_adapter_info_header)
 {
     for (auto consumer : consumers_)

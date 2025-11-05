@@ -49,6 +49,8 @@ struct AccelerationStructurePreBuildDesc
 {
     format::HandleId         handle_id{ format::kNullHandleId };
     format::HandleId         object_id{ format::kNullHandleId };
+    uint64_t                 acceleration_structure_address{ 0 };
+    uint64_t                 num_instance_descs{ 0 };
     util::MemoryOutputStream get_prebuild_info{};
 };
 #pragma pack(pop)
@@ -213,6 +215,10 @@ class Dx12RayTracingModifier : public util::Dx12ModifierBase
         const format::InitDx12AccelerationStructureCommandHeader&             command_header,
         const std::vector<format::InitDx12AccelerationStructureGeometryDesc>& geometry_descs,
         const uint8_t*                                                        build_inputs_data) override;
+
+    virtual void ProcessGetDx12AccelerationStructureSizeCommand(
+        const format::arm::GetDx12AccelerationStructureSizeCommandHeader&                   command_header,
+        StructPointerDecoder<Decoded_D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS>* input_descs) override;
 
     virtual void Process_ID3D12GraphicsCommandList4_CopyRaytracingAccelerationStructure(
         const ApiCallInfo&                                call_info,
@@ -424,7 +430,7 @@ class Dx12RayTracingModifier : public util::Dx12ModifierBase
 
     void AddPrebuildInfoResourceValueCommand();
 
-    void AddFillMemoryResourceAddressCommand(uint64_t object_id);
+    void AddFillMemoryResourceAddressCommand(const uint64_t object_id);
 
   private:
     struct ResourceObject
@@ -487,7 +493,8 @@ class Dx12RayTracingModifier : public util::Dx12ModifierBase
         bool                                                  is_first_built{ false };
         bool                                                  is_meta_copy{ false };
         D3D12_GPU_VIRTUAL_ADDRESS                             source_of_compaction{ 0 };
-        D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS  build_inputs{};
+        D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS  build_blas_inputs{};
+        D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS  build_tlas_inputs{};
         std::vector<D3D12_RAYTRACING_GEOMETRY_DESC>           geometry_descs{};
         D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO real_prebuild_info{};
         // Post-build info only recorded POSTBUILD_INFO_COMPACTED_SIZE.

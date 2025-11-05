@@ -27,6 +27,7 @@
 #include "decode/api_decoder.h"
 #include "format/api_call_id.h"
 #include "format/format.h"
+#include "format/format_arm.h"
 #include "format/platform_types.h"
 #include "generated/generated_vulkan_consumer.h"
 #include "util/defines.h"
@@ -217,6 +218,11 @@ class VulkanDecoderBase : public ApiDecoder
         const format::InitDx12AccelerationStructureCommandHeader&             command_header,
         const std::vector<format::InitDx12AccelerationStructureGeometryDesc>& geometry_descs,
         const uint8_t*                                                        build_inputs_data) override
+    {}
+
+    virtual void DispatchGetDx12AccelerationStructureSizeCommand(
+        const format::arm::GetDx12AccelerationStructureSizeCommandHeader& command_header,
+        const uint8_t*                                                    inputs_data) override
     {}
 
     virtual void DispatchDriverInfo(format::ThreadId thread_id, const format::DriverInfoBlock& info) override {}

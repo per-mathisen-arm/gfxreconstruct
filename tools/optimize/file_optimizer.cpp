@@ -357,6 +357,16 @@ bool FileOptimizer::ProcessInitDx12AccelerationStructureCommand(
     return FileTransformer::ProcessInitDx12AccelerationStructureCommand(header);
 }
 
+bool FileOptimizer::ProcessGetDx12AccelerationStructureSizeCommand(
+    const format::arm::GetDx12AccelerationStructureSizeCommandHeader& header)
+{
+    if (removed_threads_ids_.find(header.thread_id) != removed_threads_ids_.end())
+    {
+        return RemoveThreadBlock(header.meta_header.block_header, sizeof(header));
+    }
+    return FileTransformer::ProcessGetDx12AccelerationStructureSizeCommand(header);
+}
+
 bool FileOptimizer::ProcessFillMemoryResourceValueCommand(const format::FillMemoryResourceValueCommandHeader& header)
 {
     if (removed_threads_ids_.find(header.thread_id) != removed_threads_ids_.end())

@@ -70,6 +70,8 @@ class FileOptimizer : public decode::FileTransformer
     virtual bool ProcessExeFileInfoCommand(const format::ExeFileInfoBlock& header) override;
     virtual bool ProcessInitDx12AccelerationStructureCommand(
         const format::InitDx12AccelerationStructureCommandHeader& header) override;
+    virtual bool ProcessGetDx12AccelerationStructureSizeCommand(
+        const format::arm::GetDx12AccelerationStructureSizeCommandHeader& header) override;
     virtual bool
     ProcessFillMemoryResourceValueCommand(const format::FillMemoryResourceValueCommandHeader& header) override;
     virtual bool ProcessDxgiAdapterInfoCommand(const format::DxgiAdapterInfoCommandHeader& header) override;

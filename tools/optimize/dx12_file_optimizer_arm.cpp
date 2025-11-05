@@ -755,6 +755,122 @@ bool Dx12FileOptimizerARM::ProcessInitDx12AccelerationStructureCommand(
     return true;
 }
 
+bool Dx12FileOptimizerARM::ProcessGetDx12AccelerationStructureSizeCommand(
+    const format::arm::GetDx12AccelerationStructureSizeCommandHeader& header)
+{
+    if (removed_threads_ids_.find(header.thread_id) != removed_threads_ids_.end())
+    {
+        return FileOptimizer::ProcessGetDx12AccelerationStructureSizeCommand(header);
+    }
+
+    uint64_t                index                 = GetCurrentBlockIndex();
+    uint64_t                parameter_buffer_size = 0;
+    encode::ParameterBuffer buffer;
+    bool                    delete_current_call = false;
+
+    std::vector<std::unique_ptr<util::CallModifierBase::NewCallData>> new_pre_calls;
+    std::vector<std::unique_ptr<util::CallModifierBase::NewCallData>> new_post_calls;
+    for (auto& modifier : optimization_data_->modifiers)
+    {
+        modifier->SetCurrentBlockIndex(index);
+    }
+
+    bool success = true;
+
+    if (format::IsBlockCompressed(header.meta_header.block_header.type))
+    {
+        size_t uncompressed_size = 0;
+        size_t compressed_size =
+            static_cast<size_t>(header.meta_header.block_header.size) - format::GetMetaDataBlockBaseSize(header);
+        parameter_buffer_size = compressed_size;
+        success               = ReadCompressedParameterBuffer(
+            compressed_size, static_cast<size_t>(header.inputs_data_size), &uncompressed_size);
+    }
+    else
+    {
+        parameter_buffer_size = header.inputs_data_size;
+        success               = ReadParameterBuffer(static_cast<size_t>(header.inputs_data_size));
+    }
+
+    if (success)
+    {
+        for (auto& modifier : optimization_data_->modifiers)
+        {
+            modifier->SetParameterBuffer(&buffer);
+            decoder.AddConsumer(modifier.get());
+            decoder.DispatchGetDx12AccelerationStructureSizeCommand(header, GetParameterBuffer().data());
+            decoder.RemoveConsumer(modifier.get());
+            modifier->AppendPreCalls(new_pre_calls);
+            modifier->AppendPostCalls(new_post_calls);
+        }
+    }
+    else
+    {
+        parameter_buffer_size = 0;
+        if (format::IsBlockCompressed(header.meta_header.block_header.type))
+        {
+            HandleBlockReadError(kErrorReadingCompressedBlockData, "Failed to read get dx12 AS size meta-data block");
+        }
+        else
+        {
+            HandleBlockReadError(kErrorReadingBlockData, "Failed to read get dx12 AS size meta-data block");
+        }
+
+        return false;
+    }
+
+    for (auto& modifier : optimization_data_->modifiers)
+    {
+        delete_current_call |= modifier->GetDeleteCurrentCall();
+    }
+
+    for (auto& new_call : new_pre_calls)
+    {
+        switch (new_call->type)
+        {
+            case util::CallModifierBase::NewCallDataType::MetaDataCall:
+                WriteMetaCommand(&(new_call->parameter_buffer));
+                break;
+            case util::CallModifierBase::NewCallDataType::ApiCall:
+                WriteMethodCall(
+                    new_call->call_id, new_call->object_id, new_call->thread_id, &(new_call->parameter_buffer));
+                break;
+            default:
+                GFXRECON_LOG_ERROR("Unprocessed PreCall NewCallDataType %d", new_call->type);
+                exit(EXIT_FAILURE);
+        }
+    }
+
+    if (!delete_current_call)
+    {
+        WriteBytes(&header, sizeof(header));
+        if (format::IsBlockCompressed(header.meta_header.block_header.type))
+        {
+            WriteBytes(GetCompressedParameterBuffer().data(), parameter_buffer_size);
+        }
+        else
+        {
+            WriteBytes(GetParameterBuffer().data(), parameter_buffer_size);
+        }
+    }
+
+    for (auto& new_call : new_post_calls)
+    {
+        switch (new_call->type)
+        {
+            case util::CallModifierBase::NewCallDataType::MetaDataCall:
+                WriteMetaCommand(&(new_call->parameter_buffer));
+                break;
+            case util::CallModifierBase::NewCallDataType::ApiCall:
+            default:
+                GFXRECON_LOG_ERROR("Unprocessed PostCall NewCallDataType %d", new_call->type);
+                exit(EXIT_FAILURE);
+        }
+    }
+
+    return true;
+}
+
 bool Dx12FileOptimizerARM::ProcessFillMemoryResourceValueCommand(
     const format::FillMemoryResourceValueCommandHeader& header)
 {

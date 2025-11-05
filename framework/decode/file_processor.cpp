@@ -2282,6 +2282,67 @@ bool FileProcessor::ProcessMetaData(BlockBuffer& block_buffer, format::MetaDataI
                                  "Failed to read init DX12 acceleration structure meta-data block header");
         }
     }
+    else if (meta_data_type == format::arm::MetaDataType::kGetDx12AccelerationStructureSizeCommand)
+    {
+        // Parse command header.
+        format::arm::GetDx12AccelerationStructureSizeCommandHeader header;
+        success = block_buffer.Read(header.thread_id);
+        success = success && block_buffer.Read(header.device_id);
+        success = success && block_buffer.Read(header.resource_id);
+        success = success && block_buffer.Read(header.acceleration_structure_address);
+        success = success && block_buffer.Read(header.num_instance_descs);
+        success = success && block_buffer.Read(header.inputs_data_size);
+
+        BlockBuffer::BlockSpan parameter_data;
+        if (success)
+        {
+            if (header.inputs_data_size > 0)
+            {
+                GFXRECON_CHECK_CONVERSION_DATA_LOSS(size_t, header.inputs_data_size);
+                const size_t data_size = static_cast<size_t>(header.inputs_data_size);
+
+                if (format::IsBlockCompressed(block_header.type))
+                {
+                    GFXRECON_CHECK_CONVERSION_DATA_LOSS(size_t, block_header.size);
+                    size_t compressed_size = static_cast<size_t>(block_header.size) -
+                                             (sizeof(header) - sizeof(header.meta_header.block_header));
+
+                    parameter_data = ReadCompressedParameterBuffer(block_buffer, compressed_size, data_size);
+                }
+                else
+                {
+                    parameter_data = ReadParameterBuffer(block_buffer, data_size);
+                }
+                success = parameter_data.size() == data_size;
+            }
+
+            if (success)
+            {
+                for (auto decoder : decoders_)
+                {
+                    if (decoder->SupportsMetaDataId(meta_data_id))
+                    {
+                        DecodeAllocator::Begin();
+
+                        decoder->DispatchGetDx12AccelerationStructureSizeCommand(header,
+                                                                                 parameter_data.GetDataAs<uint8_t>());
+
+                        DecodeAllocator::End();
+                    }
+                }
+            }
+            else
+            {
+                HandleBlockReadError(kErrorReadingBlockData,
+                                     "Failed to read get DX12 acceleration structure size meta-data block");
+            }
+        }
+        else
+        {
+            HandleBlockReadError(kErrorReadingBlockHeader,
+                                 "Failed to read get DX12 acceleration structure size meta-data block header");
+        }
+    }
     else if (meta_data_type == format::MetaDataType::kDxgiAdapterInfoCommand)
     {
         format::DxgiAdapterInfoCommandHeader adapter_info_header;

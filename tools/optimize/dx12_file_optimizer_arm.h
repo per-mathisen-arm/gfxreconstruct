@@ -59,6 +59,8 @@ class Dx12FileOptimizerARM : public FileOptimizer
     virtual bool ProcessInitSubresourceCommand(const format::InitSubresourceCommandHeader& header) override;
     virtual bool ProcessInitDx12AccelerationStructureCommand(
         const format::InitDx12AccelerationStructureCommandHeader& header) override;
+    virtual bool ProcessGetDx12AccelerationStructureSizeCommand(
+        const format::arm::GetDx12AccelerationStructureSizeCommandHeader& header) override;
     virtual bool
     ProcessFillMemoryResourceValueCommand(const format::FillMemoryResourceValueCommandHeader& header) override;
     virtual bool

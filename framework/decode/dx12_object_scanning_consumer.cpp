@@ -169,6 +169,13 @@ void Dx12ObjectScanningConsumer::ProcessInitDx12AccelerationStructureCommand(
     dxr_workload_ = true;
 }
 
+void Dx12ObjectScanningConsumer::ProcessGetDx12AccelerationStructureSizeCommand(
+    const format::arm::GetDx12AccelerationStructureSizeCommandHeader&                   command_header,
+    StructPointerDecoder<Decoded_D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS>* input_descs)
+{
+    dxr_workload_ = true;
+}
+
 void Dx12ObjectScanningConsumer::Process_ID3D12GraphicsCommandList_ExecuteIndirect(const ApiCallInfo& call_info,
                                                                                    format::HandleId   object_id,
                                                                                    format::HandleId   pCommandSignature,

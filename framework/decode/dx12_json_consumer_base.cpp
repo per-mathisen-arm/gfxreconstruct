@@ -125,6 +125,23 @@ void Dx12JsonConsumerBase::ProcessInitDx12AccelerationStructureCommand(
     writer_->WriteBlockEnd();
 }
 
+void Dx12JsonConsumerBase::ProcessGetDx12AccelerationStructureSizeCommand(
+    const format::arm::GetDx12AccelerationStructureSizeCommandHeader&                   command_header,
+    StructPointerDecoder<Decoded_D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS>* input_descs)
+{
+    const util::JsonOptions& json_options = writer_->GetOptions();
+    auto&                    jdata        = writer_->WriteMetaCommandStart("GetDx12AccelerationStructureSizeCommand");
+    FieldToJson(jdata["thread_id"], command_header.thread_id, json_options);
+    FieldToJson(jdata["device_id"], command_header.device_id, json_options);
+    FieldToJson(jdata["resource_id"], command_header.resource_id, json_options);
+    FieldToJson(jdata["acceleration_structure_address"], command_header.acceleration_structure_address, json_options);
+    FieldToJson(jdata["num_instance_descs"], command_header.num_instance_descs, json_options);
+    FieldToJson(jdata["inputs_data_size"], command_header.inputs_data_size, json_options);
+    FieldToJson(jdata["input_descs"], input_descs, json_options);
+
+    writer_->WriteBlockEnd();
+}
+
 void Dx12JsonConsumerBase::ProcessFillMemoryResourceValueCommand(
     const format::FillMemoryResourceValueCommandHeader& command_header, const uint8_t* data)
 {
