@@ -103,6 +103,8 @@ const char kDebugDeviceLostOption[]              = "--debug-device-lost";
 const char kCreateDummyAllocationsOption[]       = "--create-dummy-allocations";
 const char kOmitNullHardwareBuffersLongOption[]  = "--omit-null-hardware-buffers";
 const char kOmitNullHardwareBuffersShortOption[] = "--onhb";
+const char kOmitAllHardwareBuffersLongOption[]   = "--omit-all-hardware-buffers";
+const char kOmitAllHardwareBuffersShortOption[]  = "--oahb";
 const char kDeniedMessages[]                     = "--denied-messages";
 const char kAllowedMessages[]                    = "--allowed-messages";
 const char kShaderReplaceArgument[]              = "--replace-shaders";
@@ -942,6 +944,12 @@ static void GetReplayOptions(gfxrecon::decode::ReplayOptions&      options,
         arg_parser.IsOptionSet(kOmitNullHardwareBuffersShortOption))
     {
         options.omit_null_hardware_buffers = true;
+    }
+
+    if (arg_parser.IsOptionSet(kOmitAllHardwareBuffersLongOption) ||
+        arg_parser.IsOptionSet(kOmitAllHardwareBuffersShortOption))
+    {
+        options.omit_all_hardware_buffers = true;
     }
 
     if (arg_parser.IsOptionSet(kQuitAfterMeasurementRangeOption))

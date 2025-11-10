@@ -911,6 +911,8 @@ options:
   --onhb, --omit-null-hardware-buffers
                         Omit Vulkan calls that would pass a NULL
                         AHardwareBuffer* (forwarded to replay tool)
+  --oahb, --omit-all-hardware-buffers
+                        Will not recreate any AHardwareBuffer (forwarded to replay tool)
   --use-colorspace-fallback
                         Swap the swapchain color space if unsupported by
                         replay device. Check if color space is not supported

@@ -409,6 +409,7 @@ void VulkanReplayConsumerBase::ProcessFillMemoryCommand(uint64_t       memory_id
                 {
                     ProcessFillMemoryCommand(device_memory_id, offset, size, data);
                 }
+                const_cast<VulkanAndroidHardwareBufferInfo&>(ahb_info).is_filled = true;
             }
             else if (ahb_info.hardware_buffer != nullptr)
             {
@@ -446,6 +447,7 @@ void VulkanReplayConsumerBase::ProcessFillMemoryCommand(uint64_t       memory_id
                                                                  replay_row_pitch,
                                                                  capture_row_pitch,
                                                                  height);
+                            const_cast<VulkanAndroidHardwareBufferInfo&>(ahb_info).is_filled = true;
                         }
                         else
                         {
@@ -472,6 +474,7 @@ void VulkanReplayConsumerBase::ProcessFillMemoryCommand(uint64_t       memory_id
                                                            data_size,
                                                            data + data_offset,
                                                            data_size);
+                                const_cast<VulkanAndroidHardwareBufferInfo&>(ahb_info).is_filled = true;
                                 GFXRECON_LOG_DEBUG(
                                     "Directly fill memory for AHardwareBuffer with multi-plane format for "
                                     "same capture/replay strides (Memory ID = %" PRIu64 ")",
@@ -655,7 +658,13 @@ void VulkanReplayConsumerBase::ProcessFillMemoryCommand(uint64_t       memory_id
                     device_table->DestroyImage(device, ahb_image, nullptr);
 
                     if (vk_result != VK_SUCCESS)
+                    {
                         GFXRECON_LOG_ERROR("Failed to copy data to AHardwareBuffer that is not cpu readable");
+                    }
+                    else
+                    {
+                        const_cast<VulkanAndroidHardwareBufferInfo&>(ahb_info).is_filled = true;
+                    }
                 }
 #endif
             }
@@ -1084,6 +1093,27 @@ void VulkanReplayConsumerBase::ProcessCreateHardwareBufferCommand(
     ahb_info.data                             = nullptr;
     ahb_info.width                            = width;
     ahb_info.plane_info                       = {};
+
+    if (options_.omit_all_hardware_buffers)
+    {
+        GFXRECON_LOG_DEBUG("Omitting AHardwareBuffer object creation (Buffer ID = %" PRIu64 ", Memory ID = %" PRIu64
+                           ")",
+                           buffer_id,
+                           memory_id);
+
+        uint32_t bpp  = GetHardwareBufferFormatBpp(format);
+        ahb_info.data = new uint8_t[height * width * bpp];
+
+        VulkanAndroidHardwareBufferPlaneInfo& info = ahb_info.plane_info.emplace_back();
+
+        info.capture_offset    = 0;
+        info.replay_offset     = 0;
+        info.capture_row_pitch = bpp * stride;
+        info.replay_row_pitch  = bpp * width;
+        info.height            = height;
+
+        return;
+    }
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
 
@@ -5998,7 +6028,8 @@ VkResult VulkanReplayConsumerBase::OverrideAllocateMemory(
                     uses_android_hardware_buffer = true;
                     external_buffer_id           = import_node->buffer;
 
-                    if (entry->second.hardware_buffer != nullptr && allocator->SupportsExternalMemory())
+                    if (!options_.omit_all_hardware_buffers && entry->second.hardware_buffer != nullptr &&
+                        allocator->SupportsExternalMemory())
                     {
                         import_struct->buffer = entry->second.hardware_buffer;
                     }
@@ -6088,7 +6119,7 @@ VkResult VulkanReplayConsumerBase::OverrideAllocateMemory(
 
                 external_memory_info = &ahb_info;
 
-                if (ahb_info.data != nullptr)
+                if (ahb_info.data != nullptr && ahb_info.is_filled && !options_.omit_all_hardware_buffers)
                 {
                     if (allocator->SupportsExternalMemory())
                     {
@@ -6097,7 +6128,6 @@ VkResult VulkanReplayConsumerBase::OverrideAllocateMemory(
 
                         result = allocator->MapMemory(
                             *replay_memory, ahb_info.plane_info[0].replay_offset, size, 0, &data, allocator_data);
-
                         if (result == VK_SUCCESS && data != nullptr)
                         {
                             result =
@@ -6949,7 +6979,7 @@ VulkanReplayConsumerBase::OverrideCreateImage(PFN_vkCreateImage                 
         {
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
             VkExternalFormatANDROID* info = reinterpret_cast<VkExternalFormatANDROID*>(next_struct);
-            if (!allocator->SupportsExternalMemory())
+            if (options_.omit_all_hardware_buffers || !allocator->SupportsExternalMemory())
             {
                 skipExternalMemoryImageCreateInfo = true;
                 current_struct->pNext             = next_struct->pNext;
@@ -10934,7 +10964,7 @@ VkResult VulkanReplayConsumerBase::OverrideGetAndroidHardwareBufferPropertiesAND
 {
     assert((device_info != nullptr) && (pProperties != nullptr) && (pProperties->GetOutputPointer() != nullptr));
 
-    if ((hardware_buffer == nullptr) && options_.omit_null_hardware_buffers)
+    if (options_.omit_all_hardware_buffers || ((hardware_buffer == nullptr) && options_.omit_null_hardware_buffers))
     {
 
         GFXRECON_LOG_INFO_ONCE("A call to vkGetAndroidHardwareBufferPropertiesANDROID with a NULL "
