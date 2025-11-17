@@ -898,7 +898,6 @@ void Dx12ReplayConsumerBase::ProcessGetDx12AccelerationStructureSizeCommand(
         auto accel_struct_address = command_header.acceleration_structure_address;
 
         accel_struct_builder->SetPrebuildInfo(accel_struct_id, accel_struct_address, result_data_max_size, gpu_va_map_);
-        return;
     }
 }
 

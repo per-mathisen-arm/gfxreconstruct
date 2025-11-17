@@ -76,6 +76,13 @@ inline MetaDataId GetVersionedMetaDataId(const format::FileHeader& trace_header,
 
 GFXRECON_END_NAMESPACE(MetaDataType)
 
+#pragma pack(push)
+#pragma pack(4)
+
+// Prevent size_t from being used in data structs that will be written to the capture file.
+#define size_t \
+    static_assert(false, "Capture file data types must be constant size across all platforms. size_t is not allowed.");
+
 struct GetDx12AccelerationStructureSizeCommandHeader
 {
     MetaDataHeader   meta_header{};
@@ -90,6 +97,11 @@ struct GetDx12AccelerationStructureSizeCommandHeader
     // GetDx12AccelerationStructureSizeCommandHeader
     // data() { D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUT }
 };
+
+// Restore size_t to normal behavior.
+#undef size_t
+
+#pragma pack(pop)
 
 GFXRECON_END_NAMESPACE(arm)
 GFXRECON_END_NAMESPACE(format)
