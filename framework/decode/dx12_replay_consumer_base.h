@@ -1349,6 +1349,8 @@ class Dx12ReplayConsumerBase : public Dx12Consumer
 
     void DestroyObjectExtraInfo(DxObjectInfo* info, bool release_extra_refs);
 
+    void DestroyActiveObject(DxObjectInfo* info);
+
     void DestroyActiveObjects();
 
     void DestroyActiveWindows();

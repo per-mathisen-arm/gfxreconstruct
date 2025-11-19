@@ -4310,19 +4310,102 @@ void Dx12ReplayConsumerBase::DestroyObjectExtraInfo(DxObjectInfo* info, bool rel
     }
 }
 
+void Dx12ReplayConsumerBase::DestroyActiveObject(DxObjectInfo* info)
+{
+    DestroyObjectExtraInfo(info, false);
+
+    // Release all of the replay tool's references to the object.
+    for (uint32_t i = 0; i < info->ref_count; ++i)
+    {
+        info->object->Release();
+    }
+}
+
+/**
+ * @brief Destroys all active DirectX 12 objects in a defined order.
+ *
+ * This function iterates through the `object_info_table_`, categorizing
+ * DirectX 12 objects based on their types and storing them in buckets.
+ * It then destroys the objects in a specific order defined by the
+ * `kOrder` array to ensure proper resource management and avoid
+ * dependency issues. Finally, any remaining uncategorized objects
+ * are destroyed.
+ *
+ * The destruction order is as follows:
+ * - ID3D12ResourceInfo
+ * - ID3D12DescriptorHeapInfo
+ * - ID3D12FenceInfo
+ * - ID3D12CommandSignatureInfo
+ * - ID3D12PipelineLibraryInfo
+ * - ID3D12RootSignatureInfo
+ * - ID3D12StateObjectInfo
+ * - ID3D12StateObjectPropertiesInfo
+ * - ID3D12HeapInfo
+ * - ID3D12CommandListInfo
+ * - IDxgiSwapchainInfo
+ * - ID3D12CommandQueueInfo
+ * - ID3D12DeviceInfo
+ *
+ * After processing all categorized objects, the function clears the
+ * `object_info_table_` to free up resources.
+ *
+ * @note This function is responsible for cleaning up resources to prevent memory leaks.
+ */
 void Dx12ReplayConsumerBase::DestroyActiveObjects()
 {
-    for (auto& entry : object_info_table_)
+    // Define the order in which different types of DirectX 12 objects should be destroyed.
+    static constexpr DxObjectInfoType kOrder[] = {
+        DxObjectInfoType::kID3D12ResourceInfo,
+        DxObjectInfoType::kID3D12DescriptorHeapInfo,
+        DxObjectInfoType::kID3D12FenceInfo,
+        DxObjectInfoType::kID3D12CommandSignatureInfo,
+        DxObjectInfoType::kID3D12PipelineLibraryInfo,
+        DxObjectInfoType::kID3D12RootSignatureInfo,
+        DxObjectInfoType::kID3D12StateObjectInfo,
+        DxObjectInfoType::kID3D12StateObjectPropertiesInfo,
+        DxObjectInfoType::kID3D12HeapInfo,
+        DxObjectInfoType::kID3D12CommandListInfo,
+        DxObjectInfoType::kIDxgiSwapchainInfo,
+        DxObjectInfoType::kID3D12CommandQueueInfo,
+        DxObjectInfoType::kID3D12DeviceInfo,
+    };
+
+    // Bucket the objects by their type for ordered destruction.
+    std::unordered_map<DxObjectInfoType, std::vector<DxObjectInfo*>> buckets;
+    buckets.reserve(std::size(kOrder) + 1);
+    std::vector<DxObjectInfo*> others;
+    others.reserve(object_info_table_.size());
+
+    for (auto& kv : object_info_table_)
     {
-        auto& info = entry.second;
-
-        DestroyObjectExtraInfo(&info, false);
-
-        // Release all of the replay tool's references to the object.
-        for (uint32_t i = 0; i < info.ref_count; ++i)
+        DxObjectInfo* info = &kv.second;
+        if (info->extra_info)
         {
-            info.object->Release();
+            buckets[info->extra_info->extra_info_type].push_back(info);
         }
+        else
+        {
+            others.push_back(info);
+        }
+    }
+
+    // Destroy objects in the defined order.
+    for (DxObjectInfoType type : kOrder)
+    {
+        auto it = buckets.find(type);
+        if (it != buckets.end())
+        {
+            for (DxObjectInfo* info : it->second)
+            {
+                DestroyActiveObject(info);
+            }
+        }
+    }
+
+    // Destroy any remaining objects that were not categorized.
+    for (DxObjectInfo* info : others)
+    {
+        DestroyActiveObject(info);
     }
 
     object_info_table_.clear();
