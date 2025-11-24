@@ -25,6 +25,7 @@
 
 #include "decode/vulkan_object_info.h"
 #include "decode/vulkan_resource_allocator.h"
+#include "format/format.h"
 #include "util/defines.h"
 
 #include "vk_mem_alloc.h"
@@ -585,6 +586,7 @@ class VulkanRebindAllocator : public VulkanResourceAllocator
         // alignments.
         std::vector<SubresourceLayouts> layouts;
         bool                            use_ahb{ false };
+        format::HandleId                capture_id{ format::kNullHandleId };
     };
 
     struct MemoryAllocInfo
@@ -621,6 +623,9 @@ class VulkanRebindAllocator : public VulkanResourceAllocator
     };
 
   private:
+    ResourceAllocInfo* HasAliasedObject(const std::unordered_map<uint64_t, ResourceAllocInfo*>& resource_map,
+                                        VkDeviceSize                                            memory_offset);
+
     void WriteBoundResource(ResourceAllocInfo* resource_alloc_info,
                             VmaMemoryInfo*     bound_memory_info,
                             VkDeviceSize       src_offset,
@@ -711,6 +716,17 @@ class VulkanRebindAllocator : public VulkanResourceAllocator
                                         const ResourceAllocInfo* resource_alloc_info,
                                         VkDeviceMemory           device_memory,
                                         uint64_t                 resource_handle);
+
+    struct AliasedResourceInfo
+    {
+        uint64_t           object_handle;
+        format::HandleId   capture_id;
+        ResourceAllocInfo* resource_alloc_info;
+    };
+    VkResult AllocateMemoryForAliasedObjects(std::vector<AliasedResourceInfo>        aliased_resource_alloc_infos,
+                                             const VkPhysicalDeviceMemoryProperties& device_memory_properties,
+                                             MemoryAllocInfo&                        memory_alloc_info,
+                                             VmaMemoryInfo**                         vma_mem_info);
 
     VkResult AllocateMemoryForBuffer(VkBuffer                                buffer,
                                      VkDeviceSize                            memory_offset,
