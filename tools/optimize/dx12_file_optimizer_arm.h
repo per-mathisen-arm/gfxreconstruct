@@ -42,14 +42,10 @@ class Dx12FileOptimizerARM : public FileOptimizer
         std::unordered_set<uint64_t>         unreferenced_blocks;
         decode::UnreferencedPsoCreationCalls calls_info{};
 
-        std::unordered_set<uint64_t> unreferenced_device_blocks;
-
         std::vector<std::unique_ptr<util::Dx12ModifierBase>> modifiers;
     };
 
     Dx12FileOptimizerARM(Dx12OptimizationData* optimization_data) : optimization_data_(optimization_data) {}
-
-    void SetUnreferencedDeviceBlocks(const std::unordered_set<uint64_t>& unreferenced_device_blocks);
 
   private:
     bool ProcessFunctionCall(decode::ParsedBlock& parsed_block) override;
@@ -94,8 +90,21 @@ class Dx12FileOptimizerARM : public FileOptimizer
                 switch (new_call->type)
                 {
                     case util::CallModifierBase::NewCallDataType::ApiCall:
-                        WriteMethodCall(
-                            new_call->call_id, new_call->object_id, new_call->thread_id, &(new_call->parameter_buffer));
+                        if constexpr (std::is_same_v<Args, decode::FunctionCallArgs>)
+                        {
+                            WriteFunctionCall(new_call->call_id, new_call->thread_id, &(new_call->parameter_buffer));
+                        }
+                        else if constexpr (std::is_same_v<Args, decode::MethodCallArgs>)
+                        {
+                            WriteMethodCall(new_call->call_id,
+                                            new_call->object_id,
+                                            new_call->thread_id,
+                                            &(new_call->parameter_buffer));
+                        }
+                        else
+                        {
+                            GFXRECON_LOG_ERROR("Attempting to write an API call before unsupported block type");
+                        }
                         break;
                     case util::CallModifierBase::NewCallDataType::MetaDataCall:
                         WriteMetaCommand(&(new_call->parameter_buffer));
@@ -108,7 +117,11 @@ class Dx12FileOptimizerARM : public FileOptimizer
 
             if (!delete_current_call)
             {
-                if constexpr (std::is_same_v<Args, decode::MethodCallArgs>)
+                if constexpr (std::is_same_v<Args, decode::FunctionCallArgs>)
+                {
+                    WriteFunctionCall(args.call_id, args.call_info.thread_id, &buffer);
+                }
+                else if constexpr (std::is_same_v<Args, decode::MethodCallArgs>)
                 {
                     WriteMethodCall(args.call_id, args.object_id, args.call_info.thread_id, &buffer);
                 }
@@ -146,8 +159,21 @@ class Dx12FileOptimizerARM : public FileOptimizer
                 switch (new_call->type)
                 {
                     case util::CallModifierBase::NewCallDataType::ApiCall:
-                        WriteMethodCall(
-                            new_call->call_id, new_call->object_id, new_call->thread_id, &(new_call->parameter_buffer));
+                        if constexpr (std::is_same_v<Args, decode::FunctionCallArgs>)
+                        {
+                            WriteFunctionCall(new_call->call_id, new_call->thread_id, &(new_call->parameter_buffer));
+                        }
+                        else if constexpr (std::is_same_v<Args, decode::MethodCallArgs>)
+                        {
+                            WriteMethodCall(new_call->call_id,
+                                            new_call->object_id,
+                                            new_call->thread_id,
+                                            &(new_call->parameter_buffer));
+                        }
+                        else
+                        {
+                            GFXRECON_LOG_ERROR("Attempting to write an API call before unsupported block type");
+                        }
                         break;
                     case util::CallModifierBase::NewCallDataType::MetaDataCall:
                         WriteMetaCommand(&(new_call->parameter_buffer));
@@ -169,6 +195,10 @@ class Dx12FileOptimizerARM : public FileOptimizer
         return FileOptimizer::ProcessMetaData(parsed_block);
     }
 
+    void WriteFunctionCall(format::ApiCallId               call_id,
+                           format::ThreadId                thread_id,
+                           const util::MemoryOutputStream* parameter_buffer);
+
     void WriteMethodCall(format::ApiCallId               call_id,
                          format::HandleId                call_object_id,
                          format::ThreadId                thread_id,
@@ -179,9 +209,6 @@ class Dx12FileOptimizerARM : public FileOptimizer
     Dx12OptimizationData* optimization_data_;
     decode::Dx12Decoder   decoder_;
     uint64_t              frames_removed_ = 0;
-
-  protected:
-    std::unordered_set<uint64_t> unreferenced_device_blocks_;
 };
 
 GFXRECON_END_NAMESPACE(gfxrecon)

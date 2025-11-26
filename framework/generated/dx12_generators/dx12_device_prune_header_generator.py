@@ -84,7 +84,7 @@ class Dx12DevicePruneHeaderGenerator(Dx12BaseGenerator):
         code = (
             "#if defined(D3D12_SUPPORT)\n"
             "\n"
-            "#include \"generated_dx12_consumer.h\"\n"
+            "#include \"util/dx12_modifier_base.h\"\n"
             "#include <unordered_set>\n"
             "#include <cstdint>\n"
             "#endif\n"
@@ -99,13 +99,13 @@ class Dx12DevicePruneHeaderGenerator(Dx12BaseGenerator):
             method_info['parameters'][-1]['name'].startswith('pp'):
             pointer_name = method_info['parameters'][-1]['name']
             return  '\n'\
-                    '{\n'\
-                    '    Mark(call_info, object_id);\n'\
-                    '    if (target_.count(object_id) > 0 && return_value == S_OK && ' + pointer_name + '->GetPointer() != nullptr)\n'\
                     '    {\n'\
-                    '        target_.insert(*' + pointer_name + '->GetPointer());\n'\
-                    '    }\n'\
-                    '}\n'
+                    '        Mark(call_info, object_id);\n'\
+                    '        if (target_.count(object_id) > 0 && return_value == S_OK && ' + pointer_name + '->GetPointer() != nullptr)\n'\
+                    '        {\n'\
+                    '            target_.insert(*' + pointer_name + '->GetPointer());\n'\
+                    '        }\n'\
+                    '    }\n'
         elif class_name:
             return '{ Mark(call_info, object_id); }'
         return '{}'
@@ -207,30 +207,49 @@ class Dx12DevicePruneHeaderGenerator(Dx12BaseGenerator):
                     for arg in self.constructor_args.split(',')
                 ]
             )
-            return 'class Dx12DevicePrune{0}Consumer : public Dx12{0}Consumer\n'\
+            return 'class Dx12DevicePrune{0}Modifier : public util::Dx12{0}ModifierBase\n'\
                       '{{\n'\
                       '  public:\n'\
-                      '    explicit Dx12DevicePrune{0}Consumer({1}) {{target_.insert(targets.begin(), targets.end());}}\n'\
-                      '    virtual ~Dx12DevicePrune{0}Consumer() override {{}}\n'.format(
+                      '    explicit Dx12DevicePrune{0}Modifier({1}) {{target_.insert(targets.begin(), targets.end());}}\n'\
+                      '    virtual ~Dx12DevicePrune{0}Modifier() override {{ FoundAny(); }}\n'.format(
                           consumer_type, self.constructor_args, arg_list) + \
-                      '    const std::unordered_set<uint64_t>& GetBlocks() const { return blocks_; }\n'\
-                      '    bool                                FoundAny() const { return !blocks_.empty(); }\n'\
+                      '\n'\
+                      '    virtual bool CanOptimize() override { return !target_.empty(); }\n'\
+                      '\n'\
+                      '    bool FoundAny() const\n'\
+                      '    {\n'\
+                      '        if (!blocks_.empty())\n'\
+                      '        {\n'\
+                      '            GFXRECON_WRITE_CONSOLE("Device prune: found %" PRIu64 " blocks to remove.", blocks_.size());\n'\
+                      '            return true;\n'\
+                      '        }\n'\
+                      '        else\n'\
+                      '        {\n'\
+                      '            GFXRECON_WRITE_CONSOLE("Device prune: specified device ids not found.");\n'\
+                      '            return false;\n'\
+                      '        }\n'\
+                      '    }\n'\
+                      '\n'\
                       '  private:\n'\
                       '    void Mark(const ApiCallInfo& call_info, format::HandleId object_id)\n'\
                       '    {\n'\
                       '        if (target_.count(object_id) > 0)\n'\
                       '        {\n'\
                       '            blocks_.insert(call_info.index);\n'\
+                      '            SetDeleteCurrentCall();\n'\
                       '        }\n'\
                       '    }\n'\
+                      '\n'\
                       '    std::unordered_set<uint64_t> target_; //  ids to be tracked\n'\
-                      '    std::unordered_set<uint64_t> blocks_;\n'
+                      '    std::unordered_set<uint64_t> blocks_;\n'\
+                      '\n'\
+                      '  public:\n'
         else:
-            return 'class Dx12DevicePrune{0}Consumer : public Dx12{0}Consumer\n'\
+            return 'class Dx12DevicePrune{0}Modifier : public Dx12{0}ModifierBase\n'\
                       '{{\n'\
                       '  public:\n'\
-                      '    Dx12DevicePrune{0}Consumer(){{}}\n'\
-                      '    virtual ~Dx12DevicePrune{0}Consumer() override {{}}\n'.format(
+                      '    Dx12DevicePrune{0}Modifier(){{}}\n'\
+                      '    virtual ~Dx12DevicePrune{0}Modifier() override {{}}\n'.format(
                           consumer_type)
 
     def get_decoder_class_define(self, consumer_type):

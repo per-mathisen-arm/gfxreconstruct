@@ -28,18 +28,8 @@
 
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 
-void Dx12FileOptimizerARM::SetUnreferencedDeviceBlocks(const std::unordered_set<uint64_t>& unreferenced_device_blocks)
-{
-    unreferenced_device_blocks_ = unreferenced_device_blocks;
-}
-
 bool Dx12FileOptimizerARM::ProcessFunctionCall(decode::ParsedBlock& parsed_block)
 {
-    if (unreferenced_device_blocks_.find(GetCurrentBlockIndex()) != unreferenced_device_blocks_.end())
-    {
-        return true;
-    }
-
     const auto& args = parsed_block.Get<decode::FunctionCallArgs>();
 
     // Exit early if the call is filtered out by FileOptimizer
@@ -67,11 +57,6 @@ bool Dx12FileOptimizerARM::ProcessFunctionCall(decode::ParsedBlock& parsed_block
 
 bool Dx12FileOptimizerARM::ProcessMethodCall(decode::ParsedBlock& parsed_block)
 {
-    if (unreferenced_device_blocks_.find(GetCurrentBlockIndex()) != unreferenced_device_blocks_.end())
-    {
-        return true;
-    }
-
     const auto& args = parsed_block.Get<decode::MethodCallArgs>();
 
     // Exit early if the call is filtered out by FileOptimizer
@@ -198,6 +183,74 @@ void Dx12FileOptimizerARM::WriteMethodCall(format::ApiCallId               call_
 
         packet_size += sizeof(uncompressed_header.api_call_id) + sizeof(compressed_header.object_id) +
                        sizeof(uncompressed_header.thread_id) + data_size;
+
+        uncompressed_header.block_header.size = packet_size;
+    }
+
+    // Write appropriate function call block header.
+    WriteBytes(header_pointer, header_size);
+
+    // Write parameter data.
+    WriteBytes(data_pointer, data_size);
+}
+
+void Dx12FileOptimizerARM::WriteFunctionCall(format::ApiCallId               call_id,
+                                             format::ThreadId                thread_id,
+                                             const util::MemoryOutputStream* parameter_buffer)
+{
+    assert(parameter_buffer != nullptr);
+
+    bool                                 not_compressed      = true;
+    format::CompressedFunctionCallHeader compressed_header   = {};
+    format::FunctionCallHeader           uncompressed_header = {};
+    size_t                               uncompressed_size   = parameter_buffer->GetDataSize();
+    size_t                               header_size         = 0;
+    const void*                          header_pointer      = nullptr;
+    size_t                               data_size           = 0;
+    const void*                          data_pointer        = nullptr;
+
+    util::Compressor*     compressor                  = GetCompressor();
+    std::vector<uint8_t>& compressed_parameter_buffer = GetCompressedParameterBuffer();
+
+    if (compressor != nullptr)
+    {
+        size_t packet_size = 0;
+        size_t compressed_size =
+            compressor->Compress(uncompressed_size, parameter_buffer->GetData(), &compressed_parameter_buffer, 0);
+
+        if ((0 < compressed_size) && (compressed_size < uncompressed_size))
+        {
+            data_pointer   = reinterpret_cast<const void*>(compressed_parameter_buffer.data());
+            data_size      = compressed_size;
+            header_pointer = reinterpret_cast<const void*>(&compressed_header);
+            header_size    = sizeof(format::CompressedFunctionCallHeader);
+
+            compressed_header.block_header.type = format::BlockType::kCompressedFunctionCallBlock;
+            compressed_header.api_call_id       = call_id;
+            compressed_header.thread_id         = thread_id;
+            compressed_header.uncompressed_size = uncompressed_size;
+
+            packet_size += sizeof(compressed_header.api_call_id) + sizeof(compressed_header.uncompressed_size) +
+                           sizeof(compressed_header.thread_id) + compressed_size;
+
+            compressed_header.block_header.size = packet_size;
+            not_compressed                      = false;
+        }
+    }
+
+    if (not_compressed)
+    {
+        size_t packet_size = 0;
+        data_pointer       = reinterpret_cast<const void*>(parameter_buffer->GetData());
+        data_size          = uncompressed_size;
+        header_pointer     = reinterpret_cast<const void*>(&uncompressed_header);
+        header_size        = sizeof(format::FunctionCallHeader);
+
+        uncompressed_header.block_header.type = format::BlockType::kFunctionCallBlock;
+        uncompressed_header.api_call_id       = call_id;
+        uncompressed_header.thread_id         = thread_id;
+
+        packet_size += sizeof(uncompressed_header.api_call_id) + sizeof(uncompressed_header.thread_id) + data_size;
 
         uncompressed_header.block_header.size = packet_size;
     }

@@ -253,10 +253,10 @@ def make_gen_opts(args):
     py_prefix_strings[-4] = py_prefix_strings1.format(
         'dx12_device_prune_header_generator.py'
     )
-    gen_opts['generated_dx12_device_prune_consumer.h'] = [
+    gen_opts['generated_dx12_device_prune_modifier.h'] = [
         Dx12DevicePruneHeaderGenerator,
         Dx12DevicePruneHeaderGeneratorOptions(
-            filename='generated_dx12_device_prune_consumer.h',
+            filename='generated_dx12_device_prune_modifier.h',
             directory=directory,
             constructor_args='const std::unordered_set<uint64_t>& targets',
             blacklists=blacklists,

@@ -33,6 +33,7 @@ struct Dx12OptimizationOptions
     bool optimize_resource_values{ false };
     bool optimize_resource_values_experimental{ false };
     bool optimize_resource_values_offline{ false };
+    bool no_default{ false };
 
     int32_t override_gpu_index{ -1 };
     std::unordered_set<uint64_t> remove_device_ids{};

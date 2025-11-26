@@ -72,8 +72,8 @@ extern "C"
 }
 #endif
 
-const char kOptions[] =
-    "-h|--help,--version,--no-debug-popup,--d3d12-pso-removal,--dxr,--dxr-offline,--dxr-experimental,--vk-remove-rt";
+const char kOptions[] = "-h|--help,--version,--no-debug-popup,--d3d12-pso-removal,--dxr,--dxr-offline,--dxr-"
+                        "experimental,--vk-remove-rt,--d3d12-no-default";
 const char kArguments[] =
     "--gpu,--set-replay-options,--set-replay-options,--remove-device-instance,--remove-thread,--remove-device-ids";
 
@@ -85,6 +85,7 @@ const char kReplayOptions[]               = "--set-replay-options";
 const char kVulkanDevInsRemoval[]         = "--remove-device-instance";
 const char kThreadRemoval[]               = "--remove-thread";
 const char kRemoveDeviceIds[]             = "--remove-device-ids";
+const char kDx12OptimizeNoDefault[]       = "--d3d12-no-default";
 
 std::vector<std::string>                       remove_app_name;
 std::unordered_set<gfxrecon::format::ThreadId> removed_threads_ids;
@@ -125,7 +126,9 @@ static void PrintUsage(const char* exe_name)
         "comma marks for multiple arguments. the default value is \"android framework\".");
     GFXRECON_WRITE_CONSOLE("  --vk-remove-rt\t\tRemove ray-tracing related API calls from the trace");
     GFXRECON_WRITE_CONSOLE("  --remove-thread <threads>\t\tRemove the specified threads from the trace.");
-    GFXRECON_WRITE_CONSOLE("  --remove-device-ids <ids>\t\tRemove the specified device from the trace.");
+    GFXRECON_WRITE_CONSOLE("  --remove-device-ids <ids>\t\tRemove the specified device from the D3D12 trace.");
+    GFXRECON_WRITE_CONSOLE(
+        "  --d3d12-no-default\t\tSkip D3D12 default optimizations. Not commonly used unless specifically required.");
     GFXRECON_WRITE_CONSOLE("  -h\t\t\tPrint usage information and exit (same as --help).");
     GFXRECON_WRITE_CONSOLE("  --version\t\tPrint version information and exit.");
 #if defined(WIN32)
@@ -328,6 +331,7 @@ int main(int argc, const char** argv)
         dx12_options.optimize_resource_values_experimental = arg_parser.IsOptionSet(kDx12OptimizeDxrExperimental);
         dx12_options.optimize_resource_values_offline      = arg_parser.IsOptionSet(kDx12OptimizeDxrOffline);
         dx12_options.remove_redundant_psos                 = arg_parser.IsOptionSet(kD3d12PsoRemoval);
+        dx12_options.no_default                            = arg_parser.IsOptionSet(kDx12OptimizeNoDefault);
         const auto& override_gpu                           = arg_parser.GetArgumentValue(kOverrideGpuArgument);
 
         gfxrecon::VulkanOptimizationOptions vulkan_options{};

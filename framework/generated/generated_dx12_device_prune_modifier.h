@@ -25,12 +25,12 @@
 **
 */
 
-#ifndef  GFXRECON_GENERATED_DX12_DEVICE_PRUNE_CONSUMER_H
-#define  GFXRECON_GENERATED_DX12_DEVICE_PRUNE_CONSUMER_H
+#ifndef  GFXRECON_GENERATED_DX12_DEVICE_PRUNE_MODIFIER_H
+#define  GFXRECON_GENERATED_DX12_DEVICE_PRUNE_MODIFIER_H
 
 #if defined(D3D12_SUPPORT)
 
-#include "generated_dx12_consumer.h"
+#include "util/dx12_modifier_base.h"
 #include <unordered_set>
 #include <cstdint>
 #endif
@@ -38,23 +38,42 @@
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(decode)
 
-class Dx12DevicePruneConsumer : public Dx12Consumer
+class Dx12DevicePruneModifier : public util::Dx12ModifierBase
 {
   public:
-    explicit Dx12DevicePruneConsumer(const std::unordered_set<uint64_t>& targets) {target_.insert(targets.begin(), targets.end());}
-    virtual ~Dx12DevicePruneConsumer() override {}
-    const std::unordered_set<uint64_t>& GetBlocks() const { return blocks_; }
-    bool                                FoundAny() const { return !blocks_.empty(); }
+    explicit Dx12DevicePruneModifier(const std::unordered_set<uint64_t>& targets) {target_.insert(targets.begin(), targets.end());}
+    virtual ~Dx12DevicePruneModifier() override { FoundAny(); }
+
+    virtual bool CanOptimize() override { return !target_.empty(); }
+
+    bool FoundAny() const
+    {
+        if (!blocks_.empty())
+        {
+            GFXRECON_WRITE_CONSOLE("Device prune: found %" PRIu64 " blocks to remove.", blocks_.size());
+            return true;
+        }
+        else
+        {
+            GFXRECON_WRITE_CONSOLE("Device prune: specified device ids not found.");
+            return false;
+        }
+    }
+
   private:
     void Mark(const ApiCallInfo& call_info, format::HandleId object_id)
     {
         if (target_.count(object_id) > 0)
         {
             blocks_.insert(call_info.index);
+            SetDeleteCurrentCall();
         }
     }
+
     std::unordered_set<uint64_t> target_; //  ids to be tracked
     std::unordered_set<uint64_t> blocks_;
+
+  public:
 /*
 ** This part is generated from d3d12.h in Windows SDK: 10.0.26100.0
 **
@@ -785,13 +804,13 @@ class Dx12DevicePruneConsumer : public Dx12Consumer
         StructPointerDecoder<Decoded_D3D12_COMMAND_QUEUE_DESC>* pDesc,
         Decoded_GUID riid,
         HandlePointerDecoder<void*>* ppCommandQueue)
-{
-    Mark(call_info, object_id);
-    if (target_.count(object_id) > 0 && return_value == S_OK && ppCommandQueue->GetPointer() != nullptr)
     {
-        target_.insert(*ppCommandQueue->GetPointer());
+        Mark(call_info, object_id);
+        if (target_.count(object_id) > 0 && return_value == S_OK && ppCommandQueue->GetPointer() != nullptr)
+        {
+            target_.insert(*ppCommandQueue->GetPointer());
+        }
     }
-}
 
 
     virtual void Process_ID3D12Device_CreateCommandAllocator(
@@ -801,13 +820,13 @@ class Dx12DevicePruneConsumer : public Dx12Consumer
         D3D12_COMMAND_LIST_TYPE type,
         Decoded_GUID riid,
         HandlePointerDecoder<void*>* ppCommandAllocator)
-{
-    Mark(call_info, object_id);
-    if (target_.count(object_id) > 0 && return_value == S_OK && ppCommandAllocator->GetPointer() != nullptr)
     {
-        target_.insert(*ppCommandAllocator->GetPointer());
+        Mark(call_info, object_id);
+        if (target_.count(object_id) > 0 && return_value == S_OK && ppCommandAllocator->GetPointer() != nullptr)
+        {
+            target_.insert(*ppCommandAllocator->GetPointer());
+        }
     }
-}
 
 
     virtual void Process_ID3D12Device_CreateGraphicsPipelineState(
@@ -817,13 +836,13 @@ class Dx12DevicePruneConsumer : public Dx12Consumer
         StructPointerDecoder<Decoded_D3D12_GRAPHICS_PIPELINE_STATE_DESC>* pDesc,
         Decoded_GUID riid,
         HandlePointerDecoder<void*>* ppPipelineState)
-{
-    Mark(call_info, object_id);
-    if (target_.count(object_id) > 0 && return_value == S_OK && ppPipelineState->GetPointer() != nullptr)
     {
-        target_.insert(*ppPipelineState->GetPointer());
+        Mark(call_info, object_id);
+        if (target_.count(object_id) > 0 && return_value == S_OK && ppPipelineState->GetPointer() != nullptr)
+        {
+            target_.insert(*ppPipelineState->GetPointer());
+        }
     }
-}
 
 
     virtual void Process_ID3D12Device_CreateComputePipelineState(
@@ -833,13 +852,13 @@ class Dx12DevicePruneConsumer : public Dx12Consumer
         StructPointerDecoder<Decoded_D3D12_COMPUTE_PIPELINE_STATE_DESC>* pDesc,
         Decoded_GUID riid,
         HandlePointerDecoder<void*>* ppPipelineState)
-{
-    Mark(call_info, object_id);
-    if (target_.count(object_id) > 0 && return_value == S_OK && ppPipelineState->GetPointer() != nullptr)
     {
-        target_.insert(*ppPipelineState->GetPointer());
+        Mark(call_info, object_id);
+        if (target_.count(object_id) > 0 && return_value == S_OK && ppPipelineState->GetPointer() != nullptr)
+        {
+            target_.insert(*ppPipelineState->GetPointer());
+        }
     }
-}
 
 
     virtual void Process_ID3D12Device_CreateCommandList(
@@ -852,13 +871,13 @@ class Dx12DevicePruneConsumer : public Dx12Consumer
         format::HandleId pInitialState,
         Decoded_GUID riid,
         HandlePointerDecoder<void*>* ppCommandList)
-{
-    Mark(call_info, object_id);
-    if (target_.count(object_id) > 0 && return_value == S_OK && ppCommandList->GetPointer() != nullptr)
     {
-        target_.insert(*ppCommandList->GetPointer());
+        Mark(call_info, object_id);
+        if (target_.count(object_id) > 0 && return_value == S_OK && ppCommandList->GetPointer() != nullptr)
+        {
+            target_.insert(*ppCommandList->GetPointer());
+        }
     }
-}
 
 
     virtual void Process_ID3D12Device_CreateDescriptorHeap(
@@ -868,13 +887,13 @@ class Dx12DevicePruneConsumer : public Dx12Consumer
         StructPointerDecoder<Decoded_D3D12_DESCRIPTOR_HEAP_DESC>* pDescriptorHeapDesc,
         Decoded_GUID riid,
         HandlePointerDecoder<void*>* ppvHeap)
-{
-    Mark(call_info, object_id);
-    if (target_.count(object_id) > 0 && return_value == S_OK && ppvHeap->GetPointer() != nullptr)
     {
-        target_.insert(*ppvHeap->GetPointer());
+        Mark(call_info, object_id);
+        if (target_.count(object_id) > 0 && return_value == S_OK && ppvHeap->GetPointer() != nullptr)
+        {
+            target_.insert(*ppvHeap->GetPointer());
+        }
     }
-}
 
 
     virtual void Process_ID3D12Device_GetDescriptorHandleIncrementSize(
@@ -892,13 +911,13 @@ class Dx12DevicePruneConsumer : public Dx12Consumer
         SIZE_T blobLengthInBytes,
         Decoded_GUID riid,
         HandlePointerDecoder<void*>* ppvRootSignature)
-{
-    Mark(call_info, object_id);
-    if (target_.count(object_id) > 0 && return_value == S_OK && ppvRootSignature->GetPointer() != nullptr)
     {
-        target_.insert(*ppvRootSignature->GetPointer());
+        Mark(call_info, object_id);
+        if (target_.count(object_id) > 0 && return_value == S_OK && ppvRootSignature->GetPointer() != nullptr)
+        {
+            target_.insert(*ppvRootSignature->GetPointer());
+        }
     }
-}
 
 
     virtual void Process_ID3D12Device_CreateConstantBufferView(
@@ -987,13 +1006,13 @@ class Dx12DevicePruneConsumer : public Dx12Consumer
         StructPointerDecoder<Decoded_D3D12_CLEAR_VALUE>* pOptimizedClearValue,
         Decoded_GUID riidResource,
         HandlePointerDecoder<void*>* ppvResource)
-{
-    Mark(call_info, object_id);
-    if (target_.count(object_id) > 0 && return_value == S_OK && ppvResource->GetPointer() != nullptr)
     {
-        target_.insert(*ppvResource->GetPointer());
+        Mark(call_info, object_id);
+        if (target_.count(object_id) > 0 && return_value == S_OK && ppvResource->GetPointer() != nullptr)
+        {
+            target_.insert(*ppvResource->GetPointer());
+        }
     }
-}
 
 
     virtual void Process_ID3D12Device_CreateHeap(
@@ -1003,13 +1022,13 @@ class Dx12DevicePruneConsumer : public Dx12Consumer
         StructPointerDecoder<Decoded_D3D12_HEAP_DESC>* pDesc,
         Decoded_GUID riid,
         HandlePointerDecoder<void*>* ppvHeap)
-{
-    Mark(call_info, object_id);
-    if (target_.count(object_id) > 0 && return_value == S_OK && ppvHeap->GetPointer() != nullptr)
     {
-        target_.insert(*ppvHeap->GetPointer());
+        Mark(call_info, object_id);
+        if (target_.count(object_id) > 0 && return_value == S_OK && ppvHeap->GetPointer() != nullptr)
+        {
+            target_.insert(*ppvHeap->GetPointer());
+        }
     }
-}
 
 
     virtual void Process_ID3D12Device_CreatePlacedResource(
@@ -1023,13 +1042,13 @@ class Dx12DevicePruneConsumer : public Dx12Consumer
         StructPointerDecoder<Decoded_D3D12_CLEAR_VALUE>* pOptimizedClearValue,
         Decoded_GUID riid,
         HandlePointerDecoder<void*>* ppvResource)
-{
-    Mark(call_info, object_id);
-    if (target_.count(object_id) > 0 && return_value == S_OK && ppvResource->GetPointer() != nullptr)
     {
-        target_.insert(*ppvResource->GetPointer());
+        Mark(call_info, object_id);
+        if (target_.count(object_id) > 0 && return_value == S_OK && ppvResource->GetPointer() != nullptr)
+        {
+            target_.insert(*ppvResource->GetPointer());
+        }
     }
-}
 
 
     virtual void Process_ID3D12Device_CreateReservedResource(
@@ -1041,13 +1060,13 @@ class Dx12DevicePruneConsumer : public Dx12Consumer
         StructPointerDecoder<Decoded_D3D12_CLEAR_VALUE>* pOptimizedClearValue,
         Decoded_GUID riid,
         HandlePointerDecoder<void*>* ppvResource)
-{
-    Mark(call_info, object_id);
-    if (target_.count(object_id) > 0 && return_value == S_OK && ppvResource->GetPointer() != nullptr)
     {
-        target_.insert(*ppvResource->GetPointer());
+        Mark(call_info, object_id);
+        if (target_.count(object_id) > 0 && return_value == S_OK && ppvResource->GetPointer() != nullptr)
+        {
+            target_.insert(*ppvResource->GetPointer());
+        }
     }
-}
 
 
     virtual void Process_ID3D12Device_CreateSharedHandle(
@@ -1098,13 +1117,13 @@ class Dx12DevicePruneConsumer : public Dx12Consumer
         D3D12_FENCE_FLAGS Flags,
         Decoded_GUID riid,
         HandlePointerDecoder<void*>* ppFence)
-{
-    Mark(call_info, object_id);
-    if (target_.count(object_id) > 0 && return_value == S_OK && ppFence->GetPointer() != nullptr)
     {
-        target_.insert(*ppFence->GetPointer());
+        Mark(call_info, object_id);
+        if (target_.count(object_id) > 0 && return_value == S_OK && ppFence->GetPointer() != nullptr)
+        {
+            target_.insert(*ppFence->GetPointer());
+        }
     }
-}
 
 
     virtual void Process_ID3D12Device_GetDeviceRemovedReason(
@@ -1131,13 +1150,13 @@ class Dx12DevicePruneConsumer : public Dx12Consumer
         StructPointerDecoder<Decoded_D3D12_QUERY_HEAP_DESC>* pDesc,
         Decoded_GUID riid,
         HandlePointerDecoder<void*>* ppvHeap)
-{
-    Mark(call_info, object_id);
-    if (target_.count(object_id) > 0 && return_value == S_OK && ppvHeap->GetPointer() != nullptr)
     {
-        target_.insert(*ppvHeap->GetPointer());
+        Mark(call_info, object_id);
+        if (target_.count(object_id) > 0 && return_value == S_OK && ppvHeap->GetPointer() != nullptr)
+        {
+            target_.insert(*ppvHeap->GetPointer());
+        }
     }
-}
 
 
     virtual void Process_ID3D12Device_SetStablePowerState(
@@ -1154,13 +1173,13 @@ class Dx12DevicePruneConsumer : public Dx12Consumer
         format::HandleId pRootSignature,
         Decoded_GUID riid,
         HandlePointerDecoder<void*>* ppvCommandSignature)
-{
-    Mark(call_info, object_id);
-    if (target_.count(object_id) > 0 && return_value == S_OK && ppvCommandSignature->GetPointer() != nullptr)
     {
-        target_.insert(*ppvCommandSignature->GetPointer());
+        Mark(call_info, object_id);
+        if (target_.count(object_id) > 0 && return_value == S_OK && ppvCommandSignature->GetPointer() != nullptr)
+        {
+            target_.insert(*ppvCommandSignature->GetPointer());
+        }
     }
-}
 
 
     virtual void Process_ID3D12Device_GetResourceTiling(
@@ -1233,13 +1252,13 @@ class Dx12DevicePruneConsumer : public Dx12Consumer
         SIZE_T BlobLength,
         Decoded_GUID riid,
         HandlePointerDecoder<void*>* ppPipelineLibrary)
-{
-    Mark(call_info, object_id);
-    if (target_.count(object_id) > 0 && return_value == S_OK && ppPipelineLibrary->GetPointer() != nullptr)
     {
-        target_.insert(*ppPipelineLibrary->GetPointer());
+        Mark(call_info, object_id);
+        if (target_.count(object_id) > 0 && return_value == S_OK && ppPipelineLibrary->GetPointer() != nullptr)
+        {
+            target_.insert(*ppPipelineLibrary->GetPointer());
+        }
     }
-}
 
 
     virtual void Process_ID3D12Device1_SetEventOnMultipleFenceCompletion(
@@ -1267,13 +1286,13 @@ class Dx12DevicePruneConsumer : public Dx12Consumer
         StructPointerDecoder<Decoded_D3D12_PIPELINE_STATE_STREAM_DESC>* pDesc,
         Decoded_GUID riid,
         HandlePointerDecoder<void*>* ppPipelineState)
-{
-    Mark(call_info, object_id);
-    if (target_.count(object_id) > 0 && return_value == S_OK && ppPipelineState->GetPointer() != nullptr)
     {
-        target_.insert(*ppPipelineState->GetPointer());
+        Mark(call_info, object_id);
+        if (target_.count(object_id) > 0 && return_value == S_OK && ppPipelineState->GetPointer() != nullptr)
+        {
+            target_.insert(*ppPipelineState->GetPointer());
+        }
     }
-}
 
 
     virtual void Process_ID3D12Device3_OpenExistingHeapFromAddress(
@@ -1328,13 +1347,13 @@ class Dx12DevicePruneConsumer : public Dx12Consumer
         D3D12_COMMAND_LIST_FLAGS flags,
         Decoded_GUID riid,
         HandlePointerDecoder<void*>* ppCommandList)
-{
-    Mark(call_info, object_id);
-    if (target_.count(object_id) > 0 && return_value == S_OK && ppCommandList->GetPointer() != nullptr)
     {
-        target_.insert(*ppCommandList->GetPointer());
+        Mark(call_info, object_id);
+        if (target_.count(object_id) > 0 && return_value == S_OK && ppCommandList->GetPointer() != nullptr)
+        {
+            target_.insert(*ppCommandList->GetPointer());
+        }
     }
-}
 
 
     virtual void Process_ID3D12Device4_CreateProtectedResourceSession(
@@ -1344,13 +1363,13 @@ class Dx12DevicePruneConsumer : public Dx12Consumer
         StructPointerDecoder<Decoded_D3D12_PROTECTED_RESOURCE_SESSION_DESC>* pDesc,
         Decoded_GUID riid,
         HandlePointerDecoder<void*>* ppSession)
-{
-    Mark(call_info, object_id);
-    if (target_.count(object_id) > 0 && return_value == S_OK && ppSession->GetPointer() != nullptr)
     {
-        target_.insert(*ppSession->GetPointer());
+        Mark(call_info, object_id);
+        if (target_.count(object_id) > 0 && return_value == S_OK && ppSession->GetPointer() != nullptr)
+        {
+            target_.insert(*ppSession->GetPointer());
+        }
     }
-}
 
 
     virtual void Process_ID3D12Device4_CreateCommittedResource1(
@@ -1365,13 +1384,13 @@ class Dx12DevicePruneConsumer : public Dx12Consumer
         format::HandleId pProtectedSession,
         Decoded_GUID riidResource,
         HandlePointerDecoder<void*>* ppvResource)
-{
-    Mark(call_info, object_id);
-    if (target_.count(object_id) > 0 && return_value == S_OK && ppvResource->GetPointer() != nullptr)
     {
-        target_.insert(*ppvResource->GetPointer());
+        Mark(call_info, object_id);
+        if (target_.count(object_id) > 0 && return_value == S_OK && ppvResource->GetPointer() != nullptr)
+        {
+            target_.insert(*ppvResource->GetPointer());
+        }
     }
-}
 
 
     virtual void Process_ID3D12Device4_CreateHeap1(
@@ -1382,13 +1401,13 @@ class Dx12DevicePruneConsumer : public Dx12Consumer
         format::HandleId pProtectedSession,
         Decoded_GUID riid,
         HandlePointerDecoder<void*>* ppvHeap)
-{
-    Mark(call_info, object_id);
-    if (target_.count(object_id) > 0 && return_value == S_OK && ppvHeap->GetPointer() != nullptr)
     {
-        target_.insert(*ppvHeap->GetPointer());
+        Mark(call_info, object_id);
+        if (target_.count(object_id) > 0 && return_value == S_OK && ppvHeap->GetPointer() != nullptr)
+        {
+            target_.insert(*ppvHeap->GetPointer());
+        }
     }
-}
 
 
     virtual void Process_ID3D12Device4_CreateReservedResource1(
@@ -1401,13 +1420,13 @@ class Dx12DevicePruneConsumer : public Dx12Consumer
         format::HandleId pProtectedSession,
         Decoded_GUID riid,
         HandlePointerDecoder<void*>* ppvResource)
-{
-    Mark(call_info, object_id);
-    if (target_.count(object_id) > 0 && return_value == S_OK && ppvResource->GetPointer() != nullptr)
     {
-        target_.insert(*ppvResource->GetPointer());
+        Mark(call_info, object_id);
+        if (target_.count(object_id) > 0 && return_value == S_OK && ppvResource->GetPointer() != nullptr)
+        {
+            target_.insert(*ppvResource->GetPointer());
+        }
     }
-}
 
 
     virtual void Process_ID3D12Device4_GetResourceAllocationInfo1(
@@ -1575,13 +1594,13 @@ class Dx12DevicePruneConsumer : public Dx12Consumer
         format::HandleId pOwner,
         Decoded_GUID riid,
         HandlePointerDecoder<void*>* ppvTracker)
-{
-    Mark(call_info, object_id);
-    if (target_.count(object_id) > 0 && return_value == S_OK && ppvTracker->GetPointer() != nullptr)
     {
-        target_.insert(*ppvTracker->GetPointer());
+        Mark(call_info, object_id);
+        if (target_.count(object_id) > 0 && return_value == S_OK && ppvTracker->GetPointer() != nullptr)
+        {
+            target_.insert(*ppvTracker->GetPointer());
+        }
     }
-}
 
 
     virtual void Process_ID3D12Device5_RemoveDevice(
@@ -1615,13 +1634,13 @@ class Dx12DevicePruneConsumer : public Dx12Consumer
         SIZE_T CreationParametersDataSizeInBytes,
         Decoded_GUID riid,
         HandlePointerDecoder<void*>* ppMetaCommand)
-{
-    Mark(call_info, object_id);
-    if (target_.count(object_id) > 0 && return_value == S_OK && ppMetaCommand->GetPointer() != nullptr)
     {
-        target_.insert(*ppMetaCommand->GetPointer());
+        Mark(call_info, object_id);
+        if (target_.count(object_id) > 0 && return_value == S_OK && ppMetaCommand->GetPointer() != nullptr)
+        {
+            target_.insert(*ppMetaCommand->GetPointer());
+        }
     }
-}
 
 
     virtual void Process_ID3D12Device5_CreateStateObject(
@@ -1631,13 +1650,13 @@ class Dx12DevicePruneConsumer : public Dx12Consumer
         StructPointerDecoder<Decoded_D3D12_STATE_OBJECT_DESC>* pDesc,
         Decoded_GUID riid,
         HandlePointerDecoder<void*>* ppStateObject)
-{
-    Mark(call_info, object_id);
-    if (target_.count(object_id) > 0 && return_value == S_OK && ppStateObject->GetPointer() != nullptr)
     {
-        target_.insert(*ppStateObject->GetPointer());
+        Mark(call_info, object_id);
+        if (target_.count(object_id) > 0 && return_value == S_OK && ppStateObject->GetPointer() != nullptr)
+        {
+            target_.insert(*ppStateObject->GetPointer());
+        }
     }
-}
 
 
     virtual void Process_ID3D12Device5_GetRaytracingAccelerationStructurePrebuildInfo(
@@ -1743,13 +1762,13 @@ class Dx12DevicePruneConsumer : public Dx12Consumer
         StructPointerDecoder<Decoded_D3D12_PROTECTED_RESOURCE_SESSION_DESC1>* pDesc,
         Decoded_GUID riid,
         HandlePointerDecoder<void*>* ppSession)
-{
-    Mark(call_info, object_id);
-    if (target_.count(object_id) > 0 && return_value == S_OK && ppSession->GetPointer() != nullptr)
     {
-        target_.insert(*ppSession->GetPointer());
+        Mark(call_info, object_id);
+        if (target_.count(object_id) > 0 && return_value == S_OK && ppSession->GetPointer() != nullptr)
+        {
+            target_.insert(*ppSession->GetPointer());
+        }
     }
-}
 
 
     virtual void Process_ID3D12Device8_GetResourceAllocationInfo2(
@@ -1773,13 +1792,13 @@ class Dx12DevicePruneConsumer : public Dx12Consumer
         format::HandleId pProtectedSession,
         Decoded_GUID riidResource,
         HandlePointerDecoder<void*>* ppvResource)
-{
-    Mark(call_info, object_id);
-    if (target_.count(object_id) > 0 && return_value == S_OK && ppvResource->GetPointer() != nullptr)
     {
-        target_.insert(*ppvResource->GetPointer());
+        Mark(call_info, object_id);
+        if (target_.count(object_id) > 0 && return_value == S_OK && ppvResource->GetPointer() != nullptr)
+        {
+            target_.insert(*ppvResource->GetPointer());
+        }
     }
-}
 
 
     virtual void Process_ID3D12Device8_CreatePlacedResource1(
@@ -1793,13 +1812,13 @@ class Dx12DevicePruneConsumer : public Dx12Consumer
         StructPointerDecoder<Decoded_D3D12_CLEAR_VALUE>* pOptimizedClearValue,
         Decoded_GUID riid,
         HandlePointerDecoder<void*>* ppvResource)
-{
-    Mark(call_info, object_id);
-    if (target_.count(object_id) > 0 && return_value == S_OK && ppvResource->GetPointer() != nullptr)
     {
-        target_.insert(*ppvResource->GetPointer());
+        Mark(call_info, object_id);
+        if (target_.count(object_id) > 0 && return_value == S_OK && ppvResource->GetPointer() != nullptr)
+        {
+            target_.insert(*ppvResource->GetPointer());
+        }
     }
-}
 
 
     virtual void Process_ID3D12Device8_CreateSamplerFeedbackUnorderedAccessView(
@@ -1943,13 +1962,13 @@ class Dx12DevicePruneConsumer : public Dx12Consumer
         StructPointerDecoder<Decoded_D3D12_SHADER_CACHE_SESSION_DESC>* pDesc,
         Decoded_GUID riid,
         HandlePointerDecoder<void*>* ppvSession)
-{
-    Mark(call_info, object_id);
-    if (target_.count(object_id) > 0 && return_value == S_OK && ppvSession->GetPointer() != nullptr)
     {
-        target_.insert(*ppvSession->GetPointer());
+        Mark(call_info, object_id);
+        if (target_.count(object_id) > 0 && return_value == S_OK && ppvSession->GetPointer() != nullptr)
+        {
+            target_.insert(*ppvSession->GetPointer());
+        }
     }
-}
 
 
     virtual void Process_ID3D12Device9_ShaderCacheControl(
@@ -1967,13 +1986,13 @@ class Dx12DevicePruneConsumer : public Dx12Consumer
         Decoded_GUID CreatorID,
         Decoded_GUID riid,
         HandlePointerDecoder<void*>* ppCommandQueue)
-{
-    Mark(call_info, object_id);
-    if (target_.count(object_id) > 0 && return_value == S_OK && ppCommandQueue->GetPointer() != nullptr)
     {
-        target_.insert(*ppCommandQueue->GetPointer());
+        Mark(call_info, object_id);
+        if (target_.count(object_id) > 0 && return_value == S_OK && ppCommandQueue->GetPointer() != nullptr)
+        {
+            target_.insert(*ppCommandQueue->GetPointer());
+        }
     }
-}
 
 
     virtual void Process_ID3D12Device10_CreateCommittedResource3(
@@ -1990,13 +2009,13 @@ class Dx12DevicePruneConsumer : public Dx12Consumer
         PointerDecoder<DXGI_FORMAT>* pCastableFormats,
         Decoded_GUID riidResource,
         HandlePointerDecoder<void*>* ppvResource)
-{
-    Mark(call_info, object_id);
-    if (target_.count(object_id) > 0 && return_value == S_OK && ppvResource->GetPointer() != nullptr)
     {
-        target_.insert(*ppvResource->GetPointer());
+        Mark(call_info, object_id);
+        if (target_.count(object_id) > 0 && return_value == S_OK && ppvResource->GetPointer() != nullptr)
+        {
+            target_.insert(*ppvResource->GetPointer());
+        }
     }
-}
 
 
     virtual void Process_ID3D12Device10_CreatePlacedResource2(
@@ -2012,13 +2031,13 @@ class Dx12DevicePruneConsumer : public Dx12Consumer
         PointerDecoder<DXGI_FORMAT>* pCastableFormats,
         Decoded_GUID riid,
         HandlePointerDecoder<void*>* ppvResource)
-{
-    Mark(call_info, object_id);
-    if (target_.count(object_id) > 0 && return_value == S_OK && ppvResource->GetPointer() != nullptr)
     {
-        target_.insert(*ppvResource->GetPointer());
+        Mark(call_info, object_id);
+        if (target_.count(object_id) > 0 && return_value == S_OK && ppvResource->GetPointer() != nullptr)
+        {
+            target_.insert(*ppvResource->GetPointer());
+        }
     }
-}
 
 
     virtual void Process_ID3D12Device10_CreateReservedResource2(
@@ -2033,13 +2052,13 @@ class Dx12DevicePruneConsumer : public Dx12Consumer
         PointerDecoder<DXGI_FORMAT>* pCastableFormats,
         Decoded_GUID riid,
         HandlePointerDecoder<void*>* ppvResource)
-{
-    Mark(call_info, object_id);
-    if (target_.count(object_id) > 0 && return_value == S_OK && ppvResource->GetPointer() != nullptr)
     {
-        target_.insert(*ppvResource->GetPointer());
+        Mark(call_info, object_id);
+        if (target_.count(object_id) > 0 && return_value == S_OK && ppvResource->GetPointer() != nullptr)
+        {
+            target_.insert(*ppvResource->GetPointer());
+        }
     }
-}
 
 
     virtual void Process_ID3D12Device11_CreateSampler2(
@@ -2078,13 +2097,13 @@ class Dx12DevicePruneConsumer : public Dx12Consumer
         WStringDecoder* subobjectName,
         Decoded_GUID riid,
         HandlePointerDecoder<void*>* ppvRootSignature)
-{
-    Mark(call_info, object_id);
-    if (target_.count(object_id) > 0 && return_value == S_OK && ppvRootSignature->GetPointer() != nullptr)
     {
-        target_.insert(*ppvRootSignature->GetPointer());
+        Mark(call_info, object_id);
+        if (target_.count(object_id) > 0 && return_value == S_OK && ppvRootSignature->GetPointer() != nullptr)
+        {
+            target_.insert(*ppvRootSignature->GetPointer());
+        }
     }
-}
 
 
     virtual void Process_ID3D12VirtualizationGuestDevice_ShareWithHost(
@@ -2247,13 +2266,13 @@ class Dx12DevicePruneConsumer : public Dx12Consumer
         SIZE_T Size,
         Decoded_GUID riid,
         HandlePointerDecoder<void*>* ppvDeserializer)
-{
-    Mark(call_info, object_id);
-    if (target_.count(object_id) > 0 && return_value == S_OK && ppvDeserializer->GetPointer() != nullptr)
     {
-        target_.insert(*ppvDeserializer->GetPointer());
+        Mark(call_info, object_id);
+        if (target_.count(object_id) > 0 && return_value == S_OK && ppvDeserializer->GetPointer() != nullptr)
+        {
+            target_.insert(*ppvDeserializer->GetPointer());
+        }
     }
-}
 
 
     virtual void Process_ID3D12DeviceConfiguration1_CreateVersionedRootSignatureDeserializerFromSubobjectInLibrary(
@@ -2265,13 +2284,13 @@ class Dx12DevicePruneConsumer : public Dx12Consumer
         WStringDecoder* RootSignatureSubobjectName,
         Decoded_GUID riid,
         HandlePointerDecoder<void*>* ppvDeserializer)
-{
-    Mark(call_info, object_id);
-    if (target_.count(object_id) > 0 && return_value == S_OK && ppvDeserializer->GetPointer() != nullptr)
     {
-        target_.insert(*ppvDeserializer->GetPointer());
+        Mark(call_info, object_id);
+        if (target_.count(object_id) > 0 && return_value == S_OK && ppvDeserializer->GetPointer() != nullptr)
+        {
+            target_.insert(*ppvDeserializer->GetPointer());
+        }
     }
-}
 
 
     virtual void Process_ID3D12GraphicsCommandList5_RSSetShadingRate(

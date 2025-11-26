@@ -45,6 +45,8 @@ target_sources(gfxrecon-optimize
                    ${CMAKE_CURRENT_LIST_DIR}/vulkan_micromap_modifier.cpp
                    ${CMAKE_CURRENT_LIST_DIR}/vulkan_descriptor_buffer_modifier.h
                    ${CMAKE_CURRENT_LIST_DIR}/vulkan_descriptor_buffer_modifier.cpp
+                   ${PROJECT_SOURCE_DIR}/framework/generated/generated_vulkan_skiavk_modifier.h
+                   ${CMAKE_CURRENT_LIST_DIR}/vulkan_skia_modifier.cpp
                    $<$<BOOL:${D3D12_SUPPORT}>:${CMAKE_CURRENT_LIST_DIR}/dx12_file_optimizer.h>
                    $<$<BOOL:${D3D12_SUPPORT}>:${CMAKE_CURRENT_LIST_DIR}/dx12_file_optimizer.cpp>
                    $<$<BOOL:${D3D12_SUPPORT}>:${CMAKE_CURRENT_LIST_DIR}/dx12_file_optimizer_arm.h>
@@ -55,15 +57,13 @@ target_sources(gfxrecon-optimize
                    $<$<BOOL:${D3D12_SUPPORT}>:${CMAKE_CURRENT_LIST_DIR}/dx12_raytracing_modifier.cpp>
                    $<$<BOOL:${D3D12_SUPPORT}>:${CMAKE_CURRENT_LIST_DIR}/dx12_redundancy_modifier.h>
                    $<$<BOOL:${D3D12_SUPPORT}>:${CMAKE_CURRENT_LIST_DIR}/dx12_redundancy_modifier.cpp>
+                   $<$<BOOL:${D3D12_SUPPORT}>:${PROJECT_SOURCE_DIR}/framework/generated/generated_dx12_device_prune_modifier.h>
+                   $<$<BOOL:${D3D12_SUPPORT}>:${CMAKE_CURRENT_LIST_DIR}/dx12_device_prune_modifier.cpp>
                    $<$<BOOL:${D3D12_SUPPORT}>:${CMAKE_CURRENT_LIST_DIR}/dx12_resource_value_tracking_consumer.h>
                    $<$<BOOL:${D3D12_SUPPORT}>:${CMAKE_CURRENT_LIST_DIR}/dx12_resource_value_tracking_consumer.cpp>
-                   $<$<AND:$<BOOL:${GFXRECON_TOCPP_SUPPORT}>,$<BOOL:${D3D12_SUPPORT}>>:${PROJECT_SOURCE_DIR}/framework/generated/generated_dx12_device_prune_consumer.h>
-                   $<$<BOOL:${D3D12_SUPPORT}>:${CMAKE_CURRENT_LIST_DIR}/dx12_device_prune_consumer.cpp>
                    $<$<BOOL:${D3D12_SUPPORT}>:${CMAKE_CURRENT_LIST_DIR}/block_skipping_file_processor.h>
                    $<$<BOOL:${D3D12_SUPPORT}>:${CMAKE_CURRENT_LIST_DIR}/block_skipping_file_processor.cpp>
                    ${CMAKE_CURRENT_LIST_DIR}/../platform_debug_helper.cpp
-                   $<$<BOOL:${GFXRECON_TOCPP_SUPPORT}>:${PROJECT_SOURCE_DIR}/framework/generated/generated_vulkan_skiavk_modifier.h>
-                   ${CMAKE_CURRENT_LIST_DIR}/vulkan_skia_modifier.cpp
                    $<$<BOOL:WIN32>:${PROJECT_SOURCE_DIR}/version.rc>
               )
 
