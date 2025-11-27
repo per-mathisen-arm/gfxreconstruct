@@ -820,6 +820,23 @@ class Dx12ReplayConsumerBase : public Dx12Consumer
         PointerDecoder<UINT>*                                          pRangeTileCounts,
         D3D12_TILE_MAPPING_FLAGS                                       Flags);
 
+    void
+    OverrideCopyTileMappings(DxObjectInfo*                                                  replay_object_info,
+                             format::HandleId                                               in_pDstResource,
+                             StructPointerDecoder<Decoded_D3D12_TILED_RESOURCE_COORDINATE>* pDstRegionStartCoordinate,
+                             format::HandleId                                               in_pSrcResource,
+                             StructPointerDecoder<Decoded_D3D12_TILED_RESOURCE_COORDINATE>* pSrcRegionStartCoordinate,
+                             StructPointerDecoder<Decoded_D3D12_TILE_REGION_SIZE>*          pRegionSize,
+                             D3D12_TILE_MAPPING_FLAGS                                       Flags);
+
+    void OverrideCopyTiles(DxObjectInfo*                                                  replay_object_info,
+                           format::HandleId                                               in_pResource,
+                           StructPointerDecoder<Decoded_D3D12_TILED_RESOURCE_COORDINATE>* pTileRegionStartCoordinate,
+                           StructPointerDecoder<Decoded_D3D12_TILE_REGION_SIZE>*          pTileRegionSize,
+                           format::HandleId                                               in_pBuffer,
+                           UINT64                                                         BufferStartOffsetInBytes,
+                           D3D12_TILE_COPY_FLAGS                                          Flags);
+
     UINT64 OverrideGetCompletedValue(DxObjectInfo* replay_object_info, UINT64 original_result);
 
     HRESULT OverrideSetEventOnCompletion(DxObjectInfo* replay_object_info,

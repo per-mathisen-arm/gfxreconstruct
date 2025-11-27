@@ -445,5 +445,37 @@ void Dx12DefaultAllocator::UpdateTileMappings(ID3D12CommandQueue*               
                                Flags);
 }
 
+void Dx12DefaultAllocator::CopyTileMappings(ID3D12CommandQueue*                    pQueue,
+                                            format::HandleId                       dst_resource_capture_id,
+                                            ID3D12Resource*                        pDstResource,
+                                            format::HandleId                       src_resource_capture_id,
+                                            ID3D12Resource*                        pSrcResource,
+                                            const D3D12_TILED_RESOURCE_COORDINATE* pDstRegionStartCoordinate,
+                                            const D3D12_TILED_RESOURCE_COORDINATE* pSrcRegionStartCoordinate,
+                                            const D3D12_TILE_REGION_SIZE*          pRegionSize,
+                                            D3D12_TILE_MAPPING_FLAGS               Flags)
+{
+    GFXRECON_UNREFERENCED_PARAMETER(dst_resource_capture_id);
+    GFXRECON_UNREFERENCED_PARAMETER(src_resource_capture_id);
+
+    pQueue->CopyTileMappings(
+        pDstResource, pDstRegionStartCoordinate, pSrcResource, pSrcRegionStartCoordinate, pRegionSize, Flags);
+}
+
+void Dx12DefaultAllocator::CopyTiles(ID3D12GraphicsCommandList*             pList,
+                                     format::HandleId                       resource_capture_id,
+                                     ID3D12Resource*                        pResource,
+                                     const D3D12_TILED_RESOURCE_COORDINATE* pTileRegionStartCoordinate,
+                                     const D3D12_TILE_REGION_SIZE*          pTileRegionSize,
+                                     format::HandleId                       buffer_capture_id,
+                                     ID3D12Resource*                        pBuffer,
+                                     UINT64                                 BufferStartOffsetInBytes,
+                                     D3D12_TILE_COPY_FLAGS                  Flags)
+{
+    GFXRECON_UNREFERENCED_PARAMETER(resource_capture_id);
+    GFXRECON_UNREFERENCED_PARAMETER(buffer_capture_id);
+    pList->CopyTiles(pResource, pTileRegionStartCoordinate, pTileRegionSize, pBuffer, BufferStartOffsetInBytes, Flags);
+}
+
 GFXRECON_END_NAMESPACE(decode)
 GFXRECON_END_NAMESPACE(gfxrecon)

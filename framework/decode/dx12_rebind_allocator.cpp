@@ -1,4 +1,4 @@
-/*
+﻿/*
 ** Copyright (c) 2025 LunarG, Inc.
 ** Copyright (c) 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 **
@@ -1100,17 +1100,365 @@ void Dx12RebindAllocator::UpdateTileMappings(ID3D12CommandQueue*                
                                              const UINT*                            pRangeTileCounts,
                                              D3D12_TILE_MAPPING_FLAGS               Flags)
 {
+    assert(NumRanges > 0);
+    assert(NumResourceRegions > 0);
+
+    UINT                                         num_tiles_for_entire_resource = 0;
+    D3D12_RESOURCE_DESC                          resource_desc                 = pResource->GetDesc();
+    std::vector<D3D12_TILED_RESOURCE_COORDINATE> corrected_coordinates;
+    std::vector<D3D12_TILE_REGION_SIZE>          corrected_sizes;
+
+    std::vector<D3D12_TILE_RANGE_FLAGS> final_range_flags;
+    std::vector<UINT>                   final_heap_offsets;
+    std::vector<UINT>                   final_range_counts;
+
+    corrected_coordinates.reserve(NumResourceRegions);
+    corrected_sizes.reserve(NumResourceRegions);
+
+    final_range_flags.reserve(NumRanges);
+    if (pHeapRangeStartOffsets)
+        final_heap_offsets.reserve(NumRanges);
+    if (pRangeTileCounts)
+        final_range_counts.reserve(NumRanges);
+
+    D3D12_PACKED_MIP_INFO packed_mip_info         = {};
+    D3D12_TILE_SHAPE      standard_tile_shape     = {};
+    UINT                  num_subresource_tilings = 0;
+    device_->GetResourceTiling(pResource,
+                               &num_tiles_for_entire_resource,
+                               &packed_mip_info,
+                               &standard_tile_shape,
+                               &num_subresource_tilings,
+                               0,
+                               nullptr);
+
+    const UINT first_packed_mip_index            = packed_mip_info.NumStandardMips;
+    const UINT packed_region_start_tile_index    = (packed_mip_info.NumPackedMips > 0)
+                                                       ? packed_mip_info.StartTileIndexInOverallResource
+                                                       : num_tiles_for_entire_resource;
+    const UINT physically_available_packed_tiles = num_tiles_for_entire_resource - packed_region_start_tile_index;
+
+    UINT current_range_index = 0;
+    bool x_offset_corrected  = false;
+    bool region_skipped      = false;
+    bool range_clipped       = false;
+
+    if (NumResourceRegions == 1)
+    {
+        // pResourceRegionStartCoordinates or pResourceRegionSizes can be null only when NumResourceRegions == 1
+        const D3D12_TILED_RESOURCE_COORDINATE& original_coord = pResourceRegionStartCoordinates != nullptr
+                                                                    ? pResourceRegionStartCoordinates[0]
+                                                                    : D3D12_TILED_RESOURCE_COORDINATE{ 0, 0, 0, 0 };
+
+        UINT original_num_tiles = pResourceRegionSizes != nullptr ? pResourceRegionSizes[0].NumTiles
+                                                                  : (pResourceRegionStartCoordinates != nullptr
+                                                                         ? 1                               // One tile
+                                                                         : num_tiles_for_entire_resource); // All tiles
+
+        const D3D12_TILE_REGION_SIZE& original_size = pResourceRegionSizes[0];
+
+        D3D12_TILED_RESOURCE_COORDINATE final_coord = original_coord;
+        D3D12_TILE_REGION_SIZE          final_size  = original_size;
+        bool                            needs_correction =
+            packed_mip_info.NumPackedMips > 0 && original_coord.Subresource >= first_packed_mip_index;
+        if (needs_correction)
+        {
+            x_offset_corrected = true;
+            UINT x_offset      = 0;
+            if (original_coord.Subresource > first_packed_mip_index)
+            {
+                GFXRECON_LOG_DEBUG(
+                    "Packed mip correction triggered for Subresource %u. Replay device packs from Subresource %u.",
+                    original_coord.Subresource,
+                    first_packed_mip_index);
+
+                for (UINT sub_idx = first_packed_mip_index; sub_idx < original_coord.Subresource; ++sub_idx)
+                {
+                    UINT64 mip_width  = std::max(static_cast<UINT64>(1u), resource_desc.Width >> sub_idx);
+                    UINT   mip_height = std::max(1u, resource_desc.Height >> sub_idx);
+                    UINT   tiles_x =
+                        (mip_width + standard_tile_shape.WidthInTexels - 1) / standard_tile_shape.WidthInTexels;
+                    UINT tiles_y =
+                        (mip_height + standard_tile_shape.HeightInTexels - 1) / standard_tile_shape.HeightInTexels;
+                    x_offset += tiles_x * tiles_y;
+                }
+            }
+
+            x_offset += original_coord.X;
+
+            if (x_offset >= physically_available_packed_tiles)
+            {
+                GFXRECON_LOG_DEBUG("Skipping UpdateTileMappings call. Calculated X-offset %u exceeds the physically "
+                                   "available tiles (%u) in the packed region.",
+                                   x_offset,
+                                   physically_available_packed_tiles);
+                return;
+            }
+            else
+            {
+                UINT remaining_tiles = physically_available_packed_tiles - x_offset;
+
+                UINT clamped_num_tiles = std::min(original_num_tiles, remaining_tiles);
+
+                if (clamped_num_tiles == 0)
+                {
+                    GFXRECON_LOG_DEBUG("Skipping corrected region, Calculated start offset is at the end of "
+                                       "available packed tiles.");
+                    return;
+                }
+
+                final_coord = { x_offset, 0, 0, first_packed_mip_index };
+                final_size  = { clamped_num_tiles, false, 0, 0, 0 };
+            }
+        }
+
+        corrected_coordinates.push_back(final_coord);
+        corrected_sizes.push_back(final_size);
+
+        UINT total_tiles_to_process = pResourceRegionSizes != nullptr ? final_size.NumTiles : original_num_tiles;
+        UINT current_range_index    = 0;
+
+        if (pRangeTileCounts != nullptr)
+        {
+            while (total_tiles_to_process > 0 && current_range_index < NumRanges)
+            {
+                if (pRangeFlags)
+                    final_range_flags.push_back(pRangeFlags[current_range_index]);
+                else
+                    final_range_flags.push_back(D3D12_TILE_RANGE_FLAG_NONE);
+
+                if (pHeapRangeStartOffsets)
+                    final_heap_offsets.push_back(pHeapRangeStartOffsets[current_range_index]);
+
+                UINT current_range_size = pRangeTileCounts[current_range_index];
+
+                if (current_range_size > total_tiles_to_process)
+                {
+                    range_clipped = true;
+                    final_range_counts.push_back(total_tiles_to_process);
+                    total_tiles_to_process = 0;
+                }
+                else
+                {
+                    final_range_counts.push_back(current_range_size);
+                    total_tiles_to_process -= current_range_size;
+                }
+
+                current_range_index++;
+            }
+        }
+        else
+        {
+            // if pRangeTileCounts null, NumRanges = 1
+            if (pRangeFlags)
+                final_range_flags.push_back(pRangeFlags[current_range_index]);
+            else
+                final_range_flags.push_back(D3D12_TILE_RANGE_FLAG_NONE);
+
+            if (pHeapRangeStartOffsets)
+                final_heap_offsets.push_back(pHeapRangeStartOffsets[current_range_index]);
+
+            // NumRanges = 1, pRangeTileCounts = null represents all tiles.
+        }
+    }
+    else
+    {
+        assert(pResourceRegionStartCoordinates != nullptr);
+        assert(pResourceRegionSizes != nullptr);
+        for (UINT i = 0; i < NumResourceRegions; ++i)
+        {
+            const D3D12_TILED_RESOURCE_COORDINATE& original_coord = pResourceRegionStartCoordinates[i];
+            const D3D12_TILE_REGION_SIZE&          original_size  = pResourceRegionSizes[i];
+            bool                                   is_skipped     = false;
+
+            D3D12_TILED_RESOURCE_COORDINATE final_coord = original_coord;
+            D3D12_TILE_REGION_SIZE          final_size  = original_size;
+
+            bool needs_correction =
+                packed_mip_info.NumPackedMips > 0 && original_coord.Subresource >= first_packed_mip_index;
+            if (needs_correction)
+            {
+                x_offset_corrected = true;
+                UINT x_offset      = 0;
+                if (original_coord.Subresource > first_packed_mip_index)
+                {
+                    GFXRECON_LOG_DEBUG(
+                        "Packed mip correction triggered for Subresource %u. Replay device packs from Subresource %u.",
+                        original_coord.Subresource,
+                        first_packed_mip_index);
+
+                    for (UINT sub_idx = first_packed_mip_index; sub_idx < original_coord.Subresource; ++sub_idx)
+                    {
+                        UINT64 mip_width  = std::max(static_cast<UINT64>(1u), resource_desc.Width >> sub_idx);
+                        UINT   mip_height = std::max(1u, resource_desc.Height >> sub_idx);
+                        UINT   tiles_x =
+                            (mip_width + standard_tile_shape.WidthInTexels - 1) / standard_tile_shape.WidthInTexels;
+                        UINT tiles_y =
+                            (mip_height + standard_tile_shape.HeightInTexels - 1) / standard_tile_shape.HeightInTexels;
+
+                        x_offset += tiles_x * tiles_y;
+                    }
+                }
+
+                x_offset += original_coord.X;
+
+                if (x_offset >= physically_available_packed_tiles)
+                {
+                    GFXRECON_LOG_DEBUG("Skipping corrected region %u (original Subresource %u, calculated X-offset %u)."
+                                       "The offset exceeds the physically available tiles (%u) in the packed region.",
+                                       i,
+                                       original_coord.Subresource,
+                                       x_offset,
+                                       physically_available_packed_tiles);
+                    is_skipped     = true;
+                    region_skipped = true;
+
+                    if (NumResourceRegions == 1)
+                    {
+                        GFXRECON_LOG_DEBUG(
+                            "All regions in UpdateTileMappings call are invalid/skipped. No API call will be made.");
+                        return;
+                    }
+                }
+                else
+                {
+                    UINT remaining_tiles = physically_available_packed_tiles - x_offset;
+
+                    UINT clamped_num_tiles = std::min(original_size.NumTiles, remaining_tiles);
+
+                    if (clamped_num_tiles == 0)
+                    {
+                        GFXRECON_LOG_DEBUG("Skipping corrected region %u. Calculated start offset is at the end of "
+                                           "available packed tiles.",
+                                           i);
+                        is_skipped     = true;
+                        region_skipped = true;
+                    }
+                    else
+                    {
+                        final_coord = { x_offset, 0, 0, first_packed_mip_index };
+                        final_size  = { clamped_num_tiles, false, 0, 0, 0 };
+                        // usebox needs to be false when in packed range
+                    }
+                }
+            }
+
+            if (is_skipped)
+            {
+                if (NumRanges > 0)
+                {
+                    if (pRangeTileCounts != nullptr)
+                    {
+                        UINT tiles_to_skip = original_size.NumTiles;
+                        while (tiles_to_skip > 0 && current_range_index < NumRanges)
+                        {
+                            tiles_to_skip -= pRangeTileCounts[current_range_index];
+                            current_range_index++;
+                        }
+                    }
+                    else if (current_range_index < NumRanges)
+                    {
+                        // if pRangeTileCounts null, NumRanges = 1
+                        GFXRECON_LOG_DEBUG("Only single range present in UpdateTileMappings call, do not skip the "
+                                           "range for skipped region.");
+                    }
+                }
+            }
+            else
+            {
+                corrected_coordinates.push_back(final_coord);
+                corrected_sizes.push_back(final_size);
+
+                if (NumRanges > 0)
+                {
+                    UINT total_tiles_to_process = final_size.NumTiles;
+
+                    if (pRangeTileCounts != nullptr)
+                    {
+                        while (total_tiles_to_process > 0 && current_range_index < NumRanges)
+                        {
+                            if (pRangeFlags)
+                                final_range_flags.push_back(pRangeFlags[current_range_index]);
+                            else
+                                final_range_flags.push_back(D3D12_TILE_RANGE_FLAG_NONE);
+
+                            if (pHeapRangeStartOffsets)
+                                final_heap_offsets.push_back(pHeapRangeStartOffsets[current_range_index]);
+
+                            UINT current_range_size = pRangeTileCounts[current_range_index];
+
+                            if (current_range_size > total_tiles_to_process)
+                            {
+                                range_clipped = true;
+                                final_range_counts.push_back(total_tiles_to_process);
+                                total_tiles_to_process = 0;
+                            }
+                            else
+                            {
+                                final_range_counts.push_back(current_range_size);
+                                total_tiles_to_process -= current_range_size;
+                            }
+
+                            current_range_index++;
+                        }
+                    }
+                    else if (current_range_index < NumRanges)
+                    {
+                        // if pRangeTileCounts null, NumRanges = 1
+                        if (pRangeFlags)
+                            final_range_flags.push_back(pRangeFlags[current_range_index]);
+                        else
+                            final_range_flags.push_back(D3D12_TILE_RANGE_FLAG_NONE);
+
+                        if (pHeapRangeStartOffsets)
+                            final_heap_offsets.push_back(pHeapRangeStartOffsets[current_range_index]);
+
+                        current_range_index++;
+                    }
+                }
+            }
+        }
+    }
+
+    if (corrected_coordinates.empty())
+    {
+        GFXRECON_LOG_DEBUG("All regions in UpdateTileMappings call were invalid/skipped. No API call will be made.");
+        return;
+    }
+
+    const UINT final_num_regions =
+        x_offset_corrected && region_skipped ? static_cast<UINT>(corrected_coordinates.size()) : NumResourceRegions;
+
+    const D3D12_TILED_RESOURCE_COORDINATE* final_coordinates =
+        x_offset_corrected ? corrected_coordinates.data() : pResourceRegionStartCoordinates;
+
+    const D3D12_TILE_REGION_SIZE* final_sizes = x_offset_corrected ? corrected_sizes.data() : pResourceRegionSizes;
+
+    const UINT                    final_num_ranges = x_offset_corrected && (region_skipped || range_clipped)
+                                                         ? ((NumRanges > 0) ? static_cast<UINT>(final_range_flags.size()) : 0)
+                                                         : NumRanges;
+    const D3D12_TILE_RANGE_FLAGS* final_range_flags_ptr =
+        x_offset_corrected && (region_skipped || range_clipped)
+            ? (final_range_flags.empty() ? nullptr : final_range_flags.data())
+            : pRangeFlags;
+    const UINT* final_heap_offsets_ptr = x_offset_corrected && (region_skipped || range_clipped)
+                                             ? (final_heap_offsets.empty() ? nullptr : final_heap_offsets.data())
+                                             : pHeapRangeStartOffsets;
+    const UINT* final_range_counts_ptr = x_offset_corrected && (region_skipped || range_clipped)
+                                             ? (final_range_counts.empty() ? nullptr : final_range_counts.data())
+                                             : pRangeTileCounts;
+
     if (pHeap == nullptr)
     {
         pQueue->UpdateTileMappings(pResource,
-                                   NumResourceRegions,
-                                   pResourceRegionStartCoordinates,
-                                   pResourceRegionSizes,
+                                   final_num_regions,
+                                   final_coordinates,
+                                   final_sizes,
                                    pHeap,
-                                   NumRanges,
-                                   pRangeFlags,
-                                   pHeapRangeStartOffsets,
-                                   pRangeTileCounts,
+                                   final_num_ranges,
+                                   final_range_flags_ptr,
+                                   final_heap_offsets_ptr,
+                                   final_range_counts_ptr,
                                    Flags);
     }
     else
@@ -1168,16 +1516,248 @@ void Dx12RebindAllocator::UpdateTileMappings(ID3D12CommandQueue*                
         }
 
         pQueue->UpdateTileMappings(pResource,
-                                   NumResourceRegions,
-                                   pResourceRegionStartCoordinates,
-                                   pResourceRegionSizes,
+                                   final_num_regions,
+                                   final_coordinates,
+                                   final_sizes,
                                    pNewHeap,
-                                   NumRanges,
-                                   pRangeFlags,
-                                   pHeapRangeStartOffsets,
-                                   pRangeTileCounts,
+                                   final_num_ranges,
+                                   final_range_flags_ptr,
+                                   final_heap_offsets_ptr,
+                                   final_range_counts_ptr,
                                    Flags);
     }
+}
+
+void Dx12RebindAllocator::CopyTileMappings(ID3D12CommandQueue*                    pQueue,
+                                           format::HandleId                       dst_resource_capture_id,
+                                           ID3D12Resource*                        pDstResource,
+                                           format::HandleId                       src_resource_capture_id,
+                                           ID3D12Resource*                        pSrcResource,
+                                           const D3D12_TILED_RESOURCE_COORDINATE* pDstRegionStartCoordinate,
+                                           const D3D12_TILED_RESOURCE_COORDINATE* pSrcRegionStartCoordinate,
+                                           const D3D12_TILE_REGION_SIZE*          pRegionSize,
+                                           D3D12_TILE_MAPPING_FLAGS               Flags)
+{
+    UINT dst_num_tiles_for_entire_resource = 0;
+    UINT src_num_tiles_for_entire_resource = 0;
+
+    D3D12_RESOURCE_DESC dst_resource_desc = pDstResource->GetDesc();
+    D3D12_RESOURCE_DESC src_resource_desc = pSrcResource->GetDesc();
+
+    D3D12_PACKED_MIP_INFO dst_packed_mip_info = {}, src_packed_mip_info = {};
+    D3D12_TILE_SHAPE      dst_tile_shape = {}, src_tile_shape = {};
+    UINT                  dst_num_subresource_tilings = 0, src_num_subresource_tilings = 0;
+
+    device_->GetResourceTiling(pDstResource,
+                               &dst_num_tiles_for_entire_resource,
+                               &dst_packed_mip_info,
+                               &dst_tile_shape,
+                               &dst_num_subresource_tilings,
+                               0,
+                               nullptr);
+    device_->GetResourceTiling(pSrcResource,
+                               &src_num_tiles_for_entire_resource,
+                               &src_packed_mip_info,
+                               &src_tile_shape,
+                               &src_num_subresource_tilings,
+                               0,
+                               nullptr);
+
+    const UINT dst_first_packed_mip_index         = dst_packed_mip_info.NumStandardMips;
+    const UINT dst_packed_region_start_tile_index = (dst_packed_mip_info.NumPackedMips > 0)
+                                                        ? dst_packed_mip_info.StartTileIndexInOverallResource
+                                                        : dst_num_tiles_for_entire_resource;
+    const UINT dst_physically_available_packed_tiles =
+        dst_num_tiles_for_entire_resource - dst_packed_region_start_tile_index;
+
+    const UINT src_first_packed_mip_index         = src_packed_mip_info.NumStandardMips;
+    const UINT src_packed_region_start_tile_index = (src_packed_mip_info.NumPackedMips > 0)
+                                                        ? src_packed_mip_info.StartTileIndexInOverallResource
+                                                        : src_num_tiles_for_entire_resource;
+    const UINT src_physically_available_packed_tiles =
+        src_num_tiles_for_entire_resource - src_packed_region_start_tile_index;
+
+    D3D12_TILED_RESOURCE_COORDINATE final_dst_coord   = *pDstRegionStartCoordinate;
+    D3D12_TILED_RESOURCE_COORDINATE final_src_coord   = *pSrcRegionStartCoordinate;
+    D3D12_TILE_REGION_SIZE          final_region_size = *pRegionSize;
+
+    bool dst_needs_correction =
+        (dst_packed_mip_info.NumPackedMips > 0) && (final_dst_coord.Subresource >= dst_first_packed_mip_index);
+
+    if (dst_needs_correction)
+    {
+        UINT dst_x_offset = 0;
+        if (final_dst_coord.Subresource > dst_first_packed_mip_index)
+        {
+            for (UINT sub_idx = dst_first_packed_mip_index; sub_idx < final_dst_coord.Subresource; ++sub_idx)
+            {
+                UINT64 mip_width  = std::max(static_cast<UINT64>(1u), dst_resource_desc.Width >> sub_idx);
+                UINT   mip_height = std::max(1u, dst_resource_desc.Height >> sub_idx);
+                UINT   tiles_x    = (mip_width + dst_tile_shape.WidthInTexels - 1) / dst_tile_shape.WidthInTexels;
+                UINT   tiles_y    = (mip_height + dst_tile_shape.HeightInTexels - 1) / dst_tile_shape.HeightInTexels;
+                dst_x_offset += tiles_x * tiles_y;
+            }
+        }
+
+        dst_x_offset += final_dst_coord.X;
+
+        if (dst_x_offset >= dst_physically_available_packed_tiles)
+        {
+            GFXRECON_LOG_DEBUG("Skipping CopyTileMappings for dest region (Subresource=%u start X-offset=%u): out of "
+                               "packed mip bounds (%u).",
+                               final_dst_coord.Subresource,
+                               dst_x_offset,
+                               dst_physically_available_packed_tiles);
+            return;
+        }
+
+        UINT dst_remaining_tiles = dst_physically_available_packed_tiles - dst_x_offset;
+        UINT clamped_num_tiles   = std::min(final_region_size.NumTiles, dst_remaining_tiles);
+
+        if (clamped_num_tiles == 0)
+        {
+            GFXRECON_LOG_DEBUG(
+                "Skipping CopyTileMappings for dest region: start offset at last available packed tile.");
+            return;
+        }
+
+        final_dst_coord            = { dst_x_offset, 0, 0, dst_first_packed_mip_index };
+        final_region_size.NumTiles = clamped_num_tiles;
+        final_region_size.UseBox   = false;
+        // packed mip UseBox=false
+    }
+
+    bool src_needs_correction =
+        (src_packed_mip_info.NumPackedMips > 0) && (final_src_coord.Subresource >= src_first_packed_mip_index);
+
+    if (src_needs_correction)
+    {
+        UINT src_x_offset = 0;
+        if (final_src_coord.Subresource > src_first_packed_mip_index)
+        {
+            for (UINT sub_idx = src_first_packed_mip_index; sub_idx < final_src_coord.Subresource; ++sub_idx)
+            {
+                UINT64 mip_width  = std::max(static_cast<UINT64>(1u), src_resource_desc.Width >> sub_idx);
+                UINT   mip_height = std::max(1u, src_resource_desc.Height >> sub_idx);
+                UINT   tiles_x    = (mip_width + src_tile_shape.WidthInTexels - 1) / src_tile_shape.WidthInTexels;
+                UINT   tiles_y    = (mip_height + src_tile_shape.HeightInTexels - 1) / src_tile_shape.HeightInTexels;
+                src_x_offset += tiles_x * tiles_y;
+            }
+        }
+
+        src_x_offset += final_src_coord.X;
+
+        if (src_x_offset >= src_physically_available_packed_tiles)
+        {
+            GFXRECON_LOG_DEBUG("Skipping CopyTileMappings for src region (Subresource=%u start X-offset=%u): out of "
+                               "packed mip bounds (%u).",
+                               final_src_coord.Subresource,
+                               src_x_offset,
+                               src_physically_available_packed_tiles);
+            return;
+        }
+
+        UINT src_remaining_tiles   = src_physically_available_packed_tiles - src_x_offset;
+        UINT clamped_num_tiles     = std::min(final_region_size.NumTiles, src_remaining_tiles);
+        final_region_size.NumTiles = std::min(final_region_size.NumTiles, clamped_num_tiles);
+
+        if (final_region_size.NumTiles == 0)
+        {
+            GFXRECON_LOG_DEBUG("Skipping CopyTileMappings for src region: start offset at last available packed tile.");
+            return;
+        }
+
+        final_src_coord          = { src_x_offset, 0, 0, src_first_packed_mip_index };
+        final_region_size.UseBox = false;
+        // packed mip UseBox=false
+    }
+
+    pQueue->CopyTileMappings(pDstResource, &final_dst_coord, pSrcResource, &final_src_coord, &final_region_size, Flags);
+}
+
+void Dx12RebindAllocator::CopyTiles(ID3D12GraphicsCommandList*             pList,
+                                    format::HandleId                       resource_capture_id,
+                                    ID3D12Resource*                        pResource,
+                                    const D3D12_TILED_RESOURCE_COORDINATE* pTileRegionStartCoordinate,
+                                    const D3D12_TILE_REGION_SIZE*          pTileRegionSize,
+                                    format::HandleId                       buffer_capture_id,
+                                    ID3D12Resource*                        pBuffer,
+                                    UINT64                                 BufferStartOffsetInBytes,
+                                    D3D12_TILE_COPY_FLAGS                  Flags)
+{
+    UINT                  num_tiles_for_entire_resource = 0;
+    D3D12_RESOURCE_DESC   resource_desc                 = pResource->GetDesc();
+    D3D12_PACKED_MIP_INFO packed_mip_info               = {};
+    D3D12_TILE_SHAPE      standard_tile_shape           = {};
+    UINT                  num_subresource_tilings       = 0;
+
+    device_->GetResourceTiling(pResource,
+                               &num_tiles_for_entire_resource,
+                               &packed_mip_info,
+                               &standard_tile_shape,
+                               &num_subresource_tilings,
+                               0,
+                               nullptr);
+
+    const UINT first_packed_mip_index            = packed_mip_info.NumStandardMips;
+    const UINT packed_region_start_tile_index    = (packed_mip_info.NumPackedMips > 0)
+                                                       ? packed_mip_info.StartTileIndexInOverallResource
+                                                       : num_tiles_for_entire_resource;
+    const UINT physically_available_packed_tiles = num_tiles_for_entire_resource - packed_region_start_tile_index;
+
+    D3D12_TILED_RESOURCE_COORDINATE final_coord = *pTileRegionStartCoordinate;
+    D3D12_TILE_REGION_SIZE          final_size  = *pTileRegionSize;
+
+    bool needs_correction = packed_mip_info.NumPackedMips > 0 && final_coord.Subresource >= first_packed_mip_index;
+
+    if (needs_correction)
+    {
+        UINT x_offset = 0;
+        if (final_coord.Subresource > first_packed_mip_index)
+        {
+            GFXRECON_LOG_DEBUG("Packed mip correction triggered for CopyTiles on Subresource %u. Replay device packs "
+                               "from Subresource %u.",
+                               final_coord.Subresource,
+                               first_packed_mip_index);
+
+            for (UINT sub_idx = first_packed_mip_index; sub_idx < final_coord.Subresource; ++sub_idx)
+            {
+                UINT64 mip_width  = std::max(static_cast<UINT64>(1u), resource_desc.Width >> sub_idx);
+                UINT   mip_height = std::max(1u, resource_desc.Height >> sub_idx);
+                UINT tiles_x = (mip_width + standard_tile_shape.WidthInTexels - 1) / standard_tile_shape.WidthInTexels;
+                UINT tiles_y =
+                    (mip_height + standard_tile_shape.HeightInTexels - 1) / standard_tile_shape.HeightInTexels;
+                x_offset += tiles_x * tiles_y;
+            }
+        }
+        x_offset += final_coord.X;
+
+        if (x_offset >= physically_available_packed_tiles)
+        {
+            GFXRECON_LOG_DEBUG(
+                "Skipping CopyTiles. Calculated start offset %u is out of available packed tile bounds (%u).",
+                x_offset,
+                physically_available_packed_tiles);
+            return;
+        }
+
+        UINT remaining_tiles   = physically_available_packed_tiles - x_offset;
+        UINT clamped_num_tiles = std::min(final_size.NumTiles, remaining_tiles);
+
+        if (clamped_num_tiles == 0)
+        {
+            GFXRECON_LOG_DEBUG("Skipping CopyTiles. Calculated start offset is at the end of available packed tiles, "
+                               "no space left to copy.");
+            return;
+        }
+
+        final_coord         = { x_offset, 0, 0, first_packed_mip_index };
+        final_size.NumTiles = clamped_num_tiles;
+        final_size.UseBox   = false;
+        // packed mip UseBox=false
+    }
+
+    pList->CopyTiles(pResource, &final_coord, &final_size, pBuffer, BufferStartOffsetInBytes, Flags);
 }
 
 void Dx12RebindAllocator::ReportResourceIncompatibility(const D3D12_RESOURCE_DESC* resource_desc)

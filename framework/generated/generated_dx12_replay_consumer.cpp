@@ -1652,24 +1652,27 @@ void Dx12ReplayConsumer::Process_ID3D12GraphicsCommandList_CopyTiles(
             pBuffer,
             BufferStartOffsetInBytes,
             Flags);
-        auto in_pTiledResource = MapObject<ID3D12Resource>(pTiledResource);
-        auto in_pBuffer = MapObject<ID3D12Resource>(pBuffer);
-        reinterpret_cast<ID3D12GraphicsCommandList*>(replay_object->object)->CopyTiles(in_pTiledResource,
-                                                                                       pTileRegionStartCoordinate->GetPointer(),
-                                                                                       pTileRegionSize->GetPointer(),
-                                                                                       in_pBuffer,
-                                                                                       BufferStartOffsetInBytes,
-                                                                                       Flags);
-        if(options_.enable_dump_resources)
+        auto in_pTiledResource = pTiledResource;
+        auto in_pBuffer = pBuffer;
+        OverrideCopyTiles(replay_object,
+                          in_pTiledResource,
+                          pTileRegionStartCoordinate,
+                          pTileRegionSize,
+                          in_pBuffer,
+                          BufferStartOffsetInBytes,
+                          Flags);
+        if (options_.enable_dump_resources)
         {
+            auto prTiledResource = MapObject<ID3D12Resource>(pTiledResource);
+            auto prBuffer = MapObject<ID3D12Resource>(pBuffer);
             GFXRECON_ASSERT(dump_resources_);
             auto dump_command_sets = dump_resources_->GetCommandListsForDumpResources(replay_object, call_info.index, format::ApiCall_ID3D12GraphicsCommandList_CopyTiles);
             for (auto& command_set : dump_command_sets)
             {
-                command_set.list->CopyTiles(in_pTiledResource,
+                command_set.list->CopyTiles(prTiledResource,
                                             pTileRegionStartCoordinate->GetPointer(),
                                             pTileRegionSize->GetPointer(),
-                                            in_pBuffer,
+                                            prBuffer,
                                             BufferStartOffsetInBytes,
                                             Flags);
             }
@@ -3955,14 +3958,15 @@ void Dx12ReplayConsumer::Process_ID3D12CommandQueue_CopyTileMappings(
             pSrcRegionStartCoordinate,
             pRegionSize,
             Flags);
-        auto in_pDstResource = MapObject<ID3D12Resource>(pDstResource);
-        auto in_pSrcResource = MapObject<ID3D12Resource>(pSrcResource);
-        reinterpret_cast<ID3D12CommandQueue*>(replay_object->object)->CopyTileMappings(in_pDstResource,
-                                                                                       pDstRegionStartCoordinate->GetPointer(),
-                                                                                       in_pSrcResource,
-                                                                                       pSrcRegionStartCoordinate->GetPointer(),
-                                                                                       pRegionSize->GetPointer(),
-                                                                                       Flags);
+        auto in_pDstResource = pDstResource;
+        auto in_pSrcResource = pSrcResource;
+        OverrideCopyTileMappings(replay_object,
+                                 in_pDstResource,
+                                 pDstRegionStartCoordinate,
+                                 in_pSrcResource,
+                                 pSrcRegionStartCoordinate,
+                                 pRegionSize,
+                                 Flags);
         CustomReplayPostCall<format::ApiCallId::ApiCall_ID3D12CommandQueue_CopyTileMappings>::Dispatch(
             this,
             call_info,

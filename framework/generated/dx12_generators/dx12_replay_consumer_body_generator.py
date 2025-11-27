@@ -409,6 +409,14 @@ class Dx12ReplayConsumerBodyGenerator(
                                 code += '    auto in_{0} = {0};\n'.format(
                                     value.name
                                 )
+                            elif  name == "ID3D12CommandQueue_CopyTileMappings":
+                                code += '    auto in_{0} = {0};\n'.format(
+                                    value.name
+                                )
+                            elif  name == "ID3D12GraphicsCommandList_CopyTiles":
+                                code += '    auto in_{0} = {0};\n'.format(
+                                    value.name
+                                )
                             else:
                                 code += '    auto in_{0} = GetObjectInfo({0});\n'.format(
                                     value.name
@@ -668,6 +676,25 @@ class Dx12ReplayConsumerBodyGenerator(
 
             code += (
                 ");\n"
+                "        }\n"
+                "    }\n"
+            )
+        elif is_object and method_name == 'CopyTiles':
+            code += (
+                "    if (options_.enable_dump_resources)\n"
+                "    {\n"
+                "        auto prTiledResource = MapObject<ID3D12Resource>(pTiledResource);\n"
+                "        auto prBuffer = MapObject<ID3D12Resource>(pBuffer);\n"
+                "        GFXRECON_ASSERT(dump_resources_);\n"
+                "        auto dump_command_sets = dump_resources_->GetCommandListsForDumpResources(replay_object, call_info.index, format::ApiCall_ID3D12GraphicsCommandList_CopyTiles);\n"
+                "        for (auto& command_set : dump_command_sets)\n"
+                "        {\n"
+                "            command_set.list->CopyTiles(prTiledResource,\n"
+                "                                        pTileRegionStartCoordinate->GetPointer(),\n"
+                "                                        pTileRegionSize->GetPointer(),\n"
+                "                                        prBuffer,\n"
+                "                                        BufferStartOffsetInBytes,\n"
+                "                                        Flags);\n"
                 "        }\n"
                 "    }\n"
             )

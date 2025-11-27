@@ -170,6 +170,26 @@ class Dx12ResourceAllocator
                                     _In_reads_opt_(NumRanges) const UINT*                   pRangeTileCounts,
                                     D3D12_TILE_MAPPING_FLAGS                                Flags) = 0;
 
+    virtual void CopyTileMappings(ID3D12CommandQueue*                             pQueue,
+                                  format::HandleId                                dst_resource_capture_id,
+                                  _In_ ID3D12Resource*                            pDstResource,
+                                  format::HandleId                                src_resource_capture_id,
+                                  _In_ ID3D12Resource*                            pSrcResource,
+                                  _In_opt_ const D3D12_TILED_RESOURCE_COORDINATE* pDstRegionStartCoordinate,
+                                  _In_opt_ const D3D12_TILED_RESOURCE_COORDINATE* pSrcRegionStartCoordinate,
+                                  _In_opt_ const D3D12_TILE_REGION_SIZE*          pRegionSize,
+                                  D3D12_TILE_MAPPING_FLAGS                        Flags) = 0;
+
+    virtual void CopyTiles(ID3D12GraphicsCommandList*                      pList,
+                           format::HandleId                                resource_capture_id,
+                           _In_ ID3D12Resource*                            pResource,
+                           _In_opt_ const D3D12_TILED_RESOURCE_COORDINATE* pTileRegionStartCoordinate,
+                           _In_opt_ const D3D12_TILE_REGION_SIZE*          pTileRegionSize,
+                           format::HandleId                                buffer_capture_id,
+                           _In_ ID3D12Resource*                            pBuffer,
+                           UINT64                                          BufferStartOffsetInBytes,
+                           D3D12_TILE_COPY_FLAGS                           Flags) = 0;
+
     virtual bool SupportD3D12MemoryAllocator() = 0;
 
     virtual ULONG Release(IUnknown* object, format::HandleId object_id) = 0;

@@ -3560,6 +3560,76 @@ void Dx12ReplayConsumerBase::OverrideUpdateTileMappings(
                                   Flags);
 }
 
+void Dx12ReplayConsumerBase::OverrideCopyTileMappings(
+    DxObjectInfo*                                                  replay_object_info,
+    format::HandleId                                               in_pDstResource,
+    StructPointerDecoder<Decoded_D3D12_TILED_RESOURCE_COORDINATE>* pDstRegionStartCoordinate,
+    format::HandleId                                               in_pSrcResource,
+    StructPointerDecoder<Decoded_D3D12_TILED_RESOURCE_COORDINATE>* pSrcRegionStartCoordinate,
+    StructPointerDecoder<Decoded_D3D12_TILE_REGION_SIZE>*          pRegionSize,
+    D3D12_TILE_MAPPING_FLAGS                                       Flags)
+{
+    auto dst_resource_info = GetObjectInfo(in_pDstResource);
+    auto src_resource_info = GetObjectInfo(in_pSrcResource);
+
+    auto pDstResource       = static_cast<ID3D12Resource*>(dst_resource_info->object);
+    auto pSrcResource       = static_cast<ID3D12Resource*>(src_resource_info->object);
+    auto pQueue             = reinterpret_cast<ID3D12CommandQueue*>(replay_object_info->object);
+    auto command_queue_info = GetExtraInfo<D3D12CommandQueueInfo>(replay_object_info);
+    assert(command_queue_info != nullptr);
+    auto device_object = GetObjectInfo(command_queue_info->parent_id);
+    assert(device_object != nullptr);
+    auto device_info = GetExtraInfo<D3D12DeviceInfo>(device_object);
+    assert(device_info != nullptr);
+    auto allocator = device_info->allocator.get();
+    assert(allocator != nullptr);
+
+    allocator->CopyTileMappings(pQueue,
+                                in_pDstResource,
+                                pDstResource,
+                                in_pSrcResource,
+                                pSrcResource,
+                                pDstRegionStartCoordinate->GetPointer(),
+                                pSrcRegionStartCoordinate->GetPointer(),
+                                pRegionSize->GetPointer(),
+                                Flags);
+}
+
+void Dx12ReplayConsumerBase::OverrideCopyTiles(
+    DxObjectInfo*                                                  replay_object_info,
+    format::HandleId                                               in_pResource,
+    StructPointerDecoder<Decoded_D3D12_TILED_RESOURCE_COORDINATE>* pTileRegionStartCoordinate,
+    StructPointerDecoder<Decoded_D3D12_TILE_REGION_SIZE>*          pTileRegionSize,
+    format::HandleId                                               in_pBuffer,
+    UINT64                                                         buffer_start_offset_in_bytes,
+    D3D12_TILE_COPY_FLAGS                                          Flags)
+{
+    auto resource_info = GetObjectInfo(in_pResource);
+    auto buffer_info   = GetObjectInfo(in_pBuffer);
+
+    auto pResource         = static_cast<ID3D12Resource*>(resource_info->object);
+    auto pBuffer           = static_cast<ID3D12Resource*>(buffer_info->object);
+    auto pList             = reinterpret_cast<ID3D12GraphicsCommandList*>(replay_object_info->object);
+    auto command_list_info = GetExtraInfo<D3D12CommandListInfo>(replay_object_info);
+    assert(command_list_info != nullptr);
+    auto device_object = GetObjectInfo(command_list_info->parent_id);
+    assert(device_object != nullptr);
+    auto device_info = GetExtraInfo<D3D12DeviceInfo>(device_object);
+    assert(device_info != nullptr);
+    auto allocator = device_info->allocator.get();
+    assert(allocator != nullptr);
+
+    allocator->CopyTiles(pList,
+                         in_pResource,
+                         pResource,
+                         pTileRegionStartCoordinate->GetPointer(),
+                         pTileRegionSize->GetPointer(),
+                         in_pBuffer,
+                         pBuffer,
+                         buffer_start_offset_in_bytes,
+                         Flags);
+}
+
 UINT64 Dx12ReplayConsumerBase::OverrideGetCompletedValue(DxObjectInfo* replay_object_info, UINT64 original_result)
 {
     assert((replay_object_info != nullptr) && (replay_object_info->object != nullptr));
