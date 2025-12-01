@@ -59,7 +59,7 @@ void Encode_D3D12SerializeRootSignature(
     ID3DBlob** ppBlob,
     ID3DBlob** ppErrorBlob)
 {
-    auto encoder = D3D12CaptureManager::Get()->BeginApiCallCapture(format::ApiCallId::ApiCall_D3D12SerializeRootSignature);
+    auto encoder = D3D12CaptureManager::Get()->BeginTrackedApiCallCapture(format::ApiCallId::ApiCall_D3D12SerializeRootSignature);
     if(encoder)
     {
         bool omit_output_data = false;
@@ -72,7 +72,7 @@ void Encode_D3D12SerializeRootSignature(
         encoder->EncodeObjectPtr(ppBlob, omit_output_data);
         encoder->EncodeObjectPtr(ppErrorBlob, omit_output_data);
         encoder->EncodeInt32Value(return_value);
-        D3D12CaptureManager::Get()->EndApiCallCapture();
+        D3D12CaptureManager::Get()->EndCreateApiCallCapture(return_value, IID_ID3D10Blob, reinterpret_cast<void**>(ppBlob));
     }
 }
 
@@ -106,7 +106,7 @@ void Encode_D3D12SerializeVersionedRootSignature(
     ID3DBlob** ppBlob,
     ID3DBlob** ppErrorBlob)
 {
-    auto encoder = D3D12CaptureManager::Get()->BeginApiCallCapture(format::ApiCallId::ApiCall_D3D12SerializeVersionedRootSignature);
+    auto encoder = D3D12CaptureManager::Get()->BeginTrackedApiCallCapture(format::ApiCallId::ApiCall_D3D12SerializeVersionedRootSignature);
     if(encoder)
     {
         bool omit_output_data = false;
@@ -118,7 +118,7 @@ void Encode_D3D12SerializeVersionedRootSignature(
         encoder->EncodeObjectPtr(ppBlob, omit_output_data);
         encoder->EncodeObjectPtr(ppErrorBlob, omit_output_data);
         encoder->EncodeInt32Value(return_value);
-        D3D12CaptureManager::Get()->EndApiCallCapture();
+        D3D12CaptureManager::Get()->EndCreateApiCallCapture(return_value, IID_ID3D10Blob, reinterpret_cast<void**>(ppBlob));
     }
 }
 

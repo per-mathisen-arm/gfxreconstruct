@@ -122,6 +122,8 @@ class Dx12StateWriter
 
     void WriteRootSignatureBlobState(const Dx12StateTable& state_table);
 
+    void WriteCreateRootSignatureState(const Dx12StateTable& state_table);
+
     void WriteCachedPSOBlobState(const Dx12StateTable& state_table);
 
     void WriteHeapState(const Dx12StateTable& state_table);

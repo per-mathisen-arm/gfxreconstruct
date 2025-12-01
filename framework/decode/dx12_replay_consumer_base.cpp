@@ -2228,6 +2228,7 @@ Dx12ReplayConsumerBase::OverrideCreateDescriptorHeap(DxObjectInfo* replay_object
             heap_info->replay_increments  = device_info->replay_increments;
         }
 
+        heap_info->parent_id = replay_object_info->capture_id;
         SetExtraInfo(heap, std::move(heap_info));
     }
 
@@ -2941,6 +2942,23 @@ Dx12ReplayConsumerBase::OverrideGetGPUDescriptorHandleForHeapStart(
     auto heap_info = GetExtraInfo<D3D12DescriptorHeapInfo>(replay_object_info);
     if (heap_info != nullptr)
     {
+        auto device_object = GetObjectInfo(heap_info->parent_id);
+        assert(device_object != nullptr);
+        auto device_info = GetExtraInfo<D3D12DeviceInfo>(device_object);
+        if (device_info != nullptr)
+        {
+            heap_info->capture_increments = device_info->capture_increments;
+            heap_info->replay_increments  = device_info->replay_increments;
+        }
+
+        if (((*heap_info->capture_increments)[heap_info->descriptor_type] == 0) &&
+            ((*heap_info->replay_increments)[heap_info->descriptor_type] == 0))
+        {
+            GFXRECON_LOG_ERROR(
+                "Descriptor heap increment sizes not recorded for descriptor heap type %u, replay may fail.",
+                heap_info->descriptor_type);
+        }
+
         // Only initialize on the first call.
         if (heap_info->replay_gpu_addr_begin == kNullGpuAddress)
         {

@@ -861,6 +861,14 @@ class D3D12CaptureManager : public ApiCaptureManager
                                            const void*                         pInitializationParametersData,
                                            SIZE_T                              InitializationParametersDataSizeInBytes);
 
+    void PostProcess_ID3D12Device_CreateRootSignature(ID3D12Device_Wrapper* device_wrapper,
+                                                      HRESULT               result,
+                                                      UINT                  nodeMask,
+                                                      const void*           pBlobWithRootSignature,
+                                                      SIZE_T                blobLengthInBytes,
+                                                      REFIID                riid,
+                                                      void**                ppvRootSignature);
+
   protected:
     D3D12CaptureManager();
 

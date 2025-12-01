@@ -351,6 +351,11 @@ class Dx12ApiCallEncodersBodyGenerator(Dx12ApiCallEncodersHeaderGenerator):
         if len(create_object_info) == 1 and create_object_info[0]:
             is_create_call = True
             create_object_tuple = create_object_info[0]
+        # Special case for create calls with 'ppBlob' created objects.
+        elif len(create_object_info) == 2 and create_object_info[0]:
+            if 'ppBlob' in create_object_info[0][1]:
+                is_create_call = True
+                create_object_tuple = create_object_info[0]
 
         # Check if last parameter is a descriptor.
         descriptor_creation_param_name = self.get_descriptor_creation_param(

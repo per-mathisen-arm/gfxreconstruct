@@ -270,7 +270,9 @@ struct IDXGIFactoryInfo : public DxgiWrapperInfo
 {};
 
 struct ID3D12RootSignatureInfo : public DxWrapperInfo
-{};
+{
+    std::vector<uint8_t> blob_value;
+};
 
 struct ID3D12RootSignatureDeserializerInfo : public DxWrapperInfo
 {};

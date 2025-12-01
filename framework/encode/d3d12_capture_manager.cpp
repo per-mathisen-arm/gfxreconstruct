@@ -3834,5 +3834,27 @@ void D3D12CaptureManager::PostProcess_InitializeMetaCommand(ID3D12GraphicsComman
     }
 }
 
+void D3D12CaptureManager::PostProcess_ID3D12Device_CreateRootSignature(ID3D12Device_Wrapper* device_wrapper,
+                                                                       HRESULT               result,
+                                                                       UINT                  nodeMask,
+                                                                       const void*           pBlobWithRootSignature,
+                                                                       SIZE_T                blobLengthInBytes,
+                                                                       REFIID                riid,
+                                                                       void**                ppvRootSignature)
+{
+    GFXRECON_UNREFERENCED_PARAMETER(device_wrapper);
+    GFXRECON_UNREFERENCED_PARAMETER(nodeMask);
+
+    if (SUCCEEDED(result) && (ppvRootSignature != nullptr) && (*ppvRootSignature != nullptr))
+    {
+        auto root_signature_info = reinterpret_cast<ID3D12RootSignature_Wrapper*>(*ppvRootSignature)->GetObjectInfo();
+        if ((root_signature_info != nullptr) && (blobLengthInBytes != 0) && (pBlobWithRootSignature != nullptr))
+        {
+            root_signature_info->blob_value.resize(blobLengthInBytes);
+            std::memcpy(root_signature_info->blob_value.data(), pBlobWithRootSignature, blobLengthInBytes);
+        }
+    }
+}
+
 GFXRECON_END_NAMESPACE(encode)
 GFXRECON_END_NAMESPACE(gfxrecon)

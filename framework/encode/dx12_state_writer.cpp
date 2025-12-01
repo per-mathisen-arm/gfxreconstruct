@@ -123,7 +123,7 @@ void Dx12StateWriter::WriteState(const Dx12StateTable& state_table, uint64_t fra
     WriteHeapState(state_table);
 
     // Root signatures
-    StandardCreateWrite<ID3D12RootSignature_Wrapper>(state_table);
+    WriteCreateRootSignatureState(state_table);
     StandardCreateWrite<ID3D12RootSignatureDeserializer_Wrapper>(state_table);
     StandardCreateWrite<ID3D12VersionedRootSignatureDeserializer_Wrapper>(state_table);
 
@@ -395,6 +395,100 @@ void Dx12StateWriter::WriteRootSignatureBlobState(const Dx12StateTable& state_ta
     });
 }
 
+void Dx12StateWriter::WriteCreateRootSignatureState(const Dx12StateTable& state_table)
+{
+    state_table.VisitWrappers([&](const ID3D12RootSignature_Wrapper* wrapper) {
+        assert(wrapper != nullptr);
+        assert(wrapper->GetObjectInfo() != nullptr);
+
+        auto wrapper_info = wrapper->GetObjectInfo();
+        if (wrapper_info->blob_value.size() != 0)
+        {
+            const void* blobData = wrapper_info->blob_value.data();
+            SIZE_T      blobSize = static_cast<SIZE_T>(wrapper_info->blob_value.size());
+
+            graphics::dx12::ID3D12VersionedRootSignatureDeserializerComPtr deserializer = nullptr;
+            auto                                                           result =
+                D3D12CaptureManager::Get()->GetD3D12DispatchTable().D3D12CreateVersionedRootSignatureDeserializer(
+                    blobData, blobSize, IID_PPV_ARGS(&deserializer));
+            if (FAILED(result))
+            {
+                GFXRECON_LOG_ERROR("Failed to create root signature deserializer for root signature blob (error = %d)",
+                                   result);
+                return;
+            }
+
+            auto root_signature_desc = deserializer->GetUnconvertedRootSignatureDesc();
+            if (root_signature_desc == nullptr)
+            {
+                GFXRECON_LOG_ERROR("Failed to get root signature description from deserializer");
+                return;
+            }
+
+            ID3D10Blob* ppBlob      = nullptr;
+            ID3D10Blob* ppErrorBlob = nullptr;
+            result = D3D12CaptureManager::Get()->GetD3D12DispatchTable().D3D12SerializeVersionedRootSignature(
+                root_signature_desc, &ppBlob, &ppErrorBlob);
+            if (FAILED(result) || (ppBlob == nullptr))
+            {
+                GFXRECON_LOG_ERROR("Failed to serialize root signature (error = %d)", result);
+                return;
+            }
+
+            auto buffer_size = ppBlob->GetBufferSize();
+            auto buffer_ptr  = ppBlob->GetBufferPointer();
+
+            WrapObject(IID_ID3D10Blob, reinterpret_cast<void**>(&ppBlob), nullptr);
+            WrapObject(IID_ID3D10Blob, reinterpret_cast<void**>(&ppErrorBlob), nullptr);
+
+            EncodeStructPtr(&encoder_, root_signature_desc);
+            encoder_.EncodeObjectPtr(reinterpret_cast<void**>(&ppBlob));
+            encoder_.EncodeObjectPtr(reinterpret_cast<void**>(&ppErrorBlob));
+            encoder_.EncodeInt32Value(result);
+            WriteFunctionCall(format::ApiCallId::ApiCall_D3D12SerializeVersionedRootSignature, &parameter_stream_);
+            parameter_stream_.Clear();
+
+            auto blob_wrapper = reinterpret_cast<ID3D10Blob_Wrapper*>(ppBlob);
+            blob_wrapper->MakeRefInternal();
+
+            encoder_.EncodeSizeTValue(buffer_size);
+            WriteMethodCall(
+                format::ApiCallId::ApiCall_ID3D10Blob_GetBufferSize, blob_wrapper->GetCaptureId(), &parameter_stream_);
+            parameter_stream_.Clear();
+
+            encoder_.EncodeVoidPtr(buffer_ptr);
+            WriteMethodCall(format::ApiCallId::ApiCall_ID3D10Blob_GetBufferPointer,
+                            blob_wrapper->GetCaptureId(),
+                            &parameter_stream_);
+            parameter_stream_.Clear();
+
+            StandardCreateWrite(wrapper);
+
+            ULONG return_value = 0;
+            encoder_.EncodeInt32Value(return_value);
+            WriteMethodCall(
+                format::ApiCallId::ApiCall_IUnknown_Release, blob_wrapper->GetCaptureId(), &parameter_stream_);
+            parameter_stream_.Clear();
+
+            if (ppErrorBlob != nullptr)
+            {
+                auto error_blob_wrapper = reinterpret_cast<ID3D10Blob_Wrapper*>(ppErrorBlob);
+                error_blob_wrapper->MakeRefInternal();
+
+                encoder_.EncodeInt32Value(return_value);
+                WriteMethodCall(format::ApiCallId::ApiCall_IUnknown_Release,
+                                error_blob_wrapper->GetCaptureId(),
+                                &parameter_stream_);
+                parameter_stream_.Clear();
+            }
+        }
+        else
+        {
+            StandardCreateWrite(wrapper);
+        }
+    });
+}
+
 void Dx12StateWriter::WriteCachedPSOBlobState(const Dx12StateTable& state_table)
 {
     std::set<util::MemoryOutputStream*> processed;
@@ -491,6 +585,14 @@ void Dx12StateWriter::WriteDescriptorState(const Dx12StateTable& state_table)
         auto        heap_info = heap_wrapper->GetObjectInfo();
         const auto& heap_desc = heap->GetDesc();
 
+        // Write call to query the device for heap increment size.
+        encoder_.EncodeEnumValue(heap_desc.Type);
+        encoder_.EncodeUInt32Value(heap_info->descriptor_increment);
+        WriteMethodCall(format::ApiCallId::ApiCall_ID3D12Device_GetDescriptorHandleIncrementSize,
+                        heap_info->create_object_id,
+                        &parameter_stream_);
+        parameter_stream_.Clear();
+
         // Write heap creation call.
         StandardCreateWrite(heap_wrapper);
 
@@ -517,14 +619,6 @@ void Dx12StateWriter::WriteDescriptorState(const Dx12StateTable& state_table)
                             &parameter_stream_);
             parameter_stream_.Clear();
         }
-
-        // Write call to query the device for heap increment size.
-        encoder_.EncodeEnumValue(heap_desc.Type);
-        encoder_.EncodeUInt32Value(heap_info->descriptor_increment);
-        WriteMethodCall(format::ApiCallId::ApiCall_ID3D12Device_GetDescriptorHandleIncrementSize,
-                        heap_info->create_object_id,
-                        &parameter_stream_);
-        parameter_stream_.Clear();
 
         // Write descriptor creation calls, not use StandardCreateWrite.
         for (uint32_t i = 0; i < heap_desc.NumDescriptors; ++i)
