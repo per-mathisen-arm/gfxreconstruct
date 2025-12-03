@@ -444,7 +444,7 @@ void Dx12AccelerationStructureBuilder::PreBuildRaytracingAccelerationStructure(
         // Last minute validation: storage buffer should be bigger than the acceleration structure size, the size
         // provided as an input in Create*Resource calls and the actual size retrieved from GetASBuildSizes query.
         // Assume all these sizes should satisfy the above condition.
-        GFXRECON_ASSERT(prebuild_info.ResultDataMaxSizeInBytes > recreated_va_size_map_iter->second.second);
+        GFXRECON_ASSERT(prebuild_info.ResultDataMaxSizeInBytes <= recreated_va_size_map_iter->second.second);
     }
 
     scratch_size = util::platform::AlignValue<D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BYTE_ALIGNMENT>(scratch_size);
