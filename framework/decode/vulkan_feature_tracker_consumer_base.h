@@ -314,6 +314,18 @@ class VulkanFeatureTrackerConsumerBase : public util::VulkanModifierBase
                                      StructPointerDecoder<Decoded_VkBufferDeviceAddressInfo>* pInfo) override;
 
     virtual void
+    Process_vkGetBufferDeviceAddressEXT(const ApiCallInfo&                                       call_info,
+                                        VkDeviceAddress                                          returnValue,
+                                        format::HandleId                                         device,
+                                        StructPointerDecoder<Decoded_VkBufferDeviceAddressInfo>* pInfo) override;
+
+    virtual void
+    Process_vkGetBufferDeviceAddressKHR(const ApiCallInfo&                                       call_info,
+                                        VkDeviceAddress                                          returnValue,
+                                        format::HandleId                                         device,
+                                        StructPointerDecoder<Decoded_VkBufferDeviceAddressInfo>* pInfo) override;
+
+    virtual void
     Process_vkGetBufferOpaqueCaptureAddress(const ApiCallInfo&                                       call_info,
                                             uint64_t                                                 returnValue,
                                             format::HandleId                                         device,

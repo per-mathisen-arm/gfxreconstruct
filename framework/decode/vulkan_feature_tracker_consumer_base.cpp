@@ -159,9 +159,9 @@ VulkanFeatureTrackerConsumerBase::VulkanFeatureTrackerConsumerBase()
                                    "shaderStorageImageMultisample",
                                    "shaderStorageImageReadWithoutFormat",
                                    "shaderStorageImageWriteWithoutFormat",
-                                   "shaderUniformBufferArrayDynamicIndexing "
+                                   "shaderUniformBufferArrayDynamicIndexing",
                                    "shaderSampledImageArrayDynamicIndexing",
-                                   "shaderStorageBufferArrayDynamicIndexing "
+                                   "shaderStorageBufferArrayDynamicIndexing",
                                    "shaderStorageImageArrayDynamicIndexing",
                                    "shaderClipDistance",
                                    "shaderCullDistance",
@@ -272,6 +272,7 @@ VulkanFeatureTrackerConsumerBase::VulkanFeatureTrackerConsumerBase()
                                    "shaderUniformBufferArrayNonUniformIndexing",
                                    "shaderSampledImageArrayNonUniformIndexing",
                                    "shaderStorageBufferArrayNonUniformIndexing",
+                                   "shaderStorageImageArrayNonUniformIndexing",
                                    "shaderInputAttachmentArrayNonUniformIndexing",
                                    "shaderUniformTexelBufferArrayNonUniformIndexing",
                                    "shaderStorageTexelBufferArrayNonUniformIndexing",
@@ -297,6 +298,7 @@ VulkanFeatureTrackerConsumerBase::VulkanFeatureTrackerConsumerBase()
                                    "bufferDeviceAddressCaptureReplay",
                                    "bufferDeviceAddressMultiDevice",
                                    "vulkanMemoryModel",
+                                   "vulkanMemoryModelDeviceScope",
                                    "vulkanMemoryModelAvailabilityVisibilityChains",
                                    "shaderOutputViewportIndex",
                                    "shaderOutputLayer",
@@ -1311,6 +1313,24 @@ void VulkanFeatureTrackerConsumerBase::Process_vkGetBufferDeviceAddress(
     StructPointerDecoder<Decoded_VkBufferDeviceAddressInfo>* pInfo)
 {
     core12_.bufferDeviceAddress = true;
+}
+
+void VulkanFeatureTrackerConsumerBase::Process_vkGetBufferDeviceAddressEXT(
+    const ApiCallInfo&                                       call_info,
+    VkDeviceAddress                                          returnValue,
+    format::HandleId                                         device,
+    StructPointerDecoder<Decoded_VkBufferDeviceAddressInfo>* pInfo)
+{
+    Process_vkGetBufferDeviceAddress(call_info, returnValue, device, pInfo);
+}
+
+void VulkanFeatureTrackerConsumerBase::Process_vkGetBufferDeviceAddressKHR(
+    const ApiCallInfo&                                       call_info,
+    VkDeviceAddress                                          returnValue,
+    format::HandleId                                         device,
+    StructPointerDecoder<Decoded_VkBufferDeviceAddressInfo>* pInfo)
+{
+    Process_vkGetBufferDeviceAddress(call_info, returnValue, device, pInfo);
 }
 
 void VulkanFeatureTrackerConsumerBase::Process_vkGetBufferOpaqueCaptureAddress(
