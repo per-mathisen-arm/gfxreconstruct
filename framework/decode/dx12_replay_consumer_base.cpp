@@ -836,6 +836,10 @@ void Dx12ReplayConsumerBase::ProcessGetDx12AccelerationStructureSizeCommand(
         return;
     }
 
+    // In order for GetAccelerationStructureInputsBufferEntries to correctly process inputs buffer entries, a
+    // non-zero GPU VA must be set for values that will be used.
+    const D3D12_GPU_VIRTUAL_ADDRESS kDefaultGpuVa = 1;
+
     graphics::dx12::ID3D12Device5ComPtr device5_ptr = nullptr;
     device_object_info->object->QueryInterface(IID_PPV_ARGS(&device5_ptr));
     GFXRECON_ASSERT(device5_ptr);
@@ -868,7 +872,7 @@ void Dx12ReplayConsumerBase::ProcessGetDx12AccelerationStructureSizeCommand(
     {
         inputs.Type          = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
         inputs.NumDescs      = command_header.num_instance_descs;
-        inputs.InstanceDescs = 0;
+        inputs.InstanceDescs = kDefaultGpuVa;
 
         inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
         device5_ptr->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &replay_info);
@@ -2275,6 +2279,7 @@ void Dx12ReplayConsumerBase::SetResourceReplayRequiredSize(DxObjectInfo* replay_
         auto desc_pointer = pDesc->GetPointer();
         if (desc_pointer->Dimension == D3D12_RESOURCE_DIMENSION_BUFFER)
         {
+            // Save original buffer size
             auto result = resource_buffer_widths_.emplace(resource_id, desc_pointer->Width);
             if (!result.second)
             {
@@ -2304,6 +2309,7 @@ void Dx12ReplayConsumerBase::SetResourceReplayRequiredSize(DxObjectInfo* replay_
         auto desc_pointer = pDesc1->GetPointer();
         if (desc_pointer->Dimension == D3D12_RESOURCE_DIMENSION_BUFFER)
         {
+            // Save original buffer size
             auto result = resource_buffer_widths_.emplace(resource_id, desc_pointer->Width);
             if (!result.second)
             {
@@ -3043,7 +3049,9 @@ Dx12ReplayConsumerBase::OverrideGetGpuVirtualAddress(DxObjectInfo*             r
             resource_info->replay_address_  = replay_result;
 
             UINT64 desc_width = 0;
+            auto   desc       = replay_object->GetDesc();
 
+            // Use original buffer size firstly if available
             auto resource_iter = resource_buffer_widths_.find(replay_object_info->capture_id);
             if (resource_iter != resource_buffer_widths_.end())
             {
@@ -3051,7 +3059,6 @@ Dx12ReplayConsumerBase::OverrideGetGpuVirtualAddress(DxObjectInfo*             r
             }
             else
             {
-                auto desc  = replay_object->GetDesc();
                 desc_width = desc.Width;
             }
 
@@ -3061,6 +3068,18 @@ Dx12ReplayConsumerBase::OverrideGetGpuVirtualAddress(DxObjectInfo*             r
             {
                 resource_value_mapper_->AddResourceGpuVa(
                     replay_object_info->capture_id, replay_result, desc_width, original_result);
+            }
+
+            if (((desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS) ==
+                 D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS) ||
+                ((desc.Flags & D3D12_RESOURCE_FLAG_RAYTRACING_ACCELERATION_STRUCTURE) ==
+                 D3D12_RESOURCE_FLAG_RAYTRACING_ACCELERATION_STRUCTURE))
+            {
+                auto accel_struct_builder = GetAccelerationStructureBuilder(replay_object_info);
+                if (support_memory_allocator_ && (accel_struct_builder != nullptr))
+                {
+                    accel_struct_builder->SetAccelerationStructureSize(replay_result, original_result, desc.Width);
+                }
             }
         }
     }
@@ -7231,6 +7250,25 @@ void Dx12ReplayConsumerBase::PostCall_ID3D12Device_CopyDescriptorsSimple(
         {
             dest_heap_extra_info->dsv_infos[dest_idx] = src_heap_extra_info->dsv_infos[src_idx];
         }
+    }
+}
+
+void Dx12ReplayConsumerBase::PreCall_ID3D12GraphicsCommandList4_CopyRaytracingAccelerationStructure(
+    const ApiCallInfo&                                call_info,
+    DxObjectInfo*                                     command_list4_object_info,
+    D3D12_GPU_VIRTUAL_ADDRESS                         DestAccelerationStructureData,
+    D3D12_GPU_VIRTUAL_ADDRESS                         SourceAccelerationStructureData,
+    D3D12_RAYTRACING_ACCELERATION_STRUCTURE_COPY_MODE Mode)
+{
+    GFXRECON_ASSERT(command_list4_object_info != nullptr);
+    GFXRECON_ASSERT(command_list4_object_info->object != nullptr);
+
+    auto accel_struct_builder = GetAccelerationStructureBuilder(command_list4_object_info);
+    if (support_memory_allocator_ && (accel_struct_builder != nullptr))
+    {
+        auto command_list_id = command_list4_object_info->capture_id;
+        accel_struct_builder->VerifyAccelerationStructureSize(
+            DestAccelerationStructureData, SourceAccelerationStructureData, 0);
     }
 }
 

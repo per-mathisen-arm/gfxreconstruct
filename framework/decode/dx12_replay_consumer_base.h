@@ -285,6 +285,13 @@ class Dx12ReplayConsumerBase : public Dx12Consumer
                                                      Decoded_D3D12_CPU_DESCRIPTOR_HANDLE SrcDescriptorRangeStart,
                                                      D3D12_DESCRIPTOR_HEAP_TYPE          DescriptorHeapsType);
 
+    void PreCall_ID3D12GraphicsCommandList4_CopyRaytracingAccelerationStructure(
+        const ApiCallInfo&                                call_info,
+        DxObjectInfo*                                     command_list4_object_info,
+        D3D12_GPU_VIRTUAL_ADDRESS                         DestAccelerationStructureData,
+        D3D12_GPU_VIRTUAL_ADDRESS                         SourceAccelerationStructureData,
+        D3D12_RAYTRACING_ACCELERATION_STRUCTURE_COPY_MODE Mode);
+
     HRESULT OverrideSerialize(DxObjectInfo*            replay_object,
                               HRESULT                  return_value,
                               PointerDecoder<uint8_t>* pData,

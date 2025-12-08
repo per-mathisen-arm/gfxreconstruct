@@ -95,15 +95,22 @@ void Dx12RayTracingModifier::Process_ID3D12StateObjectProperties_GetShaderIdenti
         return;
     }
 
-    if ((return_value != nullptr) && !return_value->IsNull())
+    if ((return_value == nullptr) || (return_value->IsNull()))
     {
-        std::vector<uint8_t> shader_id(D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES, 0);
-        util::platform::MemoryCopy(shader_id.data(),
-                                   D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES,
-                                   (uint8_t*)return_value->GetPointer(),
-                                   D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
+        return;
+    }
 
-        shader_id_to_properties_id_[shader_id] = object_id;
+    std::vector<uint8_t> shader_id(D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES, 0);
+    util::platform::MemoryCopy(shader_id.data(),
+                               D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES,
+                               (uint8_t*)return_value->GetPointer(),
+                               D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
+
+    auto [iter, inserted] = shader_id_to_properties_id_.try_emplace(shader_id, object_id);
+    if ((!inserted) && (iter->second != object_id))
+    {
+        GFXRECON_LOG_ERROR(
+            "Shader identifier already exists for object ID: %" PRIu64 " and %" PRIu64, object_id, iter->second);
     }
 }
 
@@ -620,6 +627,10 @@ void Dx12RayTracingModifier::Process_BuildRaytracingAccelerationStructure(
             }
         }
 
+        // In order for GetAccelerationStructureInputsBufferEntries to correctly process inputs buffer entries, a
+        // non-zero GPU VA must be set for values that will be used.
+        const D3D12_GPU_VIRTUAL_ADDRESS kDefaultGpuVa = 1;
+
         auto& acceleration_structure_inputs = desc->Inputs;
         if (acceleration_structure_inputs.Type == D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL)
         {
@@ -635,13 +646,14 @@ void Dx12RayTracingModifier::Process_BuildRaytracingAccelerationStructure(
                         const_cast<D3D12_RAYTRACING_GEOMETRY_DESC&>(acceleration_structure_inputs.pGeometryDescs[i]);
                     if (geometry_desc.Type == D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES)
                     {
-                        geometry_desc.Triangles.VertexBuffer.StartAddress = 0;
-                        geometry_desc.Triangles.IndexBuffer               = 0;
-                        geometry_desc.Triangles.Transform3x4              = 0;
+                        geometry_desc.Triangles.VertexBuffer.StartAddress = kDefaultGpuVa;
+                        geometry_desc.Triangles.Transform3x4              = kDefaultGpuVa;
+                        geometry_desc.Triangles.IndexBuffer =
+                            (geometry_desc.Triangles.IndexCount > 0) ? kDefaultGpuVa : 0;
                     }
                     else
                     {
-                        geometry_desc.AABBs.AABBs.StartAddress = 0;
+                        geometry_desc.AABBs.AABBs.StartAddress = kDefaultGpuVa;
                     }
 
                     build_desc.geometry_descs[i] = geometry_desc;
@@ -652,13 +664,14 @@ void Dx12RayTracingModifier::Process_BuildRaytracingAccelerationStructure(
                         const_cast<D3D12_RAYTRACING_GEOMETRY_DESC*>(acceleration_structure_inputs.ppGeometryDescs[i]);
                     if (geometry_desc->Type == D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES)
                     {
-                        geometry_desc->Triangles.VertexBuffer.StartAddress = 0;
-                        geometry_desc->Triangles.IndexBuffer               = 0;
-                        geometry_desc->Triangles.Transform3x4              = 0;
+                        geometry_desc->Triangles.VertexBuffer.StartAddress = kDefaultGpuVa;
+                        geometry_desc->Triangles.Transform3x4              = kDefaultGpuVa;
+                        geometry_desc->Triangles.IndexBuffer =
+                            (geometry_desc->Triangles.IndexCount > 0) ? kDefaultGpuVa : 0;
                     }
                     else
                     {
-                        geometry_desc->AABBs.AABBs.StartAddress = 0;
+                        geometry_desc->AABBs.AABBs.StartAddress = kDefaultGpuVa;
                     }
 
                     build_desc.geometry_descs[i] = *geometry_desc;
@@ -667,10 +680,10 @@ void Dx12RayTracingModifier::Process_BuildRaytracingAccelerationStructure(
         }
         else
         {
+            const_cast<D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS&>(acceleration_structure_inputs)
+                .InstanceDescs                       = (desc->Inputs.NumDescs > 0) ? kDefaultGpuVa : 0;
             build_desc.build_tlas_inputs             = desc->Inputs;
             build_desc.build_tlas_inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
-            const_cast<D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS&>(acceleration_structure_inputs)
-                .InstanceDescs = 0;
         }
 
         bool need_insert_prebuild_info = false;
@@ -683,46 +696,41 @@ void Dx12RayTracingModifier::Process_BuildRaytracingAccelerationStructure(
         {
             if (build_desc.build_blas_inputs.Type == D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL)
             {
-                for (const auto& geom_desc : build_desc_iter->second.geometry_descs)
-                {
-                    bool found = false;
-                    for (const auto& new_geom_desc : build_desc.geometry_descs)
-                    {
-                        if (memcmp(&geom_desc, &new_geom_desc, sizeof(D3D12_RAYTRACING_GEOMETRY_DESC)) == 0)
-                        {
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (!found)
-                    {
-                        build_desc.geometry_descs.push_back(geom_desc);
-                    }
-                }
-
                 if (build_desc_iter->second.geometry_descs.empty())
                 {
                     need_insert_prebuild_info = true;
                 }
-
-                if (build_desc.geometry_descs.size() > build_desc.build_blas_inputs.NumDescs)
+                else
                 {
-                    build_desc.build_blas_inputs.NumDescs = build_desc.geometry_descs.size();
-                    need_insert_prebuild_info             = true;
+                    for (const auto& geom_desc : build_desc_iter->second.geometry_descs)
+                    {
+                        bool found = false;
+                        for (const auto& new_geom_desc : build_desc.geometry_descs)
+                        {
+                            if (memcmp(&geom_desc, &new_geom_desc, sizeof(D3D12_RAYTRACING_GEOMETRY_DESC)) == 0)
+                            {
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found)
+                        {
+                            build_desc.geometry_descs.push_back(geom_desc);
+                            build_desc.build_blas_inputs.NumDescs = build_desc.geometry_descs.size();
+                            need_insert_prebuild_info             = true;
+                        }
+                    }
                 }
             }
 
             if (build_desc.build_tlas_inputs.Type == D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL)
             {
-                if (build_desc_iter->second.build_tlas_inputs.NumDescs == 0)
+                build_desc.build_tlas_inputs.NumDescs =
+                    std::max(build_desc.build_tlas_inputs.NumDescs, build_desc_iter->second.build_tlas_inputs.NumDescs);
+
+                if (build_desc.build_tlas_inputs.NumDescs != 0)
                 {
                     need_insert_prebuild_info = true;
-                }
-
-                if (build_desc.build_tlas_inputs.NumDescs < build_desc_iter->second.build_tlas_inputs.NumDescs)
-                {
-                    build_desc.build_tlas_inputs.NumDescs = build_desc_iter->second.build_tlas_inputs.NumDescs;
-                    need_insert_prebuild_info             = true;
                 }
             }
 
@@ -793,10 +801,10 @@ void Dx12RayTracingModifier::ProcessInitDx12AccelerationStructureCommand(
 
     bool build = true;
     bool copy  = false;
-    if (command_header.copy_source_gpu_va != 0)
+    if (src_address != 0)
     {
         copy = true;
-        if (command_header.copy_source_gpu_va != command_header.dest_acceleration_structure_data)
+        if (src_address != dst_address)
         {
             build = false;
         }
@@ -808,7 +816,7 @@ void Dx12RayTracingModifier::ProcessInitDx12AccelerationStructureCommand(
         std::vector<D3D12_RAYTRACING_GEOMETRY_DESC>        build_geometry_descs = {};
 
         // Reconstruct acceleration structure build descs.
-        build_desc.DestAccelerationStructureData    = command_header.dest_acceleration_structure_data;
+        build_desc.DestAccelerationStructureData    = dst_address;
         build_desc.SourceAccelerationStructureData  = 0;
         build_desc.ScratchAccelerationStructureData = 0;
         build_desc.Inputs.Type = static_cast<D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE>(command_header.inputs_type);
@@ -1029,6 +1037,10 @@ void Dx12RayTracingModifier::Process_CopyRaytracingAccelerationStructure(
             acceleration_structure_build_desc_.emplace(dst_address, build_desc);
             prebuild_info_insert_values_[resource_entries_[dst_id].block_index].emplace(dst_address, prebuild_desc);
         }
+    }
+    else
+    {
+        GFXRECON_LOG_ERROR("Failed to find src and dst address 0x%" PRIx64 " and 0x%" PRIx64, src_address, dst_address);
     }
 }
 

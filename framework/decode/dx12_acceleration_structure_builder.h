@@ -56,6 +56,14 @@ class Dx12AccelerationStructureBuilder
 
     const D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO GetLastPrebuildInfo();
 
+    void SetAccelerationStructureSize(const uint64_t replay_accel_struct_address,
+                                      const uint64_t capture_accel_struct_address,
+                                      const uint64_t create_accel_struct_size);
+
+    void VerifyAccelerationStructureSize(const uint64_t dst_accel_struct_address,
+                                         const uint64_t src_accel_struct_address,
+                                         const uint64_t build_accel_struct_size);
+
     void PreBuildRaytracingAccelerationStructure(const format::HandleId      command_list_id,
                                                  ID3D12GraphicsCommandList4* command_list_ptr,
                                                  const D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC* build_desc);
@@ -161,6 +169,7 @@ class Dx12AccelerationStructureBuilder
     // Map of accel_struct_buffer replay GPU VA to capture VA and its size.
     std::unordered_map<D3D12_GPU_VIRTUAL_ADDRESS, std::pair<D3D12_GPU_VIRTUAL_ADDRESS, uint64_t>>
         recreated_accel_struct_va_size_;
+    std::unordered_map<D3D12_GPU_VIRTUAL_ADDRESS, uint64_t> build_accel_struct_va_size_;
 };
 
 GFXRECON_END_NAMESPACE(decode)
