@@ -276,7 +276,7 @@ class CaptureSettings
         uint64_t                     fence_query_delay_timeout_threshold{ 0 };
         uint32_t                     fence_query_delay_limit{ UINT32_MAX };
         bool                         queue_zero_only{ false };
-        bool                         allow_pipeline_compile_required{ false };
+        bool                         allow_pipeline_compile_required{ true };
         bool                         quit_after_frame_ranges{ false };
         bool                         force_fifo_present_mode{ true };
         bool                         use_asset_file{ false };

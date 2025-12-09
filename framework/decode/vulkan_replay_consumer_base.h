@@ -2046,6 +2046,15 @@ class VulkanReplayConsumerBase : public VulkanConsumer
     std::vector<format::HandleId>
     GetImageAttachments(StructPointerDecoder<Decoded_VkRenderPassBeginInfo>* render_pass_begin_info_decoder);
 
+    static bool ShouldSkipPipelineCreationForCompileRequired(VkResult                          original_result,
+                                                             uint32_t                          create_info_count,
+                                                             HandlePointerDecoder<VkPipeline>* pipelines,
+                                                             const char*                       pipeline_type);
+
+    template <typename CreateInfo>
+    static void
+    RemoveFailOnCompileRequiredFlags(uint32_t create_info_count, CreateInfo* create_infos, const char* pipeline_type);
+
   private:
     util::platform::LibraryHandle                                            loader_handle_;
     PFN_vkGetInstanceProcAddr                                                get_instance_proc_addr_;
