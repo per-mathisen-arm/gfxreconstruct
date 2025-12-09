@@ -189,52 +189,12 @@ class VulkanFeatureTrackerConsumerBase : public util::VulkanModifierBase
                                          StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
                                          HandlePointerDecoder<VkSampler>*                     pSampler) override;
 
-    virtual void Process_vkCmdWriteAccelerationStructuresPropertiesNV(
-        const ApiCallInfo&                               call_info,
-        format::HandleId                                 commandBuffer,
-        uint32_t                                         accelerationStructureCount,
-        HandlePointerDecoder<VkAccelerationStructureNV>* pAccelerationStructures,
-        VkQueryType                                      queryType,
-        format::HandleId                                 queryPool,
-        uint32_t                                         firstQuery) override;
-
-    virtual void Process_vkWriteMicromapsPropertiesEXT(const ApiCallInfo&                   call_info,
-                                                       VkResult                             returnValue,
-                                                       format::HandleId                     device,
-                                                       uint32_t                             micromapCount,
-                                                       HandlePointerDecoder<VkMicromapEXT>* pMicromaps,
-                                                       VkQueryType                          queryType,
-                                                       size_t                               dataSize,
-                                                       PointerDecoder<uint8_t>*             pData,
-                                                       size_t                               stride) override;
-
-    virtual void Process_vkCmdWriteMicromapsPropertiesEXT(const ApiCallInfo&                   call_info,
-                                                          format::HandleId                     commandBuffer,
-                                                          uint32_t                             micromapCount,
-                                                          HandlePointerDecoder<VkMicromapEXT>* pMicromaps,
-                                                          VkQueryType                          queryType,
-                                                          format::HandleId                     queryPool,
-                                                          uint32_t                             firstQuery) override;
-
-    virtual void Process_vkWriteAccelerationStructuresPropertiesKHR(
-        const ApiCallInfo&                                call_info,
-        VkResult                                          returnValue,
-        format::HandleId                                  device,
-        uint32_t                                          accelerationStructureCount,
-        HandlePointerDecoder<VkAccelerationStructureKHR>* pAccelerationStructures,
-        VkQueryType                                       queryType,
-        size_t                                            dataSize,
-        PointerDecoder<uint8_t>*                          pData,
-        size_t                                            stride) override;
-
-    virtual void Process_vkCmdWriteAccelerationStructuresPropertiesKHR(
-        const ApiCallInfo&                                call_info,
-        format::HandleId                                  commandBuffer,
-        uint32_t                                          accelerationStructureCount,
-        HandlePointerDecoder<VkAccelerationStructureKHR>* pAccelerationStructures,
-        VkQueryType                                       queryType,
-        format::HandleId                                  queryPool,
-        uint32_t                                          firstQuery) override;
+    virtual void Process_vkCreateQueryPool(const ApiCallInfo&                                   call_info,
+                                           VkResult                                             returnValue,
+                                           format::HandleId                                     device,
+                                           StructPointerDecoder<Decoded_VkQueryPoolCreateInfo>* pCreateInfo,
+                                           StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
+                                           HandlePointerDecoder<VkQueryPool>*                   pQueryPool) override;
 
     virtual void Process_vkResetQueryPool(const ApiCallInfo& call_info,
                                           format::HandleId   device,

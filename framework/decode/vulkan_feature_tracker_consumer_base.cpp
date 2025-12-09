@@ -1067,80 +1067,17 @@ void VulkanFeatureTrackerConsumerBase::Process_vkCreateSampler(
     }
 }
 
-void VulkanFeatureTrackerConsumerBase::Process_vkCmdWriteAccelerationStructuresPropertiesNV(
-    const ApiCallInfo&                               call_info,
-    format::HandleId                                 commandBuffer,
-    uint32_t                                         accelerationStructureCount,
-    HandlePointerDecoder<VkAccelerationStructureNV>* pAccelerationStructures,
-    VkQueryType                                      queryType,
-    format::HandleId                                 queryPool,
-    uint32_t                                         firstQuery)
+void VulkanFeatureTrackerConsumerBase::Process_vkCreateQueryPool(
+    const ApiCallInfo&                                   call_info,
+    VkResult                                             returnValue,
+    format::HandleId                                     device,
+    StructPointerDecoder<Decoded_VkQueryPoolCreateInfo>* pCreateInfo,
+    StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
+    HandlePointerDecoder<VkQueryPool>*                   pQueryPool)
 {
-    if (queryType == VK_QUERY_TYPE_PIPELINE_STATISTICS)
-    {
-        core10_.pipelineStatisticsQuery = true;
-    }
-}
+    auto pCreateInfoDec = pCreateInfo->GetPointer();
 
-void VulkanFeatureTrackerConsumerBase::Process_vkWriteMicromapsPropertiesEXT(
-    const ApiCallInfo&                   call_info,
-    VkResult                             returnValue,
-    format::HandleId                     device,
-    uint32_t                             micromapCount,
-    HandlePointerDecoder<VkMicromapEXT>* pMicromaps,
-    VkQueryType                          queryType,
-    size_t                               dataSize,
-    PointerDecoder<uint8_t>*             pData,
-    size_t                               stride)
-{
-    if (queryType == VK_QUERY_TYPE_PIPELINE_STATISTICS)
-    {
-        core10_.pipelineStatisticsQuery = true;
-    }
-}
-
-void VulkanFeatureTrackerConsumerBase::Process_vkCmdWriteMicromapsPropertiesEXT(
-    const ApiCallInfo&                   call_info,
-    format::HandleId                     commandBuffer,
-    uint32_t                             micromapCount,
-    HandlePointerDecoder<VkMicromapEXT>* pMicromaps,
-    VkQueryType                          queryType,
-    format::HandleId                     queryPool,
-    uint32_t                             firstQuery)
-{
-    if (queryType == VK_QUERY_TYPE_PIPELINE_STATISTICS)
-    {
-        core10_.pipelineStatisticsQuery = true;
-    }
-}
-
-void VulkanFeatureTrackerConsumerBase::Process_vkWriteAccelerationStructuresPropertiesKHR(
-    const ApiCallInfo&                                call_info,
-    VkResult                                          returnValue,
-    format::HandleId                                  device,
-    uint32_t                                          accelerationStructureCount,
-    HandlePointerDecoder<VkAccelerationStructureKHR>* pAccelerationStructures,
-    VkQueryType                                       queryType,
-    size_t                                            dataSize,
-    PointerDecoder<uint8_t>*                          pData,
-    size_t                                            stride)
-{
-    if (queryType == VK_QUERY_TYPE_PIPELINE_STATISTICS)
-    {
-        core10_.pipelineStatisticsQuery = true;
-    }
-}
-
-void VulkanFeatureTrackerConsumerBase::Process_vkCmdWriteAccelerationStructuresPropertiesKHR(
-    const ApiCallInfo&                                call_info,
-    format::HandleId                                  commandBuffer,
-    uint32_t                                          accelerationStructureCount,
-    HandlePointerDecoder<VkAccelerationStructureKHR>* pAccelerationStructures,
-    VkQueryType                                       queryType,
-    format::HandleId                                  queryPool,
-    uint32_t                                          firstQuery)
-{
-    if (queryType == VK_QUERY_TYPE_PIPELINE_STATISTICS)
+    if (pCreateInfoDec->queryType == VK_QUERY_TYPE_PIPELINE_STATISTICS && pCreateInfoDec->pipelineStatistics != 0)
     {
         core10_.pipelineStatisticsQuery = true;
     }
