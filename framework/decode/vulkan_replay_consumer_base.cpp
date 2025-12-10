@@ -12781,8 +12781,7 @@ void VulkanReplayConsumerBase::OverrideUpdateDescriptorSets(
     VkCopyDescriptorSet*  in_pDescriptorCopies = p_pescriptor_copies->GetPointer();
     const auto*           writes_meta          = p_descriptor_writes->GetMetaStructPointer();
 
-    auto allocator = device_info->allocator.get();
-    if (use_acceleration_structure_builder_)
+    if (UseAddressReplacement(device_info))
     {
         // check/correct specific resource handles (i.e. VkAccelerationStructure)
         auto& address_replacer = GetDeviceAddressReplacer(device_info);

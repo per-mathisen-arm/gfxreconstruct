@@ -900,10 +900,11 @@ VkResult VulkanCaptureManager::OverrideCreateBuffer(VkDevice                    
                                              vulkan_wrappers::BufferWrapper>(
             device, vulkan_wrappers::NoParentWrapper::kHandleValue, pBuffer, GetUniqueId);
 
-        auto buffer_wrapper = vulkan_wrappers::GetWrapper<vulkan_wrappers::BufferWrapper>(*pBuffer);
-        GFXRECON_ASSERT(buffer_wrapper)
-        buffer_wrapper->size  = modified_create_info->size;
-        buffer_wrapper->usage = pCreateInfo->usage;
+        auto* buffer_wrapper = vulkan_wrappers::GetWrapper<vulkan_wrappers::BufferWrapper>(*pBuffer);
+        GFXRECON_ASSERT(buffer_wrapper);
+        buffer_wrapper->device = device;
+        buffer_wrapper->size   = modified_create_info->size;
+        buffer_wrapper->usage  = pCreateInfo->usage;
 
         if (uses_address)
         {
@@ -1201,29 +1202,38 @@ VulkanCaptureManager::OverrideCreateAccelerationStructureKHR(VkDevice           
         {
             SetObjectName<AccelerationStructureKHRWrapper>(device, *pAccelerationStructureKHR);
         }
-        auto accel_struct_wrapper =
+        auto* accel_struct_wrapper =
             vulkan_wrappers::GetWrapper<vulkan_wrappers::AccelerationStructureKHRWrapper>(*pAccelerationStructureKHR);
         accel_struct_wrapper->device = device_wrapper;
         accel_struct_wrapper->type   = modified_create_info->type;
 
-        auto storage_buffer_wrapper = vulkan_wrappers::GetWrapper<vulkan_wrappers::BufferWrapper>(pCreateInfo->buffer);
-        if (storage_buffer_wrapper->bind_memory_id != format::kNullHandleId)
+        auto* buffer_wrapper =
+            vulkan_wrappers::GetWrapper<vulkan_wrappers::BufferWrapper>(modified_create_info->buffer, true);
+        GFXRECON_ASSERT(buffer_wrapper != nullptr);
+
+        accel_struct_wrapper->buffer = buffer_wrapper;
+        accel_struct_wrapper->offset = modified_create_info->offset;
+        accel_struct_wrapper->size   = modified_create_info->size;
+
+        // associated buffer keeps track of existing acceleration-structures
+        buffer_wrapper->acceleration_structures[accel_struct_wrapper->address].type = accel_struct_wrapper->type;
+
+        if (buffer_wrapper->bind_memory_id != format::kNullHandleId)
         {
             VkAccelerationStructureDeviceAddressInfoKHR address_info{
                 VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR, nullptr, accel_struct_wrapper->handle
             };
-
-            // save address to use as pCreateInfo->deviceAddress during replay
             VkDeviceAddress address =
                 device_table->GetAccelerationStructureDeviceAddressKHR(device_unwrapped, &address_info);
+
+            accel_struct_wrapper->device  = device_wrapper;
             accel_struct_wrapper->address = address;
+            accel_struct_wrapper->type    = modified_create_info->type;
 
             if (device_wrapper->property_feature_info.feature_accelerationStructureCaptureReplay)
             {
-                // save address to use as pCreateInfo->deviceAddress during replay
                 WriteSetOpaqueAddressCommand(device_wrapper->handle_id, accel_struct_wrapper->handle_id, address);
             }
-
             if (IsCaptureModeTrack())
             {
                 state_tracker_->TrackAccelerationStructureKHRDeviceAddress(device, *pAccelerationStructureKHR, address);
@@ -1231,8 +1241,7 @@ VulkanCaptureManager::OverrideCreateAccelerationStructureKHR(VkDevice           
         }
         else
         {
-            GFXRECON_LOG_WARNING("Could not get device address for acceleration structure %" PRIu64
-                                 ", storage buffer was not bound",
+            GFXRECON_LOG_WARNING("Buffer %" PRIu64 " is not bound at acceleration structure creation time",
                                  accel_struct_wrapper->handle_id);
         }
     }
@@ -1244,11 +1253,11 @@ VkResult VulkanCaptureManager::OverrideCreateMicromapEXT(VkDevice               
                                                          const VkAllocationCallbacks*   pAllocator,
                                                          VkMicromapEXT*                 pMicromap)
 {
-    auto                           handle_unwrap_memory  = VulkanCaptureManager::Get()->GetHandleUnwrapMemory();
-    auto                           device_wrapper        = GetWrapper<DeviceWrapper>(device);
-    VkDevice                       device_unwrapped      = device_wrapper->handle;
-    const graphics::VulkanDeviceTable* device_table          = GetDeviceTable(device);
-    const VkMicromapCreateInfoEXT* pCreateInfo_unwrapped = UnwrapStructPtrHandles(pCreateInfo, handle_unwrap_memory);
+    auto                               handle_unwrap_memory = VulkanCaptureManager::Get()->GetHandleUnwrapMemory();
+    auto                               device_wrapper       = GetWrapper<DeviceWrapper>(device);
+    VkDevice                           device_unwrapped     = device_wrapper->handle;
+    const graphics::VulkanDeviceTable* device_table         = GetDeviceTable(device);
+    const VkMicromapCreateInfoEXT* pCreateInfo_unwrapped    = UnwrapStructPtrHandles(pCreateInfo, handle_unwrap_memory);
 
     VkResult result;
     if (device_wrapper->property_feature_info.feature_micromapCaptureReplay)
