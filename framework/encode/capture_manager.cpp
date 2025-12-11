@@ -105,7 +105,8 @@ CommonCaptureManager::CommonCaptureManager() :
     debug_device_lost_(false), screenshot_prefix_(""), screenshots_enabled_(false), disable_dxr_(false),
     accel_struct_padding_(0), iunknown_wrapping_(false), force_command_serialization_(false), queue_zero_only_(false),
     allow_pipeline_compile_required_(false), quit_after_frame_ranges_(false), use_asset_file_(false), block_index_(0),
-    write_assets_(false), previous_write_assets_(false), skip_threads_with_invalid_data_(false)
+    write_assets_(false), previous_write_assets_(false), skip_threads_with_invalid_data_(false),
+    original_wave_size_(false)
 {}
 
 CommonCaptureManager::~CommonCaptureManager()
@@ -409,6 +410,7 @@ bool CommonCaptureManager::Initialize(format::ApiFamilyId                   api_
     use_asset_file_                  = trace_settings.use_asset_file;
     ignore_frame_boundary_android_   = trace_settings.ignore_frame_boundary_android;
     skip_threads_with_invalid_data_  = trace_settings.skip_threads_with_invalid_data;
+    original_wave_size_              = trace_settings.original_wave_size;
 
     fence_query_delay_                   = trace_settings.fence_query_delay;
     fence_query_delay_unit_              = trace_settings.fence_query_delay_unit;

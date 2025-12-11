@@ -2371,6 +2371,25 @@ HRESULT D3D12CaptureManager::OverrideID3D12Device_CheckFeatureSupport(ID3D12Devi
     {
         return E_INVALIDARG;
     }
+    else if (!GetOriginalWaveSizeSetting() && (feature == D3D12_FEATURE_D3D12_OPTIONS1) &&
+             (feature_support_data != nullptr) &&
+             (feature_support_data_size >= sizeof(D3D12_FEATURE_DATA_D3D12_OPTIONS1)))
+    {
+        HRESULT result = device->CheckFeatureSupport(feature, feature_support_data, feature_support_data_size);
+
+        if (SUCCEEDED(result))
+        {
+            GFXRECON_LOG_WARNING("Modifying D3D12_FEATURE_DATA_D3D12_OPTIONS1 to set WaveLaneCountMin to 32.");
+
+            auto* options1 = reinterpret_cast<D3D12_FEATURE_DATA_D3D12_OPTIONS1*>(feature_support_data);
+
+            options1->WaveLaneCountMin = std::max(options1->WaveLaneCountMin, 32u);
+            options1->WaveLaneCountMax = std::max(options1->WaveLaneCountMax, 32u);
+            // Nvidia requires min wave lane count to be 32.
+        }
+
+        return result;
+    }
     else
     {
         return device->CheckFeatureSupport(feature, feature_support_data, feature_support_data_size);

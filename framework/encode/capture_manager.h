@@ -460,6 +460,10 @@ class CommonCaptureManager
     {
         return ignore_frame_boundary_android_;
     }
+    bool GetOriginalWaveSizeSetting() const
+    {
+        return original_wave_size_;
+    }
 
     util::Compressor* GetCompressor()
     {
@@ -670,6 +674,7 @@ class CommonCaptureManager
     bool                                    write_state_files_;
     bool                                    ignore_frame_boundary_android_;
     bool                                    skip_threads_with_invalid_data_;
+    bool                                    original_wave_size_;
 
     struct
     {

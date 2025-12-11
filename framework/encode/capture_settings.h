@@ -166,6 +166,8 @@ GFXRECON_BEGIN_NAMESPACE(encode)
 #define CAPTURE_ENVIRONMENT_UPPER                            "CAPTURE_ENVIRONMENT"
 #define CAPTURE_PROCESS_NAME_LOWER                           "capture_process_name"
 #define CAPTURE_PROCESS_NAME_UPPER                           "CAPTURE_PROCESS_NAME"
+#define ORIGINAL_WAVE_SIZE_LOWER                             "original_wave_size"
+#define ORIGINAL_WAVE_SIZE_UPPER                             "ORIGINAL_WAVE_SIZE"
 // clang-format on
 
 class CaptureSettings
@@ -279,6 +281,7 @@ class CaptureSettings
         bool                         ignore_frame_boundary_android{ false };
         bool                         skip_threads_with_invalid_data{ false };
         std::vector<std::string>     capture_environment;
+        bool                         original_wave_size{ false };
 
         // An optimization for the page_guard memory tracking mode that eliminates the need for shadow memory by
         // overriding vkAllocateMemory so that all host visible allocations use the external memory extension with a

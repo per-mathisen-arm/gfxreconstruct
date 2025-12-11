@@ -119,6 +119,7 @@ const char kIgnoreFrameBoundaryAndroidEnvVar[]               = GFXRECON_OPTION_S
 const char kSkipThreadsWithInvalidDataEnvVar[]               = GFXRECON_OPTION_STR(SKIP_THREADS_WITH_INVALID_DATA);
 const char kCaptureEnvironmentEnvVar[]                       = GFXRECON_OPTION_STR(CAPTURE_ENVIRONMENT);
 const char kCaptureProcessNameEnvVar[]                       = GFXRECON_OPTION_STR(CAPTURE_PROCESS_NAME);
+const char kOriginalWaveSizeEnvVar[]                         = GFXRECON_OPTION_STR(ORIGINAL_WAVE_SIZE);
 
 #if defined(__ANDROID__)
 // Android-specific capture options
@@ -190,6 +191,7 @@ const std::string kOptionIgnoreFrameBoundaryAndroid                  = std::stri
 const std::string kOptionSkipThreadsWithInvalidData                  = std::string(kSettingsFilter) + std::string(SKIP_THREADS_WITH_INVALID_DATA_LOWER);
 const std::string kOptionCaptureEnvironment                          = std::string(kSettingsFilter) + std::string(CAPTURE_ENVIRONMENT_LOWER);
 const std::string kOptionCaptureProcessName                          = std::string(kSettingsFilter) + std::string(CAPTURE_PROCESS_NAME_LOWER);
+const std::string kOptionOriginalWaveSize                            = std::string(kSettingsFilter) + std::string(ORIGINAL_WAVE_SIZE_LOWER);
 
 #if defined(GFXRECON_ENABLE_LZ4_COMPRESSION)
 const format::CompressionType kDefaultCompressionType = format::CompressionType::kLz4;
@@ -352,6 +354,7 @@ void CaptureSettings::LoadOptionsEnvVar(OptionsMap* options, bool load_log_setti
     LoadSingleOptionEnvVar(options, kDisableDxrEnvVar, kOptionDisableDxr);
     LoadSingleOptionEnvVar(options, kDisableMetaCommandEnvVar, kOptionDisableMetaCommand);
     LoadSingleOptionEnvVar(options, kAccelStructPaddingEnvVar, kOptionAccelStructPadding);
+    LoadSingleOptionEnvVar(options, kOriginalWaveSizeEnvVar, kOptionOriginalWaveSize);
 
     // IUnknown wrapping environment variable
     LoadSingleOptionEnvVar(options, kCaptureIUnknownWrappingEnvVar, kOptionKeyCaptureIUnknownWrapping);
@@ -583,6 +586,8 @@ void CaptureSettings::ProcessOptions(OptionsMap* options, CaptureSettings* setti
         ParseBoolString(FindOption(options, kOptionDisableMetaCommand), settings->trace_settings_.disable_meta_command);
     settings->trace_settings_.accel_struct_padding = gfxrecon::util::ParseUintString(
         FindOption(options, kOptionAccelStructPadding), settings->trace_settings_.accel_struct_padding);
+    settings->trace_settings_.original_wave_size =
+        ParseBoolString(FindOption(options, kOptionOriginalWaveSize), settings->trace_settings_.original_wave_size);
 
     // IUnknown wrapping option
     settings->trace_settings_.iunknown_wrapping = ParseBoolString(
