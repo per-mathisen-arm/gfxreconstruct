@@ -42,14 +42,14 @@ class MetadataConsumerBase
     virtual void Process_ExeFileInfo(const util::filepath::FileInfo& info_record) {}
     virtual void ProcessDisplayMessageCommand(const std::string& message) {}
     virtual void ProcessFillMemoryCommand(uint64_t memory_id, uint64_t offset, uint64_t size, const uint8_t* data) {}
-    virtual void ProcessFixDeviceAddressCommand(const format::FixDeviceAddressCommandHeader& header,
-                                                const format::AddressLocationInfo*           infos)
+    virtual void ProcessFixDeviceAddressCommand(const format::FixDeviceAddressCommandHeader&    header,
+                                                const std::vector<format::AddressLocationInfo>& infos)
     {}
-    virtual void ProcessFixShaderGroupHandleCommand(const format::FixShaderGroupHandleCommandHeader& header,
-                                                    const format::ShaderHandleLocationInfo*          infos)
+    virtual void ProcessFixShaderGroupHandleCommand(const format::FixShaderGroupHandleCommandHeader&     header,
+                                                    const std::vector<format::ShaderHandleLocationInfo>& infos)
     {}
-    virtual void ProcessFixDescriptorDataCommand(const format::FixDescriptorDataCommandHeader& header,
-                                                 const format::DescriptorDataLocationInfo*     infos)
+    virtual void ProcessFixDescriptorDataCommand(const format::FixDescriptorDataCommandHeader&          header,
+                                                 const std::vector<format::DescriptorDataLocationInfo>& infos)
     {}
     virtual void ProcessFixShadowMemoryCommand(format::HandleId memory_id, uint64_t map_memory, uint64_t shadow_memory)
     {}

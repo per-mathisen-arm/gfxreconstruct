@@ -82,8 +82,8 @@ class MetadataJsonConsumer : public Base
         WriteBlockEnd();
     }
 
-    virtual void ProcessFixDeviceAddressCommand(const format::FixDeviceAddressCommandHeader& header,
-                                                const format::AddressLocationInfo*           infos) override
+    virtual void ProcessFixDeviceAddressCommand(const format::FixDeviceAddressCommandHeader&    header,
+                                                const std::vector<format::AddressLocationInfo>& infos) override
     {
         using namespace util;
         const JsonOptions& json_options = GetOptions();
@@ -102,8 +102,8 @@ class MetadataJsonConsumer : public Base
         WriteBlockEnd();
     }
 
-    virtual void ProcessFixShaderGroupHandleCommand(const format::FixShaderGroupHandleCommandHeader& header,
-                                                    const format::ShaderHandleLocationInfo*          infos) override
+    virtual void ProcessFixShaderGroupHandleCommand(const format::FixShaderGroupHandleCommandHeader&     header,
+                                                    const std::vector<format::ShaderHandleLocationInfo>& infos) override
     {
         using namespace util;
         const JsonOptions& json_options = GetOptions();
@@ -122,8 +122,8 @@ class MetadataJsonConsumer : public Base
         WriteBlockEnd();
     }
 
-    virtual void ProcessFixDescriptorDataCommand(const format::FixDescriptorDataCommandHeader& header,
-                                                 const format::DescriptorDataLocationInfo*     infos) override
+    virtual void ProcessFixDescriptorDataCommand(const format::FixDescriptorDataCommandHeader&          header,
+                                                 const std::vector<format::DescriptorDataLocationInfo>& infos) override
     {
         using namespace util;
         const JsonOptions& json_options = GetOptions();

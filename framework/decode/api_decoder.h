@@ -91,14 +91,14 @@ class ApiDecoder
     virtual void DispatchFillMemoryCommand(
         format::ThreadId thread_id, uint64_t memory_id, uint64_t offset, uint64_t size, const uint8_t* data) = 0;
 
-    virtual void DispatchFixDeviceAddresCommand(const format::FixDeviceAddressCommandHeader& header,
-                                                const format::AddressLocationInfo*           infos) = 0;
+    virtual void DispatchFixDeviceAddressCommand(const format::FixDeviceAddressCommandHeader&    header,
+                                                 const std::vector<format::AddressLocationInfo>& infos) = 0;
 
-    virtual void DispatchFixShaderGroupHandleCommand(const format::FixShaderGroupHandleCommandHeader& header,
-                                                     const format::ShaderHandleLocationInfo*          infos) = 0;
+    virtual void DispatchFixShaderGroupHandleCommand(const format::FixShaderGroupHandleCommandHeader&     header,
+                                                     const std::vector<format::ShaderHandleLocationInfo>& infos) = 0;
 
-    virtual void DispatchFixDescriptorDataCommand(const format::FixDescriptorDataCommandHeader& header,
-                                                  const format::DescriptorDataLocationInfo*     info) = 0;
+    virtual void DispatchFixDescriptorDataCommand(const format::FixDescriptorDataCommandHeader&          header,
+                                                  const std::vector<format::DescriptorDataLocationInfo>& info) = 0;
 
     virtual void DispatchFixShadowMemoryCommand(format::ThreadId thread_id,
                                                 format::HandleId memory_id,

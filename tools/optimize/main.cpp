@@ -190,7 +190,7 @@ GetVulkanOptimizationData(const std::string& input_filename, const gfxrecon::Vul
         file_processor.AddDecoder(&decoder);
         file_processor.ProcessAllFrames();
 
-        if (file_processor.GetErrorState() != gfxrecon::decode::FileProcessor::kErrorNone)
+        if (file_processor.GetErrorState() != gfxrecon::decode::kErrorNone)
         {
             throw std::runtime_error("Failed to scan input file for optimizations");
         }

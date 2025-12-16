@@ -542,8 +542,8 @@ void VulkanRayTracingModifier::ProcessInitBufferCommand(format::HandleId device_
     }
 }
 
-void VulkanRayTracingModifier::ProcessFixDeviceAddressCommand(const format::FixDeviceAddressCommandHeader& header,
-                                                              const format::AddressLocationInfo*           infos)
+void VulkanRayTracingModifier::ProcessFixDeviceAddressCommand(const format::FixDeviceAddressCommandHeader&    header,
+                                                              const std::vector<format::AddressLocationInfo>& infos)
 {
     if (IsModificationPass())
     {
@@ -554,7 +554,7 @@ void VulkanRayTracingModifier::ProcessFixDeviceAddressCommand(const format::FixD
 }
 
 void VulkanRayTracingModifier::ProcessFixShaderGroupHandleCommand(
-    const format::FixShaderGroupHandleCommandHeader& header, const format::ShaderHandleLocationInfo* infos)
+    const format::FixShaderGroupHandleCommandHeader& header, const std::vector<format::ShaderHandleLocationInfo>& infos)
 {
     if (IsModificationPass())
     {

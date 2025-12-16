@@ -4663,9 +4663,9 @@ class VulkanSkiaModifier : public util::VulkanModifierBase
   public: // meta data function
     virtual void ProcessFillMemoryCommand(uint64_t memory_id, uint64_t offset, uint64_t size, const uint8_t* data) override;
     virtual void ProcessFixDeviceAddressCommand(const format::FixDeviceAddressCommandHeader& header,
-                                                const format::AddressLocationInfo*           infos) override;
+                                                const std::vector<format::AddressLocationInfo>& infos) override;
     virtual void ProcessFixShaderGroupHandleCommand(const format::FixShaderGroupHandleCommandHeader& header,
-                                                    const format::ShaderHandleLocationInfo*          infos) override;
+                                                    const std::vector<format::ShaderHandleLocationInfo>& infos) override;
     virtual void ProcessResizeWindowCommand(format::HandleId surface_id, uint32_t width, uint32_t height) override;
     virtual void
     ProcessResizeWindowCommand2(format::HandleId surface_id, uint32_t width, uint32_t height, uint32_t pre_transform) override;

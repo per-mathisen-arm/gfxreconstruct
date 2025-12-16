@@ -84,8 +84,8 @@ void VulkanDecoderBase::DispatchFillMemoryCommand(
     }
 }
 
-void VulkanDecoderBase::DispatchFixDeviceAddresCommand(const format::FixDeviceAddressCommandHeader& header,
-                                                       const format::AddressLocationInfo*           infos)
+void VulkanDecoderBase::DispatchFixDeviceAddressCommand(const format::FixDeviceAddressCommandHeader&    header,
+                                                        const std::vector<format::AddressLocationInfo>& infos)
 {
     for (auto consumer : consumers_)
     {
@@ -93,8 +93,8 @@ void VulkanDecoderBase::DispatchFixDeviceAddresCommand(const format::FixDeviceAd
     }
 }
 
-void VulkanDecoderBase::DispatchFixShaderGroupHandleCommand(const format::FixShaderGroupHandleCommandHeader& header,
-                                                            const format::ShaderHandleLocationInfo*          infos)
+void VulkanDecoderBase::DispatchFixShaderGroupHandleCommand(const format::FixShaderGroupHandleCommandHeader&     header,
+                                                            const std::vector<format::ShaderHandleLocationInfo>& infos)
 {
     for (auto consumer : consumers_)
     {
@@ -102,8 +102,8 @@ void VulkanDecoderBase::DispatchFixShaderGroupHandleCommand(const format::FixSha
     }
 }
 
-void VulkanDecoderBase::DispatchFixDescriptorDataCommand(const format::FixDescriptorDataCommandHeader& header,
-                                                         const format::DescriptorDataLocationInfo*     infos)
+void VulkanDecoderBase::DispatchFixDescriptorDataCommand(const format::FixDescriptorDataCommandHeader&          header,
+                                                         const std::vector<format::DescriptorDataLocationInfo>& infos)
 {
     for (auto consumer : consumers_)
     {

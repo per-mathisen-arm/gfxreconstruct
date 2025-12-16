@@ -34,8 +34,8 @@ class VulkanDescriptorBufferModifier : public util::VulkanModifierBase
     virtual void
     ProcessFillMemoryCommand(uint64_t memory_id, uint64_t offset, uint64_t size, const uint8_t* data) override;
 
-    virtual void ProcessFixDescriptorDataCommand(const format::FixDescriptorDataCommandHeader& header,
-                                                 const format::DescriptorDataLocationInfo*     infos) override;
+    virtual void ProcessFixDescriptorDataCommand(const format::FixDescriptorDataCommandHeader&          header,
+                                                 const std::vector<format::DescriptorDataLocationInfo>& infos) override;
 
     virtual void
     ProcessFixShadowMemoryCommand(format::HandleId memory_id, uint64_t map_memory, uint64_t shadow_memory) override;
