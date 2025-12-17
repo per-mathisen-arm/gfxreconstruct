@@ -28,6 +28,7 @@
 #include "decode/descriptor_update_template_decoder.h"
 #include "decode/resource_util.h"
 #include "decode/vulkan_captured_swapchain.h"
+#include "decode/vulkan_device_address_tracker.h"
 #include "decode/vulkan_object_info.h"
 #include "decode/vulkan_virtual_swapchain.h"
 #include "decode/vulkan_offscreen_swapchain.h"
@@ -2419,7 +2420,8 @@ void VulkanReplayConsumerBase::InitializeReplayDumpResources()
 {
     if (resource_dumper_ == nullptr)
     {
-        resource_dumper_ = std::make_unique<VulkanReplayDumpResources>(options_, object_info_table_);
+        resource_dumper_ =
+            std::make_unique<VulkanReplayDumpResources>(options_, object_info_table_, _device_address_trackers);
         GFXRECON_ASSERT(resource_dumper_);
     }
 }
@@ -7698,53 +7700,6 @@ void VulkanReplayConsumerBase::OverrideDestroyDescriptorUpdateTemplate(
     func(device, descriptor_update_template, GetAllocationCallbacks(pAllocator));
 }
 
-static VkDescriptorType SpvReflectToVkDescriptorType(SpvReflectDescriptorType type)
-{
-    switch (type)
-    {
-        case SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLER:
-            return VK_DESCRIPTOR_TYPE_SAMPLER;
-
-        case SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
-            return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-
-        case SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
-            return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-
-        case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_IMAGE:
-            return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-
-        case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
-            return VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
-
-        case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
-            return VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
-
-        case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
-            return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-
-        case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER:
-            return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-
-        case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
-            return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-
-        case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
-            return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
-
-        case SPV_REFLECT_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
-            return VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
-
-        case SPV_REFLECT_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
-            return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-
-        default:
-            GFXRECON_LOG_WARNING("%s(): Unrecognised SPIRV-Reflect descriptor type");
-            assert(0);
-            return VK_DESCRIPTOR_TYPE_MAX_ENUM;
-    }
-}
-
 VkResult VulkanReplayConsumerBase::OverrideCreateShaderModule(
     PFN_vkCreateShaderModule                                      func,
     VkResult                                                      original_result,
@@ -10275,6 +10230,14 @@ void VulkanReplayConsumerBase::OverrideCmdBuildAccelerationStructuresKHR(
     VkAccelerationStructureBuildGeometryInfoKHR* build_geometry_infos = pInfos->GetPointer();
     VkAccelerationStructureBuildRangeInfoKHR**   build_range_infos    = ppBuildRangeInfos->GetPointer();
 
+    // Dump resources handler for CmdBuildAccelerationStructuresKHR is expecting the device addresses unchanged so it
+    // needs to be called before the address replacer
+    if (options_.dumping_resources)
+    {
+        resource_dumper_->HandleCmdBuildAccelerationStructures(
+            command_buffer_info, *GetDeviceTable(device_info->handle), infoCount, pInfos, ppBuildRangeInfos);
+    }
+
     if (UseAddressReplacement(device_info))
     {
         auto& address_tracker  = GetDeviceAddressTracker(device_info);
@@ -10349,6 +10312,15 @@ void VulkanReplayConsumerBase::OverrideCmdCopyAccelerationStructureKHR(
     StructPointerDecoder<Decoded_VkCopyAccelerationStructureInfoKHR>* pInfo)
 {
     VulkanDeviceInfo* device_info = object_info_table_->GetVkDeviceInfo(command_buffer_info->parent_id);
+
+    if (options_.dumping_resources)
+    {
+        const auto* info_meta = pInfo->GetMetaStructPointer();
+        const auto* src       = object_info_table_->GetVkAccelerationStructureKHRInfo(info_meta->src);
+        const auto* dst       = object_info_table_->GetVkAccelerationStructureKHRInfo(info_meta->dst);
+        resource_dumper_->HandleCmdCopyAccelerationStructureKHR(
+            command_buffer_info, *GetDeviceTable(device_info->handle), src, dst);
+    }
 
     VkCommandBuffer                     command_buffer = command_buffer_info->handle;
     VkCopyAccelerationStructureInfoKHR* info           = pInfo->GetPointer();
@@ -11591,6 +11563,11 @@ void VulkanReplayConsumerBase::OverrideDestroyAccelerationStructureKHR(
 
         // remove from address-tracking
         GetDeviceAddressTracker(device_info).RemoveAccelerationStructure(acceleration_structure_info);
+
+        if (options_.dumping_resources)
+        {
+            resource_dumper_->HandleDestroyAccelerationStructureKHR(acceleration_structure_info);
+        }
     }
     else
     {
@@ -12289,7 +12266,13 @@ void VulkanReplayConsumerBase::UpdateDescriptorSetInfoWithTemplate(
 
                 case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
                 {
-                    desc_set_info->descriptors[binding_index].desc_type = type;
+                    const format::HandleId* as_ids = decoder->GetAccelerationStructureKHRHandleIdsPointer();
+                    for (uint32_t i = 0; i < count; ++i)
+                    {
+                        const uint32_t array_index = dst_array_element + i;
+                        const auto*    as_info     = object_info_table_->GetVkAccelerationStructureKHRInfo(as_ids[i]);
+                        desc_set_info->descriptors[binding_index].acceleration_structs_khr_info[array_index] = as_info;
+                    }
                     accel_struct_count += count;
                 }
                 break;
@@ -12681,6 +12664,14 @@ void VulkanReplayConsumerBase::ProcessBuildVulkanAccelerationStructuresMetaComma
         VkAccelerationStructureBuildGeometryInfoKHR* build_geometry_infos = pInfos->GetPointer();
         VkAccelerationStructureBuildRangeInfoKHR**   range_infos          = ppRangeInfos->GetPointer();
 
+        // Dump resources handler for CmdBuildAccelerationStructuresKHR is expecting the device addresses unchanged so
+        // it needs to be called before the address replacer
+        if (options_.dumping_resources)
+        {
+            resource_dumper_->HandleCmdBuildAccelerationStructures(
+                nullptr, *GetDeviceTable(device_info->handle), info_count, pInfos, ppRangeInfos);
+        }
+
         GetDeviceAddressReplacer(device_info)
             .ProcessBuildVulkanAccelerationStructuresMetaCommand(
                 info_count, pInfos->GetPointer(), ppRangeInfos->GetPointer(), GetDeviceAddressTracker(device_info));
@@ -12833,6 +12824,28 @@ void VulkanReplayConsumerBase::OverrideUpdateDescriptorSets(
                     {
                         dst_desc_set_info->descriptors[binding].texel_buffer_view_info[arr_idx] =
                             object_info_table_->GetVkBufferViewInfo(writes_meta[s].pTexelBufferView.GetPointer()[i]);
+                    }
+                    break;
+
+                    case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
+                    {
+                        const auto* as_descriptors_meta =
+                            GetPNextMetaStruct<Decoded_VkWriteDescriptorSetAccelerationStructureKHR>(
+                                writes_meta[s].pNext);
+                        if (as_descriptors_meta != nullptr)
+                        {
+                            const auto* as_ids = as_descriptors_meta->pAccelerationStructures.GetPointer();
+                            for (uint32_t as = 0; as < as_descriptors_meta->decoded_value->accelerationStructureCount;
+                                 ++as)
+                            {
+                                const auto* as_info = object_info_table_->GetVkAccelerationStructureKHRInfo(as_ids[as]);
+                                if (as_info != nullptr)
+                                {
+                                    dst_desc_set_info->descriptors[binding].acceleration_structs_khr_info[arr_idx] =
+                                        as_info;
+                                }
+                            }
+                        }
                     }
                     break;
 

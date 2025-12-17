@@ -155,6 +155,7 @@ struct VulkanReplayOptions : public ReplayOptions
     bool  dump_resources_dump_raw_images{ false };
     bool  dump_resources_dump_separate_alpha{ false };
     bool  dump_resources_dump_unused_vertex_bindings{ false };
+    bool  dump_resources_dump_build_AS_input_buffers{ false };
 
     std::vector<std::string> marking_layers_names;
     format::CompressionType  dump_resources_binary_file_compression_type{ format::CompressionType::kNone };

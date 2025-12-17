@@ -2034,9 +2034,8 @@ class VulkanReplayConsumerBase : public VulkanConsumer
     std::unique_ptr<VulkanSwapchain>                                               swapchain_;
     std::string                                                                    screenshot_file_prefix_;
 
-    std::unordered_map<const decode::VulkanDeviceInfo*, decode::VulkanDeviceAddressTracker> _device_address_trackers;
-    std::unordered_map<const decode::VulkanDeviceInfo*, std::unique_ptr<decode::VulkanAddressReplacerBase>>
-        _device_address_replacers;
+    VulkanPerDeviceAddressTrackers  _device_address_trackers;
+    VulkanPerDeviceAddressReplacers _device_address_replacers;
 
     util::ThreadPool main_thread_queue_;
     util::ThreadPool background_queue_;

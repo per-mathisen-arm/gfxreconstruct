@@ -170,7 +170,6 @@ class VulkanResourceInitializer
 
     VkResult FlushRemainingResourcesInit();
 
-  private:
     struct CommandExecObjects
     {
         VkQueue         queue;
@@ -182,7 +181,6 @@ class VulkanResourceInitializer
     // Map queue family index to command pool, command buffer, and queue objects for command processing.
     typedef std::unordered_map<uint32_t, CommandExecObjects> CommandExecObjectMap;
 
-  private:
     VkDevice                              device_;
     CommandExecObjectMap                  command_exec_objects_;
     VkDeviceMemory                        staging_memory_;
@@ -196,6 +194,8 @@ class VulkanResourceInitializer
     VkDescriptorPool                      draw_pool_;
     VkDescriptorSetLayout                 draw_set_layout_;
     VkDescriptorSet                       draw_set_;
+    VkFence                               fence_             = VK_NULL_HANDLE;
+    uint32_t                              num_queue_submits_ = 0;
     VkPhysicalDeviceMemoryProperties      memory_properties_{};
     bool                                  have_shader_stencil_write_;
     VulkanResourceAllocator*              resource_allocator_;
