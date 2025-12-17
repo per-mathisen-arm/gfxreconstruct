@@ -105,7 +105,7 @@ bool FileProcessorSucceeded(const decode::FileProcessor& processor)
         GFXRECON_WRITE_CONSOLE("Did not detect any frames in the capture.");
     }
 
-    if ((processor.GetErrorState() == gfxrecon::decode::FileProcessor::kErrorNone) == false)
+    if ((processor.GetErrorState() == gfxrecon::decode::BlockReadError::kErrorNone) == false)
     {
         GFXRECON_WRITE_CONSOLE("Encountered error while reading the capture.");
     }
@@ -116,7 +116,7 @@ bool FileProcessorSucceeded(const decode::FileProcessor& processor)
     }
 
     return (processor.GetCurrentFrameNumber() > 0) &&
-           (processor.GetErrorState() == gfxrecon::decode::FileProcessor::kErrorNone) &&
+           (processor.GetErrorState() == gfxrecon::decode::BlockReadError::kErrorNone) &&
            processor.EntireFileWasProcessed();
 }
 
@@ -172,7 +172,7 @@ bool GetPsoOptimizationInfo(const std::string&               input_filename,
                 options.optimize_resource_values = false;
             }
         }
-        else if (pso_pass_file_processor.GetErrorState() != gfxrecon::decode::FileProcessor::kErrorNone)
+        else if (pso_pass_file_processor.GetErrorState() != gfxrecon::decode::BlockReadError::kErrorNone)
         {
             GFXRECON_WRITE_CONSOLE("A failure has occurred during scanning capture file for unreferenced PSOs");
         }
@@ -274,7 +274,7 @@ bool GetDxrOptimizationInfo(const std::string&               input_filename,
 
             dxr_scan_result = true;
         }
-        else if (dxr_pass_file_processor.GetErrorState() != gfxrecon::decode::FileProcessor::kErrorNone)
+        else if (dxr_pass_file_processor.GetErrorState() != gfxrecon::decode::BlockReadError::kErrorNone)
         {
             GFXRECON_WRITE_CONSOLE("A failure has occurred during capture processing for DXR/EI optimization");
         }
@@ -479,7 +479,7 @@ GetDx12OptimizationData(const std::string& input_filename, const decode::Dx12Opt
             file_processor.AddDecoder(&decoder);
             file_processor.ProcessAllFrames();
 
-            if (file_processor.GetErrorState() != gfxrecon::decode::FileProcessor::kErrorNone)
+            if (file_processor.GetErrorState() != gfxrecon::decode::kErrorNone)
             {
                 throw std::runtime_error("Failed to scan input file for optimizations");
             }
@@ -506,7 +506,7 @@ GetDx12OptimizationData(const std::string& input_filename, const decode::Dx12Opt
         file_processor.AddDecoder(&decoder);
         file_processor.ProcessAllFrames();
 
-        if (file_processor.GetErrorState() != gfxrecon::decode::FileProcessor::kErrorNone)
+        if (file_processor.GetErrorState() != gfxrecon::decode::kErrorNone)
         {
             throw std::runtime_error("Failed to scan input file for optimizations");
         }

@@ -366,12 +366,14 @@ bool VulkanFileOptimizer::ProcessFixDeviceAddressCommand(const format::FixDevice
 
     if (success)
     {
+        format::AddressLocationInfo* data = reinterpret_cast<format::AddressLocationInfo*>(GetParameterBuffer().data());
+        const std::vector<format::AddressLocationInfo> locations(data, data + header.num_of_locations);
+
         for (auto& modifier : optimization_data_->modifiers)
         {
             modifier->SetParameterBuffer(&buffer);
             decoder.AddConsumer(modifier.get());
-            decoder.DispatchFixDeviceAddresCommand(
-                header, reinterpret_cast<const format::AddressLocationInfo*>(GetParameterBuffer().data()));
+            decoder.DispatchFixDeviceAddressCommand(header, locations);
             decoder.RemoveConsumer(modifier.get());
             modifier->AppendPreCalls(new_pre_calls);
             modifier->AppendPostCalls(new_post_calls);
@@ -448,12 +450,15 @@ bool VulkanFileOptimizer::ProcessFixShaderGroupHandleCommand(const format::FixSh
 
     if (success)
     {
+        format::ShaderHandleLocationInfo* data =
+            reinterpret_cast<format::ShaderHandleLocationInfo*>(GetParameterBuffer().data());
+        const std::vector<format::ShaderHandleLocationInfo> locations(data, data + header.num_of_locations);
+
         for (auto& modifier : optimization_data_->modifiers)
         {
             modifier->SetParameterBuffer(&buffer);
             decoder.AddConsumer(modifier.get());
-            decoder.DispatchFixShaderGroupHandleCommand(
-                header, reinterpret_cast<const format::ShaderHandleLocationInfo*>(GetParameterBuffer().data()));
+            decoder.DispatchFixShaderGroupHandleCommand(header, locations);
             decoder.RemoveConsumer(modifier.get());
             modifier->AppendPreCalls(new_pre_calls);
             modifier->AppendPostCalls(new_post_calls);

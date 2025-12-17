@@ -660,8 +660,8 @@ void VulkanReplayConsumerBase::ProcessFillMemoryCommand(uint64_t       memory_id
     }
 }
 
-void VulkanReplayConsumerBase::ProcessFixDeviceAddressCommand(const format::FixDeviceAddressCommandHeader& header,
-                                                              const format::AddressLocationInfo*           infos)
+void VulkanReplayConsumerBase::ProcessFixDeviceAddressCommand(const format::FixDeviceAddressCommandHeader&    header,
+                                                              const std::vector<format::AddressLocationInfo>& infos)
 {
     const VulkanDeviceInfo*       device_info = object_info_table_->GetVkDeviceInfo(header.relation_id);
     const VulkanDeviceMemoryInfo* memory_info = object_info_table_->GetVkDeviceMemoryInfo(header.relation_id);
@@ -780,7 +780,7 @@ void VulkanReplayConsumerBase::ProcessFixDeviceAddressCommand(const format::FixD
 }
 
 void VulkanReplayConsumerBase::ProcessFixShaderGroupHandleCommand(
-    const format::FixShaderGroupHandleCommandHeader& header, const format::ShaderHandleLocationInfo* infos)
+    const format::FixShaderGroupHandleCommandHeader& header, const std::vector<format::ShaderHandleLocationInfo>& infos)
 {
     const VulkanDeviceInfo*       device_info = object_info_table_->GetVkDeviceInfo(header.relation_id);
     const VulkanDeviceMemoryInfo* memory_info = object_info_table_->GetVkDeviceMemoryInfo(header.relation_id);
@@ -861,8 +861,8 @@ void VulkanReplayConsumerBase::ProcessFixShaderGroupHandleCommand(
     }
 }
 
-void VulkanReplayConsumerBase::ProcessFixDescriptorDataCommand(const format::FixDescriptorDataCommandHeader& header,
-                                                               const format::DescriptorDataLocationInfo*     infos)
+void VulkanReplayConsumerBase::ProcessFixDescriptorDataCommand(
+    const format::FixDescriptorDataCommandHeader& header, const std::vector<format::DescriptorDataLocationInfo>& infos)
 {
     for (uint64_t i = 0; i < header.num_of_locations; i++)
     {

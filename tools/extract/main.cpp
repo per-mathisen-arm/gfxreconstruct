@@ -638,7 +638,7 @@ int main(int argc, const char** argv)
             GFXRECON_LOG_ERROR("Could not detect graphics API. Aborting Extract.")
         }
 
-        if (file_processor.GetErrorState() != gfxrecon::decode::FileProcessor::kErrorNone)
+        if (file_processor.GetErrorState() != gfxrecon::decode::BlockReadError::kErrorNone)
         {
             GFXRECON_WRITE_CONSOLE("A failure has occurred during file processing");
             gfxrecon::util::Log::Release();

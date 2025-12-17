@@ -102,16 +102,17 @@ class OpenXrDecoderBase : public ApiDecoder
         format::ThreadId thread_id, uint64_t memory_id, uint64_t offset, uint64_t size, const uint8_t* data) override
     {}
 
-    virtual void DispatchFixDeviceAddresCommand(const format::FixDeviceAddressCommandHeader& header,
-                                                const format::AddressLocationInfo*           infos) override
+    virtual void DispatchFixDeviceAddressCommand(const format::FixDeviceAddressCommandHeader&    header,
+                                                 const std::vector<format::AddressLocationInfo>& infos) override
     {}
 
-    virtual void DispatchFixShaderGroupHandleCommand(const format::FixShaderGroupHandleCommandHeader& header,
-                                                     const format::ShaderHandleLocationInfo*          infos) override
+    virtual void
+    DispatchFixShaderGroupHandleCommand(const format::FixShaderGroupHandleCommandHeader&     header,
+                                        const std::vector<format::ShaderHandleLocationInfo>& infos) override
     {}
 
-    virtual void DispatchFixDescriptorDataCommand(const format::FixDescriptorDataCommandHeader& header,
-                                                  const format::DescriptorDataLocationInfo*     info) override
+    virtual void DispatchFixDescriptorDataCommand(const format::FixDescriptorDataCommandHeader&          header,
+                                                  const std::vector<format::DescriptorDataLocationInfo>& info) override
     {}
 
     virtual void DispatchFixShadowMemoryCommand(format::ThreadId thread_id,

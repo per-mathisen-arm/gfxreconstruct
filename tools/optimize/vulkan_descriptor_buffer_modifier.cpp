@@ -114,7 +114,7 @@ void VulkanDescriptorBufferModifier::ProcessFillMemoryCommand(uint64_t       mem
 }
 
 void VulkanDescriptorBufferModifier::ProcessFixDescriptorDataCommand(
-    const format::FixDescriptorDataCommandHeader& header, const format::DescriptorDataLocationInfo* infos)
+    const format::FixDescriptorDataCommandHeader& header, const std::vector<format::DescriptorDataLocationInfo>& infos)
 {
     if (IsModificationPass())
     {

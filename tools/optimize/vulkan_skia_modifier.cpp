@@ -587,8 +587,8 @@ void VulkanSkiaModifier::ProcessCreateHardwareBufferCommand(
     }
 }
 
-void VulkanSkiaModifier::ProcessFixDeviceAddressCommand(const format::FixDeviceAddressCommandHeader& header,
-                                                        const format::AddressLocationInfo*           infos)
+void VulkanSkiaModifier::ProcessFixDeviceAddressCommand(const format::FixDeviceAddressCommandHeader&    header,
+                                                        const std::vector<format::AddressLocationInfo>& infos)
 {
     if (IsModificationPass())
         return;
@@ -611,8 +611,8 @@ void VulkanSkiaModifier::ProcessFixDeviceAddressCommand(const format::FixDeviceA
     }
 }
 
-void VulkanSkiaModifier::ProcessFixShaderGroupHandleCommand(const format::FixShaderGroupHandleCommandHeader& header,
-                                                            const format::ShaderHandleLocationInfo*          infos)
+void VulkanSkiaModifier::ProcessFixShaderGroupHandleCommand(const format::FixShaderGroupHandleCommandHeader&     header,
+                                                            const std::vector<format::ShaderHandleLocationInfo>& infos)
 {
     if (IsModificationPass())
         return;

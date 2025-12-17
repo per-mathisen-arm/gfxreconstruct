@@ -107,8 +107,15 @@ class VulkanReplayConsumerBase : public VulkanConsumer
     virtual void
     ProcessFillMemoryCommand(uint64_t memory_id, uint64_t offset, uint64_t size, const uint8_t* data) override;
 
-    virtual void ProcessFixDeviceAddressCommand(const format::FixDeviceAddressCommandHeader& header,
-                                                const format::AddressLocationInfo*           infos) override;
+    virtual void ProcessFixDeviceAddressCommand(const format::FixDeviceAddressCommandHeader&    header,
+                                                const std::vector<format::AddressLocationInfo>& infos) override;
+
+    virtual void
+    ProcessFixShaderGroupHandleCommand(const format::FixShaderGroupHandleCommandHeader&     header,
+                                       const std::vector<format::ShaderHandleLocationInfo>& infos) override;
+
+    virtual void ProcessFixDescriptorDataCommand(const format::FixDescriptorDataCommandHeader&          header,
+                                                 const std::vector<format::DescriptorDataLocationInfo>& infos) override;
 
     virtual void ProcessMicromapCompactionDependencyCommand(format::HandleId                     parent,
                                                             const std::vector<format::HandleId>& children) override;
@@ -116,12 +123,6 @@ class VulkanReplayConsumerBase : public VulkanConsumer
     virtual void
     ProcessAccelerationStructureCompactionDependencyCommand(format::HandleId                     parent,
                                                             const std::vector<format::HandleId>& children) override;
-
-    virtual void ProcessFixShaderGroupHandleCommand(const format::FixShaderGroupHandleCommandHeader& header,
-                                                    const format::ShaderHandleLocationInfo*          infos) override;
-
-    virtual void ProcessFixDescriptorDataCommand(const format::FixDescriptorDataCommandHeader& header,
-                                                 const format::DescriptorDataLocationInfo*     infos) override;
 
     virtual void ProcessResizeWindowCommand(format::HandleId surface_id, uint32_t width, uint32_t height) override;
 

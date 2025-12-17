@@ -49,11 +49,12 @@ class VulkanRayTracingModifier : public util::VulkanModifierBase
                                           uint64_t         data_size,
                                           const uint8_t*   data) override;
 
-    virtual void ProcessFixDeviceAddressCommand(const format::FixDeviceAddressCommandHeader& header,
-                                                const format::AddressLocationInfo*           infos) override;
+    virtual void ProcessFixDeviceAddressCommand(const format::FixDeviceAddressCommandHeader&    header,
+                                                const std::vector<format::AddressLocationInfo>& infos) override;
 
-    virtual void ProcessFixShaderGroupHandleCommand(const format::FixShaderGroupHandleCommandHeader& header,
-                                                    const format::ShaderHandleLocationInfo*          infos) override;
+    virtual void
+    ProcessFixShaderGroupHandleCommand(const format::FixShaderGroupHandleCommandHeader&     header,
+                                       const std::vector<format::ShaderHandleLocationInfo>& infos) override;
 
     virtual void
     ProcessAccelerationStructureCompactionDependencyCommand(format::HandleId                     parent,
