@@ -769,6 +769,18 @@ class VulkanRebindAllocator : public VulkanResourceAllocator
                          VmaMemoryInfo&         vma_mem_info,
                          VkMemoryPropertyFlags& bind_memory_property);
 
+    template <typename T, typename S>
+    void RebindSparseMemory(const T&                     original_memory_bind,
+                            T&                           modified_memory_bind,
+                            ResourceAllocInfo*           res_alloc_info,
+                            MemoryAllocInfo*             mem_alloc_info,
+                            S                            vma_mem_blocks,
+                            std::vector<VmaMemoryInfo*>& vma_memory_infos,
+                            VkBuffer                     buffer,
+                            VkImage                      image,
+                            const std::string&           type_string,
+                            VkDeviceSize                 alloc_size);
+
   private:
     VkDevice                         device_ = VK_NULL_HANDLE;
     VmaAllocator                     allocator_;
