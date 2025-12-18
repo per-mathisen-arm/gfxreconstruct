@@ -941,7 +941,7 @@ bool FileTransformer::ProcessMetaData(const format::MetaDataHeader& meta_header)
             success      = success && ReadBytes(&header.inputs_flags, sizeof(header.inputs_flags));
             success = success && ReadBytes(&header.inputs_num_instance_descs, sizeof(header.inputs_num_instance_descs));
             success = success && ReadBytes(&header.inputs_num_geometry_descs, sizeof(header.inputs_num_geometry_descs));
-            success = success && ReadBytes(&header.inputs_data_size, sizeof(header.inputs_data_size));
+            success = success && ReadBytes(&header.data_size, sizeof(header.data_size));
 
             if (success)
             {
@@ -961,7 +961,7 @@ bool FileTransformer::ProcessMetaData(const format::MetaDataHeader& meta_header)
             success      = success &&
                       ReadBytes(&header.acceleration_structure_address, sizeof(header.acceleration_structure_address));
             success = success && ReadBytes(&header.num_instance_descs, sizeof(header.num_instance_descs));
-            success = success && ReadBytes(&header.inputs_data_size, sizeof(header.inputs_data_size));
+            success = success && ReadBytes(&header.data_size, sizeof(header.data_size));
 
             if (success)
             {

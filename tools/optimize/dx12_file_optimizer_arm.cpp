@@ -661,13 +661,13 @@ bool Dx12FileOptimizerARM::ProcessInitDx12AccelerationStructureCommand(
             static_cast<size_t>(header.meta_header.block_header.size) - format::GetMetaDataBlockBaseSize(header) -
             (sizeof(format::InitDx12AccelerationStructureGeometryDesc) * header.inputs_num_geometry_descs);
         parameter_buffer_size = compressed_size;
-        success               = ReadCompressedParameterBuffer(
-            compressed_size, static_cast<size_t>(header.inputs_data_size), &uncompressed_size);
+        success =
+            ReadCompressedParameterBuffer(compressed_size, static_cast<size_t>(header.data_size), &uncompressed_size);
     }
     else
     {
-        parameter_buffer_size = header.inputs_data_size;
-        success               = ReadParameterBuffer(static_cast<size_t>(header.inputs_data_size));
+        parameter_buffer_size = header.data_size;
+        success               = ReadParameterBuffer(static_cast<size_t>(header.data_size));
     }
 
     if (success)
@@ -783,13 +783,13 @@ bool Dx12FileOptimizerARM::ProcessGetDx12AccelerationStructureSizeCommand(
         size_t compressed_size =
             static_cast<size_t>(header.meta_header.block_header.size) - format::GetMetaDataBlockBaseSize(header);
         parameter_buffer_size = compressed_size;
-        success               = ReadCompressedParameterBuffer(
-            compressed_size, static_cast<size_t>(header.inputs_data_size), &uncompressed_size);
+        success =
+            ReadCompressedParameterBuffer(compressed_size, static_cast<size_t>(header.data_size), &uncompressed_size);
     }
     else
     {
-        parameter_buffer_size = header.inputs_data_size;
-        success               = ReadParameterBuffer(static_cast<size_t>(header.inputs_data_size));
+        parameter_buffer_size = header.data_size;
+        success               = ReadParameterBuffer(static_cast<size_t>(header.data_size));
     }
 
     if (success)

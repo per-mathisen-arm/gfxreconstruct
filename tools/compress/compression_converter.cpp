@@ -508,9 +508,9 @@ bool CompressionConverter::ProcessInitDx12AccelerationStructureCommand(
 
     if (success)
     {
-        GFXRECON_CHECK_CONVERSION_DATA_LOSS(size_t, init_cmd.inputs_data_size);
+        GFXRECON_CHECK_CONVERSION_DATA_LOSS(size_t, init_cmd.data_size);
 
-        size_t data_size = static_cast<size_t>(init_cmd.inputs_data_size);
+        size_t data_size = static_cast<size_t>(init_cmd.data_size);
 
         if (format::IsBlockCompressed(init_cmd.meta_header.block_header.type))
         {
@@ -587,9 +587,9 @@ bool CompressionConverter::ProcessGetDx12AccelerationStructureSizeCommand(
 
     if (success)
     {
-        GFXRECON_CHECK_CONVERSION_DATA_LOSS(size_t, input_cmd.inputs_data_size);
+        GFXRECON_CHECK_CONVERSION_DATA_LOSS(size_t, input_cmd.data_size);
 
-        size_t data_size = static_cast<size_t>(input_cmd.inputs_data_size);
+        size_t data_size = static_cast<size_t>(input_cmd.data_size);
 
         if (format::IsBlockCompressed(input_cmd.meta_header.block_header.type))
         {

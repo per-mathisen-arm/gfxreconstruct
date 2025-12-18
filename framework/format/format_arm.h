@@ -21,11 +21,11 @@ constexpr format::MetaDataType CreateMetaDataTypeARM(MetaDataTypeUnderlyingType 
     return static_cast<format::MetaDataType>(kBeginExperimentalReservedRange + type_id);
 }
 
-inline constexpr format::MetaDataType kInitTensorCommand                = CreateMetaDataTypeARM(0);
-inline constexpr format::MetaDataType kFixShaderGroupHandleCommand      = CreateMetaDataTypeARM(1);
-inline constexpr format::MetaDataType kFixDescriptorDataCommand         = CreateMetaDataTypeARM(2);
-inline constexpr format::MetaDataType kFixShadowMemoryCommand           = CreateMetaDataTypeARM(3);
-inline constexpr format::MetaDataType kFillMemoryResourceAddressCommand = CreateMetaDataTypeARM(4);
+inline constexpr format::MetaDataType kInitTensorCommand                       = CreateMetaDataTypeARM(0);
+inline constexpr format::MetaDataType kFixShaderGroupHandleCommand             = CreateMetaDataTypeARM(1);
+inline constexpr format::MetaDataType kFixDescriptorDataCommand                = CreateMetaDataTypeARM(2);
+inline constexpr format::MetaDataType kFixShadowMemoryCommand                  = CreateMetaDataTypeARM(3);
+inline constexpr format::MetaDataType kFillMemoryResourceAddressCommand        = CreateMetaDataTypeARM(4);
 inline constexpr format::MetaDataType kGetDx12AccelerationStructureSizeCommand = CreateMetaDataTypeARM(5);
 
 // Enums used in ARM builds up to r4p1 release that are not reserved upstream
@@ -91,7 +91,7 @@ struct GetDx12AccelerationStructureSizeCommandHeader
     format::HandleId resource_id{ 0 };
     uint64_t         acceleration_structure_address{ 0 };
     uint64_t         num_instance_descs{ 0 };
-    uint64_t         inputs_data_size{ 0 };
+    uint64_t         data_size{ 0 };
 
     // In the capture file, accel struct data is written in the following order:
     // GetDx12AccelerationStructureSizeCommandHeader

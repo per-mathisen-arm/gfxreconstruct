@@ -2203,7 +2203,7 @@ void Dx12RayTracingModifier::AddPrebuildInfoResourceValueCommand()
             input_header.resource_id                    = iter->second.handle_id;
             input_header.acceleration_structure_address = iter->second.acceleration_structure_address;
             input_header.num_instance_descs             = iter->second.num_instance_descs;
-            input_header.inputs_data_size               = prebuild_info.GetDataSize();
+            input_header.data_size                      = prebuild_info.GetDataSize();
 
             new_call->parameter_buffer.Write(&input_header,
                                              sizeof(format::arm::GetDx12AccelerationStructureSizeCommandHeader));

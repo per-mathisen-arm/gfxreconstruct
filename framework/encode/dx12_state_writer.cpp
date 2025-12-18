@@ -918,8 +918,7 @@ void Dx12StateWriter::WriteMetaCommandCreationState(const Dx12StateTable& state_
                     format::ApiFamilyId::ApiFamily_D3D12, format::MetaDataType::kInitializeMetaCommand);
                 init_meta_command.thread_id  = thread_id_;
                 init_meta_command.capture_id = wrapper->GetCaptureId();
-                init_meta_command.initialization_parameters_data_size =
-                    wrapper_info->initialize_parameters->GetDataSize();
+                init_meta_command.data_size  = wrapper_info->initialize_parameters->GetDataSize();
                 init_meta_command.total_number_of_initializemetacommand = metacommand_wrappers.size();
                 init_meta_command.block_index                           = ++block_index;
 
@@ -1866,12 +1865,12 @@ void Dx12StateWriter::WriteAccelerationStructuresState(
 
         // Get NumDescs and data sizes.
         size_t inputs_data_ptr_file_size = 0;
-        cmd.inputs_data_size             = 0;
+        cmd.data_size                    = 0;
         cmd.inputs_num_instance_descs    = 0;
         cmd.inputs_num_geometry_descs    = 0;
         if (write_build_data)
         {
-            cmd.inputs_data_size = as_build.input_data_size - as_build.input_data_header_size;
+            cmd.data_size = as_build.input_data_size - as_build.input_data_header_size;
             if (as_build.inputs.Type == D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL)
             {
                 cmd.inputs_num_geometry_descs = as_build.inputs.NumDescs;
@@ -1885,15 +1884,15 @@ void Dx12StateWriter::WriteAccelerationStructuresState(
                 GFXRECON_ASSERT(false && "Invalid D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE.");
             }
 
-            GFXRECON_CHECK_CONVERSION_DATA_LOSS(size_t, cmd.inputs_data_size);
-            inputs_data_ptr_file_size = static_cast<size_t>(cmd.inputs_data_size);
+            GFXRECON_CHECK_CONVERSION_DATA_LOSS(size_t, cmd.data_size);
+            inputs_data_ptr_file_size = static_cast<size_t>(cmd.data_size);
             if (compressor_ != nullptr)
             {
                 // Compress block data.
                 size_t compressed_size =
                     compressor_->Compress(inputs_data_ptr_file_size, inputs_data_ptr, &compressed_parameter_buffer_, 0);
 
-                if ((compressed_size > 0) && (compressed_size < cmd.inputs_data_size))
+                if ((compressed_size > 0) && (compressed_size < cmd.data_size))
                 {
                     cmd.meta_header.block_header.type = format::BlockType::kCompressedMetaDataBlock;
 

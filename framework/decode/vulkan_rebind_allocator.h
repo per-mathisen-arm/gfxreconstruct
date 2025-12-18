@@ -485,6 +485,8 @@ class VulkanRebindAllocator : public VulkanResourceAllocator
     virtual uint64_t GetDeviceMemoryOpaqueCaptureAddress(const VkDeviceMemoryOpaqueCaptureAddressInfo* info,
                                                          MemoryData allocator_data) override;
 
+    void ClearStagingResources() override;
+
   private:
     struct MemoryAllocInfo;
 
@@ -710,8 +712,6 @@ class VulkanRebindAllocator : public VulkanResourceAllocator
                                         VkDeviceMemory           device_memory,
                                         uint64_t                 resource_handle);
 
-    virtual void ClearStagingResources() override;
-
     VkResult AllocateMemoryForBuffer(VkBuffer                                buffer,
                                      VkDeviceSize                            memory_offset,
                                      const VkPhysicalDeviceMemoryProperties& device_memory_properties,
@@ -781,7 +781,6 @@ class VulkanRebindAllocator : public VulkanResourceAllocator
                             const std::string&           type_string,
                             VkDeviceSize                 alloc_size);
 
-  private:
     VkDevice                         device_ = VK_NULL_HANDLE;
     VmaAllocator                     allocator_;
     Functions                        functions_;

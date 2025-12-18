@@ -390,8 +390,6 @@ class VulkanResourceAllocator
 
     virtual bool SupportBindVideoSessionMemory() = 0;
 
-    virtual void ClearStagingResources(){};
-
     virtual VkResult CreateDataGraphPipelineSession(const VkDataGraphPipelineSessionCreateInfoARM* create_info,
                                                     const VkAllocationCallbacks*                   allocation_callbacks,
                                                     format::HandleId                               capture_id,
@@ -484,6 +482,7 @@ class VulkanResourceAllocator
 
     virtual uint64_t GetDeviceMemoryOpaqueCaptureAddress(const VkDeviceMemoryOpaqueCaptureAddressInfo* info,
                                                          MemoryData allocator_data) = 0;
+    virtual void     ClearStagingResources(){};
 };
 
 GFXRECON_END_NAMESPACE(decode)
