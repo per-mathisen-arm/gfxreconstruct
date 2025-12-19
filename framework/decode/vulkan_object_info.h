@@ -88,8 +88,9 @@ enum PhysicalDeviceArrayIndices : uint32_t
     kShaderEXTArrayGetShaderBinaryDataEXT                                                = 21,
     kPhysicalDeviceArrayGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV = 22,
     kPhysicalDeviceArrayGetPhysicalDeviceCooperativeVectorPropertiesNV                   = 23,
-    kPhysicalDeviceArrayGetPhysicalDeviceDataGraphInstructionSetsARM                     = 24,
+    kPhysicalDeviceArrayEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM = 24,
     kPhysicalDeviceArrayGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM               = 25,
+    kPhysicalDeviceArrayGetPhysicalDeviceDataGraphInstructionSetsARM                     = 26,
 
     // Aliases for extensions functions that were promoted to core.
     kPhysicalDeviceArrayGetPhysicalDeviceQueueFamilyProperties2KHR =

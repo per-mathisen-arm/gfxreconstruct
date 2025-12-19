@@ -260,6 +260,9 @@ void FileProcessor::ProcessAnnotation()
     } };
     BlockParser block_parser(err_handler, pool_, compressor_, file_header_);
 
+    ProcessVisitor  process_visitor(*this);
+    DispatchVisitor dispatch_visitor(decoders_, annotation_handler_);
+
     BlockBuffer block_buffer;
     bool        success = GetBlockBuffer(block_parser, block_buffer);
 
@@ -269,15 +272,14 @@ void FileProcessor::ProcessAnnotation()
         block_parser.SetFrameNumber(current_frame_number_);
 
         ParsedBlock parsed_block = block_parser.ParseBlock(block_buffer);
-        if (parsed_block.IsReady())
+        if (parsed_block.IsVisitable())
         {
-            ProcessVisitor process_visitor(*this);
-            parsed_block.Visit(process_visitor);
+            std::visit(process_visitor, parsed_block.GetArgs());
             success = process_visitor.IsSuccess();
             if (success)
             {
-                DispatchVisitor dispatch_visitor(block_parser, decoders_, annotation_handler_);
-                parsed_block.Visit(dispatch_visitor);
+                parsed_block.Decompress(block_parser); // Safe without testing block state.
+                std::visit(dispatch_visitor, parsed_block.GetArgs());
             }
         }
     }
@@ -314,6 +316,9 @@ bool FileProcessor::ProcessBlocks()
     // NOTE: To test deferred decompression operation uncomment next line
     // block_parser.SetDecompressionPolicy(BlockParser::DecompressionPolicy::kQueueOptimized);
 
+    ProcessVisitor  process_visitor(*this);
+    DispatchVisitor dispatch_visitor(decoders_, annotation_handler_);
+
     while (success)
     {
         PrintBlockInfo();
@@ -343,18 +348,16 @@ bool FileProcessor::ProcessBlocks()
                     // parsed_block, though the block header is still valid.
                     ParsedBlock parsed_block = block_parser.ParseBlock(block_buffer);
 
-                    ProcessVisitor process_visitor(*this);
-
                     // NOTE: Visitable is either Ready or DeferredDecompression,
                     //       Invalid, Unknown, and Skip are not Visitable
                     if (parsed_block.IsVisitable())
                     {
-                        parsed_block.Visit(process_visitor);
+                        std::visit(process_visitor, parsed_block.GetArgs());
                         success = process_visitor.IsSuccess();
                         if (success)
                         {
-                            DispatchVisitor dispatch_visitor(block_parser, decoders_, annotation_handler_);
-                            parsed_block.Visit(dispatch_visitor);
+                            parsed_block.Decompress(block_parser); // Safe without testing block state.
+                            std::visit(dispatch_visitor, parsed_block.GetArgs());
                         }
                     }
                     else if (parsed_block.IsUnknown())

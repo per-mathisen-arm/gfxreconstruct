@@ -1138,7 +1138,7 @@ VkResult DispatchTraceRaysDumpingContext::DumpDispatchTraceRays(VkQueue         
             return res;
         }
 
-        if (options_.dump_resources_dump_immutable_resources)
+        if (options_.dump_all_descriptors)
         {
             res = DumpDescriptors(qs_index, bcb_index, disp_index, true);
             if (res != VK_SUCCESS)
@@ -1165,7 +1165,7 @@ VkResult DispatchTraceRaysDumpingContext::DumpDispatchTraceRays(VkQueue         
             return res;
         }
 
-        if (options_.dump_resources_dump_immutable_resources)
+        if (options_.dump_all_descriptors)
         {
             res = DumpDescriptors(qs_index, bcb_index, tr_index, false);
             if (res != VK_SUCCESS)
