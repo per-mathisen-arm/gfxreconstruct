@@ -9922,6 +9922,176 @@ VkCheckpointData2NV* TrackStruct(const VkCheckpointData2NV* value, HandleUnwrapM
     return unwrapped_struct;
 }
 
+VkPhysicalDevicePresentTimingFeaturesEXT* TrackStruct(const VkPhysicalDevicePresentTimingFeaturesEXT* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkPhysicalDevicePresentTimingFeaturesEXT* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkPresentTimingSurfaceCapabilitiesEXT* TrackStruct(const VkPresentTimingSurfaceCapabilitiesEXT* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkPresentTimingSurfaceCapabilitiesEXT* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkSwapchainCalibratedTimestampInfoEXT* TrackStruct(const VkSwapchainCalibratedTimestampInfoEXT* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkSwapchainCalibratedTimestampInfoEXT* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkSwapchainTimingPropertiesEXT* TrackStruct(const VkSwapchainTimingPropertiesEXT* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkSwapchainTimingPropertiesEXT* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkSwapchainTimeDomainPropertiesEXT* TrackStruct(const VkSwapchainTimeDomainPropertiesEXT* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkSwapchainTimeDomainPropertiesEXT* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+    if (unwrapped_struct->pTimeDomains)
+    {
+        unwrapped_struct->pTimeDomains = vulkan_wrappers::MakeUnwrapStructs(unwrapped_struct->pTimeDomains, unwrapped_struct->timeDomainCount, unwrap_memory);
+    }
+    if (unwrapped_struct->pTimeDomainIds)
+    {
+        unwrapped_struct->pTimeDomainIds = vulkan_wrappers::MakeUnwrapStructs(unwrapped_struct->pTimeDomainIds, unwrapped_struct->timeDomainCount, unwrap_memory);
+    }
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkPastPresentationTimingInfoEXT* TrackStruct(const VkPastPresentationTimingInfoEXT* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkPastPresentationTimingInfoEXT* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkPastPresentationTimingEXT* TrackStruct(const VkPastPresentationTimingEXT* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkPastPresentationTimingEXT* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+    if (unwrapped_struct->pPresentStages)
+    {
+        unwrapped_struct->pPresentStages = vulkan_wrappers::MakeUnwrapStructs(unwrapped_struct->pPresentStages, unwrapped_struct->presentStageCount, unwrap_memory);
+    }
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkPastPresentationTimingPropertiesEXT* TrackStruct(const VkPastPresentationTimingPropertiesEXT* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkPastPresentationTimingPropertiesEXT* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+    if (unwrapped_struct->pPresentationTimings)
+    {
+        unwrapped_struct->pPresentationTimings = vulkan_wrappers::MakeUnwrapStructs(unwrapped_struct->pPresentationTimings, unwrapped_struct->presentationTimingCount, unwrap_memory);
+    }
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkPresentTimingInfoEXT* TrackStruct(const VkPresentTimingInfoEXT* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkPresentTimingInfoEXT* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkPresentTimingsInfoEXT* TrackStruct(const VkPresentTimingsInfoEXT* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkPresentTimingsInfoEXT* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+    if (unwrapped_struct->pTimingInfos)
+    {
+        unwrapped_struct->pTimingInfos = vulkan_wrappers::MakeUnwrapStructs(unwrapped_struct->pTimingInfos, unwrapped_struct->swapchainCount, unwrap_memory);
+    }
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
 VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL* TrackStruct(const VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL* value, HandleUnwrapMemory* unwrap_memory)
 {
     if (value == nullptr)
@@ -14109,14 +14279,14 @@ VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV* TrackStruct(const VkPhy
     return unwrapped_struct;
 }
 
-VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT* TrackStruct(const VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT* value, HandleUnwrapMemory* unwrap_memory)
+VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV* TrackStruct(const VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV* value, HandleUnwrapMemory* unwrap_memory)
 {
     if (value == nullptr)
     {
         return nullptr;
     }
 
-    VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+    VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
 
 
     unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
@@ -15655,6 +15825,21 @@ VkPhysicalDeviceRayTracingInvocationReorderPropertiesEXT* TrackStruct(const VkPh
     }
 
     VkPhysicalDeviceRayTracingInvocationReorderPropertiesEXT* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT* TrackStruct(const VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
 
 
     unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
@@ -17733,6 +17918,26 @@ void* TrackStruct(const void* value, HandleUnwrapMemory* unwrap_memory)
             return TrackStruct(reinterpret_cast<const VkQueueFamilyCheckpointProperties2NV*>(value), unwrap_memory);
         case VK_STRUCTURE_TYPE_CHECKPOINT_DATA_2_NV:
             return TrackStruct(reinterpret_cast<const VkCheckpointData2NV*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_TIMING_FEATURES_EXT:
+            return TrackStruct(reinterpret_cast<const VkPhysicalDevicePresentTimingFeaturesEXT*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_PRESENT_TIMING_SURFACE_CAPABILITIES_EXT:
+            return TrackStruct(reinterpret_cast<const VkPresentTimingSurfaceCapabilitiesEXT*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_SWAPCHAIN_CALIBRATED_TIMESTAMP_INFO_EXT:
+            return TrackStruct(reinterpret_cast<const VkSwapchainCalibratedTimestampInfoEXT*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_SWAPCHAIN_TIMING_PROPERTIES_EXT:
+            return TrackStruct(reinterpret_cast<const VkSwapchainTimingPropertiesEXT*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_SWAPCHAIN_TIME_DOMAIN_PROPERTIES_EXT:
+            return TrackStruct(reinterpret_cast<const VkSwapchainTimeDomainPropertiesEXT*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_PAST_PRESENTATION_TIMING_INFO_EXT:
+            return TrackStruct(reinterpret_cast<const VkPastPresentationTimingInfoEXT*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_PAST_PRESENTATION_TIMING_EXT:
+            return TrackStruct(reinterpret_cast<const VkPastPresentationTimingEXT*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_PAST_PRESENTATION_TIMING_PROPERTIES_EXT:
+            return TrackStruct(reinterpret_cast<const VkPastPresentationTimingPropertiesEXT*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_PRESENT_TIMING_INFO_EXT:
+            return TrackStruct(reinterpret_cast<const VkPresentTimingInfoEXT*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_PRESENT_TIMINGS_INFO_EXT:
+            return TrackStruct(reinterpret_cast<const VkPresentTimingsInfoEXT*>(value), unwrap_memory);
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_FUNCTIONS_2_FEATURES_INTEL:
             return TrackStruct(reinterpret_cast<const VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL*>(value), unwrap_memory);
         case VK_STRUCTURE_TYPE_INITIALIZE_PERFORMANCE_API_INFO_INTEL:
@@ -18271,8 +18476,8 @@ void* TrackStruct(const void* value, HandleUnwrapMemory* unwrap_memory)
             return TrackStruct(reinterpret_cast<const VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM*>(value), unwrap_memory);
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_PROPERTIES_NV:
             return TrackStruct(reinterpret_cast<const VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV*>(value), unwrap_memory);
-        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_EXT:
-            return TrackStruct(reinterpret_cast<const VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_NV:
+            return TrackStruct(reinterpret_cast<const VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV*>(value), unwrap_memory);
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_VECTOR_PROPERTIES_NV:
             return TrackStruct(reinterpret_cast<const VkPhysicalDeviceCooperativeVectorPropertiesNV*>(value), unwrap_memory);
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_VECTOR_FEATURES_NV:
@@ -18469,6 +18674,8 @@ void* TrackStruct(const void* value, HandleUnwrapMemory* unwrap_memory)
             return TrackStruct(reinterpret_cast<const VkImageAlignmentControlCreateInfoMESA*>(value), unwrap_memory);
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_PROPERTIES_EXT:
             return TrackStruct(reinterpret_cast<const VkPhysicalDeviceRayTracingInvocationReorderPropertiesEXT*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_EXT:
+            return TrackStruct(reinterpret_cast<const VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT*>(value), unwrap_memory);
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLAMP_CONTROL_FEATURES_EXT:
             return TrackStruct(reinterpret_cast<const VkPhysicalDeviceDepthClampControlFeaturesEXT*>(value), unwrap_memory);
         case VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_DEPTH_CLAMP_CONTROL_CREATE_INFO_EXT:
