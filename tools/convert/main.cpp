@@ -363,7 +363,7 @@ int main(int argc, const char** argv)
             json_options.checksum         = checksum;
             json_options.checksum_trigger = checksum_trigger;
 
-            gfxrecon::decode::JsonWriter json_writer{ json_options, GFXRECON_PROJECT_VERSION_STRING, input_filename };
+            gfxrecon::decode::JsonWriter json_writer{ json_options, GetProjectVersionString(), input_filename };
             file_processor.SetAnnotationProcessor(&json_writer);
 
             bool              success = true;

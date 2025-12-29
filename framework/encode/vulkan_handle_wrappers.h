@@ -178,8 +178,11 @@ struct FenceWrapper : public HandleWrapper<VkFence>
 {
     // Signaled state at creation to be compared with signaled state at snapshot write. If states are different, the
     // create parameters will need to be modified to reflect the state at snapshot write.
-    bool           created_signaled{ false };
-    DeviceWrapper* device{ nullptr };
+    bool created_signaled{ false };
+
+    // keep track if the fence is currently waiting to be signaled
+    std::atomic<bool> in_flight{ false };
+    DeviceWrapper*    device{ nullptr };
 
     // The fence cannot be "validated" until a certain number of queries (that might correspond to a number of frames)
     // to the fence have been called. So if query_delay is not zero but the fence is validated by Vulkan,

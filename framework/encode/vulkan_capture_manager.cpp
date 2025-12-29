@@ -1660,8 +1660,8 @@ VkResult VulkanCaptureManager::OverrideGetPhysicalDeviceToolPropertiesEXT(
 
         util::platform::StringCopy(pToolProperties->version,
                                    VK_MAX_EXTENSION_NAME_SIZE,
-                                   GFXRECON_PROJECT_VERSION_STRING,
-                                   util::platform::StringLength(GFXRECON_PROJECT_VERSION_STRING));
+                                   GetProjectVersionString(),
+                                   util::platform::StringLength(GetProjectVersionString()));
 
         util::platform::StringCopy(pToolProperties->description,
                                    VK_MAX_DESCRIPTION_SIZE,
@@ -3041,6 +3041,12 @@ void VulkanCaptureManager::PostProcess_vkAcquireNextImage2KHR(VkResult result,
     {
         if (IsCaptureModeTrack())
         {
+            if (pAcquireInfo != nullptr && pAcquireInfo->fence != VK_NULL_HANDLE)
+            {
+                auto* fence_wrapper = vulkan_wrappers::GetWrapper<vulkan_wrappers::FenceWrapper>(pAcquireInfo->fence);
+                fence_wrapper->in_flight = true;
+            }
+
             GFXRECON_ASSERT((state_tracker_ != nullptr) && (pAcquireInfo != nullptr) && (index != nullptr));
             state_tracker_->TrackSemaphoreSignalState(pAcquireInfo->semaphore);
             state_tracker_->TrackAcquireImage(*index,
@@ -3088,6 +3094,7 @@ void VulkanCaptureManager::PostProcess_vkQueuePresentKHR(
                 pPresentInfo->waitSemaphoreCount, pPresentInfo->pWaitSemaphores, 0, nullptr);
             state_tracker_->TrackPresentedImages(
                 pPresentInfo->swapchainCount, pPresentInfo->pSwapchains, pPresentInfo->pImageIndices, queue);
+            state_tracker_->TrackPresentFences(pPresentInfo);
         }
         else
         {
@@ -3557,6 +3564,12 @@ void VulkanCaptureManager::PreProcess_vkQueueSubmit(std::shared_lock<CommonCaptu
     {
         if (pSubmits)
         {
+            if (fence != VK_NULL_HANDLE)
+            {
+                auto* fence_wrapper      = vulkan_wrappers::GetWrapper<vulkan_wrappers::FenceWrapper>(fence);
+                fence_wrapper->in_flight = true;
+            }
+
             for (uint32_t s = 0; s < submitCount; ++s)
             {
                 state_tracker_->TrackCommandBuffersSubmision(pSubmits[s].commandBufferCount,
@@ -3595,6 +3608,12 @@ void VulkanCaptureManager::PreProcess_vkQueueSubmit2(
         std::vector<VkCommandBuffer> command_buffs;
         if (pSubmits)
         {
+            if (fence != VK_NULL_HANDLE)
+            {
+                auto* fence_wrapper      = vulkan_wrappers::GetWrapper<vulkan_wrappers::FenceWrapper>(fence);
+                fence_wrapper->in_flight = true;
+            }
+
             for (uint32_t s = 0; s < submitCount; ++s)
             {
                 if (pSubmits[s].pCommandBufferInfos)
@@ -4143,6 +4162,25 @@ void VulkanCaptureManager::PostProcess_vkCreateShaderModule(VkResult            
     }
 }
 
+void VulkanCaptureManager::PreProcess_vkQueueBindSparse(VkQueue                 queue,
+                                                        uint32_t                bindInfoCount,
+                                                        const VkBindSparseInfo* pBindInfo,
+                                                        VkFence                 fence)
+{
+    GFXRECON_UNREFERENCED_PARAMETER(queue);
+    GFXRECON_UNREFERENCED_PARAMETER(bindInfoCount);
+    GFXRECON_UNREFERENCED_PARAMETER(pBindInfo);
+
+    if (IsCaptureModeTrack() && fence != VK_NULL_HANDLE)
+    {
+        auto* fence_wrapper = vulkan_wrappers::GetWrapper<vulkan_wrappers::FenceWrapper>(fence);
+        if (fence_wrapper != nullptr)
+        {
+            fence_wrapper->in_flight = true;
+        }
+    }
+}
+
 #if ENABLE_OPENXR_SUPPORT
 void VulkanCaptureManager::PreProcess_vkDestroyFence(VkDevice                     device,
                                                      VkFence                      fence,
@@ -4206,6 +4244,69 @@ void VulkanCaptureManager::PreProcess_vkWaitForFences(
     }
 }
 #endif
+
+void VulkanCaptureManager::PostProcess_vkResetFences(VkResult       result,
+                                                     VkDevice       device,
+                                                     uint32_t       fenceCount,
+                                                     const VkFence* pFences)
+{
+    GFXRECON_UNREFERENCED_PARAMETER(result);
+    GFXRECON_UNREFERENCED_PARAMETER(device);
+
+    if (IsCaptureModeTrack())
+    {
+        for (uint32_t i = 0; i < fenceCount; ++i)
+        {
+            auto* fence_wrapper = vulkan_wrappers::GetWrapper<vulkan_wrappers::FenceWrapper>(pFences[i]);
+            if (fence_wrapper != nullptr)
+            {
+                fence_wrapper->in_flight = false;
+            }
+        }
+    }
+
+    for (uint32_t i = 0; i < fenceCount; ++i)
+    {
+        FenceWrapper* wrapper = GetWrapper<FenceWrapper>(pFences[i]);
+        assert(wrapper != nullptr);
+        wrapper->query_delay = 0;
+    }
+}
+
+void VulkanCaptureManager::PostProcess_vkWaitForFences(
+    VkResult result, VkDevice device, uint32_t fenceCount, const VkFence* pFences, VkBool32 waitAll, uint64_t timeout)
+{
+    GFXRECON_UNREFERENCED_PARAMETER(device);
+    GFXRECON_UNREFERENCED_PARAMETER(waitAll);
+    GFXRECON_UNREFERENCED_PARAMETER(timeout);
+
+    if (IsCaptureModeTrack() && result == VK_SUCCESS)
+    {
+        for (uint32_t i = 0; i < fenceCount; ++i)
+        {
+            auto* fence_wrapper = vulkan_wrappers::GetWrapper<vulkan_wrappers::FenceWrapper>(pFences[i]);
+            if (fence_wrapper != nullptr)
+            {
+                fence_wrapper->in_flight = false;
+            }
+        }
+    }
+}
+
+void VulkanCaptureManager::PostProcess_vkGetFenceStatus(VkResult result, VkDevice device, VkFence fence)
+{
+    GFXRECON_UNREFERENCED_PARAMETER(device);
+
+    if (IsCaptureModeTrack() && result == VK_SUCCESS)
+    {
+        auto* fence_wrapper = vulkan_wrappers::GetWrapper<vulkan_wrappers::FenceWrapper>(fence);
+        if (fence_wrapper != nullptr)
+        {
+            // fence was already signaled, so clear 'in_flight' flag
+            fence_wrapper->in_flight = false;
+        }
+    }
+}
 
 void VulkanCaptureManager::PreProcess_vkBeginCommandBuffer(VkCommandBuffer                 commandBuffer,
                                                            const VkCommandBufferBeginInfo* pBeginInfo)

@@ -173,7 +173,7 @@ bool CommonCaptureManager::LockedCreateInstance(ApiCaptureManager*           api
         CaptureSettings::LoadSettings(&capture_settings_, initialize_log_);
 
         GFXRECON_LOG_INFO("Initializing GFXReconstruct capture layer");
-        GFXRECON_LOG_INFO("  GFXReconstruct Version %s", GFXRECON_PROJECT_VERSION_STRING);
+        GFXRECON_LOG_INFO("  GFXReconstruct Version %s", GetProjectVersionString());
 
         CaptureSettings::TraceSettings trace_settings = capture_settings_.GetTraceSettings();
         std::string                    base_filename  = trace_settings.capture_file;
@@ -1260,7 +1260,7 @@ bool CommonCaptureManager::CreateCaptureFile(format::ApiFamilyId api_family, con
         operation_annotation["tool"] = "capture";
 
         operation_annotation[format::kOperationAnnotationTimestamp]             = util::datetime::UtcNowString();
-        operation_annotation[format::kOperationAnnotationGfxreconstructVersion] = GFXRECON_PROJECT_VERSION_STRING;
+        operation_annotation[format::kOperationAnnotationGfxreconstructVersion] = GetProjectVersionString();
         operation_annotation[format::kOperationAnnotationVulkanVersion] =
             std::to_string(VK_VERSION_MAJOR(VK_HEADER_VERSION_COMPLETE)) + '.' +
             std::to_string(VK_VERSION_MINOR(VK_HEADER_VERSION_COMPLETE)) + '.' +
