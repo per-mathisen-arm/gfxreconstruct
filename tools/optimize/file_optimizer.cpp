@@ -55,126 +55,62 @@ uint64_t FileOptimizer::GetUnreferencedBlocksSize()
     return unreferenced_blocks_.size();
 }
 
-bool FileOptimizer::ProcessFunctionCall(const format::FunctionCallHeader& header)
+bool FileOptimizer::ProcessFunctionCall(decode::ParsedBlock& parsed_block)
 {
-    if (removed_threads_ids_.find(header.thread_id) == removed_threads_ids_.end())
-    {
-        return FileTransformer::ProcessFunctionCall(header);
-    }
-    else
-    {
-        // Total number of bytes remaining to be read for the current block.
-        const uint64_t unread_bytes = header.block_header.size - (sizeof(header) - sizeof(header.block_header));
+    const auto& args       = parsed_block.Get<decode::FunctionCallArgs>();
+    bool        filter_out = FilterFunctionCall(args);
 
-        if (!SkipBytes(unread_bytes))
-        {
-            HandleBlockReadError(kErrorSeekingFile, "Failed to skip function call block data");
-            return false;
-        }
+    if (!filter_out)
+    {
+        // Copy the method call block, if it was not filtered.
+        return FileTransformer::ProcessFunctionCall(parsed_block);
     }
-
-    return true;
+    return true; // Successful filtering no passthrough write.
 }
 
-bool FileOptimizer::ProcessMethodCall(const format::MethodCallHeader& header, uint64_t block_index)
+bool FileOptimizer::ProcessMethodCall(decode::ParsedBlock& parsed_block)
 {
-    bool ignore_call = (removed_threads_ids_.find(header.thread_id) != removed_threads_ids_.end());
+    const auto& args       = parsed_block.Get<decode::MethodCallArgs>();
+    bool        filter_out = FilterMethodCall(args);
 
-    if (header.api_call_id == format::ApiCallId::ApiCall_ID3D12Device_CreateGraphicsPipelineState ||
-        header.api_call_id == format::ApiCallId::ApiCall_ID3D12Device_CreateComputePipelineState ||
-        header.api_call_id == format::ApiCallId::ApiCall_ID3D12PipelineLibrary_StorePipeline)
+    if (!filter_out)
     {
-        // If the buffer is in the unused list, omit the call block from the file.
-        if (unreferenced_blocks_.find(block_index) != unreferenced_blocks_.end())
-        {
-            unreferenced_blocks_.erase(block_index);
-            ignore_call = true;
-        }
+        // Copy the method call block, if it was not filtered.
+        return FileTransformer::ProcessMethodCall(parsed_block);
     }
-
-    if (ignore_call)
-    {
-        // Total number of bytes remaining to be read for the current block.
-        const uint64_t unread_bytes = header.block_header.size - sizeof(header) + sizeof(header.block_header);
-
-        if (!SkipBytes(unread_bytes))
-        {
-            HandleBlockReadError(kErrorSeekingFile, "Failed to skip method call block data");
-            return false;
-        }
-
-        return true;
-    }
-    else
-    {
-        return FileTransformer::ProcessMethodCall(header, block_index);
-    }
+    return true; // Successful filtering no passthrough write.
 }
 
-bool FileOptimizer::ProcessDisplayMessageCommand(const format::DisplayMessageCommandHeader& header)
+bool FileOptimizer::ProcessMetaData(decode::ParsedBlock& parsed_block)
 {
-    if (removed_threads_ids_.find(header.thread_id) != removed_threads_ids_.end())
+    auto filter_visitor = [this](const auto& store) { return FilterMetaData(*store); };
+
+    VisitResult result = std::visit(filter_visitor, parsed_block.GetArgs());
+
+    if (result == kNeedsPassthrough)
     {
-        return RemoveThreadBlock(header.meta_header.block_header, sizeof(header));
+        return FileTransformer::ProcessMetaData(parsed_block);
     }
-    return FileTransformer::ProcessDisplayMessageCommand(header);
+    return result == kSuccess;
 }
 
-bool FileOptimizer::ProcessFillMemoryCommand(const format::FillMemoryCommandHeader& header)
+decode::FileTransformer::VisitResult FileOptimizer::FilterMetaData(const decode::InitBufferArgs& args)
 {
-    if (removed_threads_ids_.find(header.thread_id) != removed_threads_ids_.end())
-    {
-        return RemoveThreadBlock(header.meta_header.block_header, sizeof(header));
-    }
-    return FileTransformer::ProcessFillMemoryCommand(header);
-}
+    GFXRECON_ASSERT(format::GetMetaDataType(args.meta_data_id) == format::MetaDataType::kInitBufferCommand);
 
-bool FileOptimizer::ProcessResizeWindowCommand(const format::ResizeWindowCommand& header)
-{
-    if (removed_threads_ids_.find(header.thread_id) != removed_threads_ids_.end())
+    if (removed_threads_ids_.contains(args.thread_id))
     {
-        return RemoveThreadBlock(header.meta_header.block_header, sizeof(header));
+        return kSuccess;
     }
-    return FileTransformer::ProcessResizeWindowCommand(header);
-}
 
-bool FileOptimizer::ProcessSetSwapchainImageStateCommand(const format::SetSwapchainImageStateCommandHeader& header)
-{
-    if (removed_threads_ids_.find(header.thread_id) != removed_threads_ids_.end())
-    {
-        return RemoveThreadBlock(header.meta_header.block_header, sizeof(header));
-    }
-    return FileTransformer::ProcessSetSwapchainImageStateCommand(header);
-}
-
-bool FileOptimizer::ProcessBeginResourceInitCommand(const format::BeginResourceInitCommand& header)
-{
-    if (removed_threads_ids_.find(header.thread_id) != removed_threads_ids_.end())
-    {
-        return RemoveThreadBlock(header.meta_header.block_header, sizeof(header));
-    }
-    return FileTransformer::ProcessBeginResourceInitCommand(header);
-}
-
-bool FileOptimizer::ProcessEndResourceInitCommand(const format::EndResourceInitCommand& header)
-{
-    if (removed_threads_ids_.find(header.thread_id) != removed_threads_ids_.end())
-    {
-        return RemoveThreadBlock(header.meta_header.block_header, sizeof(header));
-    }
-    return FileTransformer::ProcessEndResourceInitCommand(header);
-}
-
-bool FileOptimizer::ProcessInitBufferCommand(const format::InitBufferCommandHeader& header)
-{
     // If the buffer is in the unused list, omit its initialization data from the file.
-    if (unreferenced_ids_.find(header.buffer_id) != unreferenced_ids_.end())
+    if (unreferenced_ids_.find(args.buffer_id) != unreferenced_ids_.end())
     {
         // In its place insert a dummy annotation meta command. This should keep the block index when
         // replaying an optimized trimmed capture in in alignment with the block index calculated
         // at capture time
         const char*       label = format::kAnnotationLabelRemovedResource;
-        const std::string data  = "Removed buffer " + std::to_string(header.buffer_id);
+        const std::string data  = "Removed buffer " + std::to_string(args.buffer_id);
 
         const size_t label_length = util::platform::StringLength(label);
         const size_t data_length  = data.length();
@@ -189,42 +125,32 @@ bool FileOptimizer::ProcessInitBufferCommand(const format::InitBufferCommandHead
         if (!WriteBytes(&annotation, sizeof(annotation)) || !WriteBytes(label, label_length) ||
             !WriteBytes(data.c_str(), data_length))
         {
-            HandleBlockWriteError(kErrorReadingBlockHeader, "Failed to write annotation meta-data block");
-            return false;
+            HandleBlockWriteError(decode::kErrorWritingBlockData, "Failed to write annotation meta-data block");
+            return kError;
         }
-
-        // Total number of bytes remaining to be read for the current block.
-        const uint64_t unread_bytes =
-            header.meta_header.block_header.size - (sizeof(header) - sizeof(header.meta_header.block_header));
-
-        if (!SkipBytes(unread_bytes))
-        {
-            HandleBlockReadError(kErrorSeekingFile, "Failed to skip init bimage data meta-data block data");
-            return false;
-        }
-    }
-    else if (removed_threads_ids_.find(header.thread_id) != removed_threads_ids_.end())
-    {
-        return RemoveThreadBlock(header.meta_header.block_header, sizeof(header));
-    }
-    else
-    {
-        return FileTransformer::ProcessInitBufferCommand(header);
+        return kSuccess;
     }
 
-    return true;
+    return kNeedsPassthrough;
 }
 
-bool FileOptimizer::ProcessInitImageCommand(const format::InitImageCommandHeader& header)
+decode::FileTransformer::VisitResult FileOptimizer::FilterMetaData(const decode::InitImageArgs& args)
 {
+    GFXRECON_ASSERT(format::GetMetaDataType(args.meta_data_id) == format::MetaDataType::kInitImageCommand);
+
+    if (removed_threads_ids_.contains(args.thread_id))
+    {
+        return kSuccess;
+    }
+
     // If the image is in the unused list, omit its initialization data from the file.
-    if (unreferenced_ids_.find(header.image_id) != unreferenced_ids_.end())
+    if (unreferenced_ids_.find(args.image_id) != unreferenced_ids_.end())
     {
         // In its place insert a dummy annotation meta command. This should keep the block index when
         // replaying an optimized trimmed capture in in alignment with the block index calculated
         // at capture time
         const char*       label = format::kAnnotationLabelRemovedResource;
-        const std::string data  = "Removed subresource from image " + std::to_string(header.image_id);
+        const std::string data  = "Removed subresource from image " + std::to_string(args.image_id);
 
         const size_t label_length = util::platform::StringLength(label);
         const size_t data_length  = data.length();
@@ -239,229 +165,33 @@ bool FileOptimizer::ProcessInitImageCommand(const format::InitImageCommandHeader
         if (!WriteBytes(&annotation, sizeof(annotation)) || !WriteBytes(label, label_length) ||
             !WriteBytes(data.c_str(), data_length))
         {
-            HandleBlockWriteError(kErrorReadingBlockHeader, "Failed to write annotation meta-data block");
-            return false;
+            HandleBlockWriteError(decode::kErrorWritingBlockData, "Failed to write annotation meta-data block");
+            return kError;
         }
 
-        // Total number of bytes remaining to be read for the current block.
-        const uint64_t unread_bytes =
-            header.meta_header.block_header.size - (sizeof(header) - sizeof(header.meta_header.block_header));
-
-        if (!SkipBytes(unread_bytes))
-        {
-            HandleBlockReadError(kErrorSeekingFile, "Failed to skip init bimage data meta-data block data");
-            return false;
-        }
-    }
-    else if (removed_threads_ids_.find(header.thread_id) != removed_threads_ids_.end())
-    {
-        return RemoveThreadBlock(header.meta_header.block_header, sizeof(header));
-    }
-    else
-    {
-        return FileTransformer::ProcessInitImageCommand(header);
+        return kSuccess;
     }
 
-    return true;
+    return kNeedsPassthrough;
 }
 
-bool FileOptimizer::ProcessDestroyHardwareBufferCommand(const format::DestroyHardwareBufferCommand& header)
+decode::FileTransformer::VisitResult FileOptimizer::FilterMetaData(const decode::InitTensorArgs& args)
 {
-    if (removed_threads_ids_.find(header.thread_id) != removed_threads_ids_.end())
-    {
-        return RemoveThreadBlock(header.meta_header.block_header, sizeof(header));
-    }
-    return FileTransformer::ProcessDestroyHardwareBufferCommand(header);
-}
+    GFXRECON_ASSERT(format::GetMetaDataType(args.meta_data_id) == format::arm::MetaDataType::kInitTensorCommand);
 
-bool FileOptimizer::ProcessSetDevicePropertiesCommand(const format::SetDevicePropertiesCommand& header)
-{
-    if (removed_threads_ids_.find(header.thread_id) != removed_threads_ids_.end())
+    if (removed_threads_ids_.contains(args.thread_id))
     {
-        return RemoveThreadBlock(header.meta_header.block_header, sizeof(header));
-    }
-    return FileTransformer::ProcessSetDevicePropertiesCommand(header);
-}
-
-bool FileOptimizer::ProcessSetDeviceMemoryPropertiesCommand(const format::SetDeviceMemoryPropertiesCommand& header)
-{
-    if (removed_threads_ids_.find(header.thread_id) != removed_threads_ids_.end())
-    {
-        return RemoveThreadBlock(header.meta_header.block_header, sizeof(header));
-    }
-    return FileTransformer::ProcessSetDeviceMemoryPropertiesCommand(header);
-}
-
-bool FileOptimizer::ProcessResizeWindowCommand2(const format::ResizeWindowCommand2& header)
-{
-    if (removed_threads_ids_.find(header.thread_id) != removed_threads_ids_.end())
-    {
-        return RemoveThreadBlock(header.meta_header.block_header, sizeof(header));
-    }
-    return FileTransformer::ProcessResizeWindowCommand2(header);
-}
-
-bool FileOptimizer::ProcessSetOpaqueAddressCommand(const format::SetOpaqueAddressCommand& header)
-{
-    if (removed_threads_ids_.find(header.thread_id) != removed_threads_ids_.end())
-    {
-        return RemoveThreadBlock(header.meta_header.block_header, sizeof(header));
-    }
-    return FileTransformer::ProcessSetOpaqueAddressCommand(header);
-}
-
-bool FileOptimizer::ProcessSetRayTracingShaderGroupHandlesCommand(
-    const format::SetRayTracingShaderGroupHandlesCommandHeader& header)
-{
-    if (removed_threads_ids_.find(header.thread_id) != removed_threads_ids_.end())
-    {
-        return RemoveThreadBlock(header.meta_header.block_header, sizeof(header));
-    }
-    return FileTransformer::ProcessSetRayTracingShaderGroupHandlesCommand(header);
-}
-
-bool FileOptimizer::ProcessCreateHeapAllocationCommand(const format::CreateHeapAllocationCommand& header)
-{
-    if (removed_threads_ids_.find(header.thread_id) != removed_threads_ids_.end())
-    {
-        return RemoveThreadBlock(header.meta_header.block_header, sizeof(header));
-    }
-    return FileTransformer::ProcessCreateHeapAllocationCommand(header);
-}
-
-bool FileOptimizer::ProcessInitSubresourceCommand(const format::InitSubresourceCommandHeader& header)
-{
-    if (removed_threads_ids_.find(header.thread_id) != removed_threads_ids_.end())
-    {
-        return RemoveThreadBlock(header.meta_header.block_header, sizeof(header));
-    }
-    return FileTransformer::ProcessInitSubresourceCommand(header);
-}
-
-bool FileOptimizer::ProcessExeFileInfoCommand(const format::ExeFileInfoBlock& header)
-{
-    if (removed_threads_ids_.find(header.thread_id) != removed_threads_ids_.end())
-    {
-        return RemoveThreadBlock(header.meta_header.block_header, sizeof(header));
-    }
-    return FileTransformer::ProcessExeFileInfoCommand(header);
-}
-
-bool FileOptimizer::ProcessInitDx12AccelerationStructureCommand(
-    const format::InitDx12AccelerationStructureCommandHeader& header)
-{
-    if (removed_threads_ids_.find(header.thread_id) != removed_threads_ids_.end())
-    {
-        return RemoveThreadBlock(header.meta_header.block_header, sizeof(header));
-    }
-    return FileTransformer::ProcessInitDx12AccelerationStructureCommand(header);
-}
-
-bool FileOptimizer::ProcessGetDx12AccelerationStructureSizeCommand(
-    const format::arm::GetDx12AccelerationStructureSizeCommandHeader& header)
-{
-    if (removed_threads_ids_.find(header.thread_id) != removed_threads_ids_.end())
-    {
-        return RemoveThreadBlock(header.meta_header.block_header, sizeof(header));
-    }
-    return FileTransformer::ProcessGetDx12AccelerationStructureSizeCommand(header);
-}
-
-bool FileOptimizer::ProcessFillMemoryResourceValueCommand(const format::FillMemoryResourceValueCommandHeader& header)
-{
-    if (removed_threads_ids_.find(header.thread_id) != removed_threads_ids_.end())
-    {
-        return RemoveThreadBlock(header.meta_header.block_header, sizeof(header));
-    }
-    return FileTransformer::ProcessFillMemoryResourceValueCommand(header);
-}
-
-bool FileOptimizer::ProcessDxgiAdapterInfoCommand(const format::DxgiAdapterInfoCommandHeader& header)
-{
-    if (removed_threads_ids_.find(header.thread_id) != removed_threads_ids_.end())
-    {
-        return RemoveThreadBlock(header.meta_header.block_header, sizeof(header));
-    }
-    return FileTransformer::ProcessDxgiAdapterInfoCommand(header);
-}
-
-bool FileOptimizer::ProcessDriverInfoCommand(const format::DriverInfoBlock& header)
-{
-    if (removed_threads_ids_.find(header.thread_id) != removed_threads_ids_.end())
-    {
-        return RemoveThreadBlock(header.meta_header.block_header, sizeof(header));
-    }
-    return FileTransformer::ProcessDriverInfoCommand(header);
-}
-
-bool FileOptimizer::ProcessCreateHardwareBufferCommand(const format::CreateHardwareBufferCommandHeader& header)
-{
-    if (removed_threads_ids_.find(header.thread_id) != removed_threads_ids_.end())
-    {
-        return RemoveThreadBlock(header.meta_header.block_header, sizeof(header));
-    }
-    return FileTransformer::ProcessCreateHardwareBufferCommand(header);
-}
-
-bool FileOptimizer::ProcessDx12RuntimeInfoCommand(const format::Dx12RuntimeInfoCommandHeader& header)
-{
-    if (removed_threads_ids_.find(header.thread_id) != removed_threads_ids_.end())
-    {
-        return RemoveThreadBlock(header.meta_header.block_header, sizeof(header));
-    }
-    return FileTransformer::ProcessDx12RuntimeInfoCommand(header);
-}
-
-bool FileOptimizer::ProcessParentToChildDependency(const format::ParentToChildDependencyHeader& header)
-{
-    if (removed_threads_ids_.find(header.thread_id) != removed_threads_ids_.end())
-    {
-        return RemoveThreadBlock(header.meta_header.block_header, sizeof(header));
-    }
-    return FileTransformer::ProcessParentToChildDependency(header);
-}
-
-bool FileOptimizer::ProcessSetEnvironmentVariablesCommand(const format::SetEnvironmentVariablesCommand& header)
-{
-    if (removed_threads_ids_.find(header.thread_id) != removed_threads_ids_.end())
-    {
-        return RemoveThreadBlock(header.meta_header.block_header, sizeof(header));
-    }
-    return FileTransformer::ProcessSetEnvironmentVariablesCommand(header);
-}
-
-bool FileOptimizer::ProcessExecuteBlocksFromFile(const format::ExecuteBlocksFromFile& header)
-{
-    if (removed_threads_ids_.find(header.thread_id) != removed_threads_ids_.end())
-    {
-        return RemoveThreadBlock(header.meta_header.block_header, sizeof(header));
-    }
-    return FileTransformer::ProcessExecuteBlocksFromFile(header);
-}
-
-bool FileOptimizer::RemoveThreadBlock(const format::BlockHeader& header, size_t size_read)
-{
-    const uint64_t unread_bytes = header.size - (size_read - sizeof(header));
-
-    if (!SkipBytes(unread_bytes))
-    {
-        HandleBlockReadError(kErrorSeekingFile, "Failed to skip thread-removed block");
-        return false;
+        return kSuccess;
     }
 
-    return true;
-}
-
-bool FileOptimizer::ProcessInitTensorCommand(const format::InitTensorCommandHeader& header)
-{
     // If the tensor is in the unused list, omit its initialization data from the file.
-    if (unreferenced_ids_.find(header.tensor_id) != unreferenced_ids_.end())
+    if (unreferenced_ids_.find(args.tensor_id) != unreferenced_ids_.end())
     {
         // In its place insert a dummy annotation meta command. This should keep the block index when
         // replaying an optimized trimmed capture in in alignment with the block index calculated
         // at capture time
         const char*              label        = format::kAnnotationLabelRemovedResource;
-        const std::string        data         = "Removed tensor " + std::to_string(header.tensor_id);
+        const std::string        data         = "Removed tensor " + std::to_string(args.tensor_id);
         const size_t             label_length = util::platform::StringLength(label);
         const size_t             data_length  = data.length();
         format::AnnotationHeader annotation;
@@ -473,37 +203,43 @@ bool FileOptimizer::ProcessInitTensorCommand(const format::InitTensorCommandHead
         if (!WriteBytes(&annotation, sizeof(annotation)) || !WriteBytes(label, label_length) ||
             !WriteBytes(data.c_str(), data_length))
         {
-            HandleBlockWriteError(kErrorReadingBlockHeader, "Failed to write annotation meta-data block");
-            return false;
+            HandleBlockWriteError(decode::kErrorReadingBlockHeader, "Failed to write annotation meta-data block");
+            return kError;
         }
-        // Total number of bytes remaining to be read for the current block.
-        const uint64_t unread_bytes =
-            header.meta_header.block_header.size - (sizeof(header) - sizeof(header.meta_header.block_header));
-        if (!SkipBytes(unread_bytes))
-        {
-            HandleBlockReadError(kErrorSeekingFile, "Failed to skip init bimage data meta-data block data");
-            return false;
-        }
+
+        return kSuccess;
     }
-    else if (removed_threads_ids_.find(header.thread_id) != removed_threads_ids_.end())
-    {
-        return RemoveThreadBlock(header.meta_header.block_header, sizeof(header));
-    }
-    else
-    {
-        return FileTransformer::ProcessInitTensorCommand(header);
-    }
-    return true;
+
+    return kNeedsPassthrough;
 }
 
-bool FileOptimizer::ProcessFillMemoryResourceAddressCommand(
-    const format::FillMemoryResourceAddressCommandHeader& header)
+bool FileOptimizer::FilterFunctionCall(const decode::FunctionCallArgs& args)
 {
-    if (removed_threads_ids_.find(header.thread_id) != removed_threads_ids_.end())
+    return removed_threads_ids_.contains(args.call_info.thread_id);
+}
+
+bool FileOptimizer::FilterMethodCall(const decode::MethodCallArgs& args)
+{
+    if (removed_threads_ids_.contains(args.call_info.thread_id))
     {
-        return RemoveThreadBlock(header.meta_header.block_header, sizeof(header));
+        return true;
     }
-    return FileTransformer::ProcessFillMemoryResourceAddressCommand(header);
+
+    const format::ApiCallId api_call_id = args.call_id;
+    const uint64_t          block_index = args.call_info.index;
+    bool                    filter_out  = false;
+
+    // Only a subset of blocks can be filtered out...
+    if (api_call_id == format::ApiCallId::ApiCall_ID3D12Device_CreateGraphicsPipelineState ||
+        api_call_id == format::ApiCallId::ApiCall_ID3D12Device_CreateComputePipelineState ||
+        api_call_id == format::ApiCallId::ApiCall_ID3D12PipelineLibrary_StorePipeline)
+    {
+
+        // If the buffer is in the unused list, omit the call block from the file.
+        // NOTE: Erase returns number of items erased, so only > 0 if the block_index is found
+        filter_out = (unreferenced_blocks_.erase(block_index) > 0);
+    }
+    return filter_out;
 }
 
 GFXRECON_END_NAMESPACE(gfxrecon)

@@ -384,8 +384,8 @@ class Dx12RayTracingModifier : public util::Dx12ModifierBase
                                                const uint8_t*                              data) override;
 
     virtual void
-    ProcessFillMemoryResourceAddressCommand(const format::FillMemoryResourceAddressCommandHeader& command_header,
-                                            const uint8_t*                                        data) override;
+    ProcessFillMemoryResourceAddressCommand(const format::arm::FillMemoryResourceAddressCommandHeader& command_header,
+                                            const uint8_t*                                             data) override;
 
     virtual void
     ProcessFillMemoryCommand(uint64_t memory_id, uint64_t offset, uint64_t size, const uint8_t* data) override;

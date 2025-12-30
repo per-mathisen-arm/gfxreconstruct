@@ -113,8 +113,8 @@ class Dx12ObjectScanningConsumer : public Dx12ObjectScanningConsumerBase
                                           const uint8_t*                                      data);
 
     virtual void
-    ProcessFillMemoryResourceAddressCommand(const format::FillMemoryResourceAddressCommandHeader& command_header,
-                                            const uint8_t*                                        data);
+    ProcessFillMemoryResourceAddressCommand(const format::arm::FillMemoryResourceAddressCommandHeader& command_header,
+                                            const uint8_t*                                             data);
 
     virtual void ProcessInitDx12AccelerationStructureCommand(
         const format::InitDx12AccelerationStructureCommandHeader&             command_header,

@@ -156,7 +156,7 @@ void Dx12ObjectScanningConsumer::ProcessFillMemoryResourceValueCommand(
 }
 
 void Dx12ObjectScanningConsumer::ProcessFillMemoryResourceAddressCommand(
-    const format::FillMemoryResourceAddressCommandHeader& command_header, const uint8_t* data)
+    const format::arm::FillMemoryResourceAddressCommandHeader& command_header, const uint8_t* data)
 {
     opt_fillmem_ = true;
 }

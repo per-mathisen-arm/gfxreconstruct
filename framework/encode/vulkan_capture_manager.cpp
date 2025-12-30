@@ -1244,11 +1244,11 @@ VkResult VulkanCaptureManager::OverrideCreateMicromapEXT(VkDevice               
                                                          const VkAllocationCallbacks*   pAllocator,
                                                          VkMicromapEXT*                 pMicromap)
 {
-    auto                           handle_unwrap_memory  = VulkanCaptureManager::Get()->GetHandleUnwrapMemory();
-    auto                           device_wrapper        = GetWrapper<DeviceWrapper>(device);
-    VkDevice                       device_unwrapped      = device_wrapper->handle;
-    const graphics::VulkanDeviceTable* device_table          = GetDeviceTable(device);
-    const VkMicromapCreateInfoEXT* pCreateInfo_unwrapped = UnwrapStructPtrHandles(pCreateInfo, handle_unwrap_memory);
+    auto                               handle_unwrap_memory = VulkanCaptureManager::Get()->GetHandleUnwrapMemory();
+    auto                               device_wrapper       = GetWrapper<DeviceWrapper>(device);
+    VkDevice                           device_unwrapped     = device_wrapper->handle;
+    const graphics::VulkanDeviceTable* device_table         = GetDeviceTable(device);
+    const VkMicromapCreateInfoEXT* pCreateInfo_unwrapped    = UnwrapStructPtrHandles(pCreateInfo, handle_unwrap_memory);
 
     VkResult result;
     if (device_wrapper->property_feature_info.feature_micromapCaptureReplay)

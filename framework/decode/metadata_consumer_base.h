@@ -27,6 +27,7 @@
 
 #include "util/defines.h"
 #include "format/format.h"
+#include "format/format_arm.h"
 #include "generated/generated_vulkan_struct_decoders.h"
 
 #include "decode/struct_pointer_decoder.h"
@@ -150,8 +151,8 @@ class MetadataConsumerBase
     {}
 
     virtual void
-    ProcessFillMemoryResourceAddressCommand(const format::FillMemoryResourceAddressCommandHeader& command_header,
-                                            const uint8_t*                                        data)
+    ProcessFillMemoryResourceAddressCommand(const format::arm::FillMemoryResourceAddressCommandHeader& command_header,
+                                            const uint8_t*                                             data)
     {}
 
     virtual void ProcessViewRelativeLocation(format::ThreadId                    thread_id,

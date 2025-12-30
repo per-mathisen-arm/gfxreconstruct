@@ -27,6 +27,7 @@
 #include "decode/dx12_object_info.h"
 #include "decode/handle_pointer_decoder.h"
 #include "decode/struct_pointer_decoder.h"
+#include "format/format_arm.h"
 #include "graphics/dx12_gpu_va_map.h"
 #include "util/defines.h"
 
@@ -48,7 +49,7 @@ struct Dx12FillCommandResourceValue
 #pragma pack(pop)
 typedef std::map<Dx12FillCommandBlockIndex, std::vector<Dx12FillCommandResourceValue>> Dx12FillCommandResourceValueMap;
 
-typedef format::Dx12FillMemoryResourceAddressInfo Dx12FillCommandResourceAddress;
+typedef format::arm::Dx12FillMemoryResourceAddressInfo Dx12FillCommandResourceAddress;
 typedef std::map<Dx12FillCommandBlockIndex, std::vector<Dx12FillCommandResourceAddress>>
     Dx12FillCommandResourceAddressMap;
 

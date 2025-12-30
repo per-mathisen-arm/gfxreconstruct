@@ -25,6 +25,7 @@
 #define GFXRECON_DX12_FILE_OPTIMIZER_ARM_H
 
 #include "decode/dx12_object_scanning_consumer.h"
+#include "decode/file_processor.h"
 #include "generated/generated_dx12_decoder.h"
 #include "util/dx12_modifier_base.h"
 #include "file_optimizer.h"
@@ -51,22 +52,121 @@ class Dx12FileOptimizerARM : public FileOptimizer
     void SetUnreferencedDeviceBlocks(const std::unordered_set<uint64_t>& unreferenced_device_blocks);
 
   private:
-    virtual bool ProcessFunctionCall(const format::FunctionCallHeader& header) override;
-    virtual bool ProcessMethodCall(const format::MethodCallHeader& header, uint64_t block_index = 0) override;
-    virtual bool ProcessMarker(const format::Marker& marker) override;
+    bool ProcessFunctionCall(decode::ParsedBlock& parsed_block) override;
+    bool ProcessMethodCall(decode::ParsedBlock& parsed_block) override;
+    bool ProcessFrameEndMarker(decode::ParsedBlock& parsed_block) override;
 
-    virtual bool ProcessFillMemoryCommand(const format::FillMemoryCommandHeader& header) override;
-    virtual bool ProcessInitSubresourceCommand(const format::InitSubresourceCommandHeader& header) override;
-    virtual bool ProcessInitDx12AccelerationStructureCommand(
-        const format::InitDx12AccelerationStructureCommandHeader& header) override;
-    virtual bool ProcessGetDx12AccelerationStructureSizeCommand(
-        const format::arm::GetDx12AccelerationStructureSizeCommandHeader& header) override;
-    virtual bool
-    ProcessFillMemoryResourceValueCommand(const format::FillMemoryResourceValueCommandHeader& header) override;
-    virtual bool
-    ProcessFillMemoryResourceAddressCommand(const format::FillMemoryResourceAddressCommandHeader& header) override;
-    bool ProcessUnreferencedDeviceFunction(const format::FunctionCallHeader& header, uint64_t block_index);
-    bool ProcessUnreferencedDeviceMethod(const format::MethodCallHeader& header, uint64_t block_index);
+    template <typename Args>
+    bool ModifierDispatch(const Args& args, decode::ParsedBlock& parsed_block, encode::ParameterBuffer& buffer)
+    {
+        constexpr auto decode_method = decode::DispatchTraits<Args>::kDecoderMethod;
+        if (decode::DecoderSupportsDispatch(decoder_, args))
+        {
+            [[maybe_unused]] decode::DecoderAllocGuard<decode::DispatchTraits<Args>::kHasAllocGuard> alloc_guard{};
+            decode::SetDecoderApiCallId(decoder_, args);
+            auto dispatch_call = [this, decode_method](auto&&... expanded_args) {
+                (decoder_.*decode_method)(std::forward<decltype(expanded_args)>(expanded_args)...);
+            };
+
+            // Each modifier will get access to parameter buffer to read and modify
+            // The same parameter buffer will be passed to next modifier in chain
+            bool delete_current_call = false;
+
+            // These vectors own new call data to be inserted before/after currently processed call
+            std::vector<std::unique_ptr<util::CallModifierBase::NewCallData>> new_pre_calls;
+            std::vector<std::unique_ptr<util::CallModifierBase::NewCallData>> new_post_calls;
+
+            for (auto& modifier : optimization_data_->modifiers)
+            {
+                modifier->SetCurrentBlockIndex(GetCurrentBlockIndex());
+                modifier->SetParameterBuffer(&buffer);
+                decoder_.AddConsumer(modifier.get());
+                std::apply(dispatch_call, args.GetTuple());
+                decoder_.RemoveConsumer(modifier.get());
+                delete_current_call |= modifier->GetDeleteCurrentCall();
+                modifier->AppendPreCalls(new_pre_calls);
+                modifier->AppendPostCalls(new_post_calls);
+            }
+
+            for (auto& new_call : new_pre_calls)
+            {
+                switch (new_call->type)
+                {
+                    case util::CallModifierBase::NewCallDataType::ApiCall:
+                        WriteMethodCall(
+                            new_call->call_id, new_call->object_id, new_call->thread_id, &(new_call->parameter_buffer));
+                        break;
+                    case util::CallModifierBase::NewCallDataType::MetaDataCall:
+                        WriteMetaCommand(&(new_call->parameter_buffer));
+                        break;
+                    default:
+                        GFXRECON_LOG_ERROR("Unrecognized PreCall NewCallDataType %d", new_call->type);
+                        exit(EXIT_FAILURE);
+                }
+            }
+
+            if (!delete_current_call)
+            {
+                if constexpr (std::is_same_v<Args, decode::MethodCallArgs>)
+                {
+                    WriteMethodCall(args.call_id, args.object_id, args.call_info.thread_id, &buffer);
+                }
+                else if constexpr (std::is_same_v<Args, decode::FrameEndMarkerArgs>)
+                {
+                    format::Marker marker;
+                    marker.header.size  = sizeof(format::Marker) - sizeof(format::BlockHeader);
+                    marker.header.type  = format::kFrameMarkerBlock;
+                    marker.marker_type  = format::kEndMarker;
+                    marker.frame_number = args.frame_number - frames_removed_;
+                    if (!WriteBytes(&marker, sizeof(marker)))
+                    {
+                        HandleBlockWriteError(decode::kErrorWritingBlockData, "Failed to write frame marker data");
+                        return false;
+                    }
+                }
+                else
+                {
+                    if (!FileTransformer::WriteBytes(parsed_block))
+                    {
+                        return false;
+                    }
+                }
+            }
+            else
+            {
+                if constexpr (std::is_same_v<Args, decode::FrameEndMarkerArgs>)
+                {
+                    ++frames_removed_;
+                }
+            }
+
+            for (auto& new_call : new_post_calls)
+            {
+                switch (new_call->type)
+                {
+                    case util::CallModifierBase::NewCallDataType::ApiCall:
+                        WriteMethodCall(
+                            new_call->call_id, new_call->object_id, new_call->thread_id, &(new_call->parameter_buffer));
+                        break;
+                    case util::CallModifierBase::NewCallDataType::MetaDataCall:
+                        WriteMetaCommand(&(new_call->parameter_buffer));
+                        break;
+                    default:
+                        GFXRECON_LOG_ERROR("Unrecognized PostCall NewCallDataType %d", new_call->type);
+                        exit(EXIT_FAILURE);
+                }
+            }
+        }
+
+        return true;
+    }
+
+    bool ModifierDispatch(const decode::AnnotationArgs& args,
+                          decode::ParsedBlock&          parsed_block,
+                          encode::ParameterBuffer&      buffer)
+    {
+        return FileOptimizer::ProcessMetaData(parsed_block);
+    }
 
     void WriteMethodCall(format::ApiCallId               call_id,
                          format::HandleId                call_object_id,
@@ -76,8 +176,8 @@ class Dx12FileOptimizerARM : public FileOptimizer
     void WriteMetaCommand(const util::MemoryOutputStream* parameter_buffer);
 
     Dx12OptimizationData* optimization_data_;
-    decode::Dx12Decoder   decoder;
-    uint64_t              frames_removed = 0;
+    decode::Dx12Decoder   decoder_;
+    uint64_t              frames_removed_ = 0;
 
   protected:
     std::unordered_set<uint64_t> unreferenced_device_blocks_;

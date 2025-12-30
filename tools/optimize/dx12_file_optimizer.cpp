@@ -126,15 +126,19 @@ bool Dx12FileOptimizer::AddFillMemoryResourceValueCommand()
     return success;
 }
 
-bool Dx12FileOptimizer::ProcessMetaData(const format::MetaDataHeader& meta_header)
+template <typename Args>
+decode::FileTransformer::VisitResult Dx12FileOptimizer::VisitMetaData([[maybe_unused]] const Args& args)
 {
-    auto meta_data_id = format::arm::MetaDataType::GetVersionedMetaDataId(file_header_, meta_header.meta_data_id);
-    format::MetaDataType meta_data_type = format::GetMetaDataType(meta_data_id);
-
+    constexpr bool kIsFillMemoryCommand      = std::is_same_v<decode::FillMemoryArgs, Args>;
+    constexpr bool kIsInitSubresourceCommand = std::is_same_v<decode::InitSubresourceArgs, Args>;
     // If needed, add a FillMemoryResourceValueCommand before the fill memory command.
-    if ((meta_data_type == format::MetaDataType::kFillMemoryCommand) ||
-        (meta_data_type == format::MetaDataType::kInitSubresourceCommand))
+    if constexpr (kIsFillMemoryCommand || kIsInitSubresourceCommand)
     {
+        GFXRECON_ASSERT(!kIsFillMemoryCommand ||
+                        (format::MetaDataType::kFillMemoryCommand == format::GetMetaDataType(args.meta_data_id)));
+        GFXRECON_ASSERT(!kIsInitSubresourceCommand ||
+                        (format::MetaDataType::kInitSubresourceCommand == format::GetMetaDataType(args.meta_data_id)));
+
         if ((fill_command_resource_values_ != nullptr) && (!fill_command_resource_values_->empty()))
         {
             if ((resource_values_iter_ != fill_command_resource_values_->end()) &&
@@ -168,7 +172,21 @@ bool Dx12FileOptimizer::ProcessMetaData(const format::MetaDataHeader& meta_heade
         }
     }
 
-    return FileOptimizer::ProcessMetaData(meta_header);
+    // Always passthrough, even on failure.
+    return kNeedsPassthrough;
+}
+
+bool Dx12FileOptimizer::ProcessMetaData(decode::ParsedBlock& parsed_block)
+{
+    auto        meta_visitor = [this](const auto& store) { return VisitMetaData(*store); };
+    VisitResult result       = std::visit(meta_visitor, parsed_block.GetArgs());
+
+    if (result == kNeedsPassthrough)
+    {
+        return FileOptimizer::ProcessMetaData(parsed_block);
+    }
+
+    return result == kSuccess;
 }
 
 GFXRECON_END_NAMESPACE(gfxrecon)

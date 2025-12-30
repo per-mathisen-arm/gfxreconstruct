@@ -31,15 +31,15 @@ class AnnotationEditor : public decode::FileTransformer
 {
   public:
     AnnotationEditor() = default;
-    virtual bool Process();
-    void         SetAnnotation(format::AnnotationType type, std::string label, std::string data);
+
+    bool Process() override;
+
+    void SetAnnotation(format::AnnotationType type, const std::string& label, const std::string& data);
 
   protected:
-    virtual bool ProcessAnnotation(const format::AnnotationHeader& header,
-                                   const std::string&              label,
-                                   const std::string&              data) override;
+    bool ProcessAnnotation(decode::ParsedBlock& parsed_block) override;
 
-    virtual bool WriteAnnotation(format::AnnotationType annotation_type, std::string label, std::string data);
+    bool WriteAnnotation(format::AnnotationType type, const std::string& label, const std::string& data);
 
   private:
     std::unordered_map<std::string, std::pair<format::AnnotationType, std::string>> annotations_to_set_;

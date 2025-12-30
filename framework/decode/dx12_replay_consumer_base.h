@@ -128,8 +128,8 @@ class Dx12ReplayConsumerBase : public Dx12Consumer
                                               const uint8_t*                       parameters_data) override;
 
     virtual void
-    ProcessFillMemoryResourceAddressCommand(const format::FillMemoryResourceAddressCommandHeader& command_header,
-                                            const uint8_t*                                        data) override;
+    ProcessFillMemoryResourceAddressCommand(const format::arm::FillMemoryResourceAddressCommandHeader& command_header,
+                                            const uint8_t*                                             data) override;
 
     virtual void Process_ID3D12Device_CheckFeatureSupport(format::HandleId object_id,
                                                           HRESULT          original_result,

@@ -143,7 +143,7 @@ class FileProcessor
 
     uint64_t GetNumBytesRead() const { return bytes_read_; }
 
-    BlockReadError GetErrorState() const { return error_state_; }
+    BlockIOError GetErrorState() const { return error_state_; }
 
     bool EntireFileWasProcessed() const
     {
@@ -171,7 +171,7 @@ class FileProcessor
     bool IsFrameDelimiter(format::BlockType block_type, format::MarkerType marker_type) const;
     bool IsFrameDelimiter(format::ApiCallId call_id) const;
 
-    void HandleBlockReadError(BlockReadError error_code, const char* error_message);
+    void HandleBlockReadError(BlockIOError error_code, const char* error_message);
 
     bool ProcessExecuteBlocksFromFile(const ExecuteBlocksFromFileArgs& execute_blocks_info);
     void ProcessStateBeginMarker(const StateBeginMarkerArgs& state_begin);
@@ -210,14 +210,14 @@ class FileProcessor
     uint64_t                 current_frame_number_;
     std::vector<ApiDecoder*> decoders_;
     AnnotationHandler*       annotation_handler_;
-    BlockReadError           error_state_;
+    BlockIOError             error_state_;
     uint64_t                 bytes_read_;
 
     /// @brief Incremented at the end of every block successfully processed.
     uint64_t block_index_;
 
   protected:
-    BlockReadError CheckFileStatus() const
+    BlockIOError CheckFileStatus() const
     {
         if (file_stack_.empty())
         {
@@ -430,9 +430,9 @@ class FileProcessor
     std::string absolute_path_;
 
   protected:
-    BufferPool         pool_;
-    util::Compressor*  compressor_;
-    format::FileHeader file_header_;
+    BufferPool                        pool_;
+    std::unique_ptr<util::Compressor> compressor_;
+    format::FileHeader                file_header_;
 
     struct ActiveFileContext
     {

@@ -254,8 +254,8 @@ class Dx12DecoderBase : public ApiDecoder
                                                const uint8_t* initialization_parameters_data) override;
 
     virtual void
-    DispatchFillMemoryResourceAddressCommand(const format::FillMemoryResourceAddressCommandHeader& command_header,
-                                             const uint8_t*                                        data) override;
+    DispatchFillMemoryResourceAddressCommand(const format::arm::FillMemoryResourceAddressCommandHeader& command_header,
+                                             const uint8_t*                                             data) override;
 
   protected:
     const std::vector<Dx12Consumer*>& GetConsumers() const { return consumers_; }

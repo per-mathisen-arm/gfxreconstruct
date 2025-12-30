@@ -98,6 +98,28 @@ struct GetDx12AccelerationStructureSizeCommandHeader
     // data() { D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUT }
 };
 
+struct FillMemoryResourceAddressCommandHeader
+{
+    MetaDataHeader   meta_header;
+    format::ThreadId thread_id;
+    uint64_t         resource_address_count;
+};
+
+struct Dx12FillMemoryResourceAddressInfo
+{
+    uint64_t          offset;
+    ResourceValueType type;
+
+    // The relevant resource, descriptor, or state object properties.
+    format::HandleId object_id;
+    // Base GPU VA or GPU Descriptor start address.
+    uint64_t start_value;
+    // GPU VA or GPU Descriptor found in memory.
+    uint64_t adjusted_value;
+    // Shader identifier found in memory.
+    uint8_t shader_id[kMaxShaderGroupHandleSize];
+};
+
 // Restore size_t to normal behavior.
 #undef size_t
 
