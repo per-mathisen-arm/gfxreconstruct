@@ -131,6 +131,13 @@ class VulkanRayTracingModifier : public util::VulkanModifierBase
                                              uint32_t                                              bindInfoCount,
                                              StructPointerDecoder<Decoded_VkBindBufferMemoryInfo>* pBindInfos) override;
 
+    virtual void
+    Process_vkBindBufferMemory2KHR(const ApiCallInfo&                                    call_info,
+                                   VkResult                                              returnValue,
+                                   format::HandleId                                      device,
+                                   uint32_t                                              bindInfoCount,
+                                   StructPointerDecoder<Decoded_VkBindBufferMemoryInfo>* pBindInfos) override;
+
     virtual void Process_vkBindImageMemory2(const ApiCallInfo&                                   call_info,
                                             VkResult                                             returnValue,
                                             format::HandleId                                     device,
@@ -342,6 +349,8 @@ class VulkanRayTracingModifier : public util::VulkanModifierBase
         uint64_t            creation_index;
         uint64_t            destruction_index;
         VkDeviceAddress     device_address{ 0 };
+        format::HandleId    memory_handle_id{ 0 };
+        VkDeviceSize        memory_offset{ 0 };
     };
 
     struct MemoryBindingRecord

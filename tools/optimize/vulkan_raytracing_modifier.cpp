@@ -691,6 +691,12 @@ void VulkanRayTracingModifier::Process_vkBindBufferMemory(const ApiCallInfo& cal
     {
         memory_binding_entries_[memory].memory_binding_records_.push_back({ buffer, true, memory_offset });
     }
+
+    auto buffer_entry = buffer_entries_.find(buffer);
+    GFXRECON_ASSERT(buffer_entry != buffer_entries_.end());
+    GFXRECON_ASSERT(buffer_entry->second.memory_handle_id == 0);
+    buffer_entry->second.memory_handle_id = memory;
+    buffer_entry->second.memory_offset    = memory_offset;
 }
 
 void VulkanRayTracingModifier::Process_vkBindImageMemory(const ApiCallInfo& call_info,
@@ -733,7 +739,23 @@ void VulkanRayTracingModifier::Process_vkBindBufferMemory2(
             memory_binding_entries_[bind_meta_infos[i].memory].memory_binding_records_.push_back(
                 { bind_meta_infos[i].buffer, true, bind_infos[i].memoryOffset });
         }
+
+        auto buffer_entry = buffer_entries_.find(bind_meta_infos[i].buffer);
+        GFXRECON_ASSERT(buffer_entry != buffer_entries_.end());
+        GFXRECON_ASSERT(buffer_entry->second.memory_handle_id == 0);
+        buffer_entry->second.memory_handle_id = bind_meta_infos[i].memory;
+        buffer_entry->second.memory_offset    = bind_infos[i].memoryOffset;
     }
+}
+
+void VulkanRayTracingModifier::Process_vkBindBufferMemory2KHR(
+    const ApiCallInfo&                                    call_info,
+    VkResult                                              returnValue,
+    format::HandleId                                      device,
+    uint32_t                                              bindInfoCount,
+    StructPointerDecoder<Decoded_VkBindBufferMemoryInfo>* pBindInfos)
+{
+    Process_vkBindBufferMemory2(call_info, returnValue, device, bindInfoCount, pBindInfos);
 }
 
 void VulkanRayTracingModifier::Process_vkBindImageMemory2(
@@ -820,6 +842,18 @@ void VulkanRayTracingModifier::Process_vkCreateAccelerationStructureKHR(
         if (created_object.device_address != info_donor_candidate.device_address)
         {
             continue;
+        }
+
+        if ((created_object.device_address == 0) || (info_donor_candidate.device_address == 0))
+        {
+            auto& buffer_entry_current = buffer_entries_.find(created_object.buf_handle)->second;
+            auto& buffer_entry_donor   = buffer_entries_.find(info_donor_candidate.buf_handle)->second;
+
+            if (!((buffer_entry_current.memory_handle_id == buffer_entry_donor.memory_handle_id) &&
+                  (buffer_entry_current.memory_offset == buffer_entry_donor.memory_offset)))
+            {
+                continue;
+            }
         }
 
         if (created_object.type != info_donor_candidate.type)
