@@ -42,46 +42,52 @@ bool AnnotationEditor::Process()
     return success;
 }
 
-void AnnotationEditor::SetAnnotation(format::AnnotationType type, std::string label, std::string data)
+void AnnotationEditor::SetAnnotation(format::AnnotationType type, const std::string& label, const std::string& data)
 {
     annotations_to_set_[label] = { type, data };
 }
 
-bool AnnotationEditor::ProcessAnnotation(const format::AnnotationHeader& header,
-                                         const std::string&              label,
-                                         const std::string&              data)
+bool AnnotationEditor::ProcessAnnotation(decode::ParsedBlock& parsed_block)
 {
+    const auto& args                    = parsed_block.Get<decode::AnnotationArgs>();
     bool        success                 = true;
-    const auto& annotation_modification = annotations_to_set_.find(label);
+    const auto& annotation_modification = annotations_to_set_.find(args.label);
 
     if (annotation_modification != annotations_to_set_.end())
     {
         // remove annotation if data is empty
-        if (!data.empty())
+        if (!args.annotation_data.empty())
         {
             // replace existing annotation data
-            success = FileTransformer::ProcessAnnotation(header, label, annotation_modification->second.second);
+            success = WriteAnnotation(args.type, args.label, annotation_modification->second.second);
         }
         annotations_to_set_.erase(annotation_modification);
     }
     else
     {
-        // keep exsiting annotation
-        success = FileTransformer::ProcessAnnotation(header, label, data);
+        // keep existing annotation
+        success = FileTransformer::ProcessAnnotation(parsed_block);
     }
     return success;
 }
 
-bool AnnotationEditor::WriteAnnotation(format::AnnotationType annotation_type, std::string label, std::string data)
+bool AnnotationEditor::WriteAnnotation(format::AnnotationType type, const std::string& label, const std::string& data)
 {
-    format::AnnotationHeader header;
-    header.block_header.type = format::BlockType::kAnnotation;
-    header.block_header.size = format::GetAnnotationBlockBaseSize() + label.size() + data.size();
-    header.annotation_type   = annotation_type;
-    header.label_length      = label.size();
-    header.data_length       = data.size();
+    format::AnnotationHeader annotation;
+    annotation.block_header.type = format::BlockType::kAnnotation;
+    annotation.block_header.size = format::GetAnnotationBlockBaseSize() + label.size() + data.size();
+    annotation.annotation_type   = type;
+    annotation.label_length      = label.size();
+    annotation.data_length       = data.size();
 
-    return FileTransformer::ProcessAnnotation(header, label, data);
+    if (!WriteBytes(&annotation, sizeof(annotation)) || !WriteBytes(label.data(), label.size()) ||
+        !WriteBytes(data.data(), data.size()))
+    {
+        HandleBlockWriteError(decode::kErrorWritingBlockData, "Failed to write annotation meta-data block");
+        return false;
+    }
+
+    return true;
 }
 
 GFXRECON_END_NAMESPACE(gfxrecon)

@@ -30,13 +30,11 @@ GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 class ReplayOptionsEditor : public AnnotationEditor
 {
   public:
-    virtual bool Process() override;
-    void         SetReplayOptions(std::string replay_options);
+    bool Process() override;
+    void SetReplayOptions(std::string replay_options);
 
   protected:
-    virtual bool ProcessAnnotation(const format::AnnotationHeader& header,
-                                   const std::string&              label,
-                                   const std::string&              data) override;
+    bool ProcessAnnotation(decode::ParsedBlock& parsed_block) override;
 
   private:
     std::string replay_options_;

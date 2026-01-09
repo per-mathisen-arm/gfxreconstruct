@@ -46,10 +46,11 @@ bool PreloadFileProcessor::PreloadBlocksOneFrame()
     BlockBuffer block_buffer;
     bool        success = true;
 
-    auto err_handler = BlockParser::ErrorHandler{ [this](BlockReadError err, const char* message) {
+    auto err_handler = BlockParser::ErrorHandler{ [this](BlockIOError err, const char* message) {
         HandleBlockReadError(err, message);
     } };
-    BlockParser block_parser(err_handler, pool_, compressor_, file_header_);
+    BlockParser block_parser(err_handler, pool_, compressor_.get(), file_header_);
+
     while (success)
     {
         PrintBlockInfo();

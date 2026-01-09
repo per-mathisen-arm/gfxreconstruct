@@ -347,7 +347,7 @@ void Dx12DecoderBase::DispatchInitializeMetaCommand(const format::InitializeMeta
 }
 
 void Dx12DecoderBase::DispatchFillMemoryResourceAddressCommand(
-    const format::FillMemoryResourceAddressCommandHeader& command_header, const uint8_t* data)
+    const format::arm::FillMemoryResourceAddressCommandHeader& command_header, const uint8_t* data)
 {
     for (auto consumer : consumers_)
     {

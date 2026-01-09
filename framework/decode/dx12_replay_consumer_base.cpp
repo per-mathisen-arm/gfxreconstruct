@@ -751,7 +751,7 @@ void Dx12ReplayConsumerBase::ProcessInitializeMetaCommand(const format::Initiali
 }
 
 void Dx12ReplayConsumerBase::ProcessFillMemoryResourceAddressCommand(
-    const format::FillMemoryResourceAddressCommandHeader& command_header, const uint8_t* data)
+    const format::arm::FillMemoryResourceAddressCommandHeader& command_header, const uint8_t* data)
 {
     // FillMemoryResourceAddressCommands should always be followed by a FillMemoryCommand, and the FillMemoryCommand
     // should use and clear fill_memory_resource_address_info_.

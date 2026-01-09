@@ -220,8 +220,8 @@ class StatDecoderBase : public ApiDecoder
     {}
 
     virtual void
-    DispatchFillMemoryResourceAddressCommand(const format::FillMemoryResourceAddressCommandHeader& command_header,
-                                             const uint8_t*                                        data) override
+    DispatchFillMemoryResourceAddressCommand(const format::arm::FillMemoryResourceAddressCommandHeader& command_header,
+                                             const uint8_t*                                             data) override
     {}
 
   private:

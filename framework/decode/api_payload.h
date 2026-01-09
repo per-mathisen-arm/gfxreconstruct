@@ -91,6 +91,14 @@ template <typename Command>
 struct DispatchHasAllocGuard : std::false_type
 {};
 
+template <typename Command, typename Dummy = void>
+struct DispatchHasThreadId : std::false_type
+{};
+
+template <typename Command>
+struct DispatchHasThreadId<Command, std::void_t<decltype(std::declval<Command>().thread_id)>> : std::true_type
+{};
+
 // ---- Flags base (one place for size and per-command booleans) ----------------
 //
 // The flag traits class is a base class for each of the DispatchTraits specializations
@@ -106,6 +114,7 @@ struct DispatchFlagTraits
     static constexpr bool kHasData          = DispatchHasData<Command>::value;
     static constexpr bool kHasDataSize      = DispatchHasDataSize<Command>::value;
     static constexpr bool kHasCommandHeader = DispatchHasCommandHeader<Command>::value;
+    static constexpr bool kHasThreadId      = DispatchHasThreadId<Command>::value;
 };
 
 // --- Payload structs (argument order preserved) ---
@@ -625,8 +634,8 @@ struct FillMemoryResourceAddressArgs
 
     size_t data_size; // Needed for deferred decompression, but not ApiDecoder
 
-    format::FillMemoryResourceAddressCommandHeader command_header;
-    const uint8_t*                                 data;
+    format::arm::FillMemoryResourceAddressCommandHeader command_header;
+    const uint8_t*                                      data;
 
     auto GetTuple() const { return std::tie(command_header, data); }
 };
@@ -638,7 +647,7 @@ struct AnnotationArgs
 
     // NOTE: The string name is intentionally *not* data to differ from the "data" fields that are uint8_t *
     // parameter data for the next level Decode operations, simplifying DispatchHasData logic
-    std::string            annotation_data;
+    std::string annotation_data;
 
     auto GetTuple() const { return std::tie(block_index, type, label, annotation_data); }
 };

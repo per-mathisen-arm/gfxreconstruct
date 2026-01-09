@@ -28,23 +28,17 @@
 #include "util/logging.h"
 #include "util/platform.h"
 
-#include <cassert>
-
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(decode)
 
 FileTransformer::FileTransformer() :
-    input_file_(nullptr), output_file_(nullptr), bytes_read_(0), bytes_written_(0),
-    error_state_(kErrorInvalidFileDescriptor), loading_state_(false)
+    input_file_(std::make_shared<FileInputStream>()), output_file_(nullptr), bytes_read_(0), bytes_written_(0),
+    error_state_(kErrorInvalidFileDescriptor), loading_state_(false), pool_(util::HeapBufferPool::Create())
 {}
 
 FileTransformer::~FileTransformer()
 {
-    if (input_file_ != nullptr)
-    {
-        fclose(input_file_);
-    }
-
+    // Note: input_file_ is closed by destructor
     if (output_file_ != nullptr)
     {
         fclose(output_file_);
@@ -61,11 +55,12 @@ bool FileTransformer::Initialize(const std::string& input_filename,
 
     bool success = false;
 
-    int32_t result = util::platform::FileOpen(&input_file_, input_filename.c_str(), "rb");
+    GFXRECON_ASSERT(input_file_ != nullptr);
+    bool open_input = input_file_->Open(input_filename.c_str());
 
-    if ((result == 0) && (input_file_ != nullptr))
+    if (open_input && input_file_->IsOpen())
     {
-        result = util::platform::FileOpen(&output_file_, output_filename.c_str(), "wb");
+        int32_t result = util::platform::FileOpen(&output_file_, output_filename.c_str(), "wb");
 
         if ((result == 0) && (output_file_ != nullptr))
         {
@@ -85,21 +80,35 @@ bool FileTransformer::Initialize(const std::string& input_filename,
 
     if (success)
     {
+        // We wait until after "ProcessFileHeader" as that is where compressor_ is initialized
+        auto err_handler = [this](BlockIOError err, const char* message) { HandleBlockReadError(err, message); };
+        block_parser_    = std::make_unique<BlockParser>(
+            BlockParser::ErrorHandler{ err_handler }, pool_, compressor_.get(), file_header_);
+        success = block_parser_ != nullptr;
+        if (success)
+        {
+            block_parser_->SetDecompressionPolicy(BlockParser::kNever);
+        }
+        else
+        {
+            error_state_ = kErrorOpeningFile;
+        }
+    }
+
+    if (success)
+    {
         error_state_ = kErrorNone;
     }
     else
     {
-        if (input_file_ != nullptr)
-        {
-            fclose(input_file_);
-            input_file_ = nullptr;
-        }
+        input_file_->Close();
 
         if (output_file_ != nullptr)
         {
             fclose(output_file_);
             output_file_ = nullptr;
         }
+        block_parser_.reset();
     }
 
     return success;
@@ -143,20 +152,52 @@ bool FileTransformer::Process()
     }
 
     block_index_ = 0;
+    BlockBuffer block_buffer;
+
     while (success)
     {
-        success = ProcessNextBlock();
-        block_index_++;
+        BlockIOError status = block_parser_->ReadBlockBuffer(input_file_, block_buffer);
+        success             = status == kErrorNone;
+        if (success)
+        {
+            // Track bytes read by the parser, since we aren't using ReadBytes here
+            bytes_read_ += block_buffer.Size();
+            block_parser_->SetBlockIndex(block_index_);
+            ParsedBlock parsed_block = block_parser_->ParseBlock(block_buffer);
+
+            // There are four states for a parsed block
+            //    kReady and kDeferredDecompress are "Visitable"
+            //    kUnknown is an unknown block type, passed through
+            //    kInvalid implies !IsValid (and thus !success)
+            success = parsed_block.IsValid();
+            if (success)
+            {
+                if (parsed_block.IsVisitable())
+                {
+                    auto visit_call = [this, &parsed_block](auto&& args) {
+                        return this->ProcessNextBlock(parsed_block, *args);
+                    };
+                    success = std::visit(visit_call, parsed_block.GetArgs());
+                }
+                else
+                {
+                    // Unknown block types are passed through unparsed
+                    GFXRECON_ASSERT(parsed_block.IsUnknown());
+                    success = WriteBytes(parsed_block);
+                }
+                block_index_++;
+            }
+        }
     }
 
     if (!success && (error_state_ == kErrorNone))
     {
         // If a failure occured, but no error code was set, check for a file error.
-        if ((input_file_ == nullptr) || (output_file_ == nullptr))
+        if ((input_file_.get() == nullptr) || !input_file_->IsOpen() || (output_file_ == nullptr))
         {
             error_state_ = kErrorInvalidFileDescriptor;
         }
-        else if (ferror(input_file_))
+        else if (input_file_->IsError())
         {
             error_state_ = kErrorReadingFile;
         }
@@ -230,166 +271,49 @@ bool FileTransformer::ProcessFileHeader()
     return success;
 }
 
-bool FileTransformer::ProcessNextBlock()
+template <typename Args>
+bool FileTransformer::ProcessNextBlock(ParsedBlock& parsed_block, const Args& /* args */)
 {
-    format::BlockHeader block_header;
-    bool                success = true;
+    // Drop the args parameter, as Decompress mutates Args, and we don't want to
+    // confuse maintainers (or the compiler) by passing a const Args& that is modified.
 
-    success = ReadBlockHeader(&block_header);
+    bool success = true;
 
-    if (success)
+    // Dispatch to appropriate processing function based on Args type
+    if constexpr (std::is_same_v<FunctionCallArgs, Args>)
     {
-        if (format::RemoveCompressedBlockBit(block_header.type) == format::BlockType::kFunctionCallBlock)
-        {
-            format::FunctionCallHeader header;
-            header.block_header = block_header;
-
-            success = ReadBytes(&header.api_call_id, sizeof(header.api_call_id));
-            success = success && ReadBytes(&header.thread_id, sizeof(header.thread_id));
-
-            if (success)
-            {
-                success = ProcessFunctionCall(header);
-            }
-            else
-            {
-                HandleBlockReadError(kErrorReadingBlockHeader, "Failed to read function call block header");
-            }
-        }
-        else if (format::RemoveCompressedBlockBit(block_header.type) == format::BlockType::kMetaDataBlock)
-        {
-            format::MetaDataHeader header;
-            header.block_header = block_header;
-
-            success = ReadBytes(&header.meta_data_id, sizeof(header.meta_data_id));
-
-            if (success)
-            {
-                success = ProcessMetaData(header);
-            }
-            else
-            {
-                HandleBlockReadError(kErrorReadingBlockHeader, "Failed to read meta-data block header");
-            }
-        }
-        else if (block_header.type == format::BlockType::kFrameMarkerBlock ||
-                 block_header.type == format::BlockType::kStateMarkerBlock)
-        {
-            format::Marker marker;
-            marker.header = block_header;
-
-            success = ReadBytes(&marker.marker_type, sizeof(marker.marker_type));
-            success = success && ReadBytes(&marker.frame_number, sizeof(marker.frame_number));
-
-            if (success)
-            {
-                success = ProcessMarker(marker);
-            }
-            else
-            {
-                HandleBlockReadError(kErrorReadingBlockHeader, "Failed to read marker block");
-            }
-        }
-        else if (format::RemoveCompressedBlockBit(block_header.type) == format::BlockType::kMethodCallBlock)
-        {
-            format::MethodCallHeader header;
-            header.block_header = block_header;
-
-            success = ReadBytes(&header.api_call_id, sizeof(header.api_call_id));
-            success = success && ReadBytes(&header.object_id, sizeof(header.object_id));
-            success = success && ReadBytes(&header.thread_id, sizeof(header.thread_id));
-
-            if (success)
-            {
-                success = ProcessMethodCall(header, block_index_);
-            }
-            else
-            {
-                HandleBlockReadError(kErrorReadingBlockHeader, "Failed to read method call block header");
-            }
-        }
-        else if (block_header.type == format::BlockType::kAnnotation)
-        {
-            format::AnnotationHeader header;
-            header.block_header = block_header;
-
-            success = ReadBytes(&header.annotation_type, sizeof(header.annotation_type));
-            success = success && ReadBytes(&header.label_length, sizeof(header.label_length));
-            success = success && ReadBytes(&header.data_length, sizeof(header.data_length));
-
-            if (success && ((header.label_length > 0) || (header.data_length > 0)))
-            {
-                std::string label;
-                std::string data;
-                const auto  size_sum = header.label_length + header.data_length;
-                GFXRECON_CHECK_CONVERSION_DATA_LOSS(size_t, size_sum);
-                const size_t total_length = static_cast<size_t>(size_sum);
-
-                success = ReadParameterBuffer(total_length);
-                if (success)
-                {
-                    if (header.label_length > 0)
-                    {
-                        auto label_start = parameter_buffer_.begin();
-                        label.assign(label_start, std::next(label_start, header.label_length));
-                    }
-
-                    if (header.data_length > 0)
-                    {
-                        auto data_start = std::next(parameter_buffer_.begin(), header.label_length);
-                        GFXRECON_CHECK_CONVERSION_DATA_LOSS(size_t, header.data_length);
-                        data.assign(data_start, std::next(data_start, static_cast<size_t>(header.data_length)));
-                    }
-
-                    ProcessAnnotation(header, label, data);
-                }
-            }
-
-            if (!success)
-            {
-                HandleBlockReadError(kErrorReadingBlockData, "Failed to read annotation block");
-            }
-        }
-        else
-        {
-            // Copy the block to the output file.
-            success = WriteBlockHeader(block_header);
-
-            if (success)
-            {
-                success = CopyBytes(block_header.size);
-
-                if (!success)
-                {
-                    GFXRECON_LOG_ERROR("Failed to write block data");
-                    error_state_ = kErrorWritingBlockData;
-                }
-            }
-        }
+        success = ProcessFunctionCall(parsed_block);
+    }
+    else if constexpr (std::is_same_v<MethodCallArgs, Args>)
+    {
+        success = ProcessMethodCall(parsed_block);
+    }
+    else if constexpr (DispatchTraits<Args>::kHasMetaDataId)
+    {
+        success = ProcessMetaData(parsed_block); // MetaData processing will revisit
+    }
+    else if constexpr (std::is_same_v<AnnotationArgs, Args>)
+    {
+        success = ProcessAnnotation(parsed_block);
+    }
+    else if constexpr (std::is_same_v<StateBeginMarkerArgs, Args>)
+    {
+        success = ProcessStateBeginMarker(parsed_block);
+    }
+    else if constexpr (std::is_same_v<StateEndMarkerArgs, Args>)
+    {
+        success = ProcessStateEndMarker(parsed_block);
+    }
+    else if constexpr (std::is_same_v<FrameEndMarkerArgs, Args>)
+    {
+        success = ProcessFrameEndMarker(parsed_block);
     }
     else
     {
-        if (!feof(input_file_))
-        {
-            // If we have not hit a normal EOF condition, report an error reading the block header.
-            GFXRECON_LOG_ERROR("Failed to read block header");
-            error_state_ = kErrorReadingBlockHeader;
-        }
+        // These block types have no transformation interface defined, pass them through directly
+        success = WriteBytes(parsed_block);
     }
-
     return success;
-}
-
-bool FileTransformer::ReadBlockHeader(format::BlockHeader* block_header)
-{
-    assert(block_header != nullptr);
-
-    if (ReadBytes(block_header, sizeof(*block_header)))
-    {
-        return true;
-    }
-
-    return false;
 }
 
 bool FileTransformer::WriteBlockHeader(const format::BlockHeader& block_header)
@@ -403,52 +327,9 @@ bool FileTransformer::WriteBlockHeader(const format::BlockHeader& block_header)
     return true;
 }
 
-bool FileTransformer::ReadParameterBuffer(size_t buffer_size)
-{
-    if (buffer_size > parameter_buffer_.size())
-    {
-        parameter_buffer_.resize(buffer_size);
-    }
-
-    return ReadBytes(parameter_buffer_.data(), buffer_size);
-}
-
-bool FileTransformer::ReadCompressedParameterBuffer(size_t  compressed_buffer_size,
-                                                    size_t  expected_uncompressed_size,
-                                                    size_t* uncompressed_buffer_size)
-{
-    // This should only be null if initialization failed.
-    assert(compressor_ != nullptr);
-
-    if (compressed_buffer_size > compressed_parameter_buffer_.size())
-    {
-        compressed_parameter_buffer_.resize(compressed_buffer_size);
-    }
-
-    if (ReadBytes(compressed_parameter_buffer_.data(), compressed_buffer_size))
-    {
-        if (parameter_buffer_.size() < expected_uncompressed_size)
-        {
-            parameter_buffer_.resize(expected_uncompressed_size);
-        }
-
-        size_t uncompressed_size = compressor_->Decompress(compressed_buffer_size,
-                                                           compressed_parameter_buffer_.data(),
-                                                           expected_uncompressed_size,
-                                                           parameter_buffer_.data());
-        if ((0 < uncompressed_size) && (uncompressed_size == expected_uncompressed_size))
-        {
-            *uncompressed_buffer_size = uncompressed_size;
-            return true;
-        }
-    }
-
-    return false;
-}
-
 bool FileTransformer::ReadBytes(void* buffer, size_t buffer_size)
 {
-    if (util::platform::FileRead(buffer, buffer_size, input_file_))
+    if (input_file_->ReadBytes(buffer, buffer_size))
     {
         bytes_read_ += buffer_size;
         return true;
@@ -466,37 +347,21 @@ bool FileTransformer::WriteBytes(const void* buffer, size_t buffer_size)
     return false;
 }
 
-bool FileTransformer::SkipBytes(uint64_t skip_size)
+bool FileTransformer::WriteBytes(const ParsedBlock& parsed_block)
 {
-    bool success = util::platform::FileSeek(input_file_, skip_size, util::platform::FileSeekCurrent);
-
-    if (success)
+    const util::DataSpan& block_span = parsed_block.GetBlockData();
+    if (!WriteBytes(block_span.data(), block_span.size()))
     {
-        // These technically count as bytes read/processed.
-        bytes_read_ += skip_size;
+        HandleBlockWriteError(kErrorWritingBlockData, "Failed to write passthrough block data");
+        return false;
     }
-
-    return success;
-}
-
-bool FileTransformer::CopyBytes(uint64_t copy_size)
-{
-    GFXRECON_CHECK_CONVERSION_DATA_LOSS(size_t, copy_size);
-    if (ReadParameterBuffer(static_cast<size_t>(copy_size)))
-    {
-        if (WriteBytes(parameter_buffer_.data(), static_cast<size_t>(copy_size)))
-        {
-            return true;
-        }
-    }
-
-    return false;
+    return true;
 }
 
 void FileTransformer::HandleBlockReadError(Error error_code, const char* error_message)
 {
     // Report incomplete block at end of file as a warning, other I/O errors as an error.
-    if (feof(input_file_) && !ferror(input_file_))
+    if (input_file_->IsEof() && !input_file_->IsError())
     {
         GFXRECON_LOG_WARNING("Incomplete block at end of file");
     }
@@ -513,25 +378,13 @@ void FileTransformer::HandleBlockWriteError(Error error_code, const char* error_
     error_state_ = error_code;
 }
 
-void FileTransformer::HandleBlockCopyError(Error error_code, const char* error_message)
-{
-    if (ferror(output_file_))
-    {
-        HandleBlockWriteError(error_code, error_message);
-    }
-    else
-    {
-        HandleBlockReadError(error_code, error_message);
-    }
-}
-
 bool FileTransformer::CreateCompressor(format::CompressionType type, std::unique_ptr<util::Compressor>* compressor)
 {
     assert(compressor != nullptr);
 
     if (type != format::CompressionType::kNone)
     {
-        (*compressor) = std::unique_ptr<util::Compressor>(format::CreateCompressor(type));
+        compressor->reset(format::CreateCompressor(type));
 
         if ((*compressor) == nullptr)
         {
@@ -561,1319 +414,45 @@ bool FileTransformer::WriteFileHeader(const format::FileHeader&                 
     return success;
 }
 
-bool FileTransformer::ProcessFunctionCall(const format::FunctionCallHeader& header)
+// Default Behavior for most blocks is pass-through
+bool FileTransformer::ProcessFunctionCall(ParsedBlock& parsed_block)
 {
-    if (!WriteBytes(&header, sizeof(header)))
-    {
-        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write function call block header");
-        return false;
-    }
-
-    if (!CopyBytes(header.block_header.size + sizeof(header.block_header) - sizeof(header)))
-    {
-        HandleBlockCopyError(kErrorCopyingBlockData, "Failed to copy function call block data");
-        return false;
-    }
-
-    return true;
+    return WriteBytes(parsed_block);
 }
 
-bool FileTransformer::ProcessMethodCall(const format::MethodCallHeader& header, uint64_t block_index)
+bool FileTransformer::ProcessMethodCall(ParsedBlock& parsed_block)
 {
-    if (!WriteBytes(&header, sizeof(header)))
-    {
-        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write method call block header");
-        return false;
-    }
-
-    if (!CopyBytes(header.block_header.size + sizeof(header.block_header) - sizeof(header)))
-    {
-        HandleBlockCopyError(kErrorCopyingBlockData, "Failed to copy method call block data");
-        return false;
-    }
-
-    return true;
+    return WriteBytes(parsed_block);
 }
 
-bool FileTransformer::ProcessMetaData(const format::MetaDataHeader& meta_header)
+// Because of the numerous Args types for MetaDataBlock, any override of ProcessMetaData
+// will need to use the visitor pattern to specialize operations on the kHasMetaDataId
+// Arg type current in the DispatchArgs variant
+bool FileTransformer::ProcessMetaData(ParsedBlock& parsed_block)
 {
-    auto meta_data_id = format::arm::MetaDataType::GetVersionedMetaDataId(file_header_, meta_header.meta_data_id);
-    format::MetaDataType meta_data_type = format::GetMetaDataType(meta_data_id);
-
-    switch (meta_data_type)
-    {
-        case format::MetaDataType::kDisplayMessageCommand:
-        {
-            format::DisplayMessageCommandHeader header;
-            header.meta_header = meta_header;
-
-            bool success = ReadBytes(&header.thread_id, sizeof(header.thread_id));
-
-            if (success)
-            {
-                return ProcessDisplayMessageCommand(header);
-            }
-
-            return false;
-        }
-        case format::MetaDataType::kFillMemoryCommand:
-        {
-            format::FillMemoryCommandHeader header;
-            header.meta_header = meta_header;
-
-            bool success = ReadBytes(&header.thread_id, sizeof(header.thread_id));
-            success      = success && ReadBytes(&header.memory_id, sizeof(header.memory_id));
-            success      = success && ReadBytes(&header.memory_offset, sizeof(header.memory_offset));
-            success      = success && ReadBytes(&header.memory_size, sizeof(header.memory_size));
-
-            if (success)
-            {
-                return ProcessFillMemoryCommand(header);
-            }
-
-            return false;
-        }
-        case format::MetaDataType::kResizeWindowCommand:
-        {
-            format::ResizeWindowCommand header;
-            header.meta_header = meta_header;
-
-            bool success = ReadBytes(&header.thread_id, sizeof(header.thread_id));
-            success      = success && ReadBytes(&header.surface_id, sizeof(header.surface_id));
-            success      = success && ReadBytes(&header.width, sizeof(header.width));
-            success      = success && ReadBytes(&header.height, sizeof(header.height));
-
-            if (success)
-            {
-                return ProcessResizeWindowCommand(header);
-            }
-
-            return false;
-        }
-        case format::MetaDataType::kSetSwapchainImageStateCommand:
-        {
-            format::SetSwapchainImageStateCommandHeader header;
-            header.meta_header = meta_header;
-
-            bool success = ReadBytes(&header.thread_id, sizeof(header.thread_id));
-            success      = success && ReadBytes(&header.device_id, sizeof(header.device_id));
-            success      = success && ReadBytes(&header.swapchain_id, sizeof(header.swapchain_id));
-            success      = success && ReadBytes(&header.last_presented_image, sizeof(header.last_presented_image));
-            success      = success && ReadBytes(&header.image_info_count, sizeof(header.image_info_count));
-
-            if (success)
-            {
-                return ProcessSetSwapchainImageStateCommand(header);
-            }
-
-            return false;
-        }
-        case format::MetaDataType::kBeginResourceInitCommand:
-        {
-            format::BeginResourceInitCommand header;
-            header.meta_header = meta_header;
-
-            bool success = ReadBytes(&header.thread_id, sizeof(header.thread_id));
-            success      = success && ReadBytes(&header.device_id, sizeof(header.device_id));
-            success      = success && ReadBytes(&header.total_copy_size, sizeof(header.total_copy_size));
-            success      = success && ReadBytes(&header.max_copy_size, sizeof(header.max_copy_size));
-
-            if (success)
-            {
-                return ProcessBeginResourceInitCommand(header);
-            }
-
-            return false;
-        }
-        case format::MetaDataType::kEndResourceInitCommand:
-        {
-            format::EndResourceInitCommand header;
-            header.meta_header = meta_header;
-
-            bool success = ReadBytes(&header.thread_id, sizeof(header.thread_id));
-            success      = success && ReadBytes(&header.device_id, sizeof(header.device_id));
-
-            if (success)
-            {
-                return ProcessEndResourceInitCommand(header);
-            }
-
-            return false;
-        }
-        case format::MetaDataType::kInitBufferCommand:
-        {
-            format::InitBufferCommandHeader header;
-            header.meta_header = meta_header;
-
-            bool success = ReadBytes(&header.thread_id, sizeof(header.thread_id));
-            success      = success && ReadBytes(&header.device_id, sizeof(header.device_id));
-            success      = success && ReadBytes(&header.buffer_id, sizeof(header.buffer_id));
-            success      = success && ReadBytes(&header.data_size, sizeof(header.data_size));
-
-            if (success)
-            {
-                return ProcessInitBufferCommand(header);
-            }
-
-            return false;
-        }
-        case format::MetaDataType::kInitImageCommand:
-        {
-            format::InitImageCommandHeader header;
-            header.meta_header = meta_header;
-
-            bool success = ReadBytes(&header.thread_id, sizeof(header.thread_id));
-            success      = success && ReadBytes(&header.device_id, sizeof(header.device_id));
-            success      = success && ReadBytes(&header.image_id, sizeof(header.image_id));
-            success      = success && ReadBytes(&header.data_size, sizeof(header.data_size));
-            success      = success && ReadBytes(&header.aspect, sizeof(header.aspect));
-            success      = success && ReadBytes(&header.layout, sizeof(header.layout));
-            success      = success && ReadBytes(&header.level_count, sizeof(header.level_count));
-
-            if (success)
-            {
-                return ProcessInitImageCommand(header);
-            }
-
-            return false;
-        }
-        case format::MetaDataType::kCreateHardwareBufferCommand_deprecated:
-        {
-            format::CreateHardwareBufferCommandHeader header;
-            header.meta_header.block_header.size = meta_header.block_header.size + sizeof(header) -
-                                                   sizeof(format::CreateHardwareBufferCommandHeader_deprecated);
-            header.meta_header.block_header.type = meta_header.block_header.type;
-            header.meta_header.meta_data_id      = format::MakeMetaDataId(
-                format::GetMetaDataApi(meta_header.meta_data_id), format::MetaDataType::kCreateHardwareBufferCommand);
-            header.device_id = format::kNullHandleId;
-
-            uint32_t usage = 0;
-
-            bool success = ReadBytes(&header.thread_id, sizeof(header.thread_id));
-            success      = success && ReadBytes(&header.memory_id, sizeof(header.memory_id));
-            success      = success && ReadBytes(&header.buffer_id, sizeof(header.buffer_id));
-            success      = success && ReadBytes(&header.format, sizeof(header.format));
-            success      = success && ReadBytes(&header.width, sizeof(header.width));
-            success      = success && ReadBytes(&header.height, sizeof(header.height));
-            success      = success && ReadBytes(&header.stride, sizeof(header.stride));
-            success      = success && ReadBytes(&usage, sizeof(usage));
-            success      = success && ReadBytes(&header.layers, sizeof(header.layers));
-            success      = success && ReadBytes(&header.planes, sizeof(header.planes));
-
-            header.usage = usage;
-
-            if (success)
-            {
-                return ProcessCreateHardwareBufferCommand(header);
-            }
-
-            return false;
-        }
-        case format::MetaDataType::kDestroyHardwareBufferCommand:
-        {
-            format::DestroyHardwareBufferCommand header;
-            header.meta_header = meta_header;
-
-            bool success = ReadBytes(&header.thread_id, sizeof(header.thread_id));
-            success      = success && ReadBytes(&header.buffer_id, sizeof(header.buffer_id));
-
-            if (success)
-            {
-                return ProcessDestroyHardwareBufferCommand(header);
-            }
-
-            return false;
-        }
-        case format::MetaDataType::kSetDevicePropertiesCommand:
-        {
-            format::SetDevicePropertiesCommand header;
-            header.meta_header = meta_header;
-
-            bool success = ReadBytes(&header.thread_id, sizeof(header.thread_id));
-            success      = success && ReadBytes(&header.physical_device_id, sizeof(header.physical_device_id));
-            success      = success && ReadBytes(&header.api_version, sizeof(header.api_version));
-            success      = success && ReadBytes(&header.driver_version, sizeof(header.driver_version));
-            success      = success && ReadBytes(&header.vendor_id, sizeof(header.vendor_id));
-            success      = success && ReadBytes(&header.device_id, sizeof(header.device_id));
-            success      = success && ReadBytes(&header.device_type, sizeof(header.device_type));
-            success      = success && ReadBytes(&header.pipeline_cache_uuid, sizeof(header.pipeline_cache_uuid));
-            success      = success && ReadBytes(&header.device_name_len, sizeof(header.device_name_len));
-
-            if (success)
-            {
-                return ProcessSetDevicePropertiesCommand(header);
-            }
-
-            return false;
-        }
-        case format::MetaDataType::kSetDeviceMemoryPropertiesCommand:
-        {
-            format::SetDeviceMemoryPropertiesCommand header;
-            header.meta_header = meta_header;
-
-            bool success = ReadBytes(&header.thread_id, sizeof(header.thread_id));
-            success      = success && ReadBytes(&header.physical_device_id, sizeof(header.physical_device_id));
-            success      = success && ReadBytes(&header.memory_type_count, sizeof(header.memory_type_count));
-            success      = success && ReadBytes(&header.memory_heap_count, sizeof(header.memory_heap_count));
-
-            if (success)
-            {
-                return ProcessSetDeviceMemoryPropertiesCommand(header);
-            }
-
-            return false;
-        }
-        case format::MetaDataType::kResizeWindowCommand2:
-        {
-            format::ResizeWindowCommand2 header;
-            header.meta_header = meta_header;
-
-            bool success = ReadBytes(&header.thread_id, sizeof(header.thread_id));
-            success      = success && ReadBytes(&header.surface_id, sizeof(header.surface_id));
-            success      = success && ReadBytes(&header.width, sizeof(header.width));
-            success      = success && ReadBytes(&header.height, sizeof(header.height));
-            success      = success && ReadBytes(&header.pre_transform, sizeof(header.pre_transform));
-
-            if (success)
-            {
-                return ProcessResizeWindowCommand2(header);
-            }
-
-            return false;
-        }
-        case format::MetaDataType::kSetOpaqueAddressCommand:
-        {
-            format::SetOpaqueAddressCommand header;
-            header.meta_header = meta_header;
-
-            bool success = ReadBytes(&header.thread_id, sizeof(header.thread_id));
-            success      = success && ReadBytes(&header.device_id, sizeof(header.device_id));
-            success      = success && ReadBytes(&header.object_id, sizeof(header.object_id));
-            success      = success && ReadBytes(&header.address, sizeof(header.address));
-
-            if (success)
-            {
-                return ProcessSetOpaqueAddressCommand(header);
-            }
-
-            return false;
-        }
-        case format::MetaDataType::kSetRayTracingShaderGroupHandlesCommand:
-        {
-            format::SetRayTracingShaderGroupHandlesCommandHeader header;
-            header.meta_header = meta_header;
-
-            bool success = ReadBytes(&header.thread_id, sizeof(header.thread_id));
-            success      = success && ReadBytes(&header.device_id, sizeof(header.device_id));
-            success      = success && ReadBytes(&header.pipeline_id, sizeof(header.pipeline_id));
-            success      = success && ReadBytes(&header.data_size, sizeof(header.data_size));
-
-            if (success)
-            {
-                return ProcessSetRayTracingShaderGroupHandlesCommand(header);
-            }
-
-            return false;
-        }
-        case format::MetaDataType::kCreateHeapAllocationCommand:
-        {
-            format::CreateHeapAllocationCommand header;
-            header.meta_header = meta_header;
-
-            bool success = ReadBytes(&header.thread_id, sizeof(header.thread_id));
-            success      = success && ReadBytes(&header.allocation_id, sizeof(header.allocation_id));
-            success      = success && ReadBytes(&header.allocation_size, sizeof(header.allocation_size));
-
-            if (success)
-            {
-                return ProcessCreateHeapAllocationCommand(header);
-            }
-
-            return false;
-        }
-        case format::MetaDataType::kInitSubresourceCommand:
-        {
-            format::InitSubresourceCommandHeader header;
-            header.meta_header = meta_header;
-
-            bool success = ReadBytes(&header.thread_id, sizeof(header.thread_id));
-            success      = success && ReadBytes(&header.device_id, sizeof(header.device_id));
-            success      = success && ReadBytes(&header.resource_id, sizeof(header.resource_id));
-            success      = success && ReadBytes(&header.subresource, sizeof(header.subresource));
-            success      = success && ReadBytes(&header.initial_state, sizeof(header.initial_state));
-            success      = success && ReadBytes(&header.resource_state, sizeof(header.resource_state));
-            success      = success && ReadBytes(&header.barrier_flags, sizeof(header.barrier_flags));
-            success      = success && ReadBytes(&header.data_size, sizeof(header.data_size));
-
-            if (success)
-            {
-                return ProcessInitSubresourceCommand(header);
-            }
-
-            return false;
-        }
-        case format::MetaDataType::kExeFileInfoCommand:
-        {
-            format::ExeFileInfoBlock header;
-            header.meta_header = meta_header;
-
-            bool success = ReadBytes(&header.thread_id, sizeof(header.thread_id));
-            success      = success && ReadBytes(&header.info_record, sizeof(header.info_record));
-
-            if (success)
-            {
-                return ProcessExeFileInfoCommand(header);
-            }
-
-            return false;
-        }
-        case format::MetaDataType::kInitDx12AccelerationStructureCommand:
-        {
-            format::InitDx12AccelerationStructureCommandHeader header;
-            header.meta_header = meta_header;
-
-            bool success = ReadBytes(&header.thread_id, sizeof(header.thread_id));
-            success      = success && ReadBytes(&header.dest_acceleration_structure_data,
-                                           sizeof(header.dest_acceleration_structure_data));
-            success      = success && ReadBytes(&header.copy_source_gpu_va, sizeof(header.copy_source_gpu_va));
-            success      = success && ReadBytes(&header.copy_mode, sizeof(header.copy_mode));
-            success      = success && ReadBytes(&header.inputs_type, sizeof(header.inputs_type));
-            success      = success && ReadBytes(&header.inputs_flags, sizeof(header.inputs_flags));
-            success = success && ReadBytes(&header.inputs_num_instance_descs, sizeof(header.inputs_num_instance_descs));
-            success = success && ReadBytes(&header.inputs_num_geometry_descs, sizeof(header.inputs_num_geometry_descs));
-            success = success && ReadBytes(&header.data_size, sizeof(header.data_size));
-
-            if (success)
-            {
-                return ProcessInitDx12AccelerationStructureCommand(header);
-            }
-
-            return false;
-        }
-        case format::arm::MetaDataType::kGetDx12AccelerationStructureSizeCommand:
-        {
-            format::arm::GetDx12AccelerationStructureSizeCommandHeader header;
-            header.meta_header = meta_header;
-
-            bool success = ReadBytes(&header.thread_id, sizeof(header.thread_id));
-            success      = success && ReadBytes(&header.device_id, sizeof(header.device_id));
-            success      = success && ReadBytes(&header.resource_id, sizeof(header.resource_id));
-            success      = success &&
-                      ReadBytes(&header.acceleration_structure_address, sizeof(header.acceleration_structure_address));
-            success = success && ReadBytes(&header.num_instance_descs, sizeof(header.num_instance_descs));
-            success = success && ReadBytes(&header.data_size, sizeof(header.data_size));
-
-            if (success)
-            {
-                return ProcessGetDx12AccelerationStructureSizeCommand(header);
-            }
-
-            return false;
-        }
-        case format::MetaDataType::kFillMemoryResourceValueCommand:
-        {
-            format::FillMemoryResourceValueCommandHeader header;
-            header.meta_header = meta_header;
-
-            bool success = ReadBytes(&header.thread_id, sizeof(header.thread_id));
-            success      = success && ReadBytes(&header.resource_value_count, sizeof(header.resource_value_count));
-
-            if (success)
-            {
-                return ProcessFillMemoryResourceValueCommand(header);
-            }
-
-            return false;
-        }
-        case format::MetaDataType::kDxgiAdapterInfoCommand:
-        {
-            format::DxgiAdapterInfoCommandHeader header;
-            header.meta_header = meta_header;
-
-            bool success = ReadBytes(&header.thread_id, sizeof(header.thread_id));
-            success      = success && ReadBytes(&header.adapter_desc, sizeof(header.adapter_desc));
-
-            if (success)
-            {
-                return ProcessDxgiAdapterInfoCommand(header);
-            }
-
-            return false;
-        }
-        case format::MetaDataType::kDriverInfoCommand:
-        {
-            format::DriverInfoBlock header;
-            header.meta_header = meta_header;
-
-            bool success = ReadBytes(&header.thread_id, sizeof(header.thread_id));
-            success      = success && ReadBytes(&header.driver_record, sizeof(header.driver_record));
-
-            if (success)
-            {
-                return ProcessDriverInfoCommand(header);
-            }
-
-            return false;
-        }
-        case format::MetaDataType::kCreateHardwareBufferCommand_deprecated2:
-        {
-            format::CreateHardwareBufferCommandHeader header;
-            header.meta_header.block_header.size = meta_header.block_header.size + sizeof(header) -
-                                                   sizeof(format::CreateHardwareBufferCommandHeader_deprecated2);
-            header.meta_header.block_header.type = meta_header.block_header.type;
-            header.meta_header.meta_data_id      = format::MakeMetaDataId(
-                format::GetMetaDataApi(meta_header.meta_data_id), format::MetaDataType::kCreateHardwareBufferCommand);
-            header.device_id = format::kNullHandleId;
-
-            bool success = ReadBytes(&header.thread_id, sizeof(header.thread_id));
-            success      = success && ReadBytes(&header.memory_id, sizeof(header.memory_id));
-            success      = success && ReadBytes(&header.buffer_id, sizeof(header.buffer_id));
-            success      = success && ReadBytes(&header.format, sizeof(header.format));
-            success      = success && ReadBytes(&header.width, sizeof(header.width));
-            success      = success && ReadBytes(&header.height, sizeof(header.height));
-            success      = success && ReadBytes(&header.stride, sizeof(header.stride));
-            success      = success && ReadBytes(&header.usage, sizeof(header.usage));
-            success      = success && ReadBytes(&header.layers, sizeof(header.layers));
-            success      = success && ReadBytes(&header.planes, sizeof(header.planes));
-
-            if (success)
-            {
-                return ProcessCreateHardwareBufferCommand(header);
-            }
-
-            return false;
-        }
-        case format::MetaDataType::kDx12RuntimeInfoCommand:
-        {
-            format::Dx12RuntimeInfoCommandHeader header;
-            header.meta_header = meta_header;
-
-            bool success = ReadBytes(&header.thread_id, sizeof(header.thread_id));
-            success      = success && ReadBytes(&header.runtime_info, sizeof(header.runtime_info));
-
-            if (success)
-            {
-                return ProcessDx12RuntimeInfoCommand(header);
-            }
-
-            return false;
-        }
-        case format::MetaDataType::kParentToChildDependency:
-        {
-            format::ParentToChildDependencyHeader header;
-            header.meta_header = meta_header;
-
-            bool success = ReadBytes(&header.thread_id, sizeof(header.thread_id));
-            success      = success && ReadBytes(&header.dependency_type, sizeof(header.dependency_type));
-            success      = success && ReadBytes(&header.parent_id, sizeof(header.parent_id));
-            success      = success && ReadBytes(&header.child_count, sizeof(header.child_count));
-
-            if (success)
-            {
-                return ProcessParentToChildDependency(header);
-            }
-
-            return false;
-        }
-        case format::MetaDataType::kVulkanBuildAccelerationStructuresCommand:
-        {
-            format::VulkanMetaBuildAccelerationStructuresHeader header;
-            header.meta_header = meta_header;
-            return ProcessVulkanBuildAccelerationStructuresCommand(header);
-        }
-        case format::MetaDataType::kVulkanCopyAccelerationStructuresCommand:
-        {
-            format::VulkanCopyAccelerationStructuresCommandHeader header;
-            header.meta_header = meta_header;
-            return ProcessVulkanCopyAccelerationStructuresCommand(header);
-        }
-        case format::MetaDataType::kVulkanWriteAccelerationStructuresPropertiesCommand:
-        {
-            format::VulkanWriteAccelerationStructuresPropertiesCommandHeader header;
-            header.meta_header = meta_header;
-            return ProcessVulkanWriteAccelerationStructuresPropertiesCommand(header);
-        }
-        case format::MetaDataType::kFixDeviceAddressCommand:
-        {
-            format::FixDeviceAddressCommandHeader header;
-            header.meta_header = meta_header;
-
-            bool success = ReadBytes(&header.relation_id, sizeof(header.relation_id));
-            success      = success && ReadBytes(&header.num_of_locations, sizeof(header.num_of_locations));
-
-            if (success)
-            {
-                return ProcessFixDeviceAddressCommand(header);
-            }
-
-            return false;
-        }
-        case format::arm::MetaDataType::kFixDescriptorDataCommand:
-        {
-            format::FixDescriptorDataCommandHeader header;
-            header.meta_header = meta_header;
-            bool success       = ReadBytes(&header.memory_id, sizeof(header.memory_id));
-            success            = success && ReadBytes(&header.num_of_locations, sizeof(header.num_of_locations));
-
-            if (success)
-            {
-                return ProcessFixDescriptorDataCommand(header);
-            }
-            return false;
-        }
-        case format::arm::MetaDataType::kFixShadowMemoryCommand:
-        {
-            format::FixShadowMemoryCommand header;
-            header.meta_header = meta_header;
-            bool success       = ReadBytes(&header.thread_id, sizeof(header.thread_id));
-            success            = success && ReadBytes(&header.memory_id, sizeof(header.memory_id));
-            success            = success && ReadBytes(&header.map_memory, sizeof(header.map_memory));
-            success            = success && ReadBytes(&header.shadow_memory, sizeof(header.shadow_memory));
-            if (success)
-            {
-                return ProcessFixShadowMemoryCommand(header);
-            }
-            return false;
-        }
-        case format::MetaDataType::kSetEnvironmentVariablesCommand:
-        {
-            format::SetEnvironmentVariablesCommand header;
-            header.meta_header = meta_header;
-
-            bool success = ReadBytes(&header.thread_id, sizeof(header.thread_id));
-            success      = success && ReadBytes(&header.string_length, sizeof(header.string_length));
-
-            if (success)
-            {
-                return ProcessSetEnvironmentVariablesCommand(header);
-            }
-
-            return false;
-        }
-        case format::MetaDataType::kExecuteBlocksFromFile:
-        {
-            format::ExecuteBlocksFromFile header;
-            header.meta_header = meta_header;
-
-            bool success = ReadBytes(&header.thread_id, sizeof(header.thread_id));
-            success      = success && ReadBytes(&header.n_blocks, sizeof(header.n_blocks));
-            success      = success && ReadBytes(&header.offset, sizeof(header.offset));
-            success      = success && ReadBytes(&header.filename_length, sizeof(header.filename_length));
-
-            if (success)
-            {
-                return ProcessExecuteBlocksFromFile(header);
-            }
-
-            return false;
-        }
-
-        case format::MetaDataType::kCreateHardwareBufferCommand:
-        {
-            format::CreateHardwareBufferCommandHeader header;
-            header.meta_header = meta_header;
-
-            bool success = ReadBytes(&header.thread_id, sizeof(header.thread_id));
-            success      = success && ReadBytes(&header.device_id, sizeof(header.device_id));
-            success      = success && ReadBytes(&header.memory_id, sizeof(header.memory_id));
-            success      = success && ReadBytes(&header.buffer_id, sizeof(header.buffer_id));
-            success      = success && ReadBytes(&header.format, sizeof(header.format));
-            success      = success && ReadBytes(&header.width, sizeof(header.width));
-            success      = success && ReadBytes(&header.height, sizeof(header.height));
-            success      = success && ReadBytes(&header.stride, sizeof(header.stride));
-            success      = success && ReadBytes(&header.usage, sizeof(header.usage));
-            success      = success && ReadBytes(&header.layers, sizeof(header.layers));
-            success      = success && ReadBytes(&header.planes, sizeof(header.planes));
-
-            if (success)
-            {
-                return ProcessCreateHardwareBufferCommand(header);
-            }
-
-            return false;
-        }
-        case format::arm::MetaDataType::kFixShaderGroupHandleCommand:
-        {
-            format::FixShaderGroupHandleCommandHeader header;
-            header.meta_header = meta_header;
-
-            bool success = ReadBytes(&header.relation_id, sizeof(header.relation_id));
-            success      = success && ReadBytes(&header.num_of_locations, sizeof(header.num_of_locations));
-
-            if (success)
-            {
-                return ProcessFixShaderGroupHandleCommand(header);
-            }
-
-            return false;
-        }
-        case format::arm::MetaDataType::kInitTensorCommand:
-        {
-            format::InitTensorCommandHeader header;
-            header.meta_header = meta_header;
-            bool success       = ReadBytes(&header.thread_id, sizeof(header.thread_id));
-            success            = success && ReadBytes(&header.device_id, sizeof(header.device_id));
-            success            = success && ReadBytes(&header.tensor_id, sizeof(header.tensor_id));
-            success            = success && ReadBytes(&header.data_size, sizeof(header.data_size));
-            if (success)
-            {
-                return ProcessInitTensorCommand(header);
-            }
-            return false;
-        }
-        case format::arm::MetaDataType::kFillMemoryResourceAddressCommand:
-        {
-            format::FillMemoryResourceAddressCommandHeader header;
-            header.meta_header = meta_header;
-
-            bool success = ReadBytes(&header.thread_id, sizeof(header.thread_id));
-            success      = success && ReadBytes(&header.resource_address_count, sizeof(header.resource_address_count));
-
-            if (success)
-            {
-                return ProcessFillMemoryResourceAddressCommand(header);
-            }
-
-            return false;
-        }
-        default:
-        {
-            GFXRECON_LOG_ERROR("Unrecognized meta-data type %u", meta_data_type);
-            return false;
-        }
-    }
+    return WriteBytes(parsed_block);
 }
 
-bool FileTransformer::ProcessMarker(const format::Marker& marker)
+bool FileTransformer::ProcessAnnotation(ParsedBlock& parsed_block)
 {
-    if (marker.header.type == format::kStateMarkerBlock)
-    {
-        if (marker.marker_type == format::kBeginMarker)
-        {
-            loading_state_ = true;
-        }
-        else if (marker.marker_type == format::kEndMarker)
-        {
-            loading_state_ = false;
-        }
-    }
-
-    if (!WriteBytes(&marker, sizeof(marker)))
-    {
-        HandleBlockWriteError(kErrorWritingBlockData, "Failed to write frame marker data");
-        return false;
-    }
-
-    return true;
+    return WriteBytes(parsed_block);
 }
 
-bool FileTransformer::ProcessAnnotation(const format::AnnotationHeader& header,
-                                        const std::string&              label,
-                                        const std::string&              data)
+bool FileTransformer::ProcessStateBeginMarker(ParsedBlock& parsed_block)
 {
-    if (!WriteBytes(&header, sizeof(header)))
-    {
-        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write annotation block header");
-        return false;
-    }
-
-    if (!WriteBytes(label.data(), label.size()))
-    {
-        HandleBlockWriteError(kErrorWritingBlockData, "Failed to write annotation block label");
-        return false;
-    }
-
-    if (!WriteBytes(data.data(), data.size()))
-    {
-        HandleBlockWriteError(kErrorWritingBlockData, "Failed to write annotation block data");
-        return false;
-    }
-
-    return true;
+    loading_state_ = true;
+    return WriteBytes(parsed_block);
 }
 
-bool FileTransformer::ProcessDisplayMessageCommand(const format::DisplayMessageCommandHeader& header)
+bool FileTransformer::ProcessStateEndMarker(ParsedBlock& parsed_block)
 {
-    if (!WriteBytes(&header, sizeof(header)))
-    {
-        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write meta-data block header");
-        return false;
-    }
-
-    if (!CopyBytes(header.meta_header.block_header.size + sizeof(header.meta_header.block_header) - sizeof(header)))
-    {
-        HandleBlockCopyError(kErrorCopyingBlockData, "Failed to copy meta-data block data");
-        return false;
-    }
-
-    return true;
-}
-bool FileTransformer::ProcessFillMemoryCommand(const format::FillMemoryCommandHeader& header)
-{
-    if (!WriteBytes(&header, sizeof(header)))
-    {
-        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write meta-data block header");
-        return false;
-    }
-
-    if (!CopyBytes(header.meta_header.block_header.size + sizeof(header.meta_header.block_header) - sizeof(header)))
-    {
-        HandleBlockCopyError(kErrorCopyingBlockData, "Failed to copy meta-data block data");
-        return false;
-    }
-
-    return true;
-}
-bool FileTransformer::ProcessResizeWindowCommand(const format::ResizeWindowCommand& header)
-{
-    if (!WriteBytes(&header, sizeof(header)))
-    {
-        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write meta-data block header");
-        return false;
-    }
-
-    if (!CopyBytes(header.meta_header.block_header.size + sizeof(header.meta_header.block_header) - sizeof(header)))
-    {
-        HandleBlockCopyError(kErrorCopyingBlockData, "Failed to copy meta-data block data");
-        return false;
-    }
-
-    return true;
-}
-bool FileTransformer::ProcessSetSwapchainImageStateCommand(const format::SetSwapchainImageStateCommandHeader& header)
-{
-    if (!WriteBytes(&header, sizeof(header)))
-    {
-        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write meta-data block header");
-        return false;
-    }
-
-    if (!CopyBytes(header.meta_header.block_header.size + sizeof(header.meta_header.block_header) - sizeof(header)))
-    {
-        HandleBlockCopyError(kErrorCopyingBlockData, "Failed to copy meta-data block data");
-        return false;
-    }
-
-    return true;
-}
-bool FileTransformer::ProcessBeginResourceInitCommand(const format::BeginResourceInitCommand& header)
-{
-    if (!WriteBytes(&header, sizeof(header)))
-    {
-        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write meta-data block header");
-        return false;
-    }
-
-    if (!CopyBytes(header.meta_header.block_header.size + sizeof(header.meta_header.block_header) - sizeof(header)))
-    {
-        HandleBlockCopyError(kErrorCopyingBlockData, "Failed to copy meta-data block data");
-        return false;
-    }
-
-    return true;
-}
-bool FileTransformer::ProcessEndResourceInitCommand(const format::EndResourceInitCommand& header)
-{
-    if (!WriteBytes(&header, sizeof(header)))
-    {
-        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write meta-data block header");
-        return false;
-    }
-
-    if (!CopyBytes(header.meta_header.block_header.size + sizeof(header.meta_header.block_header) - sizeof(header)))
-    {
-        HandleBlockCopyError(kErrorCopyingBlockData, "Failed to copy meta-data block data");
-        return false;
-    }
-
-    return true;
-}
-bool FileTransformer::ProcessInitBufferCommand(const format::InitBufferCommandHeader& header)
-{
-    if (!WriteBytes(&header, sizeof(header)))
-    {
-        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write meta-data block header");
-        return false;
-    }
-
-    if (!CopyBytes(header.meta_header.block_header.size + sizeof(header.meta_header.block_header) - sizeof(header)))
-    {
-        HandleBlockCopyError(kErrorCopyingBlockData, "Failed to copy meta-data block data");
-        return false;
-    }
-
-    return true;
-}
-bool FileTransformer::ProcessInitImageCommand(const format::InitImageCommandHeader& header)
-{
-    if (!WriteBytes(&header, sizeof(header)))
-    {
-        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write meta-data block header");
-        return false;
-    }
-
-    if (!CopyBytes(header.meta_header.block_header.size + sizeof(header.meta_header.block_header) - sizeof(header)))
-    {
-        HandleBlockCopyError(kErrorCopyingBlockData, "Failed to copy meta-data block data");
-        return false;
-    }
-
-    return true;
-}
-bool FileTransformer::ProcessDestroyHardwareBufferCommand(const format::DestroyHardwareBufferCommand& header)
-{
-    if (!WriteBytes(&header, sizeof(header)))
-    {
-        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write meta-data block header");
-        return false;
-    }
-
-    if (!CopyBytes(header.meta_header.block_header.size + sizeof(header.meta_header.block_header) - sizeof(header)))
-    {
-        HandleBlockCopyError(kErrorCopyingBlockData, "Failed to copy meta-data block data");
-        return false;
-    }
-
-    return true;
-}
-bool FileTransformer::ProcessSetDevicePropertiesCommand(const format::SetDevicePropertiesCommand& header)
-{
-    if (!WriteBytes(&header, sizeof(header)))
-    {
-        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write meta-data block header");
-        return false;
-    }
-
-    if (!CopyBytes(header.meta_header.block_header.size + sizeof(header.meta_header.block_header) - sizeof(header)))
-    {
-        HandleBlockCopyError(kErrorCopyingBlockData, "Failed to copy meta-data block data");
-        return false;
-    }
-
-    return true;
-}
-bool FileTransformer::ProcessSetDeviceMemoryPropertiesCommand(const format::SetDeviceMemoryPropertiesCommand& header)
-{
-    if (!WriteBytes(&header, sizeof(header)))
-    {
-        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write meta-data block header");
-        return false;
-    }
-
-    if (!CopyBytes(header.meta_header.block_header.size + sizeof(header.meta_header.block_header) - sizeof(header)))
-    {
-        HandleBlockCopyError(kErrorCopyingBlockData, "Failed to copy meta-data block data");
-        return false;
-    }
-
-    return true;
-}
-bool FileTransformer::ProcessResizeWindowCommand2(const format::ResizeWindowCommand2& header)
-{
-    if (!WriteBytes(&header, sizeof(header)))
-    {
-        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write meta-data block header");
-        return false;
-    }
-
-    if (!CopyBytes(header.meta_header.block_header.size + sizeof(header.meta_header.block_header) - sizeof(header)))
-    {
-        HandleBlockCopyError(kErrorCopyingBlockData, "Failed to copy meta-data block data");
-        return false;
-    }
-
-    return true;
-}
-bool FileTransformer::ProcessSetOpaqueAddressCommand(const format::SetOpaqueAddressCommand& header)
-{
-    if (!WriteBytes(&header, sizeof(header)))
-    {
-        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write meta-data block header");
-        return false;
-    }
-
-    if (!CopyBytes(header.meta_header.block_header.size + sizeof(header.meta_header.block_header) - sizeof(header)))
-    {
-        HandleBlockCopyError(kErrorCopyingBlockData, "Failed to copy meta-data block data");
-        return false;
-    }
-
-    return true;
-}
-bool FileTransformer::ProcessSetRayTracingShaderGroupHandlesCommand(
-    const format::SetRayTracingShaderGroupHandlesCommandHeader& header)
-{
-    if (!WriteBytes(&header, sizeof(header)))
-    {
-        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write meta-data block header");
-        return false;
-    }
-
-    if (!CopyBytes(header.meta_header.block_header.size + sizeof(header.meta_header.block_header) - sizeof(header)))
-    {
-        HandleBlockCopyError(kErrorCopyingBlockData, "Failed to copy meta-data block data");
-        return false;
-    }
-
-    return true;
-}
-bool FileTransformer::ProcessCreateHeapAllocationCommand(const format::CreateHeapAllocationCommand& header)
-{
-    if (!WriteBytes(&header, sizeof(header)))
-    {
-        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write meta-data block header");
-        return false;
-    }
-
-    if (!CopyBytes(header.meta_header.block_header.size + sizeof(header.meta_header.block_header) - sizeof(header)))
-    {
-        HandleBlockCopyError(kErrorCopyingBlockData, "Failed to copy meta-data block data");
-        return false;
-    }
-
-    return true;
-}
-bool FileTransformer::ProcessInitSubresourceCommand(const format::InitSubresourceCommandHeader& header)
-{
-    if (!WriteBytes(&header, sizeof(header)))
-    {
-        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write meta-data block header");
-        return false;
-    }
-
-    if (!CopyBytes(header.meta_header.block_header.size + sizeof(header.meta_header.block_header) - sizeof(header)))
-    {
-        HandleBlockCopyError(kErrorCopyingBlockData, "Failed to copy meta-data block data");
-        return false;
-    }
-
-    return true;
-}
-bool FileTransformer::ProcessExeFileInfoCommand(const format::ExeFileInfoBlock& header)
-{
-    if (!WriteBytes(&header, sizeof(header)))
-    {
-        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write meta-data block header");
-        return false;
-    }
-
-    if (!CopyBytes(header.meta_header.block_header.size + sizeof(header.meta_header.block_header) - sizeof(header)))
-    {
-        HandleBlockCopyError(kErrorCopyingBlockData, "Failed to copy meta-data block data");
-        return false;
-    }
-
-    return true;
-}
-bool FileTransformer::ProcessInitDx12AccelerationStructureCommand(
-    const format::InitDx12AccelerationStructureCommandHeader& header)
-{
-    if (!WriteBytes(&header, sizeof(header)))
-    {
-        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write meta-data block header");
-        return false;
-    }
-
-    if (!CopyBytes(header.meta_header.block_header.size + sizeof(header.meta_header.block_header) - sizeof(header)))
-    {
-        HandleBlockCopyError(kErrorCopyingBlockData, "Failed to copy meta-data block data");
-        return false;
-    }
-
-    return true;
-}
-bool FileTransformer::ProcessGetDx12AccelerationStructureSizeCommand(
-    const format::arm::GetDx12AccelerationStructureSizeCommandHeader& header)
-{
-    if (!WriteBytes(&header, sizeof(header)))
-    {
-        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write meta-data block header");
-        return false;
-    }
-
-    if (!CopyBytes(header.meta_header.block_header.size + sizeof(header.meta_header.block_header) - sizeof(header)))
-    {
-        HandleBlockCopyError(kErrorCopyingBlockData, "Failed to copy meta-data block data");
-        return false;
-    }
-
-    return true;
-}
-bool FileTransformer::ProcessFillMemoryResourceValueCommand(const format::FillMemoryResourceValueCommandHeader& header)
-{
-    if (!WriteBytes(&header, sizeof(header)))
-    {
-        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write meta-data block header");
-        return false;
-    }
-
-    if (!CopyBytes(header.meta_header.block_header.size + sizeof(header.meta_header.block_header) - sizeof(header)))
-    {
-        HandleBlockCopyError(kErrorCopyingBlockData, "Failed to copy meta-data block data");
-        return false;
-    }
-
-    return true;
-}
-bool FileTransformer::ProcessDxgiAdapterInfoCommand(const format::DxgiAdapterInfoCommandHeader& header)
-{
-    if (!WriteBytes(&header, sizeof(header)))
-    {
-        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write meta-data block header");
-        return false;
-    }
-
-    if (!CopyBytes(header.meta_header.block_header.size + sizeof(header.meta_header.block_header) - sizeof(header)))
-    {
-        HandleBlockCopyError(kErrorCopyingBlockData, "Failed to copy meta-data block data");
-        return false;
-    }
-
-    return true;
-}
-bool FileTransformer::ProcessDriverInfoCommand(const format::DriverInfoBlock& header)
-{
-    if (!WriteBytes(&header, sizeof(header)))
-    {
-        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write meta-data block header");
-        return false;
-    }
-
-    if (!CopyBytes(header.meta_header.block_header.size + sizeof(header.meta_header.block_header) - sizeof(header)))
-    {
-        HandleBlockCopyError(kErrorCopyingBlockData, "Failed to copy meta-data block data");
-        return false;
-    }
-
-    return true;
-}
-bool FileTransformer::ProcessCreateHardwareBufferCommand(const format::CreateHardwareBufferCommandHeader& header)
-{
-    if (!WriteBytes(&header, sizeof(header)))
-    {
-        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write meta-data block header");
-        return false;
-    }
-
-    if (!CopyBytes(header.meta_header.block_header.size + sizeof(header.meta_header.block_header) - sizeof(header)))
-    {
-        HandleBlockCopyError(kErrorCopyingBlockData, "Failed to copy meta-data block data");
-        return false;
-    }
-
-    return true;
-}
-bool FileTransformer::ProcessDx12RuntimeInfoCommand(const format::Dx12RuntimeInfoCommandHeader& header)
-{
-    if (!WriteBytes(&header, sizeof(header)))
-    {
-        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write meta-data block header");
-        return false;
-    }
-
-    if (!CopyBytes(header.meta_header.block_header.size + sizeof(header.meta_header.block_header) - sizeof(header)))
-    {
-        HandleBlockCopyError(kErrorCopyingBlockData, "Failed to copy meta-data block data");
-        return false;
-    }
-
-    return true;
-}
-bool FileTransformer::ProcessParentToChildDependency(const format::ParentToChildDependencyHeader& header)
-{
-    if (!WriteBytes(&header, sizeof(header)))
-    {
-        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write meta-data block header");
-        return false;
-    }
-
-    if (!CopyBytes(header.meta_header.block_header.size + sizeof(header.meta_header.block_header) - sizeof(header)))
-    {
-        HandleBlockCopyError(kErrorCopyingBlockData, "Failed to copy meta-data block data");
-        return false;
-    }
-
-    return true;
-}
-bool FileTransformer::ProcessVulkanBuildAccelerationStructuresCommand(
-    const format::VulkanMetaBuildAccelerationStructuresHeader& header)
-{
-    if (!WriteBytes(&header, sizeof(header)))
-    {
-        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write meta-data block header");
-        return false;
-    }
-
-    if (!CopyBytes(header.meta_header.block_header.size + sizeof(header.meta_header.block_header) - sizeof(header)))
-    {
-        HandleBlockCopyError(kErrorCopyingBlockData, "Failed to copy meta-data block data");
-        return false;
-    }
-
-    return true;
-}
-bool FileTransformer::ProcessVulkanCopyAccelerationStructuresCommand(
-    const format::VulkanCopyAccelerationStructuresCommandHeader& header)
-{
-    if (!WriteBytes(&header, sizeof(header)))
-    {
-        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write meta-data block header");
-        return false;
-    }
-
-    if (!CopyBytes(header.meta_header.block_header.size + sizeof(header.meta_header.block_header) - sizeof(header)))
-    {
-        HandleBlockCopyError(kErrorCopyingBlockData, "Failed to copy meta-data block data");
-        return false;
-    }
-
-    return true;
-}
-bool FileTransformer::ProcessVulkanWriteAccelerationStructuresPropertiesCommand(
-    const format::VulkanWriteAccelerationStructuresPropertiesCommandHeader& header)
-{
-    if (!WriteBytes(&header, sizeof(header)))
-    {
-        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write meta-data block header");
-        return false;
-    }
-
-    if (!CopyBytes(header.meta_header.block_header.size + sizeof(header.meta_header.block_header) - sizeof(header)))
-    {
-        HandleBlockCopyError(kErrorCopyingBlockData, "Failed to copy meta-data block data");
-        return false;
-    }
-
-    return true;
-}
-bool FileTransformer::ProcessFixDeviceAddressCommand(const format::FixDeviceAddressCommandHeader& header)
-{
-    if (!WriteBytes(&header, sizeof(header)))
-    {
-        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write meta-data block header");
-        return false;
-    }
-
-    if (!CopyBytes(header.meta_header.block_header.size + sizeof(header.meta_header.block_header) - sizeof(header)))
-    {
-        HandleBlockCopyError(kErrorCopyingBlockData, "Failed to copy meta-data block data");
-        return false;
-    }
-
-    return true;
-}
-bool FileTransformer::ProcessFixDescriptorDataCommand(const format::FixDescriptorDataCommandHeader& header)
-{
-    if (!WriteBytes(&header, sizeof(header)))
-    {
-        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write meta-data block header");
-        return false;
-    }
-
-    if (!CopyBytes(header.meta_header.block_header.size + sizeof(header.meta_header.block_header) - sizeof(header)))
-    {
-        HandleBlockCopyError(kErrorCopyingBlockData, "Failed to copy meta-data block data");
-        return false;
-    }
-
-    return true;
-}
-bool FileTransformer::ProcessFixShadowMemoryCommand(const format::FixShadowMemoryCommand& header)
-{
-    if (!WriteBytes(&header, sizeof(header)))
-    {
-        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write meta-data block header");
-        return false;
-    }
-
-    if (!CopyBytes(header.meta_header.block_header.size + sizeof(header.meta_header.block_header) - sizeof(header)))
-    {
-        HandleBlockCopyError(kErrorCopyingBlockData, "Failed to copy meta-data block data");
-        return false;
-    }
-
-    return true;
-}
-bool FileTransformer::ProcessSetEnvironmentVariablesCommand(const format::SetEnvironmentVariablesCommand& header)
-{
-    if (!WriteBytes(&header, sizeof(header)))
-    {
-        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write meta-data block header");
-        return false;
-    }
-
-    if (!CopyBytes(header.meta_header.block_header.size + sizeof(header.meta_header.block_header) - sizeof(header)))
-    {
-        HandleBlockCopyError(kErrorCopyingBlockData, "Failed to copy meta-data block data");
-        return false;
-    }
-
-    return true;
-}
-bool FileTransformer::ProcessExecuteBlocksFromFile(const format::ExecuteBlocksFromFile& header)
-{
-    if (!WriteBytes(&header, sizeof(header)))
-    {
-        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write meta-data block header");
-        return false;
-    }
-
-    if (!CopyBytes(header.meta_header.block_header.size + sizeof(header.meta_header.block_header) - sizeof(header)))
-    {
-        HandleBlockCopyError(kErrorCopyingBlockData, "Failed to copy meta-data block data");
-        return false;
-    }
-
-    return true;
-}
-bool FileTransformer::ProcessFixShaderGroupHandleCommand(const format::FixShaderGroupHandleCommandHeader& header)
-{
-    if (!WriteBytes(&header, sizeof(header)))
-    {
-        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write meta-data block header");
-        return false;
-    }
-
-    if (!CopyBytes(header.meta_header.block_header.size + sizeof(header.meta_header.block_header) - sizeof(header)))
-    {
-        HandleBlockCopyError(kErrorCopyingBlockData, "Failed to copy meta-data block data");
-        return false;
-    }
-
-    return true;
+    loading_state_ = false;
+    return WriteBytes(parsed_block);
 }
 
-bool FileTransformer::ProcessInitTensorCommand(const format::InitTensorCommandHeader& header)
+bool FileTransformer::ProcessFrameEndMarker(ParsedBlock& parsed_block)
 {
-    if (!WriteBytes(&header, sizeof(header)))
-    {
-        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write meta-data block header");
-        return false;
-    }
-    if (!CopyBytes(header.meta_header.block_header.size + sizeof(header.meta_header.block_header) - sizeof(header)))
-    {
-        HandleBlockCopyError(kErrorCopyingBlockData, "Failed to copy meta-data block data");
-        return false;
-    }
-    return true;
-}
-
-bool FileTransformer::ProcessFillMemoryResourceAddressCommand(
-    const format::FillMemoryResourceAddressCommandHeader& header)
-{
-    if (!WriteBytes(&header, sizeof(header)))
-    {
-        HandleBlockWriteError(kErrorWritingBlockHeader, "Failed to write meta-data block header");
-        return false;
-    }
-
-    if (!CopyBytes(header.meta_header.block_header.size + sizeof(header.meta_header.block_header) - sizeof(header)))
-    {
-        HandleBlockCopyError(kErrorCopyingBlockData, "Failed to copy meta-data block data");
-        return false;
-    }
-
-    return true;
+    return WriteBytes(parsed_block);
 }
 
 GFXRECON_END_NAMESPACE(decode)

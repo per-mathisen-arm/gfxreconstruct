@@ -47,34 +47,39 @@ class CompressionConverter : public decode::FileTransformer
                     format::CompressionType target_compression_type);
 
   protected:
-    virtual bool WriteFileHeader(const format::FileHeader&                  header,
-                                 const std::vector<format::FileOptionPair>& options) override;
+    bool WriteFileHeader(const format::FileHeader& header, const std::vector<format::FileOptionPair>& options) override;
 
-    virtual bool ProcessFunctionCall(const format::FunctionCallHeader& header) override;
-    virtual bool ProcessMethodCall(const format::MethodCallHeader& header, uint64_t block_index = 0) override;
-    virtual bool ProcessMetaData(const format::MetaDataHeader& meta_header) override;
+    bool ProcessFunctionCall(decode::ParsedBlock& parsed_block) override;
+    bool ProcessMethodCall(decode::ParsedBlock& parsed_block) override;
 
-    virtual bool ProcessFillMemoryCommand(const format::FillMemoryCommandHeader& header) override;
-    virtual bool ProcessInitBufferCommand(const format::InitBufferCommandHeader& header) override;
-    virtual bool ProcessInitImageCommand(const format::InitImageCommandHeader& header) override;
-    virtual bool ProcessInitSubresourceCommand(const format::InitSubresourceCommandHeader& header) override;
-    virtual bool ProcessInitDx12AccelerationStructureCommand(
-        const format::InitDx12AccelerationStructureCommandHeader& header) override;
-    virtual bool ProcessGetDx12AccelerationStructureSizeCommand(
-        const format::arm::GetDx12AccelerationStructureSizeCommandHeader& header) override;
-    virtual bool
-    ProcessFillMemoryResourceValueCommand(const format::FillMemoryResourceValueCommandHeader& header) override;
-    virtual bool ProcessInitTensorCommand(const format::InitTensorCommandHeader& header) override;
-    virtual bool
-    ProcessFillMemoryResourceAddressCommand(const format::FillMemoryResourceAddressCommandHeader& header) override;
+    bool ProcessMetaData(decode::ParsedBlock& parsed_block) override;
 
   private:
-    bool WriteFunctionCall(format::ApiCallId call_id, format::ThreadId thread_id, size_t buffer_size);
+    bool
+    WriteFunctionCall(format::ApiCallId call_id, format::ThreadId thread_id, size_t buffer_size, const uint8_t* buffer);
 
     bool WriteMethodCall(format::ApiCallId call_id,
                          format::HandleId  object_id,
                          format::ThreadId  thread_id,
-                         size_t            buffer_size);
+                         size_t            buffer_size,
+                         const uint8_t*    buffer);
+
+    // Specialists called by the vistor in ProcessMetaData
+    VisitResult WriteMetaData(const decode::FillMemoryArgs& args);
+    VisitResult WriteMetaData(const decode::InitBufferArgs& args);
+    VisitResult WriteMetaData(const decode::InitImageArgs& args);
+    VisitResult WriteMetaData(const decode::InitTensorArgs& args);
+    VisitResult WriteMetaData(const decode::InitSubresourceArgs& args);
+    VisitResult WriteMetaData(const decode::InitDx12AccelerationStructureArgs& args);
+    VisitResult WriteMetaData(const decode::GetDx12AccelerationStructureSizeArgs& args);
+    VisitResult WriteMetaData(const decode::FillMemoryResourceValueArgs& args);
+    VisitResult WriteMetaData(const decode::FillMemoryResourceAddressArgs& args);
+
+    template <typename Args>
+    VisitResult WriteMetaData(Args&)
+    {
+        return kNeedsPassthrough;
+    }
 
     void PrepMetadataBlock(format::MetaDataHeader& meta_data_header,
                            format::MetaDataId      meta_data_id,

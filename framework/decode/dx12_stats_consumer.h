@@ -256,8 +256,8 @@ class Dx12StatsConsumer : public Dx12Consumer
     }
 
     virtual void
-    ProcessFillMemoryResourceAddressCommand(const format::FillMemoryResourceAddressCommandHeader& command_header,
-                                            const uint8_t*                                        data)
+    ProcessFillMemoryResourceAddressCommand(const format::arm::FillMemoryResourceAddressCommandHeader& command_header,
+                                            const uint8_t*                                             data)
     {
         opt_fillmem_ = true;
     }

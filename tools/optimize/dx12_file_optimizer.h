@@ -46,7 +46,9 @@ class Dx12FileOptimizer : public FileOptimizer
   private:
     bool AddFillMemoryResourceValueCommand();
 
-    virtual bool ProcessMetaData(const format::MetaDataHeader& meta_header) override;
+    template <typename Args>
+    decode::FileTransformer::VisitResult VisitMetaData(const Args& args);
+    bool                                 ProcessMetaData(decode::ParsedBlock& parsed_block) override;
 
     const decode::Dx12FillCommandResourceValueMap*          fill_command_resource_values_;
     decode::Dx12FillCommandResourceValueMap::const_iterator resource_values_iter_;

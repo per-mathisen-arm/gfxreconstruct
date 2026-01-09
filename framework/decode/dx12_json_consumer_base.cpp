@@ -205,7 +205,7 @@ void Dx12JsonConsumerBase::ProcessDx12RuntimeInfo(const format::Dx12RuntimeInfoC
 }
 
 void Dx12JsonConsumerBase::ProcessFillMemoryResourceAddressCommand(
-    const format::FillMemoryResourceAddressCommandHeader& command_header, const uint8_t* data)
+    const format::arm::FillMemoryResourceAddressCommandHeader& command_header, const uint8_t* data)
 {
     writer_->SetCurrentBlockIndex(block_index_);
     const util::JsonOptions& json_options = writer_->GetOptions();
@@ -214,7 +214,8 @@ void Dx12JsonConsumerBase::ProcessFillMemoryResourceAddressCommand(
     FieldToJson(jdata["resource_address_count"], command_header.resource_address_count, json_options);
     // There are two blocks of values in data so we need to add together their sizes to know how big the blob to dump
     // is:
-    const auto info_bytes = command_header.resource_address_count * sizeof(format::Dx12FillMemoryResourceAddressInfo);
+    const auto info_bytes =
+        command_header.resource_address_count * sizeof(format::arm::Dx12FillMemoryResourceAddressInfo);
     RepresentBinaryFile(
         *(this->writer_), jdata[format::kNameData], "fillmemoryresourceaddresscommand.bin", info_bytes, data);
 

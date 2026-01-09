@@ -2129,7 +2129,7 @@ void Dx12RayTracingModifier::ProcessInitSubresourceCommand(const format::InitSub
 }
 
 void Dx12RayTracingModifier::ProcessFillMemoryResourceAddressCommand(
-    const format::FillMemoryResourceAddressCommandHeader& command_header, const uint8_t* data)
+    const format::arm::FillMemoryResourceAddressCommandHeader& command_header, const uint8_t* data)
 {
     if (IsModificationPass())
     {
@@ -2237,7 +2237,7 @@ void Dx12RayTracingModifier::AddFillMemoryResourceAddressCommand(const uint64_t 
         new_call->call_id   = gfxrecon::format::ApiCallId::ApiCall_Unknown;
         new_call->thread_id = 1;
 
-        format::FillMemoryResourceAddressCommandHeader ra_header;
+        format::arm::FillMemoryResourceAddressCommandHeader ra_header;
         ra_header.meta_header.block_header.type = format::BlockType::kMetaDataBlock;
         ra_header.meta_header.block_header.size =
             format::GetMetaDataBlockBaseSize(ra_header) +
@@ -2246,7 +2246,7 @@ void Dx12RayTracingModifier::AddFillMemoryResourceAddressCommand(const uint64_t 
             format::ApiFamilyId::ApiFamily_D3D12, format::arm::MetaDataType::kFillMemoryResourceAddressCommand);
         ra_header.thread_id              = 1;
         ra_header.resource_address_count = resource_address_count;
-        size_t       header_size         = sizeof(format::FillMemoryResourceAddressCommandHeader);
+        size_t       header_size         = sizeof(format::arm::FillMemoryResourceAddressCommandHeader);
         const size_t uncompressed_size   = resource_address_count * sizeof(decode::Dx12FillCommandResourceAddress);
 
         new_call->parameter_buffer.Write(&ra_header, header_size);

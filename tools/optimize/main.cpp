@@ -248,7 +248,7 @@ void RunVulkanOptimizations(const std::string&                         input_fil
 
         file_optimizer.Process();
 
-        if (file_optimizer.GetErrorState() != gfxrecon::FileOptimizer::kErrorNone &&
+        if (file_optimizer.GetErrorState() != gfxrecon::decode::kErrorNone &&
             file_optimizer.GetErrorState() != gfxrecon::decode::FileTransformer::Error::kErrorReadingBlockHeader)
         {
             throw std::runtime_error("A failure has occurred during file processing");
@@ -268,7 +268,7 @@ void SetReplayOptions(std::string input_filename, std::string output_filename, s
         file_transformer.SetReplayOptions(replay_options);
         file_transformer.Process();
 
-        if (file_transformer.GetErrorState() != gfxrecon::FileOptimizer::kErrorNone)
+        if (file_transformer.GetErrorState() != gfxrecon::decode::kErrorNone)
         {
             GFXRECON_WRITE_CONSOLE("A failure has occurred during file processing");
             gfxrecon::util::Log::Release();
