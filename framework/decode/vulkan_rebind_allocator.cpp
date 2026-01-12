@@ -2773,7 +2773,7 @@ VulkanRebindAllocator::BindDataGraphPipelineSessionMemory(uint32_t bind_info_cou
 
         if (session == VK_NULL_HANDLE)
         {
-            GFXRECON_LOG_ERROR("Bind[%u]: session handle is VK_NULL_HANDLE.", i);
+            GFXRECON_LOG_ERROR("BindDataGraphPipelineSessionMemory[%u]: session handle is VK_NULL_HANDLE.", i);
             return VK_ERROR_INITIALIZATION_FAILED;
         }
 
@@ -2799,8 +2799,8 @@ VulkanRebindAllocator::BindDataGraphPipelineSessionMemory(uint32_t bind_info_cou
 
         const VkMemoryRequirements& replay_mem_req = replay_mem_req_2.memoryRequirements;
 
-        GFXRECON_LOG_DEBUG("Bind[%u]: session=0x%llx bindPoint=%u obj=%u size=%" PRIu64 " align=%" PRIu64
-                           " typeBits=0x%08X wantProps=0x%08X",
+        GFXRECON_LOG_DEBUG("BindDataGraphPipelineSessionMemory[%u]: session=0x%llx bindPoint=%u obj=%u size=%" PRIu64
+                           " align=%" PRIu64 " typeBits=0x%08X wantProps=0x%08X",
                            i,
                            static_cast<unsigned long long>(VK_HANDLE_TO_UINT64(session)),
                            static_cast<unsigned>(bind_point),
@@ -2866,12 +2866,12 @@ VulkanRebindAllocator::BindDataGraphPipelineSessionMemory(uint32_t bind_info_cou
         result = functions_.bind_data_graph_pipeline_session_memory(device_, 1, &bind_session_memory_info);
         if (result != VK_SUCCESS)
         {
-            GFXRECON_LOG_ERROR(
-                "Bind[%u]: vkBindDataGraphPipelineSessionMemoryARM failed: %d (mem=0x%llx, offset=%" PRIu64 ")",
-                i,
-                result,
-                static_cast<unsigned long long>(VK_HANDLE_TO_UINT64(alloc_info.deviceMemory)),
-                static_cast<unsigned long long>(alloc_info.offset));
+            GFXRECON_LOG_ERROR("BindDataGraphPipelineSessionMemory[%u]: vkBindDataGraphPipelineSessionMemoryARM "
+                               "failed: %d (mem=0x%llx, offset=%" PRIu64 ")",
+                               i,
+                               result,
+                               static_cast<unsigned long long>(VK_HANDLE_TO_UINT64(alloc_info.deviceMemory)),
+                               static_cast<unsigned long long>(alloc_info.offset));
 
             if (allocation != VK_NULL_HANDLE)
             {
@@ -2888,12 +2888,13 @@ VulkanRebindAllocator::BindDataGraphPipelineSessionMemory(uint32_t bind_info_cou
                         mem_info,
                         bind_memory_properties[i]);
 
-        GFXRECON_LOG_INFO("Bind[%u]: SUCCESS session=0x%llx mem=0x%llx offset=%" PRIu64 " size=%" PRIu64,
-                          i,
-                          static_cast<unsigned long long>(VK_HANDLE_TO_UINT64(session)),
-                          static_cast<unsigned long long>(VK_HANDLE_TO_UINT64(alloc_info.deviceMemory)),
-                          static_cast<unsigned long long>(alloc_info.offset),
-                          static_cast<unsigned long long>(replay_mem_req.size));
+        GFXRECON_LOG_DEBUG("BindDataGraphPipelineSessionMemory[%u]: SUCCESS session=0x%llx mem=0x%llx offset=%" PRIu64
+                           " size=%" PRIu64,
+                           i,
+                           static_cast<unsigned long long>(VK_HANDLE_TO_UINT64(session)),
+                           static_cast<unsigned long long>(VK_HANDLE_TO_UINT64(alloc_info.deviceMemory)),
+                           static_cast<unsigned long long>(alloc_info.offset),
+                           static_cast<unsigned long long>(replay_mem_req.size));
     }
 
     return VK_SUCCESS;
