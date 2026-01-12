@@ -25,32 +25,22 @@ to one of these other documents:
 
 ## Index
 
-- [GFXReconstruct API Capture and Replay - D3D12](#gfxreconstruct-api-capture-and-replay---d3d12)
-  - [Index](#index)
-  - [Capturing API calls](#capturing-api-calls)
-    - [Enabling D3D12 Capture](#enabling-d3d12-capture)
-    - [Capture Options](#capture-options)
-        - [Supported Options](#supported-options)
-    - [Capture Files](#capture-files)
-      - [Specifying Capture File Location](#specifying-capture-file-location)
-      - [Timestamps](#timestamps)
-    - [Trimmed Captures](#trimmed-captures)
-  - [Replaying API Calls](#replaying-api-calls)
-    - [Command Line Arguments](#command-line-arguments)
-    - [Keyboard Controls](#keyboard-controls)
-    - [Capturing Replay (Recapture)](#capturing-replay-recapture)
-  - [Other Capture File Processing Tools](#other-capture-file-processing-tools)
-    - [Capture File Info](#capture-file-info)
-    - [Capture File Compression](#capture-file-compression)
-    - [Capture File Optimizer](#capture-file-optimizer)
-      - [DXR Optimization](#dxr-optimization)
-      - [Redundant PSO Removal](#redundant-pso-removal)
-    - [Renaming Scripts](#renaming-scripts)
-      - [gfxrecon-replay-renamed.py](#gfxrecon-replay-renamedpy)
-      - [gfxrecon-optimize-renamed.py](#gfxrecon-optimize-renamedpy)
-  - [AMD GPU Services Support](#amd-gpu-services-support)
-    - [How to Capture AGS](#how-to-capture-ags)
-    - [How to Process AGS Files](#how-to-process-ags-files)
+1. [Capturing API calls](#capturing-api-calls)
+    1. [Enabling D3D12 Capture](#enabling-d3d12-capture)
+    2. [Capture Options](#capture-options)
+    3. [Capture Files](#capture-files)
+2. [Replaying API Calls](#replaying-api-calls)
+    1. [Command Line Arguments](#command-line-arguments)
+    2. [Keyboard Controls](#keyboard-controls)
+    3. [Capturing Replay (Recapture)](#capturing-replay-recapture)
+3. [Other Capture File Processing Tools](#other-capture-file-processing-tools)
+    1. [Capture File Info](#capture-file-info)
+    2. [Capture File Compression](#capture-file-compression)
+    3. [Capture File Optimizer](#capture-file-optimizer)
+    4. [Renaming Scripts](#renaming-scripts)
+4. [AMD GPU Services Support](#ags-support)
+    1. [How to Capture AGS](#how-to-capture-ags)
+    2. [How to Process AGS Capture Files](#how-to-process-ags-capture-files)
 
 
 
@@ -313,7 +303,7 @@ Optional arguments:
                         (Same as --force-windowed-origin)
   --use-cached-psos     Permit using cached PSOs when creating graphics or compute pipelines.
                         Using cached PSOs may reduce PSO creation time but may result in replay errors.
-  --debug-device-lost   Enables automatic injection of breadcrumbs into command buffers and   page fault
+  --debug-device-lost   Enables automatic injection of breadcrumbs into command buffers and page fault
                         reporting.  Used to debug Direct3D 12 device removed problems.
                         For accurate DRED data that matches the current command list, please add `--sync` option.
   --fw <width,height>   Setup windowed and override resolution.
