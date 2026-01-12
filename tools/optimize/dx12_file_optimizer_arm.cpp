@@ -40,7 +40,29 @@ bool Dx12FileOptimizerARM::ProcessFunctionCall(decode::ParsedBlock& parsed_block
         return true;
     }
 
-    return FileOptimizer::ProcessFunctionCall(parsed_block);
+    const auto& args = parsed_block.Get<decode::FunctionCallArgs>();
+
+    // Exit early if the call is filtered out by FileOptimizer
+    if (FilterFunctionCall(args))
+    {
+        return true;
+    }
+
+    if (!parsed_block.Decompress(GetBlockParser()))
+    {
+        return false;
+    }
+
+    // Separate buffer that holds call parameters to modify
+    encode::ParameterBuffer buffer;
+    buffer.Write(args.data, args.data_size);
+
+    // Dispatch call while applying modifiers
+    auto modifier_dispatch_visitor = [this, &parsed_block, &buffer](const auto& store) {
+        return ModifierDispatch(*store, parsed_block, buffer);
+    };
+
+    return std::visit(modifier_dispatch_visitor, parsed_block.GetArgs());
 }
 
 bool Dx12FileOptimizerARM::ProcessMethodCall(decode::ParsedBlock& parsed_block)
@@ -66,6 +88,32 @@ bool Dx12FileOptimizerARM::ProcessMethodCall(decode::ParsedBlock& parsed_block)
     // Separate buffer that holds call parameters to modify
     encode::ParameterBuffer buffer;
     buffer.Write(args.data, args.data_size);
+
+    // Dispatch call while applying modifiers
+    auto modifier_dispatch_visitor = [this, &parsed_block, &buffer](const auto& store) {
+        return ModifierDispatch(*store, parsed_block, buffer);
+    };
+
+    return std::visit(modifier_dispatch_visitor, parsed_block.GetArgs());
+}
+
+bool Dx12FileOptimizerARM::ProcessMetaData(decode::ParsedBlock& parsed_block)
+{
+    // Exit early if the call is filtered out by FileOptimizer
+    auto        filter_visitor = [this](const auto& store) { return FilterMetaData(*store); };
+    VisitResult result         = std::visit(filter_visitor, parsed_block.GetArgs());
+    if (result != kNeedsPassthrough)
+    {
+        return result == kSuccess;
+    }
+
+    if (!parsed_block.Decompress(GetBlockParser()))
+    {
+        return false;
+    }
+
+    // There is no "parameter" but the buffer is still needed to signal the modification pass to the modifiers
+    encode::ParameterBuffer buffer;
 
     // Dispatch call while applying modifiers
     auto modifier_dispatch_visitor = [this, &parsed_block, &buffer](const auto& store) {

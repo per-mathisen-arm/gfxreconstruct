@@ -54,6 +54,7 @@ class Dx12FileOptimizerARM : public FileOptimizer
   private:
     bool ProcessFunctionCall(decode::ParsedBlock& parsed_block) override;
     bool ProcessMethodCall(decode::ParsedBlock& parsed_block) override;
+    bool ProcessMetaData(decode::ParsedBlock& parsed_block) override;
     bool ProcessFrameEndMarker(decode::ParsedBlock& parsed_block) override;
 
     template <typename Args>
