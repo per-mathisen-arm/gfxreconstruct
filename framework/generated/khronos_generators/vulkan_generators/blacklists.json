@@ -57,6 +57,7 @@
     "VkImageToMemoryCopy",
     "VkLayerSettingEXT",
     "VkDataGraphPipelineConstantARM",
-    "VkDescriptorGetInfoEXT"
+    "VkDescriptorGetInfoEXT",
+    "VkPipelineCreateInfoKHR"
   ]
 }

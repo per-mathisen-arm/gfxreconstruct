@@ -68,6 +68,7 @@ struct Decoded_VkImageToMemoryCopy;
 struct Decoded_VkLayerSettingEXT;
 struct Decoded_VkDataGraphPipelineConstantARM;
 struct Decoded_VkDescriptorGetInfoEXT;
+struct Decoded_VkPipelineCreateInfoKHR;
 
 size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_VkDescriptorImageInfo* wrapper);
 size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_VkWriteDescriptorSet* wrapper);
@@ -83,6 +84,7 @@ size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_VkImageTo
 size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_VkLayerSettingEXT* wrapper);
 size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_VkDataGraphPipelineConstantARM* wrapper);
 size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_VkDescriptorGetInfoEXT* wrapper);
+size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_VkPipelineCreateInfoKHR* wrapper);
 
 // Decoded struct wrappers for SECURITY_ATTRIBUTES and related WIN32 structures.
 struct Decoded_ACL;

@@ -160,6 +160,10 @@ void FieldToJson(nlohmann::ordered_json&               jdata,
                  const Decoded_VkDescriptorGetInfoEXT* data,
                  const util::JsonOptions&              options = util::JsonOptions());
 
+void FieldToJson(nlohmann::ordered_json&                jdata,
+                 const Decoded_VkPipelineCreateInfoKHR* data,
+                 const util::JsonOptions&               options = util::JsonOptions());
+
 template <typename T>
 void FieldToJson(nlohmann::ordered_json&  jdata,
                  const std::vector<T>&    data,
