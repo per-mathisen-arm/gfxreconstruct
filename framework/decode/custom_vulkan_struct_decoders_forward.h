@@ -65,6 +65,7 @@ struct Decoded_VkCopyMemoryToImageInfo;
 struct Decoded_VkMemoryToImageCopy;
 struct Decoded_VkCopyImageToMemoryInfo;
 struct Decoded_VkImageToMemoryCopy;
+struct Decoded_VkLayerSettingEXT;
 struct Decoded_VkDataGraphPipelineConstantARM;
 struct Decoded_VkDescriptorGetInfoEXT;
 
@@ -79,6 +80,7 @@ size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_VkCopyMem
 size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_VkMemoryToImageCopy* wrapper);
 size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_VkCopyImageToMemoryInfo* wrapper);
 size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_VkImageToMemoryCopy* wrapper);
+size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_VkLayerSettingEXT* wrapper);
 size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_VkDataGraphPipelineConstantARM* wrapper);
 size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_VkDescriptorGetInfoEXT* wrapper);
 

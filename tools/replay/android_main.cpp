@@ -103,8 +103,10 @@ extern "C"
 
 void android_main(struct android_app* app)
 {
-    GFXRECON_WRITE_CONSOLE("====== Entering android_main");
     gfxrecon::util::Log::Init();
+
+    GFXRECON_WRITE_CONSOLE("====== Entering android_main");
+
     PrintVersion(kApplicationName);
 
     // Keep screen on while window is active.

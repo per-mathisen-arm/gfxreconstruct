@@ -51,6 +51,7 @@ void EncodeStruct(ParameterEncoder* encoder, const VkIndirectExecutionSetCreateI
 void EncodeStruct(ParameterEncoder* encoder, const VkIndirectCommandsLayoutTokenEXT& value);
 void EncodeStruct(ParameterEncoder* encoder, const VkCopyMemoryToImageInfo& value);
 void EncodeStruct(ParameterEncoder* encoder, const VkCopyImageToMemoryInfo& value);
+void EncodeStruct(ParameterEncoder* encoder, const VkLayerSettingEXT& value);
 void EncodeStruct(ParameterEncoder* encoder, const VkDataGraphPipelineConstantARM& value);
 void EncodeStruct(ParameterEncoder* encoder, const VkDescriptorGetInfoEXT& value);
 

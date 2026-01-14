@@ -158,6 +158,11 @@ std::string GenerateStruct_VkImageToMemoryCopy(std::ostream&                out,
                                                Decoded_VkImageToMemoryCopy* metaInfo,
                                                VulkanCppConsumerBase&       consumer);
 
+std::string GenerateStruct_VkLayerSettingEXT(std::ostream&              out,
+                                             const VkLayerSettingEXT*   structInfo,
+                                             Decoded_VkLayerSettingEXT* metaInfo,
+                                             VulkanCppConsumerBase&     consumer);
+
 std::string GenerateStruct_VkDataGraphPipelineConstantARM(std::ostream&                           out,
                                                           const VkDataGraphPipelineConstantARM*   structInfo,
                                                           Decoded_VkDataGraphPipelineConstantARM* metaInfo,
