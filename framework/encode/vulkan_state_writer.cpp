@@ -171,7 +171,7 @@ uint64_t VulkanStateWriter::WriteState(const VulkanStateTable& state_table, uint
     // Resource creation.
     WriteBufferState(state_table);
     WriteImageState(state_table);
-    StandardCreateWrite<vulkan_wrappers::DataGraphPipelineSessionARMWrapper>(state_table);
+
     StandardCreateWrite<vulkan_wrappers::TensorARMWrapper>(state_table);
     StandardCreateWrite<vulkan_wrappers::TensorViewARMWrapper>(state_table);
     WriteDeviceMemoryState(state_table);
@@ -210,6 +210,8 @@ uint64_t VulkanStateWriter::WriteState(const VulkanStateTable& state_table, uint
     WriteAccelerationStructureStateMetaCommands(state_table);
     StandardCreateWrite<vulkan_wrappers::AccelerationStructureNVWrapper>(state_table);
     StandardCreateWrite<vulkan_wrappers::ShaderEXTWrapper>(state_table);
+    StandardCreateWrite<vulkan_wrappers::DataGraphPipelineSessionARMWrapper>(state_table);
+    WriteDataGraphPipelineSessionMemoryState(state_table);
 
     // Descriptor creation.
     StandardCreateWrite<vulkan_wrappers::DescriptorPoolWrapper>(state_table);
@@ -2232,6 +2234,36 @@ void VulkanStateWriter::WriteMicromapEXTState(const VulkanStateTable& state_tabl
         EncodeStructPtr(&encoder_, allocation_callbacks);
         WriteFunctionCall(format::ApiCall_vkDestroyCommandPool, &parameter_stream_);
     }
+}
+
+void VulkanStateWriter::WriteDataGraphPipelineSessionMemoryState(const VulkanStateTable& state_table)
+{
+    state_table.VisitWrappers([&](const vulkan_wrappers::DataGraphPipelineSessionARMWrapper* wrapper) {
+        assert(wrapper != nullptr);
+
+        // Require a valid bound memory.
+        const auto* memory_wrapper = state_table.GetVulkanDeviceMemoryWrapper(wrapper->bind_memory_id);
+        if ((wrapper->bind_memory_id == format::kNullHandleId) || (memory_wrapper == nullptr))
+        {
+            return;
+        }
+
+        VkBindDataGraphPipelineSessionMemoryInfoARM info{};
+        info.sType        = VK_STRUCTURE_TYPE_BIND_DATA_GRAPH_PIPELINE_SESSION_MEMORY_INFO_ARM;
+        info.pNext        = nullptr;
+        info.session      = wrapper->handle;
+        info.memory       = memory_wrapper->handle;
+        info.memoryOffset = wrapper->bind_offset;
+        info.bindPoint    = wrapper->bindPoint;
+        info.objectIndex  = wrapper->objectIndex;
+
+        encoder_.EncodeHandleIdValue(wrapper->bind_device->handle_id);
+        encoder_.EncodeUInt32Value(1);
+        EncodeStructArray(&encoder_, &info, 1);
+        encoder_.EncodeEnumValue(VK_SUCCESS);
+        WriteFunctionCall(format::ApiCallId::ApiCall_vkBindDataGraphPipelineSessionMemoryARM, &parameter_stream_);
+        parameter_stream_.Clear();
+    });
 }
 
 void VulkanStateWriter::WriteMicromapEXTBuild(DeviceWrapper*                          device_wrapper,
@@ -4405,7 +4437,8 @@ void VulkanStateWriter::WriteDescriptorUpdateCommand(format::HandleId           
 
     // scratch-space for a potential pNext-struct
     constexpr size_t max_num_bytes_p_next_data =
-        std::max(sizeof(VkWriteDescriptorSetAccelerationStructureKHR), sizeof(VkWriteDescriptorSetInlineUniformBlock));
+        std::max(sizeof(VkWriteDescriptorSetAccelerationStructureKHR),
+                 std::max(sizeof(VkWriteDescriptorSetInlineUniformBlock), sizeof(VkWriteDescriptorSetTensorARM)));
     std::array<uint8_t, max_num_bytes_p_next_data> p_next_data{};
 
     write->pBufferInfo      = nullptr;
@@ -4462,6 +4495,19 @@ void VulkanStateWriter::WriteDescriptorUpdateCommand(format::HandleId           
                 p_next.accelerationStructureCount = binding->count;
                 p_next.pAccelerationStructures    = binding->acceleration_structures.get();
                 write->pNext                      = &p_next;
+            }
+        }
+        break;
+        case VK_DESCRIPTOR_TYPE_TENSOR_ARM:
+        {
+            if (binding->tensor_views != nullptr)
+            {
+                auto& p_next           = *reinterpret_cast<VkWriteDescriptorSetTensorARM*>(p_next_data.data());
+                p_next.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_TENSOR_ARM;
+                p_next.pNext           = nullptr;
+                p_next.tensorViewCount = write->descriptorCount;
+                p_next.pTensorViews    = &binding->tensor_views[write->dstArrayElement];
+                write->pNext           = &p_next;
             }
         }
         break;
@@ -5119,9 +5165,16 @@ bool VulkanStateWriter::CheckCommandHandle(vulkan_state_info::CommandHandleType 
             return (state_table.GetVulkanShaderEXTWrapper(handle_id) != nullptr);
         case vulkan_state_info::CommandHandleType::DeviceMemoryHandle:
             return (state_table.GetVulkanDeviceMemoryWrapper(handle_id) != nullptr);
+        case vulkan_state_info::CommandHandleType::TensorARMHandle:
+            return (state_table.GetVulkanTensorARMWrapper(handle_id) != nullptr);
+        case vulkan_state_info::CommandHandleType::TensorViewARMHandle:
+            return (state_table.GetVulkanTensorViewARMWrapper(handle_id) != nullptr);
+        case vulkan_state_info::CommandHandleType::DataGraphPipelineSessionARMHandle:
+            return (state_table.GetVulkanDataGraphPipelineSessionARMWrapper(handle_id) != nullptr);
         default:
-            GFXRECON_LOG_ERROR("State write is skipping unrecognized handle type when checking handles "
-                               "referenced by command buffers");
+            GFXRECON_LOG_ERROR("State write is skipping unrecognized handle type %d when checking handles "
+                               "referenced by command buffers",
+                               static_cast<int>(handle_type));
             assert(false);
             return false;
     }
@@ -5199,6 +5252,12 @@ bool VulkanStateWriter::CheckDescriptorStatus(const vulkan_state_info::Descripto
                 break;
             case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
                 if (state_table.GetVulkanAccelerationStructureKHRWrapper(descriptor->handle_ids[index]) != nullptr)
+                {
+                    valid = true;
+                }
+                break;
+            case VK_DESCRIPTOR_TYPE_TENSOR_ARM:
+                if (state_table.GetVulkanTensorViewARMWrapper(descriptor->handle_ids[index]) != nullptr)
                 {
                     valid = true;
                 }
@@ -5405,24 +5464,6 @@ void VulkanStateWriter::WriteDebugUtilsState(const VulkanStateTable& state_table
 
 void VulkanStateWriter::WriteTensorMemoryState(const VulkanStateTable& state_table)
 {
-    state_table.VisitWrappers([&](const vulkan_wrappers::DataGraphPipelineSessionARMWrapper* wrapper) {
-        parameter_stream_.Clear();
-        encoder_.EncodeEnumValue(VK_SUCCESS);
-
-        VkBindDataGraphPipelineSessionMemoryInfoARM info;
-        info.pNext     = nullptr;
-        info.sType     = VK_STRUCTURE_TYPE_BIND_DATA_GRAPH_PIPELINE_SESSION_MEMORY_INFO_ARM;
-        info.session   = wrapper->handle;
-        info.bindPoint = wrapper->bindPoint;
-        const vulkan_wrappers::DeviceMemoryWrapper* memory_wrapper =
-            state_table.GetVulkanDeviceMemoryWrapper(wrapper->bind_memory_id);
-        info.memory       = memory_wrapper->handle;
-        info.memoryOffset = wrapper->bind_offset;
-        encoder_.EncodeHandleIdValue(memory_wrapper->parent_device->handle_id);
-        encoder_.EncodeUInt32Value(1);
-        EncodeStructPtr(&encoder_, &info);
-        WriteFunctionCall(format::ApiCallId::ApiCall_vkBindDataGraphPipelineSessionMemoryARM, &parameter_stream_);
-    });
     state_table.VisitWrappers([&](const vulkan_wrappers::TensorARMWrapper* wrapper) {
         parameter_stream_.Clear();
 

@@ -181,6 +181,8 @@ class VulkanStateWriter
 
     void WriteMicromapEXTState(const VulkanStateTable& state_table);
 
+    void WriteDataGraphPipelineSessionMemoryState(const VulkanStateTable& state_table);
+
     struct MicromapsCallInjectionUtilitiesHandles
     {
         format::HandleId                 command_pool_id;

@@ -1233,6 +1233,27 @@ void VulkanStateTracker::TrackUpdateDescriptorSets(uint32_t                    w
                         }
                     }
                     break;
+                    case VK_DESCRIPTOR_TYPE_TENSOR_ARM:
+                    {
+                        auto write_tensor = graphics::vulkan_struct_get_pnext<VkWriteDescriptorSetTensorARM>(write);
+
+                        if (write_tensor != nullptr)
+                        {
+                            format::HandleId*      dst_tensor_view_ids = &binding.handle_ids[current_dst_array_element];
+                            VkTensorViewARM*       dst_tensor_views = &binding.tensor_views[current_dst_array_element];
+                            const VkTensorViewARM* src_tensor_views =
+                                &write_tensor->pTensorViews[current_src_array_element];
+
+                            for (uint32_t i = 0; i < current_writes; ++i)
+                            {
+                                dst_tensor_view_ids[i] =
+                                    vulkan_wrappers::GetWrappedId<vulkan_wrappers::TensorViewARMWrapper>(
+                                        src_tensor_views[i]);
+                                dst_tensor_views[i] = src_tensor_views[i];
+                            }
+                        }
+                    }
+                    break;
                     default:
                         GFXRECON_LOG_WARNING("Attempting to track descriptor state for unrecognized descriptor type");
                         break;
