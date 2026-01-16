@@ -718,7 +718,7 @@ inline void InitializeState<VkDevice, vulkan_wrappers::ImageWrapper, VkImageCrea
     else
     {
         const graphics::VulkanDeviceTable* device_table = vulkan_wrappers::GetDeviceTable(parent_handle);
-        VkMemoryRequirements     image_mem_reqs;
+        VkMemoryRequirements               image_mem_reqs;
         assert(wrapper->handle != VK_NULL_HANDLE);
         device_table->GetImageMemoryRequirements(parent_handle, wrapper->handle, &image_mem_reqs);
         wrapper->size = image_mem_reqs.size;

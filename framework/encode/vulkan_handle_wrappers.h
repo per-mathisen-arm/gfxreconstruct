@@ -726,7 +726,8 @@ struct TensorARMWrapper : public HandleWrapper<VkTensorARM>, AssetWrapperBase
 
 struct TensorViewARMWrapper : public HandleWrapper<VkTensorViewARM>
 {
-    TensorARMWrapper* tensor;
+    TensorARMWrapper*                         tensor;
+    std::unordered_set<DescriptorSetWrapper*> descriptor_sets_bound_to;
 };
 
 struct PipelineCacheWrapper : public HandleWrapper<VkPipelineCache>
