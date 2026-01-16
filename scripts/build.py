@@ -153,7 +153,7 @@ def update_external_dependencies(args):
     '''
     if not args.skip_update_deps:
         update_git_submodule_result = subprocess.run(
-            ['git', 'submodule', 'update', '--init'], cwd=BUILD_ROOT)
+            ['git', 'submodule', 'update', '--init', '--recursive'], cwd=BUILD_ROOT)
         if 0 != update_git_submodule_result.returncode:
             raise BuildError('failed to update git submodules')
 
