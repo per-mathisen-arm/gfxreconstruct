@@ -442,8 +442,8 @@ class VulkanStateWriter
     {
         std::vector<VkCopyAccelerationStructureInfoKHR> infos;
     };
-    void EncodeAccelerationStructureCopyMetaCommand(format::HandleId                                       device_id,
-                                                    const std::vector<VkCopyAccelerationStructureInfoKHR>& infos);
+    void EncodeAccelerationStructuresCopyMetaCommand(format::HandleId                                       device_id,
+                                                     const std::vector<VkCopyAccelerationStructureInfoKHR>& infos);
 
     struct AccelerationStructureWritePropertiesCommandData
     {

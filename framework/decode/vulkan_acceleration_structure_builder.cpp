@@ -210,7 +210,7 @@ VkResult VulkanAccelerationStructureBuilder::OnCreateAccelerationStructure(
     return result;
 }
 
-void VulkanAccelerationStructureBuilder::ProcessBuildVulkanAccelerationStructuresMetaCommand(
+void VulkanAccelerationStructureBuilder::ProcessVulkanBuildAccelerationStructuresCommand(
     uint32_t                                                      info_count,
     VkAccelerationStructureBuildGeometryInfoKHR*                  geometry_infos,
     VkAccelerationStructureBuildRangeInfoKHR**                    range_infos,
@@ -225,7 +225,7 @@ void VulkanAccelerationStructureBuilder::ProcessBuildVulkanAccelerationStructure
     ExecuteCommandBuffer();
 }
 
-void VulkanAccelerationStructureBuilder::ProcessCopyVulkanAccelerationStructuresMetaCommand(
+void VulkanAccelerationStructureBuilder::ProcessVulkanCopyAccelerationStructuresCommand(
     uint32_t info_count, VkCopyAccelerationStructureInfoKHR* copy_infos)
 {
     BeginCommandBuffer();
@@ -236,7 +236,7 @@ void VulkanAccelerationStructureBuilder::ProcessCopyVulkanAccelerationStructures
     ExecuteCommandBuffer();
 }
 
-void VulkanAccelerationStructureBuilder::ProcessVulkanAccelerationStructuresWritePropertiesMetaCommand(
+void VulkanAccelerationStructureBuilder::ProcessVulkanWriteAccelerationStructuresPropertiesCommand(
     VkQueryType query_type, VkAccelerationStructureKHR acceleration_structure)
 {
     BeginCommandBuffer();

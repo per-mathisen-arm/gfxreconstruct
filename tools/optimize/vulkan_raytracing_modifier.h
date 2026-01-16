@@ -210,14 +210,14 @@ class VulkanRayTracingModifier : public util::VulkanModifierBase
         format::HandleId                                  queryPool,
         uint32_t                                          firstQuery) override;
 
-    virtual void ProcessBuildVulkanAccelerationStructuresMetaCommand(
+    virtual void ProcessVulkanBuildAccelerationStructuresCommand(
         format::HandleId                                                           device_id,
         uint32_t                                                                   info_count,
         StructPointerDecoder<Decoded_VkAccelerationStructureBuildGeometryInfoKHR>* geometry_infos,
         StructPointerDecoder<Decoded_VkAccelerationStructureBuildRangeInfoKHR*>*   range_infos,
         std::vector<std::vector<VkAccelerationStructureInstanceKHR>>&              instance_buffers_data) override;
 
-    virtual void ProcessCopyVulkanAccelerationStructuresMetaCommand(
+    virtual void ProcessVulkanCopyAccelerationStructuresCommand(
         format::HandleId                                                  device_id,
         StructPointerDecoder<Decoded_VkCopyAccelerationStructureInfoKHR>* copy_infos) override;
 

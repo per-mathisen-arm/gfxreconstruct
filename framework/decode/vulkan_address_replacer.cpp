@@ -1384,7 +1384,7 @@ void VulkanAddressReplacer::ProcessGetQueryPoolResults(VkDevice           device
     }
 }
 
-void VulkanAddressReplacer::ProcessBuildVulkanAccelerationStructuresMetaCommand(
+void VulkanAddressReplacer::ProcessVulkanBuildAccelerationStructuresCommand(
     uint32_t                                     info_count,
     VkAccelerationStructureBuildGeometryInfoKHR* geometry_infos,
     VkAccelerationStructureBuildRangeInfoKHR**   range_infos,
@@ -1409,7 +1409,7 @@ void VulkanAddressReplacer::ProcessBuildVulkanAccelerationStructuresMetaCommand(
     }
 }
 
-void VulkanAddressReplacer::ProcessCopyVulkanAccelerationStructuresMetaCommand(
+void VulkanAddressReplacer::ProcessVulkanCopyAccelerationStructuresCommand(
     uint32_t                                  info_count,
     VkCopyAccelerationStructureInfoKHR*       copy_infos,
     const decode::VulkanDeviceAddressTracker& address_tracker)
@@ -1434,13 +1434,13 @@ void VulkanAddressReplacer::ProcessCopyVulkanAccelerationStructuresMetaCommand(
             }
             else
             {
-                GFXRECON_LOG_ERROR("ProcessCopyVulkanAccelerationStructuresMetaCommand: missing handles");
+                GFXRECON_LOG_ERROR("ProcessVulkanCopyAccelerationStructuresCommand: missing handles");
             }
         }
     }
 }
 
-void VulkanAddressReplacer::ProcessVulkanAccelerationStructuresWritePropertiesMetaCommand(
+void VulkanAddressReplacer::ProcessVulkanWriteAccelerationStructuresPropertiesCommand(
     VkQueryType                               query_type,
     VkAccelerationStructureKHR                acceleration_structure,
     const decode::VulkanDeviceAddressTracker& address_tracker)

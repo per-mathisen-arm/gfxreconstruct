@@ -12627,7 +12627,7 @@ void VulkanReplayConsumerBase::Process_vkCreateRayTracingPipelinesKHR(
     }
 }
 
-void VulkanReplayConsumerBase::ProcessCopyVulkanAccelerationStructuresMetaCommand(
+void VulkanReplayConsumerBase::ProcessVulkanCopyAccelerationStructuresCommand(
     format::HandleId device, StructPointerDecoder<Decoded_VkCopyAccelerationStructureInfoKHR>* copy_infos)
 {
     VulkanDeviceInfo* device_info = GetObjectInfoTable().GetVkDeviceInfo(device);
@@ -12648,7 +12648,7 @@ void VulkanReplayConsumerBase::ProcessCopyVulkanAccelerationStructuresMetaComman
         {
             const auto& address_tracker  = GetDeviceAddressTracker(device_info);
             auto&       address_replacer = GetDeviceAddressReplacer(device_info);
-            address_replacer.ProcessCopyVulkanAccelerationStructuresMetaCommand(
+            address_replacer.ProcessVulkanCopyAccelerationStructuresCommand(
                 copy_infos->GetLength(), copy_infos->GetPointer(), address_tracker);
         }
     }
@@ -12659,15 +12659,15 @@ void VulkanReplayConsumerBase::ProcessCopyVulkanAccelerationStructuresMetaComman
         MapStructArrayHandles(copy_infos->GetMetaStructPointer(), copy_infos->GetLength(), GetObjectInfoTable());
 
         GetAccelerationStructureBuilder(device_info)
-            .ProcessCopyVulkanAccelerationStructuresMetaCommand(copy_infos->GetLength(), copy_infos->GetPointer());
+            .ProcessVulkanCopyAccelerationStructuresCommand(copy_infos->GetLength(), copy_infos->GetPointer());
     }
 
     // TODO: implement
-    // acceleration_structure_builders_[device]->ProcessCopyVulkanAccelerationStructuresMetaCommand(
+    // acceleration_structure_builders_[device]->ProcessVulkanCopyAccelerationStructuresCommand(
     //     copy_infos->GetLength(), copy_infos->GetPointer());
 }
 
-void VulkanReplayConsumerBase::ProcessBuildVulkanAccelerationStructuresMetaCommand(
+void VulkanReplayConsumerBase::ProcessVulkanBuildAccelerationStructuresCommand(
     format::HandleId                                                           device,
     uint32_t                                                                   info_count,
     StructPointerDecoder<Decoded_VkAccelerationStructureBuildGeometryInfoKHR>* pInfos,
@@ -12702,7 +12702,7 @@ void VulkanReplayConsumerBase::ProcessBuildVulkanAccelerationStructuresMetaComma
         if (UseAddressReplacement(device_info))
         {
             GetDeviceAddressReplacer(device_info)
-                .ProcessBuildVulkanAccelerationStructuresMetaCommand(
+                .ProcessVulkanBuildAccelerationStructuresCommand(
                     info_count, pInfos->GetPointer(), ppRangeInfos->GetPointer(), GetDeviceAddressTracker(device_info));
         }
     }
@@ -12724,11 +12724,11 @@ void VulkanReplayConsumerBase::ProcessBuildVulkanAccelerationStructuresMetaComma
         nullptr, info_count, build_geometry_infos, build_range_infos, address_tracker, false);
 
     GetAccelerationStructureBuilder(device_info)
-        .ProcessBuildVulkanAccelerationStructuresMetaCommand(
+        .ProcessVulkanBuildAccelerationStructuresCommand(
             info_count, build_geometry_infos, build_range_infos, instance_buffers_data);
 }
 
-void VulkanReplayConsumerBase::ProcessVulkanAccelerationStructuresWritePropertiesMetaCommand(
+void VulkanReplayConsumerBase::ProcessVulkanWriteAccelerationStructuresPropertiesCommand(
     format::HandleId device_id, VkQueryType query_type, format::HandleId acceleration_structure_id)
 {
     VulkanDeviceInfo* device_info = GetObjectInfoTable().GetVkDeviceInfo(device_id);
@@ -12749,7 +12749,7 @@ void VulkanReplayConsumerBase::ProcessVulkanAccelerationStructuresWritePropertie
                 acceleration_structure_id, &VulkanObjectInfoTable::GetVkAccelerationStructureKHRInfo);
 
             GetDeviceAddressReplacer(device_info)
-                .ProcessVulkanAccelerationStructuresWritePropertiesMetaCommand(
+                .ProcessVulkanWriteAccelerationStructuresPropertiesCommand(
                     query_type, acceleration_structure, GetDeviceAddressTracker(device_info));
         }
     }
@@ -12761,11 +12761,11 @@ void VulkanReplayConsumerBase::ProcessVulkanAccelerationStructuresWritePropertie
             acceleration_structure_id, &VulkanObjectInfoTable::GetVkAccelerationStructureKHRInfo);
 
         GetAccelerationStructureBuilder(device_info)
-            .ProcessVulkanAccelerationStructuresWritePropertiesMetaCommand(query_type, acceleration_structure);
+            .ProcessVulkanWriteAccelerationStructuresPropertiesCommand(query_type, acceleration_structure);
     }
 
     // TODO: implement
-    //    acceleration_structure_builders_[device_id]->ProcessVulkanAccelerationStructuresWritePropertiesMetaCommand(
+    //    acceleration_structure_builders_[device_id]->ProcessVulkanWriteAccelerationStructuresPropertiesCommand(
     //        query_type, acceleration_structure);
 }
 

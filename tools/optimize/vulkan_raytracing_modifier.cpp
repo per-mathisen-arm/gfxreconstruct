@@ -116,7 +116,7 @@ void VulkanRayTracingModifier::Process_vkGetAccelerationStructureDeviceAddressKH
             block_index_ < acceleration_structure_build_infos_[as_id].process_compacted_as_index)
         {
             // delete the compacted AS function,
-            // it will be inserted new AS function before ProcessCopyVulkanAccelerationStructuresMetaCommand
+            // it will be inserted new AS function before ProcessVulkanCopyAccelerationStructuresCommand
             SetDeleteCurrentCall();
 
             gfxrecon::encode::ParameterEncoder encoder(
@@ -915,7 +915,7 @@ void VulkanRayTracingModifier::Process_vkCreateAccelerationStructureKHR(
     if (build_info->second.is_meta_copy && block_index_ < build_info->second.process_compacted_as_index)
     {
         // delete the compacted AS function,
-        // it will be inserted new AS function before ProcessCopyVulkanAccelerationStructuresMetaCommand
+        // it will be inserted new AS function before ProcessVulkanCopyAccelerationStructuresCommand
         SetDeleteCurrentCall();
 
         gfxrecon::encode::ParameterEncoder encoder(
@@ -1156,7 +1156,7 @@ void VulkanRayTracingModifier::Process_vkCmdCopyAccelerationStructureKHR(
     }
 }
 
-void VulkanRayTracingModifier::ProcessBuildVulkanAccelerationStructuresMetaCommand(
+void VulkanRayTracingModifier::ProcessVulkanBuildAccelerationStructuresCommand(
     format::HandleId                                                           device_id,
     uint32_t                                                                   info_count,
     StructPointerDecoder<Decoded_VkAccelerationStructureBuildGeometryInfoKHR>* geometry_infos,
@@ -1268,7 +1268,7 @@ void VulkanRayTracingModifier::ProcessBuildVulkanAccelerationStructuresMetaComma
     }
 }
 
-void VulkanRayTracingModifier::ProcessCopyVulkanAccelerationStructuresMetaCommand(
+void VulkanRayTracingModifier::ProcessVulkanCopyAccelerationStructuresCommand(
     format::HandleId device_id, StructPointerDecoder<Decoded_VkCopyAccelerationStructureInfoKHR>* copy_infos)
 {
     if (IsModificationPass())

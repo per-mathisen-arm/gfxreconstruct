@@ -1560,7 +1560,7 @@ ParsedBlock BlockParser::ParseMetaData(BlockBuffer& block_buffer)
     }
     else if (meta_data_type == format::MetaDataType::kVulkanBuildAccelerationStructuresCommand)
     {
-        format::VulkanMetaBuildAccelerationStructuresHeader header{};
+        format::VulkanBuildAccelerationStructuresCommandHeader header{};
         GFXRECON_CHECK_CONVERSION_DATA_LOSS(size_t, block_header.size);
         const size_t           parameter_buffer_size = static_cast<size_t>(block_header.size) - sizeof(meta_data_id);
         BlockBuffer::BlockSpan parameter_data        = block_buffer.ReadSpan(parameter_buffer_size);

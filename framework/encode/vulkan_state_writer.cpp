@@ -1859,7 +1859,12 @@ void VulkanStateWriter::WriteAccelerationStructureStateMetaCommands(const Vulkan
             EncodeAccelerationStructureWritePropertiesCommand(device_id, cmd_properties);
         }
 
-        EncodeAccelerationStructureCopyMetaCommand(device_id, command.copy_infos);
+        // Check if there are actually any kVulkanCopyAccelerationStructuresCommand before dumping.
+        // This saves from dumping a basically empty block
+        if (!command.copy_infos.empty())
+        {
+            EncodeAccelerationStructuresCopyMetaCommand(device_id, command.copy_infos);
+        }
 
         for (auto& tlas_build : command.tlas_build)
         {
@@ -1989,7 +1994,7 @@ void VulkanStateWriter::EncodeAccelerationStructureBuildMetaCommand(
 
     parameter_stream_.Clear();
 
-    format::VulkanMetaBuildAccelerationStructuresHeader header{};
+    format::VulkanBuildAccelerationStructuresCommandHeader header{};
     header.meta_header.block_header.type = format::BlockType::kMetaDataBlock;
     header.meta_header.block_header.size = GetMetaDataBlockBaseSize(header);
     header.meta_header.meta_data_id      = format::MakeMetaDataId(
@@ -2010,7 +2015,7 @@ void VulkanStateWriter::EncodeAccelerationStructureBuildMetaCommand(
     ++blocks_written_;
 }
 
-void VulkanStateWriter::EncodeAccelerationStructureCopyMetaCommand(
+void VulkanStateWriter::EncodeAccelerationStructuresCopyMetaCommand(
     format::HandleId device_id, const std::vector<VkCopyAccelerationStructureInfoKHR>& infos)
 {
     if (infos.empty())

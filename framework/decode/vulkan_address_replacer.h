@@ -279,11 +279,10 @@ class VulkanAddressReplacer : public VulkanAddressReplacerBase
      * @param   range_infos             provided array of pointers to VkAccelerationStructureBuildRangeInfoKHR
      * @param   address_tracker         const reference to a VulkanDeviceAddressTracker
      */
-    void
-    ProcessBuildVulkanAccelerationStructuresMetaCommand(uint32_t                                     info_count,
-                                                        VkAccelerationStructureBuildGeometryInfoKHR* geometry_infos,
-                                                        VkAccelerationStructureBuildRangeInfoKHR**   range_infos,
-                                                        const decode::VulkanDeviceAddressTracker&    address_tracker);
+    void ProcessVulkanBuildAccelerationStructuresCommand(uint32_t                                     info_count,
+                                                         VkAccelerationStructureBuildGeometryInfoKHR* geometry_infos,
+                                                         VkAccelerationStructureBuildRangeInfoKHR**   range_infos,
+                                                         const decode::VulkanDeviceAddressTracker&    address_tracker);
 
     /**
      * @brief   Process information contained in a metadata-block in order to copy acceleration-structures.
@@ -292,9 +291,9 @@ class VulkanAddressReplacer : public VulkanAddressReplacerBase
      * @param   copy_infos      provided array of VkCopyAccelerationStructureInfoKHR
      * @param   address_tracker const reference to a VulkanDeviceAddressTracker
      */
-    void ProcessCopyVulkanAccelerationStructuresMetaCommand(uint32_t                                  info_count,
-                                                            VkCopyAccelerationStructureInfoKHR*       copy_infos,
-                                                            const decode::VulkanDeviceAddressTracker& address_tracker);
+    void ProcessVulkanCopyAccelerationStructuresCommand(uint32_t                                  info_count,
+                                                        VkCopyAccelerationStructureInfoKHR*       copy_infos,
+                                                        const decode::VulkanDeviceAddressTracker& address_tracker);
     /**
      * @brief   Process information contained in a metadata-block in order to issue a query on internal an query-pool.
      *
@@ -303,7 +302,7 @@ class VulkanAddressReplacer : public VulkanAddressReplacerBase
      * @param   query_type              type of query
      * @param   acceleration_structure  provided acceleration-structure handle
      */
-    void ProcessVulkanAccelerationStructuresWritePropertiesMetaCommand(
+    void ProcessVulkanWriteAccelerationStructuresPropertiesCommand(
         VkQueryType                               query_type,
         VkAccelerationStructureKHR                acceleration_structure,
         const decode::VulkanDeviceAddressTracker& address_tracker);

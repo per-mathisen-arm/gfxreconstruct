@@ -776,7 +776,7 @@ struct SetEnvironmentVariablesCommand
     // containing a list of environment variables and their values
 };
 
-struct VulkanMetaBuildAccelerationStructuresHeader
+struct VulkanBuildAccelerationStructuresCommandHeader
 {
     format::MetaDataHeader meta_header;
 };

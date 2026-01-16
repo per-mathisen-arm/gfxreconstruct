@@ -88,18 +88,17 @@ class VulkanAccelerationStructureBuilder
 
     void OnDestroyBuffer(const VulkanBufferInfo* buffer_info);
 
-    void ProcessBuildVulkanAccelerationStructuresMetaCommand(
+    void ProcessVulkanBuildAccelerationStructuresCommand(
         uint32_t                                                      info_count,
         VkAccelerationStructureBuildGeometryInfoKHR*                  geometry_infos,
         VkAccelerationStructureBuildRangeInfoKHR**                    range_infos,
         std::vector<std::vector<VkAccelerationStructureInstanceKHR>>& instance_buffers_data);
 
-    void ProcessCopyVulkanAccelerationStructuresMetaCommand(uint32_t                            info_count,
-                                                            VkCopyAccelerationStructureInfoKHR* copy_infos);
+    void ProcessVulkanCopyAccelerationStructuresCommand(uint32_t                            info_count,
+                                                        VkCopyAccelerationStructureInfoKHR* copy_infos);
 
-    void
-    ProcessVulkanAccelerationStructuresWritePropertiesMetaCommand(VkQueryType                query_type,
-                                                                  VkAccelerationStructureKHR acceleration_structure);
+    void ProcessVulkanWriteAccelerationStructuresPropertiesCommand(VkQueryType                query_type,
+                                                                   VkAccelerationStructureKHR acceleration_structure);
 
     void OnQueueSubmit(uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence);
     void OnQueueSubmit2(uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence);

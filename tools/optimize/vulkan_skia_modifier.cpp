@@ -834,7 +834,7 @@ void VulkanSkiaModifier::ProcessInitSubresourceCommand(const format::InitSubreso
     }
 }
 
-void VulkanSkiaModifier::ProcessBuildVulkanAccelerationStructuresMetaCommand(
+void VulkanSkiaModifier::ProcessVulkanBuildAccelerationStructuresCommand(
     format::HandleId                                                           device_id,
     uint32_t                                                                   info_count,
     StructPointerDecoder<Decoded_VkAccelerationStructureBuildGeometryInfoKHR>* geometry_infos,
@@ -850,7 +850,7 @@ void VulkanSkiaModifier::ProcessBuildVulkanAccelerationStructuresMetaCommand(
     }
 }
 
-void VulkanSkiaModifier::ProcessCopyVulkanAccelerationStructuresMetaCommand(
+void VulkanSkiaModifier::ProcessVulkanCopyAccelerationStructuresCommand(
     format::HandleId device_id, StructPointerDecoder<Decoded_VkCopyAccelerationStructureInfoKHR>* copy_infos)
 {
     if (IsModificationPass())
@@ -862,7 +862,7 @@ void VulkanSkiaModifier::ProcessCopyVulkanAccelerationStructuresMetaCommand(
     }
 }
 
-void VulkanSkiaModifier::ProcessVulkanAccelerationStructuresWritePropertiesMetaCommand(
+void VulkanSkiaModifier::ProcessVulkanWriteAccelerationStructuresPropertiesCommand(
     format::HandleId device_id, VkQueryType query_type, format::HandleId acceleration_structure_id)
 {
     if (IsModificationPass())

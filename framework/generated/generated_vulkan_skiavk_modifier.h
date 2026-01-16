@@ -4775,15 +4775,15 @@ class VulkanSkiaModifier : public util::VulkanModifierBase
                                      const uint8_t*               data) override;
     virtual void ProcessInitSubresourceCommand(const format::InitSubresourceCommandHeader& command_header,
                                            const uint8_t*                              data) override;
-    virtual void ProcessBuildVulkanAccelerationStructuresMetaCommand(
+    virtual void ProcessVulkanBuildAccelerationStructuresCommand(
     format::HandleId                                                           device_id,
     uint32_t                                                                   info_count,
     StructPointerDecoder<Decoded_VkAccelerationStructureBuildGeometryInfoKHR>* geometry_infos,
     StructPointerDecoder<Decoded_VkAccelerationStructureBuildRangeInfoKHR*>*   range_infos,
     std::vector<std::vector<VkAccelerationStructureInstanceKHR>>&              instance_buffers_data) override;
-    virtual void ProcessCopyVulkanAccelerationStructuresMetaCommand(
+    virtual void ProcessVulkanCopyAccelerationStructuresCommand(
     format::HandleId device_id, StructPointerDecoder<Decoded_VkCopyAccelerationStructureInfoKHR>* copy_infos) override;
-    virtual void ProcessVulkanAccelerationStructuresWritePropertiesMetaCommand(
+    virtual void ProcessVulkanWriteAccelerationStructuresPropertiesCommand(
     format::HandleId device_id, VkQueryType query_type, format::HandleId acceleration_structure_id) override;
     virtual void ProcessFrameEndMarker(uint64_t frame_number) override;
 

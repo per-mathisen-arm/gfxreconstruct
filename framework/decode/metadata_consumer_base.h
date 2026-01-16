@@ -128,7 +128,7 @@ class MetadataConsumerBase
 
     virtual void SetCurrentBlockIndex(uint64_t block_index) {}
 
-    virtual void ProcessBuildVulkanAccelerationStructuresMetaCommand(
+    virtual void ProcessVulkanBuildAccelerationStructuresCommand(
         format::HandleId                                                           device_id,
         uint32_t                                                                   info_count,
         StructPointerDecoder<Decoded_VkAccelerationStructureBuildGeometryInfoKHR>* geometry_infos,
@@ -136,12 +136,13 @@ class MetadataConsumerBase
         std::vector<std::vector<VkAccelerationStructureInstanceKHR>>&              instance_buffers_data)
     {}
 
-    virtual void ProcessCopyVulkanAccelerationStructuresMetaCommand(
+    virtual void ProcessVulkanCopyAccelerationStructuresCommand(
         format::HandleId device_id, StructPointerDecoder<Decoded_VkCopyAccelerationStructureInfoKHR>* copy_infos)
     {}
 
-    virtual void ProcessVulkanAccelerationStructuresWritePropertiesMetaCommand(
-        format::HandleId device_id, VkQueryType query_type, format::HandleId acceleration_structure_id)
+    virtual void ProcessVulkanWriteAccelerationStructuresPropertiesCommand(format::HandleId device_id,
+                                                                           VkQueryType      query_type,
+                                                                           format::HandleId acceleration_structure_id)
     {}
 
     virtual void ProcessInitTensorCommand(format::HandleId device_id,
