@@ -30,7 +30,6 @@
 #include "encode/capture_settings.h"
 #include "encode/descriptor_update_template_info.h"
 #include "encode/parameter_buffer.h"
-#include "encode/parameter_encoder.h"
 #include "encode/vulkan_handle_wrapper_util.h"
 #include "encode/vulkan_handle_wrappers.h"
 #include "encode/vulkan_state_tracker.h"
@@ -38,7 +37,6 @@
 #include "format/format.h"
 #include "format/platform_types.h"
 #include "generated/generated_vulkan_dispatch_table.h"
-#include "generated/generated_vulkan_command_buffer_util.h"
 #include "util/defines.h"
 #include "graphics/ahardwarebuffer_format_converter.h"
 
@@ -51,7 +49,6 @@
 #include <mutex>
 #include <set>
 #include <unordered_map>
-#include <vector>
 
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(encode)
@@ -1970,8 +1967,8 @@ class VulkanCaptureManager : public ApiCaptureManager
             state_tracker_->TrackDataGraphPipelineSessionMemoryBinding(
                 device, pBindInfos[i].session, pBindInfos[i].memory, pBindInfos[i].memoryOffset);
             auto wrapper         = GetWrapper<DataGraphPipelineSessionARMWrapper>(pBindInfos[i].session);
-            wrapper->objectIndex = pBindInfos[i].objectIndex;
-            wrapper->bindPoint   = pBindInfos[i].bindPoint;
+            wrapper->object_index = pBindInfos[i].objectIndex;
+            wrapper->bind_point   = pBindInfos[i].bindPoint;
         }
     }
 
@@ -2033,6 +2030,11 @@ class VulkanCaptureManager : public ApiCaptureManager
     void WriteSetDeviceMemoryPropertiesCommand(format::HandleId                        physical_device_id,
                                                const VkPhysicalDeviceMemoryProperties& memory_properties);
     void WriteSetOpaqueAddressCommand(format::HandleId device_id, format::HandleId object_id, uint64_t address);
+
+    void WriteSetOpaqueCaptureDescriptorData(format::HandleId device_id,
+                                             format::HandleId object_id,
+                                             size_t           data_size,
+                                             const void*      data);
 
     void WriteSetRayTracingShaderGroupHandlesCommand(format::HandleId device_id,
                                                      format::HandleId pipeline_id,

@@ -150,6 +150,10 @@ void UnwrapStructHandles(VkAccelerationStructureBuildGeometryInfoKHR* value, Han
     }
 }
 
+void UnwrapStructHandles(VkCopyMemoryToImageInfo* value, HandleUnwrapMemory* unwrap_memory) {}
+
+void UnwrapStructHandles(VkCopyImageToMemoryInfo* value, HandleUnwrapMemory* unwrap_memory) {}
+
 void UnwrapStructHandles(VkDescriptorGetInfoEXT* value, HandleUnwrapMemory* unwrap_memory)
 {
     if (value != nullptr)
@@ -189,10 +193,6 @@ void UnwrapStructHandles(VkDescriptorGetInfoEXT* value, HandleUnwrapMemory* unwr
         }
     }
 }
-
-void UnwrapStructHandles(VkCopyMemoryToImageInfo* value, HandleUnwrapMemory* unwrap_memory) {}
-
-void UnwrapStructHandles(VkCopyImageToMemoryInfo* value, HandleUnwrapMemory* unwrap_memory) {}
 
 GFXRECON_END_NAMESPACE(vulkan_wrappers)
 GFXRECON_END_NAMESPACE(encode)

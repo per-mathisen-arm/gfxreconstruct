@@ -266,6 +266,9 @@ class VulkanBaseGenerator(KhronosBaseGenerator):
             },
             'VkDebugUtilsObjectTagInfoEXT': {
                 'objectHandle': 'objectType'
+            },
+            'VkDescriptorGetInfoEXT': {
+                'objectHandle': 'objectType'
             }
         }
 

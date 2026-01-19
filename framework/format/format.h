@@ -169,6 +169,7 @@ enum class MetaDataType : uint16_t
     kExecuteBlocksFromFile                              = 34,
     kCreateHardwareBufferCommand                        = 35,
     kInitializeMetaCommand                              = 36,
+    kSetOpaqueCaptureDescriptorDataCommand              = 37,
 
     //! reserve values with highest-bit for special purposes
     kBeginExperimentalReservedRange = 1U << 15U
@@ -661,6 +662,15 @@ struct SetOpaqueAddressCommand
     format::HandleId device_id;
     format::HandleId object_id;
     uint64_t         address;
+};
+
+struct SetOpaqueDescriptorDataCommand
+{
+    MetaDataHeader   meta_header;
+    format::ThreadId thread_id;
+    format::HandleId device_id;
+    format::HandleId object_id;
+    uint32_t         data_size;
 };
 
 struct SetRayTracingShaderGroupHandlesCommandHeader

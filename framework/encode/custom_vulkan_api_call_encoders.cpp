@@ -1016,35 +1016,57 @@ vkGetTensorViewOpaqueCaptureDescriptorDataARM(VkDevice, const VkTensorViewCaptur
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT(
-    VkDevice, const VkAccelerationStructureCaptureDescriptorDataInfoEXT*, void*)
+    VkDevice device, const VkAccelerationStructureCaptureDescriptorDataInfoEXT* pInfo, void* pData)
 {
+    GFXRECON_UNREFERENCED_PARAMETER(device);
+    GFXRECON_UNREFERENCED_PARAMETER(pInfo);
+    GFXRECON_UNREFERENCED_PARAMETER(pData);
+    GFXRECON_LOG_WARNING_ONCE(
+        "%s: skipping capture of VkPhysicalDeviceDescriptorBufferFeaturesEXT::descriptorBufferCaptureReplay", __func__);
     return VK_SUCCESS;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL vkGetBufferOpaqueCaptureDescriptorDataEXT(VkDevice,
-                                                                         const VkBufferCaptureDescriptorDataInfoEXT*,
-                                                                         void*)
+VKAPI_ATTR VkResult VKAPI_CALL vkGetBufferOpaqueCaptureDescriptorDataEXT(
+    VkDevice device, const VkBufferCaptureDescriptorDataInfoEXT* pInfo, void* pData)
 {
-    return VK_SUCCESS;
-}
-
-VKAPI_ATTR VkResult VKAPI_CALL vkGetImageOpaqueCaptureDescriptorDataEXT(VkDevice,
-                                                                        const VkImageCaptureDescriptorDataInfoEXT*,
-                                                                        void*)
-{
-    return VK_SUCCESS;
-}
-
-VKAPI_ATTR VkResult VKAPI_CALL vkGetSamplerOpaqueCaptureDescriptorDataEXT(VkDevice,
-                                                                          const VkSamplerCaptureDescriptorDataInfoEXT*,
-                                                                          void*)
-{
+    GFXRECON_UNREFERENCED_PARAMETER(device);
+    GFXRECON_UNREFERENCED_PARAMETER(pInfo);
+    GFXRECON_UNREFERENCED_PARAMETER(pData);
+    GFXRECON_LOG_WARNING_ONCE(
+        "%s: skipping capture of VkPhysicalDeviceDescriptorBufferFeaturesEXT::descriptorBufferCaptureReplay", __func__);
     return VK_SUCCESS;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL
-vkGetImageViewOpaqueCaptureDescriptorDataEXT(VkDevice, const VkImageViewCaptureDescriptorDataInfoEXT*, void*)
+vkGetImageOpaqueCaptureDescriptorDataEXT(VkDevice device, const VkImageCaptureDescriptorDataInfoEXT* pInfo, void* pData)
 {
+    GFXRECON_UNREFERENCED_PARAMETER(device);
+    GFXRECON_UNREFERENCED_PARAMETER(pInfo);
+    GFXRECON_UNREFERENCED_PARAMETER(pData);
+    GFXRECON_LOG_WARNING_ONCE(
+        "%s: skipping capture of VkPhysicalDeviceDescriptorBufferFeaturesEXT::descriptorBufferCaptureReplay", __func__);
+    return VK_SUCCESS;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL vkGetSamplerOpaqueCaptureDescriptorDataEXT(
+    VkDevice device, const VkSamplerCaptureDescriptorDataInfoEXT* pInfo, void* pData)
+{
+    GFXRECON_UNREFERENCED_PARAMETER(device);
+    GFXRECON_UNREFERENCED_PARAMETER(pInfo);
+    GFXRECON_UNREFERENCED_PARAMETER(pData);
+    GFXRECON_LOG_WARNING_ONCE(
+        "%s: skipping capture of VkPhysicalDeviceDescriptorBufferFeaturesEXT::descriptorBufferCaptureReplay", __func__);
+    return VK_SUCCESS;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL vkGetImageViewOpaqueCaptureDescriptorDataEXT(
+    VkDevice device, const VkImageViewCaptureDescriptorDataInfoEXT* pInfo, void* pData)
+{
+    GFXRECON_UNREFERENCED_PARAMETER(device);
+    GFXRECON_UNREFERENCED_PARAMETER(pInfo);
+    GFXRECON_UNREFERENCED_PARAMETER(pData);
+    GFXRECON_LOG_WARNING_ONCE(
+        "%s: skipping capture of VkPhysicalDeviceDescriptorBufferFeaturesEXT::descriptorBufferCaptureReplay", __func__);
     return VK_SUCCESS;
 }
 

@@ -162,6 +162,11 @@ class VulkanReplayConsumerBase : public VulkanConsumer
     virtual void
     ProcessSetOpaqueAddressCommand(format::HandleId device_id, format::HandleId object_id, uint64_t address) override;
 
+    void ProcessSetOpaqueDescriptorDataCommand(format::HandleId device_id,
+                                               format::HandleId object_id,
+                                               uint32_t         data_size,
+                                               const uint8_t*   data) override;
+
     virtual void ProcessSetRayTracingShaderGroupHandlesCommand(format::HandleId device_id,
                                                                format::HandleId pipeline_id,
                                                                size_t           data_size,
@@ -914,7 +919,7 @@ class VulkanReplayConsumerBase : public VulkanConsumer
 
     VkResult OverrideCreateBuffer(PFN_vkCreateBuffer                                         func,
                                   VkResult                                                   original_result,
-                                  const VulkanDeviceInfo*                                    device_info,
+                                  VulkanDeviceInfo*                                          device_info,
                                   const StructPointerDecoder<Decoded_VkBufferCreateInfo>*    pCreateInfo,
                                   const StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
                                   HandlePointerDecoder<VkBuffer>*                            pBuffer);
@@ -933,7 +938,7 @@ class VulkanReplayConsumerBase : public VulkanConsumer
 
     VkResult OverrideCreateImage(PFN_vkCreateImage                                          func,
                                  VkResult                                                   original_result,
-                                 const VulkanDeviceInfo*                                    device_info,
+                                 VulkanDeviceInfo*                                          device_info,
                                  const StructPointerDecoder<Decoded_VkImageCreateInfo>*     pCreateInfo,
                                  const StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
                                  HandlePointerDecoder<VkImage>*                             pImage);
@@ -1321,7 +1326,7 @@ class VulkanReplayConsumerBase : public VulkanConsumer
     VkResult OverrideCreateAccelerationStructureKHR(
         PFN_vkCreateAccelerationStructureKHR                                      func,
         VkResult                                                                  original_result,
-        const VulkanDeviceInfo*                                                   device_info,
+        VulkanDeviceInfo*                                                         device_info,
         const StructPointerDecoder<Decoded_VkAccelerationStructureCreateInfoKHR>* pCreateInfo,
         const StructPointerDecoder<Decoded_VkAllocationCallbacks>*                pAllocator,
         HandlePointerDecoder<VkAccelerationStructureKHR>*                         pAccelerationStructureKHR);
@@ -1539,10 +1544,17 @@ class VulkanReplayConsumerBase : public VulkanConsumer
 
     VkResult OverrideCreateImageView(PFN_vkCreateImageView                                func,
                                      VkResult                                             original_result,
-                                     const VulkanDeviceInfo*                              device_info,
+                                     VulkanDeviceInfo*                                    device_info,
                                      StructPointerDecoder<Decoded_VkImageViewCreateInfo>* create_info_decoder,
                                      StructPointerDecoder<Decoded_VkAllocationCallbacks>* allocator_decoder,
                                      HandlePointerDecoder<VkImageView>*                   view_decoder);
+
+    VkResult OverrideCreateSampler(PFN_vkCreateSampler                                  func,
+                                   VkResult                                             original_result,
+                                   VulkanDeviceInfo*                                    device_info,
+                                   StructPointerDecoder<Decoded_VkSamplerCreateInfo>*   create_info_decoder,
+                                   StructPointerDecoder<Decoded_VkAllocationCallbacks>* allocator_decoder,
+                                   HandlePointerDecoder<VkSampler>*                     sampler_decoder);
 
     VkResult OverrideCreateFramebuffer(PFN_vkCreateFramebuffer                                func,
                                        VkResult                                               original_result,
@@ -1612,18 +1624,6 @@ class VulkanReplayConsumerBase : public VulkanConsumer
                                      const VulkanDeviceInfo*                                    device_info,
                                      VulkanShaderModuleInfo*                                    shader_module_info,
                                      const StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator);
-
-    void OverrideGetDescriptorEXT(PFN_vkGetDescriptorEXT                                func,
-                                  VulkanDeviceInfo*                                     device,
-                                  StructPointerDecoder<Decoded_VkDescriptorGetInfoEXT>* pDescriptorInfo,
-                                  size_t                                                dataSize,
-                                  PointerDecoder<uint8_t>*                              pDescriptor);
-
-    void
-    OverrideCmdBindDescriptorBuffersEXT(PFN_vkCmdBindDescriptorBuffersEXT                               func,
-                                        VulkanCommandBufferInfo*                                        commandBuffer,
-                                        uint32_t                                                        bufferCount,
-                                        StructPointerDecoder<Decoded_VkDescriptorBufferBindingInfoEXT>* pBindingInfos);
 
     VkResult OverrideCreateSamplerYcbcrConversion(
         PFN_vkCreateSamplerYcbcrConversion                                      func,
@@ -1757,6 +1757,18 @@ class VulkanReplayConsumerBase : public VulkanConsumer
         const VulkanDeviceInfo*                                     device_info,
         const VulkanSwapchainKHRInfo*                               swapchain_info,
         StructPointerDecoder<Decoded_VkRefreshCycleDurationGOOGLE>* pDisplayTimingProperties);
+
+    void OverrideGetDescriptorEXT(PFN_vkGetDescriptorEXT                                func,
+                                  VulkanDeviceInfo*                                     device_info,
+                                  StructPointerDecoder<Decoded_VkDescriptorGetInfoEXT>* pDescriptorInfo,
+                                  size_t                                                dataSize,
+                                  PointerDecoder<uint8_t>*                              pDescriptor);
+
+    void
+    OverrideCmdBindDescriptorBuffersEXT(PFN_vkCmdBindDescriptorBuffersEXT func,
+                                        VulkanCommandBufferInfo*          commandBuffer_info,
+                                        uint32_t                          bufferCount,
+                                        StructPointerDecoder<Decoded_VkDescriptorBufferBindingInfoEXT>* pBindingInfos);
 
     std::function<handle_create_result_t<VkPipeline>()>
     AsyncCreateGraphicsPipelines(PFN_vkCreateGraphicsPipelines                               func,
