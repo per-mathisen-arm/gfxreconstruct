@@ -1,5 +1,6 @@
 LIBRARY d3d12
 EXPORTS
+D3D12CreateAdditionalDevice=gfxrecon_D3D12CreateAdditionalDevice @99
 D3D12CoreCreateLayeredDevice=d3d12_ms.D3D12CoreCreateLayeredDevice @104
 D3D12CoreGetLayeredDeviceSize=d3d12_ms.D3D12CoreGetLayeredDeviceSize @105
 D3D12CoreRegisterLayers=d3d12_ms.D3D12CoreRegisterLayers @106

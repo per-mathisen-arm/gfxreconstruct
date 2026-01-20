@@ -51,6 +51,11 @@ struct D3d12HookInfo
 //-----------------------------------------------------------------------------
 /// typedef function pointers
 //-----------------------------------------------------------------------------
+typedef HRESULT(WINAPI* PFN_D3D12CREATEADDITIONALDEVICE)(struct IUnknown*    pAdapter,
+                                                         D3D_FEATURE_LEVEL   MinimumFeatureLevel,
+                                                         struct _GUID const& riid,
+                                                         void**              ppDevice);
+
 typedef HRESULT(WINAPI* PFN_D3D12CREATEDEVICE)(IUnknown*         pAdapter,
                                                D3D_FEATURE_LEVEL MinimumFeatureLevel,
                                                const IID&        riid,

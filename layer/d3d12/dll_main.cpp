@@ -129,6 +129,19 @@ EXTERN_C HRESULT WINAPI gfxrecon_D3D12CreateDevice(IUnknown*         pAdapter,
     return E_FAIL;
 }
 
+EXTERN_C HRESULT WINAPI gfxrecon_D3D12CreateAdditionalDevice(struct IUnknown*    pAdapter,
+                                                             D3D_FEATURE_LEVEL   MinimumFeatureLevel,
+                                                             struct _GUID const& riid,
+                                                             void**              ppDevice)
+{
+    if (gfxrecon::Initialize())
+    {
+        return GetDispatchTable().D3D12CreateDevice(pAdapter, MinimumFeatureLevel, riid, ppDevice);
+    }
+
+    return E_FAIL;
+}
+
 EXTERN_C HRESULT WINAPI gfxrecon_D3D12CreateRootSignatureDeserializer(LPCVOID pSrcData,
                                                                       SIZE_T  SrcDataSizeInBytes,
                                                                       REFIID  pRootSignatureDeserializerInterface,

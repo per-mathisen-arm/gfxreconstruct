@@ -1,5 +1,6 @@
 LIBRARY d3d12_ms
 EXPORTS
+D3D12CreateAdditionalDevice @99
 D3D12CoreCreateLayeredDevice @104
 D3D12CoreGetLayeredDeviceSize @105
 D3D12CoreRegisterLayers @106
