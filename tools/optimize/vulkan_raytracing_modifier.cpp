@@ -1735,6 +1735,27 @@ void VulkanRayTracingModifier::Process_vkCmdPushConstants(const ApiCallInfo&    
     }
 }
 
+void VulkanRayTracingModifier::Process_vkCmdPushConstants2(
+    const ApiCallInfo&                                 call_info,
+    format::HandleId                                   commandBuffer,
+    StructPointerDecoder<Decoded_VkPushConstantsInfo>* pPushConstantsInfo)
+{
+    Decoded_VkPushConstantsInfo* meta_info = pPushConstantsInfo->GetMetaStructPointer();
+    VkPushConstantsInfo*         info      = pPushConstantsInfo->GetPointer();
+    GFXRECON_ASSERT(meta_info != nullptr && info != nullptr);
+
+    Process_vkCmdPushConstants(
+        call_info, commandBuffer, meta_info->layout, info->stageFlags, info->offset, info->size, &meta_info->pValues);
+}
+
+void VulkanRayTracingModifier::Process_vkCmdPushConstants2KHR(
+    const ApiCallInfo&                                 call_info,
+    format::HandleId                                   commandBuffer,
+    StructPointerDecoder<Decoded_VkPushConstantsInfo>* pPushConstantsInfo)
+{
+    Process_vkCmdPushConstants2(call_info, commandBuffer, pPushConstantsInfo);
+}
+
 void VulkanRayTracingModifier::Process_vkQueueSubmit(const ApiCallInfo&                          call_info,
                                                      VkResult                                    returnValue,
                                                      format::HandleId                            queue,

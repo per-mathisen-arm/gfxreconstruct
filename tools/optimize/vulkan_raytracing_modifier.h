@@ -313,6 +313,16 @@ class VulkanRayTracingModifier : public util::VulkanModifierBase
                                             uint32_t                 size,
                                             PointerDecoder<uint8_t>* pValues) override;
 
+    virtual void
+    Process_vkCmdPushConstants2(const ApiCallInfo&                                 call_info,
+                                format::HandleId                                   commandBuffer,
+                                StructPointerDecoder<Decoded_VkPushConstantsInfo>* pPushConstantsInfo) override;
+
+    virtual void
+    Process_vkCmdPushConstants2KHR(const ApiCallInfo&                                 call_info,
+                                   format::HandleId                                   commandBuffer,
+                                   StructPointerDecoder<Decoded_VkPushConstantsInfo>* pPushConstantsInfo) override;
+
     virtual void Process_vkQueueSubmit(const ApiCallInfo&                          call_info,
                                        VkResult                                    returnValue,
                                        format::HandleId                            queue,
