@@ -235,6 +235,7 @@ class Dx12RebindAllocator : public Dx12ResourceAllocator
   private:
     ID3D12Device*              device_;
     ComPtr<D3D12MA::Allocator> allocator_;
+    bool                       enable_as_committed_; // Cache for GFXRECON_ACCEL_STRUCT_COMMITTED env var
 
     std::unordered_map<format::HandleId, ComPtr<D3D12MA::Allocation>>     heap_id_aliasing_allocation_;
     std::unordered_map<format::HandleId, ComPtr<D3D12MA::Allocation>>     resource_id_allocation_;

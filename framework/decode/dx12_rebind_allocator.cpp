@@ -24,11 +24,13 @@
 #include "decode/dx12_rebind_allocator.h"
 #include "graphics/dx12_util.h"
 #include "util/logging.h"
+#include "util/options.h"
+#include "util/platform.h"
 
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(decode)
 
-Dx12RebindAllocator::Dx12RebindAllocator() : allocator_(nullptr), device_(nullptr) {}
+Dx12RebindAllocator::Dx12RebindAllocator() : allocator_(nullptr), device_(nullptr), enable_as_committed_(true) {}
 
 HRESULT Dx12RebindAllocator::Initialize(const IUnknown* adapter, const void* pvDevice)
 {
@@ -40,6 +42,9 @@ HRESULT Dx12RebindAllocator::Initialize(const IUnknown* adapter, const void* pvD
 
     GFXRECON_LOG_INFO_ONCE("Replay with D3D12 rebind memory translation.");
     HRESULT result = D3D12MA::CreateAllocator(&desc, &allocator_);
+
+    std::string env_value = gfxrecon::util::platform::GetEnv("GFXRECON_ACCEL_STRUCT_COMMITTED");
+    enable_as_committed_  = gfxrecon::util::ParseBoolString(env_value, true);
 
     return result;
 }
@@ -432,8 +437,16 @@ HRESULT Dx12RebindAllocator::CreatePlacedResource(format::HandleId              
 
     if (allocator_ != nullptr)
     {
+        bool should_use_committed =
+            enable_as_committed_ && ((InitialState & D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE) != 0);
+
+        if (should_use_committed)
+        {
+            alloc_desc.Flags = D3D12MA::ALLOCATION_FLAGS::ALLOCATION_FLAG_COMMITTED;
+        }
+
         // If the HeapOffset is 0 and it is not a multi-sample resource, an aliasing resource needs be created.
-        if ((HeapOffset != 0) || (pDesc->SampleDesc.Count > 1))
+        if ((HeapOffset != 0) || (pDesc->SampleDesc.Count > 1) || should_use_committed)
         {
             result = allocator_->CreateResource(&alloc_desc,
                                                 pDesc,
@@ -626,8 +639,15 @@ HRESULT Dx12RebindAllocator::CreatePlacedResource1(format::HandleId             
 
     if (allocator_ != nullptr)
     {
+        bool should_use_committed =
+            enable_as_committed_ && ((InitialState & D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE) != 0);
+
+        if (should_use_committed)
+        {
+            alloc_desc.Flags = D3D12MA::ALLOCATION_FLAGS::ALLOCATION_FLAG_COMMITTED;
+        }
         // If the HeapOffset is 0 and it is not a multi-sample resource, an aliasing resource needs be created.
-        if ((HeapOffset != 0) || (pDesc->SampleDesc.Count > 1))
+        if ((HeapOffset != 0) || (pDesc->SampleDesc.Count > 1) || should_use_committed)
         {
             result = allocator_->CreateResource2(&alloc_desc,
                                                  pDesc,
@@ -829,8 +849,15 @@ HRESULT Dx12RebindAllocator::CreatePlacedResource2(format::HandleId             
 
     if (allocator_ != nullptr)
     {
+        bool should_use_committed =
+            enable_as_committed_ && (resource_desc->Flags & D3D12_RESOURCE_FLAG_RAYTRACING_ACCELERATION_STRUCTURE) != 0;
+
+        if (should_use_committed)
+        {
+            alloc_desc.Flags = D3D12MA::ALLOCATION_FLAGS::ALLOCATION_FLAG_COMMITTED;
+        }
         // If the HeapOffset is 0 and it is not a multi-sample resource, an aliasing resource needs be created.
-        if ((HeapOffset != 0) || (pDesc->SampleDesc.Count > 1))
+        if ((HeapOffset != 0) || (pDesc->SampleDesc.Count > 1) || should_use_committed)
         {
             result = allocator_->CreateResource3(&alloc_desc,
                                                  pDesc,
