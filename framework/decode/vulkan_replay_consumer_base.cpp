@@ -217,6 +217,12 @@ VulkanReplayConsumerBase::VulkanReplayConsumerBase(std::shared_ptr<application::
     }
 
     VulkanSwapchainOptions swapchain_options;
+    swapchain_options.force_windowed                     = options_.force_windowed;
+    swapchain_options.windowed_width                     = options_.windowed_width;
+    swapchain_options.windowed_height                    = options_.windowed_height;
+    swapchain_options.force_windowed_origin              = options_.force_windowed_origin;
+    swapchain_options.window_topleft_x                   = options_.window_topleft_x;
+    swapchain_options.window_topleft_y                   = options_.window_topleft_y;
     swapchain_options.virtual_swapchain_skip_blit        = options_.virtual_swapchain_skip_blit;
     swapchain_options.surface_index                      = options_.surface_index;
     swapchain_options.offscreen_swapchain_frame_boundary = options_.offscreen_swapchain_frame_boundary;
@@ -9912,7 +9918,6 @@ VkResult VulkanReplayConsumerBase::OverrideCreateAndroidSurfaceKHR(
     HandlePointerDecoder<VkSurfaceKHR>*                                pSurface)
 {
     GFXRECON_UNREFERENCED_PARAMETER(func);
-    GFXRECON_UNREFERENCED_PARAMETER(original_result);
     GFXRECON_UNREFERENCED_PARAMETER(pAllocator);
 
     assert((instance_info != nullptr) && (pCreateInfo != nullptr));
@@ -9927,12 +9932,7 @@ VkResult VulkanReplayConsumerBase::OverrideCreateAndroidSurfaceKHR(
                                      replay_create_info->flags,
                                      pSurface,
                                      GetInstanceTable(instance_info->handle),
-                                     application_.get(),
-                                     options_.window_topleft_x,
-                                     options_.window_topleft_y,
-                                     kDefaultWindowWidth,
-                                     kDefaultWindowHeight,
-                                     options_.force_windowed || options_.force_windowed_origin);
+                                     application_.get());
 }
 
 VkResult VulkanReplayConsumerBase::OverrideCreateWin32SurfaceKHR(
@@ -9944,7 +9944,6 @@ VkResult VulkanReplayConsumerBase::OverrideCreateWin32SurfaceKHR(
     HandlePointerDecoder<VkSurfaceKHR>*                              pSurface)
 {
     GFXRECON_UNREFERENCED_PARAMETER(func);
-    GFXRECON_UNREFERENCED_PARAMETER(original_result);
     GFXRECON_UNREFERENCED_PARAMETER(pAllocator);
 
     assert((instance_info != nullptr) && (pCreateInfo != nullptr));
@@ -9959,12 +9958,7 @@ VkResult VulkanReplayConsumerBase::OverrideCreateWin32SurfaceKHR(
                                      replay_create_info->flags,
                                      pSurface,
                                      GetInstanceTable(instance_info->handle),
-                                     application_.get(),
-                                     options_.window_topleft_x,
-                                     options_.window_topleft_y,
-                                     kDefaultWindowWidth,
-                                     kDefaultWindowHeight,
-                                     options_.force_windowed || options_.force_windowed_origin);
+                                     application_.get());
 }
 
 VkBool32 VulkanReplayConsumerBase::OverrideGetPhysicalDeviceWin32PresentationSupportKHR(
@@ -9993,7 +9987,6 @@ VkResult VulkanReplayConsumerBase::OverrideCreateXcbSurfaceKHR(
     HandlePointerDecoder<VkSurfaceKHR>*                            pSurface)
 {
     GFXRECON_UNREFERENCED_PARAMETER(func);
-    GFXRECON_UNREFERENCED_PARAMETER(original_result);
     GFXRECON_UNREFERENCED_PARAMETER(pAllocator);
 
     assert((instance_info != nullptr) && (pCreateInfo != nullptr));
@@ -10008,12 +10001,7 @@ VkResult VulkanReplayConsumerBase::OverrideCreateXcbSurfaceKHR(
                                      replay_create_info->flags,
                                      pSurface,
                                      GetInstanceTable(instance_info->handle),
-                                     application_.get(),
-                                     options_.window_topleft_x,
-                                     options_.window_topleft_y,
-                                     kDefaultWindowWidth,
-                                     kDefaultWindowHeight,
-                                     options_.force_windowed || options_.force_windowed_origin);
+                                     application_.get());
 }
 
 VkBool32 VulkanReplayConsumerBase::OverrideGetPhysicalDeviceXcbPresentationSupportKHR(
@@ -10046,7 +10034,6 @@ VkResult VulkanReplayConsumerBase::OverrideCreateXlibSurfaceKHR(
     HandlePointerDecoder<VkSurfaceKHR>*                             pSurface)
 {
     GFXRECON_UNREFERENCED_PARAMETER(func);
-    GFXRECON_UNREFERENCED_PARAMETER(original_result);
     GFXRECON_UNREFERENCED_PARAMETER(pAllocator);
 
     assert((instance_info != nullptr) && (pCreateInfo != nullptr));
@@ -10061,12 +10048,7 @@ VkResult VulkanReplayConsumerBase::OverrideCreateXlibSurfaceKHR(
                                      replay_create_info->flags,
                                      pSurface,
                                      GetInstanceTable(instance_info->handle),
-                                     application_.get(),
-                                     options_.window_topleft_x,
-                                     options_.window_topleft_y,
-                                     kDefaultWindowWidth,
-                                     kDefaultWindowHeight,
-                                     options_.force_windowed || options_.force_windowed_origin);
+                                     application_.get());
 }
 
 VkBool32 VulkanReplayConsumerBase::OverrideGetPhysicalDeviceXlibPresentationSupportKHR(
@@ -10099,7 +10081,6 @@ VkResult VulkanReplayConsumerBase::OverrideCreateWaylandSurfaceKHR(
     HandlePointerDecoder<VkSurfaceKHR>*                                pSurface)
 {
     GFXRECON_UNREFERENCED_PARAMETER(func);
-    GFXRECON_UNREFERENCED_PARAMETER(original_result);
     GFXRECON_UNREFERENCED_PARAMETER(pAllocator);
 
     assert((instance_info != nullptr) && (pCreateInfo != nullptr));
@@ -10114,12 +10095,7 @@ VkResult VulkanReplayConsumerBase::OverrideCreateWaylandSurfaceKHR(
                                      replay_create_info->flags,
                                      pSurface,
                                      GetInstanceTable(instance_info->handle),
-                                     application_.get(),
-                                     options_.window_topleft_x,
-                                     options_.window_topleft_y,
-                                     kDefaultWindowWidth,
-                                     kDefaultWindowHeight,
-                                     options_.force_windowed || options_.force_windowed_origin);
+                                     application_.get());
 }
 
 VkResult VulkanReplayConsumerBase::OverrideCreateDisplayPlaneSurfaceKHR(
@@ -10131,7 +10107,6 @@ VkResult VulkanReplayConsumerBase::OverrideCreateDisplayPlaneSurfaceKHR(
     HandlePointerDecoder<VkSurfaceKHR>*                                pSurface)
 {
     GFXRECON_UNREFERENCED_PARAMETER(func);
-    GFXRECON_UNREFERENCED_PARAMETER(original_result);
     GFXRECON_UNREFERENCED_PARAMETER(pAllocator);
 
     assert((instance_info != nullptr) && (pCreateInfo != nullptr));
@@ -10146,12 +10121,7 @@ VkResult VulkanReplayConsumerBase::OverrideCreateDisplayPlaneSurfaceKHR(
                                      replay_create_info->flags,
                                      pSurface,
                                      GetInstanceTable(instance_info->handle),
-                                     application_.get(),
-                                     options_.window_topleft_x,
-                                     options_.window_topleft_y,
-                                     kDefaultWindowWidth,
-                                     kDefaultWindowHeight,
-                                     options_.force_windowed || options_.force_windowed_origin);
+                                     application_.get());
 }
 
 VkResult VulkanReplayConsumerBase::OverrideCreateHeadlessSurfaceEXT(
@@ -10163,7 +10133,6 @@ VkResult VulkanReplayConsumerBase::OverrideCreateHeadlessSurfaceEXT(
     HandlePointerDecoder<VkSurfaceKHR>*                                 pSurface)
 {
     GFXRECON_UNREFERENCED_PARAMETER(func);
-    GFXRECON_UNREFERENCED_PARAMETER(original_result);
     GFXRECON_UNREFERENCED_PARAMETER(pAllocator);
 
     assert((instance_info != nullptr) && (pCreateInfo != nullptr));
@@ -10178,12 +10147,7 @@ VkResult VulkanReplayConsumerBase::OverrideCreateHeadlessSurfaceEXT(
                                      replay_create_info->flags,
                                      pSurface,
                                      GetInstanceTable(instance_info->handle),
-                                     application_.get(),
-                                     options_.window_topleft_x,
-                                     options_.window_topleft_y,
-                                     kDefaultWindowWidth,
-                                     kDefaultWindowHeight,
-                                     options_.force_windowed || options_.force_windowed_origin);
+                                     application_.get());
 }
 
 VkBool32 VulkanReplayConsumerBase::OverrideGetPhysicalDeviceWaylandPresentationSupportKHR(
@@ -10214,7 +10178,6 @@ VkResult VulkanReplayConsumerBase::OverrideCreateMetalSurfaceEXT(
     HandlePointerDecoder<VkSurfaceKHR>*                              pSurface)
 {
     GFXRECON_UNREFERENCED_PARAMETER(func);
-    GFXRECON_UNREFERENCED_PARAMETER(original_result);
     GFXRECON_UNREFERENCED_PARAMETER(pAllocator);
 
     assert((instance_info != nullptr) && (pCreateInfo != nullptr));
@@ -10229,12 +10192,7 @@ VkResult VulkanReplayConsumerBase::OverrideCreateMetalSurfaceEXT(
                                      replay_create_info->flags,
                                      pSurface,
                                      GetInstanceTable(instance_info->handle),
-                                     application_.get(),
-                                     options_.window_topleft_x,
-                                     options_.window_topleft_y,
-                                     kDefaultWindowWidth,
-                                     kDefaultWindowHeight,
-                                     options_.force_windowed || options_.force_windowed_origin);
+                                     application_.get());
 }
 
 void VulkanReplayConsumerBase::OverrideDestroySurfaceKHR(
