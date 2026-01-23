@@ -108,7 +108,6 @@ struct VulkanReplayOptions : public ReplayOptions
     bool                         disable_subpass_fusion{ false };
     bool                         use_ext_frame_boundary{ false };
     bool                         use_colorspace_fallback{ true };
-    bool                         offscreen_swapchain_frame_boundary{ false };
     util::SwapchainOption        swapchain_option{ util::SwapchainOption::kVirtual };
     util::PresentModeOption      present_mode_option{ util::PresentModeOption::kCapture };
     bool                         virtual_swapchain_skip_blit{ false };

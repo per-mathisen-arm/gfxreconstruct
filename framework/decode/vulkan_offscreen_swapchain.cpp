@@ -101,25 +101,6 @@ VkResult VulkanOffscreenSwapchain::CreateSwapchainKHR(VkResult                  
     default_queue_ = GetDeviceQueue(device_table_, device_info, default_queue_family_index_, 0);
     util::MarkingLayersUtil::instance().EndInjected(device_info);
 
-    // If this option is set, a command buffer submission with a `VkFrameBoundaryEXT` must be called each time
-    // `vkQueuePresentKHR` should have been called by the offscreen swapchain. So a maximum of work must be done at
-    // swapchain creation: Allocation and recording of an empty command buffer, initialization of a `VkFrameBoundaryEXT`
-    // structure... (Don't forget to free everything at swapchain destruction)
-    if (swapchain_options_.offscreen_swapchain_frame_boundary)
-    {
-        frame_boundary_.sType       = VK_STRUCTURE_TYPE_FRAME_BOUNDARY_EXT;
-        frame_boundary_.pNext       = nullptr;
-        frame_boundary_.flags       = VK_FRAME_BOUNDARY_FRAME_END_BIT_EXT;
-        frame_boundary_.frameID     = 0;
-        frame_boundary_.imageCount  = 0;
-        frame_boundary_.pImages     = nullptr;
-        frame_boundary_.bufferCount = 0;
-        frame_boundary_.pBuffers    = nullptr;
-        frame_boundary_.tagName     = 0;
-        frame_boundary_.tagSize     = 0;
-        frame_boundary_.pTag        = nullptr;
-    }
-
     return original_result;
 }
 
@@ -243,7 +224,7 @@ VkResult VulkanOffscreenSwapchain::QueuePresentKHR(VkResult                     
                                                    const VulkanQueueInfo*                      queue_info,
                                                    const VkPresentInfoKHR*                     present_info)
 {
-    if (swapchain_options_.offscreen_swapchain_frame_boundary)
+    if (swapchain_options_.use_ext_frame_boundary)
     {
         std::vector<VkImage> images(present_info->swapchainCount);
         for (uint32_t i = 0; i < images.size(); ++i)
@@ -288,6 +269,52 @@ VkResult VulkanOffscreenSwapchain::QueuePresentKHR(VkResult                     
     }
 
     return original_result;
+}
+
+void VulkanOffscreenSwapchain::FrameBoundaryANDROID(PFN_vkFrameBoundaryANDROID           func,
+                                                    const VulkanDeviceInfo*              device_info,
+                                                    const VulkanSemaphoreInfo*           semaphore_info,
+                                                    const VulkanImageInfo*               image_info,
+                                                    VulkanInstanceInfo*                  instance_info,
+                                                    const graphics::VulkanInstanceTable* instance_table,
+                                                    const graphics::VulkanDeviceTable*   device_table,
+                                                    application::Application*            application)
+{
+    GFXRECON_ASSERT(device_info != nullptr);
+
+    VkSemaphore semaphore = (semaphore_info == nullptr ? VK_NULL_HANDLE : semaphore_info->handle);
+    VkImage     image     = (image_info == nullptr ? VK_NULL_HANDLE : image_info->handle);
+
+    if (swapchain_options_.use_ext_frame_boundary)
+    {
+        frame_boundary_.imageCount = (image == VK_NULL_HANDLE ? 0 : 1);
+        frame_boundary_.pImages    = (image == VK_NULL_HANDLE ? nullptr : &image);
+        ++frame_boundary_.frameID;
+
+        VkPipelineStageFlags wait_stage_flags = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+
+        VkSubmitInfo submitInfo;
+        submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.pNext                = &frame_boundary_;
+        submitInfo.waitSemaphoreCount   = (semaphore == VK_NULL_HANDLE ? 0 : 1);
+        submitInfo.pWaitSemaphores      = (semaphore == VK_NULL_HANDLE ? nullptr : &semaphore);
+        submitInfo.pWaitDstStageMask    = (semaphore == VK_NULL_HANDLE ? nullptr : &wait_stage_flags);
+        submitInfo.commandBufferCount   = 0;
+        submitInfo.pCommandBuffers      = nullptr;
+        submitInfo.signalSemaphoreCount = 0;
+        submitInfo.pSignalSemaphores    = nullptr;
+
+        VkQueue queue;
+
+        util::MarkingLayersUtil::instance().BeginInjected(device_info);
+        device_table->GetDeviceQueue(device_info->handle, 0, 0, &queue);
+        device_table->QueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
+        util::MarkingLayersUtil::instance().EndInjected(device_info);
+    }
+    else
+    {
+        func(device_info->handle, semaphore, image);
+    }
 }
 
 // queue_info could be nullptr. It means it doesn't specify a VkQueue and use default_queue. Its purpose is to singal

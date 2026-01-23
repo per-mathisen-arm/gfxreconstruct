@@ -29,8 +29,7 @@
 #ifndef GFXRECON_REPLAY_SETTINGS_ARM_H
 #define GFXRECON_REPLAY_SETTINGS_ARM_H
 
-static constexpr const char kArmOptions[] = ",--dsf|--disable-subpass-fusion"
-                                            ",--use-ext-frame-boundary";
+static constexpr const char kArmOptions[] = ",--dsf|--disable-subpass-fusion";
 
 static constexpr const char kArmArguments[] = ",--tsp|--trigger-script-path"
                                               ",--tsf|--trigger-script-frame"
@@ -56,7 +55,6 @@ inline const char* GetArmArgumentsString(const char* arguments)
 inline void PrintUsageArmShort()
 {
     GFXRECON_WRITE_CONSOLE("\t\t\t[--dsf | --disable-subpass-fusion]");
-    GFXRECON_WRITE_CONSOLE("\t\t\t[--use-ext-frame-boundary]");
 #if !defined(WIN32)
     GFXRECON_WRITE_CONSOLE("\t\t\t[--tsp | --trigger-script-path <script-file>]");
     GFXRECON_WRITE_CONSOLE("\t\t\t[--tsf | --trigger-script-frame <frame-ranges>]");
@@ -80,9 +78,6 @@ inline void PrintUsageArmDetailedCommon()
 // Part of the help message displaying detailed usage of Vulkan-specific options
 inline void PrintUsageArmDetailedVulkanOnly()
 {
-    GFXRECON_WRITE_CONSOLE("  --use-ext-frame-boundary");
-    GFXRECON_WRITE_CONSOLE("          \t\tConvert all offscreen frame boundaries to `VK_EXT_frame_boundary`");
-    GFXRECON_WRITE_CONSOLE("          \t\tframe boundaries.");
     GFXRECON_WRITE_CONSOLE("  --dsf   \t\tForce disable subpass fusion.");
     GFXRECON_WRITE_CONSOLE("          \t\tTry to nudge the driver to \"fuse\" subpasses of the render pass");
     GFXRECON_WRITE_CONSOLE("          \t\tinto 1 pass,");

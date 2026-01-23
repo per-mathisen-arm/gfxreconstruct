@@ -1131,16 +1131,20 @@ GetVulkanReplayOptions(const gfxrecon::util::ArgumentParser&           arg_parse
     if (arg_parser.IsOptionSet(kUseExtFrameBoundaryOption))
     {
         replay_options.use_ext_frame_boundary = true;
+        replay_options.swapchain_option       = gfxrecon::util::SwapchainOption::kOffscreen;
+    }
+
+    if (arg_parser.IsOptionSet(kOffscreenSwapchainFrameBoundary))
+    {
+        GFXRECON_LOG_WARNING("Detected usage of deprecated \"--offscreen-swapchain-frame-boundary\". Use "
+                             "\"--use-ext-frame-boundary\" instead.");
+        replay_options.use_ext_frame_boundary = true;
+        replay_options.swapchain_option       = gfxrecon::util::SwapchainOption::kOffscreen;
     }
 
     if (arg_parser.IsOptionSet(kColorspaceFallback))
     {
         replay_options.use_colorspace_fallback = true;
-    }
-
-    if (arg_parser.IsOptionSet(kOffscreenSwapchainFrameBoundary))
-    {
-        replay_options.offscreen_swapchain_frame_boundary = true;
     }
 
     if (arg_parser.IsOptionSet(kVirtualSwapchainSkipBlitLongOption) ||

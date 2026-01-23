@@ -782,7 +782,9 @@ Optional arguments:
                             virtual     Virtual Swapchain of images which match
                                         the swapchain in effect at capture time and
                                         which are copied to the underlying swapchain of the
-                                        implementation being replayed on. This is default.
+                                        implementation being replayed on. Also displays
+                                        offscreen frame boundaries to an additional window.
+                                        This is default.
                             captured    Use the swapchain indices stored in the
                                         capture directly on the swapchain setup for replay.
                             offscreen   Disable creating swapchains, surfaces
@@ -820,8 +822,9 @@ Optional arguments:
   --vssb
                         Skip blit to real swapchain to gain performance during replay.
   --use-ext-frame-boundary
-                        Convert all offscreen frame boundaries to `VK_EXT_frame_boundary`
-                        frame boundaries.
+                        Convert `VkQueuePresentKHR` and `vkFrameBoundaryANDROID` calls to
+                        `VKFrameBoundaryEXT` submissions.
+                        This option automatically triggers `--swapchain offscreen`.
   --flush-inside-measurement-range
                         If this is specified the replayer will flush and wait
                         for all current GPU work to finish at the end of each
@@ -831,13 +834,7 @@ Optional arguments:
                         Check if color space is not supported by replay device and
                         fallback to VK_COLOR_SPACE_SRGB_NONLINEAR_KHR.
   --offscreen-swapchain-frame-boundary
-                        Should only be used with offscreen swapchain.
-                        Activates the extension VK_EXT_frame_boundary (always supported if
-                        trimming, checks for driver support otherwise) and inserts command
-                        buffer submission with VkFrameBoundaryEXT where vkQueuePresentKHR
-                        was called in the original capture.
-                        This allows preserving frames when capturing a replay that uses.
-                        offscreen swapchain.
+                        Deprecated. Alias to `--use-ext-frame-boundary`.
   --preload-measurement-range
                         Preloads a frame range specified with --measurement-frame-range
                         from the trace file into a continuous, expandable buffer,

@@ -217,15 +217,16 @@ VulkanReplayConsumerBase::VulkanReplayConsumerBase(std::shared_ptr<application::
     }
 
     VulkanSwapchainOptions swapchain_options;
-    swapchain_options.force_windowed                     = options_.force_windowed;
-    swapchain_options.windowed_width                     = options_.windowed_width;
-    swapchain_options.windowed_height                    = options_.windowed_height;
-    swapchain_options.force_windowed_origin              = options_.force_windowed_origin;
-    swapchain_options.window_topleft_x                   = options_.window_topleft_x;
-    swapchain_options.window_topleft_y                   = options_.window_topleft_y;
-    swapchain_options.virtual_swapchain_skip_blit        = options_.virtual_swapchain_skip_blit;
-    swapchain_options.surface_index                      = options_.surface_index;
-    swapchain_options.offscreen_swapchain_frame_boundary = options_.offscreen_swapchain_frame_boundary;
+    swapchain_options.force_windowed              = options_.force_windowed;
+    swapchain_options.windowed_width              = options_.windowed_width;
+    swapchain_options.windowed_height             = options_.windowed_height;
+    swapchain_options.force_windowed_origin       = options_.force_windowed_origin;
+    swapchain_options.window_topleft_x            = options_.window_topleft_x;
+    swapchain_options.window_topleft_y            = options_.window_topleft_y;
+    swapchain_options.virtual_swapchain_skip_blit = options_.virtual_swapchain_skip_blit;
+    swapchain_options.surface_index               = options_.surface_index;
+    swapchain_options.use_ext_frame_boundary      = options_.use_ext_frame_boundary;
+    swapchain_options.present_mode_option         = options_.present_mode_option;
     swapchain_->SetOptions(swapchain_options);
 
     if (options_.enable_debug_device_lost)
@@ -3707,7 +3708,7 @@ void VulkanReplayConsumerBase::ModifyCreateDeviceInfo(
     }
 
     // Add VK_EXT_frame_boundary if an option uses it
-    if (options_.offscreen_swapchain_frame_boundary || options_.use_ext_frame_boundary)
+    if (options_.use_ext_frame_boundary)
     {
         if (!graphics::feature_util::IsSupportedExtension(modified_extensions, VK_EXT_FRAME_BOUNDARY_EXTENSION_NAME))
         {
@@ -4052,15 +4053,6 @@ void VulkanReplayConsumerBase::OverrideDestroyDevice(
     {
         device            = device_info->handle;
         auto device_table = GetDeviceTable(device);
-
-        auto it = fba_resources_.find(device);
-        if (it != fba_resources_.end())
-        {
-            util::MarkingLayersUtil::instance().BeginInjected(device_info);
-            device_table->DestroyCommandPool(device, it->second.first, nullptr);
-            util::MarkingLayersUtil::instance().EndInjected(device_info);
-            fba_resources_.erase(device);
-        }
 
         if (screenshot_handler_ != nullptr)
         {
@@ -11805,11 +11797,9 @@ void VulkanReplayConsumerBase::OverrideFrameBoundaryANDROID(PFN_vkFrameBoundaryA
                                                             const VulkanSemaphoreInfo* semaphore_info,
                                                             const VulkanImageInfo*     image_info)
 {
-    GFXRECON_ASSERT((device_info != nullptr));
+    GFXRECON_ASSERT(device_info != nullptr);
 
-    VkDevice    device    = device_info->handle;
-    VkSemaphore semaphore = semaphore_info ? semaphore_info->handle : VK_NULL_HANDLE;
-    VkImage     image     = image_info ? image_info->handle : VK_NULL_HANDLE;
+    const graphics::VulkanDeviceTable* device_table = GetDeviceTable(device_info->handle);
 
     if (screenshot_handler_ != nullptr && !options_.screenshot_ignore_frameBoundaryAndroid)
     {
@@ -11838,10 +11828,10 @@ void VulkanReplayConsumerBase::OverrideFrameBoundaryANDROID(PFN_vkFrameBoundaryA
 
             screenshot_handler_->WriteImage(filename_prefix,
                                             device_info,
-                                            GetDeviceTable(device),
+                                            device_table,
                                             memory_properties,
                                             device_info->allocator.get(),
-                                            image,
+                                            image_info->handle,
                                             image_info->format,
                                             image_info->extent.width,
                                             image_info->extent.height,
@@ -11855,10 +11845,18 @@ void VulkanReplayConsumerBase::OverrideFrameBoundaryANDROID(PFN_vkFrameBoundaryA
         util::MarkingLayersUtil::instance().EndInjected(device_info);
     }
 
-    if (!arm_features_->UseExtFrameBoundaryAndroid(device_info, semaphore, image))
-    {
-        func(device, semaphore, image);
-    }
+    CommonObjectInfoTable& object_info_table = GetObjectInfoTable();
+
+    VulkanPhysicalDeviceInfo* physical_device_info = object_info_table.GetVkPhysicalDeviceInfo(device_info->parent_id);
+    GFXRECON_ASSERT(physical_device_info != nullptr);
+
+    VulkanInstanceInfo* instance_info = object_info_table.GetVkInstanceInfo(physical_device_info->parent_id);
+    GFXRECON_ASSERT(instance_info != nullptr);
+
+    const graphics::VulkanInstanceTable* instance_table = GetInstanceTable(instance_info->handle);
+
+    swapchain_->FrameBoundaryANDROID(
+        func, device_info, semaphore_info, image_info, instance_info, instance_table, device_table, application_.get());
 }
 
 void VulkanReplayConsumerBase::OverrideDestroyAccelerationStructureKHR(

@@ -61,8 +61,6 @@ class VulkanReplayConsumerArmFeatures
 
     void ReplaceDeviceAddresses(VulkanCommandBufferInfo* command_buffer_info, void* data);
 
-    bool UseExtFrameBoundaryAndroid(const VulkanDeviceInfo* device_info, VkSemaphore semaphore, VkImage image);
-
     void SetPhysicalDevicePropertiesDescriptorBuffer(VulkanPhysicalDeviceInfo*          physical_device_info,
                                                      const VkPhysicalDeviceProperties2* capture_properties,
                                                      const VkPhysicalDeviceProperties2* replay_properties);
