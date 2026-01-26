@@ -249,10 +249,10 @@ void FileProcessor::ProcessAnnotation()
         return;
     }
 
-    auto err_handler = BlockParser::ErrorHandler{ [this](BlockIOError err, const char* message) {
-        HandleBlockReadError(err, message);
-    } };
-    BlockParser block_parser(err_handler, pool_, compressor_.get(), file_header_);
+    BlockParser block_parser([this](BlockIOError err, const char* message) { HandleBlockReadError(err, message); },
+                             pool_,
+                             compressor_.get(),
+                             file_header_);
 
     ProcessVisitor  process_visitor(*this);
     DispatchVisitor dispatch_visitor(decoders_, annotation_handler_);
@@ -306,10 +306,10 @@ bool FileProcessor::ProcessBlocks()
     BlockBuffer block_buffer;
     bool        success = true;
 
-    auto err_handler = BlockParser::ErrorHandler{ [this](BlockIOError err, const char* message) {
-        HandleBlockReadError(err, message);
-    } };
-    BlockParser block_parser(err_handler, pool_, compressor_.get(), file_header_);
+    BlockParser block_parser([this](BlockIOError err, const char* message) { HandleBlockReadError(err, message); },
+                             pool_,
+                             compressor_.get(),
+                             file_header_);
     // NOTE: To test deferred decompression operation uncomment next line
     // block_parser.SetDecompressionPolicy(BlockParser::DecompressionPolicy::kQueueOptimized);
 

@@ -4553,6 +4553,10 @@ class VulkanSkiaModifier : public util::VulkanModifierBase
         const ApiCallInfo&                          call_info,
         format::HandleId                            commandBuffer,
         StructPointerDecoder<Decoded_VkBeginCustomResolveInfoEXT>* pBeginCustomResolveInfo){ CheckSkiavk(commandBuffer);}
+    virtual void Process_vkCmdSetComputeOccupancyPriorityNV(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        StructPointerDecoder<Decoded_VkComputeOccupancyPriorityParametersNV>* pParameters){ CheckSkiavk(commandBuffer);}
     virtual void Process_vkCreateAccelerationStructureKHR(
         const ApiCallInfo&                          call_info,
         VkResult                                    returnValue,
