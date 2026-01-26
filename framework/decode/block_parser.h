@@ -123,7 +123,7 @@ class BlockParser
     DecompressionResult DecompressSpan(const BlockBuffer::BlockSpan& compressed_span, size_t expanded_size);
 
     using ErrorHandler = std::function<void(BlockIOError, const char*)>;
-    BlockParser(const ErrorHandler&       err,
+    BlockParser(ErrorHandler              err,
                 BufferPool&               pool,
                 util::Compressor*         compressor,
                 const format::FileHeader& file_header) :
@@ -147,7 +147,7 @@ class BlockParser
     ReadParameterBuffer(const char* label, BlockBuffer& block_buffer, uint64_t uncompressed_size = kReadSizeFromBuffer);
     bool                DecompressWhenParsed(const ParsedBlock& parsed_block);
     BufferPool          pool_; // TODO: Get a better pool, and share with FileInputStream
-    const ErrorHandler& err_handler_;
+    ErrorHandler        err_handler_;
     util::Compressor*   compressor_           = nullptr;
     DecompressionPolicy decompression_policy_ = DecompressionPolicy::kAlways;
 
