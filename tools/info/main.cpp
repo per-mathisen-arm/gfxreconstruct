@@ -70,14 +70,14 @@
 
 #include <nlohmann/json.hpp>
 
-const char kHelpShortOption[]   = "-h";
-const char kHelpLongOption[]    = "--help";
-const char kVersionOption[]     = "--version";
-const char kNoDebugPopup[]      = "--no-debug-popup";
-const char kExeInfoOnlyOption[] = "--exe-info-only";
-const char kEnvVarsOnlyOption[] = "--env-vars-only";
+const char kHelpShortOption[]      = "-h";
+const char kHelpLongOption[]       = "--help";
+const char kVersionOption[]        = "--version";
+const char kNoDebugPopup[]         = "--no-debug-popup";
+const char kExeInfoOnlyOption[]    = "--exe-info-only";
+const char kEnvVarsOnlyOption[]    = "--env-vars-only";
 const char kFileFormatOnlyOption[] = "--file-format-only";
-const char kEnumGpuIndices[]    = "--enum-gpu-indices";
+const char kEnumGpuIndices[]       = "--enum-gpu-indices";
 
 const char kOptions[] =
     "-h|--help,--version,--no-debug-popup,--exe-info-only,--env-vars-only,--file-format-only,--enum-gpu-indices";
@@ -419,7 +419,7 @@ void GatherExeInfo(gfxrecon::decode::FileProcessor& file_processor, gfxrecon::de
 }
 
 // A short pass to get exe info. Only processes the first blocks of a capture file.
-void GatherAndPrintExeInfo(const std::string& input_filename)
+bool GatherAndPrintExeInfo(const std::string& input_filename)
 {
     gfxrecon::decode::InfoConsumer  info_consumer(true);
     gfxrecon::decode::FileProcessor file_processor;
@@ -428,6 +428,8 @@ void GatherAndPrintExeInfo(const std::string& input_filename)
         GatherExeInfo(file_processor, info_consumer);
         PrintExeInfo(info_consumer);
     }
+
+    return file_processor.GetErrorState() == gfxrecon::decode::BlockIOError::kErrorNone;
 }
 
 FileFormatInfo GatherFileFormatInfo(gfxrecon::decode::FileProcessor& file_processor,
@@ -445,7 +447,7 @@ FileFormatInfo GatherFileFormatInfo(gfxrecon::decode::FileProcessor& file_proces
 }
 
 // A short pass to get file format info. Only processes the first two frames of a capture file.
-void GatherAndPrintFileFormatInfo(const std::string& input_filename)
+bool GatherAndPrintFileFormatInfo(const std::string& input_filename)
 {
     const gfxrecon::decode::InfoConsumer::NoMaxBlockTag no_max_tag;
     gfxrecon::decode::InfoConsumer                      info_consumer(no_max_tag);
@@ -456,6 +458,8 @@ void GatherAndPrintFileFormatInfo(const std::string& input_filename)
         GFXRECON_WRITE_CONSOLE("File format info:");
         PrintFileFormatInfo(file_format_info);
     }
+
+    return file_processor.GetErrorState() == gfxrecon::decode::BlockIOError::kErrorNone;
 }
 
 #if ENABLE_OPENXR_SUPPORT
@@ -908,7 +912,7 @@ void PrintEnvironmentVariableInfo(gfxrecon::decode::InfoConsumer& info_consumer)
     }
 }
 
-void GatherAndPrintEnvVars(const std::string& input_filename)
+bool GatherAndPrintEnvVars(const std::string& input_filename)
 {
     gfxrecon::decode::FileProcessor file_processor;
     if (file_processor.Initialize(input_filename))
@@ -932,9 +936,11 @@ void GatherAndPrintEnvVars(const std::string& input_filename)
             GFXRECON_LOG_ERROR("Encountered error while reading capture. Unable to report environment variables.");
         }
     }
+
+    return file_processor.GetErrorState() == gfxrecon::decode::BlockIOError::kErrorNone;
 }
 
-void GatherAndPrintAllInfo(const std::string& input_filename)
+bool GatherAndPrintAllInfo(const std::string& input_filename)
 {
     gfxrecon::decode::FileProcessor file_processor;
     if (file_processor.Initialize(input_filename))
@@ -1039,6 +1045,8 @@ void GatherAndPrintAllInfo(const std::string& input_filename)
             GFXRECON_WRITE_CONSOLE("Encountered error while reading capture. Stats unavailable.");
         }
     }
+
+    return file_processor.GetErrorState() == gfxrecon::decode::BlockIOError::kErrorNone;
 }
 
 int main(int argc, const char** argv)
@@ -1077,24 +1085,25 @@ int main(int argc, const char** argv)
 
     const std::vector<std::string>& positional_arguments = arg_parser.GetPositionalArguments();
     std::string                     input_filename       = positional_arguments[0];
+    bool                            success              = true;
 
     if (arg_parser.IsOptionSet(kExeInfoOnlyOption))
     {
-        GatherAndPrintExeInfo(input_filename);
+        success = GatherAndPrintExeInfo(input_filename);
     }
     else if (arg_parser.IsOptionSet(kEnvVarsOnlyOption))
     {
-        GatherAndPrintEnvVars(input_filename);
+        success = GatherAndPrintEnvVars(input_filename);
     }
     else if (arg_parser.IsOptionSet(kFileFormatOnlyOption))
     {
-        GatherAndPrintFileFormatInfo(input_filename);
+        success = GatherAndPrintFileFormatInfo(input_filename);
     }
     else
     {
-        GatherAndPrintAllInfo(input_filename);
+        success = GatherAndPrintAllInfo(input_filename);
     }
 
     gfxrecon::util::Log::Release();
-    return 0;
+    return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }

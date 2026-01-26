@@ -1318,14 +1318,6 @@ std::string GenerateStruct_VkDataGraphPipelineConstantARM(std::ostream&         
     return {};
 }
 
-std::string GenerateStruct_VkDescriptorGetInfoEXT(std::ostream&                   out,
-                                                  const VkDescriptorGetInfoEXT*   structInfo,
-                                                  Decoded_VkDescriptorGetInfoEXT* metaInfo,
-                                                  VulkanCppConsumerBase&          consumer)
-{
-    return {};
-}
-
 std::string GenerateStruct_VkCopyMemoryToImageInfo(std::ostream&                    out,
                                                    const VkCopyMemoryToImageInfo*   structInfo,
                                                    Decoded_VkCopyMemoryToImageInfo* metaInfo,
@@ -1605,6 +1597,18 @@ std::string GenerateStruct_VkLayerSettingEXT(std::ostream&              out,
     out << "\t\t"
         << "};" << std::endl;
     return variable_name;
+}
+
+std::string GenerateStruct_VkDescriptorGetInfoEXT(std::ostream&                   out,
+                                                  const VkDescriptorGetInfoEXT*   structInfo,
+                                                  Decoded_VkDescriptorGetInfoEXT* metaInfo,
+                                                  VulkanCppConsumerBase&          consumer)
+{
+    GFXRECON_UNREFERENCED_PARAMETER(out);
+    GFXRECON_UNREFERENCED_PARAMETER(structInfo);
+    GFXRECON_UNREFERENCED_PARAMETER(metaInfo);
+    GFXRECON_UNREFERENCED_PARAMETER(consumer);
+    return {};
 }
 
 GFXRECON_END_NAMESPACE(gfxrecon)

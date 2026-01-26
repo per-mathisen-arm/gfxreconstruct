@@ -170,6 +170,28 @@ void MapStructHandles(Decoded_VkAccelerationStructureBuildGeometryInfoKHR* wrapp
     }
 }
 
+void MapStructHandles(Decoded_VkCopyMemoryToImageInfo* wrapper, const CommonObjectInfoTable& object_info_table)
+{
+    if ((wrapper != nullptr) && (wrapper->decoded_value != nullptr))
+    {
+        VkCopyMemoryToImageInfo* value = wrapper->decoded_value;
+
+        value->dstImage = handle_mapping::MapHandle<VulkanImageInfo>(
+            wrapper->dstImage, object_info_table, &CommonObjectInfoTable::GetVkImageInfo);
+    }
+}
+
+void MapStructHandles(Decoded_VkCopyImageToMemoryInfo* wrapper, const CommonObjectInfoTable& object_info_table)
+{
+    if ((wrapper != nullptr) && (wrapper->decoded_value != nullptr))
+    {
+        VkCopyImageToMemoryInfo* value = wrapper->decoded_value;
+
+        value->srcImage = handle_mapping::MapHandle<VulkanImageInfo>(
+            wrapper->srcImage, object_info_table, &CommonObjectInfoTable::GetVkImageInfo);
+    }
+}
+
 void MapStructHandles(Decoded_VkDescriptorGetInfoEXT* wrapper, const CommonObjectInfoTable& object_info_table)
 {
     if ((wrapper != nullptr) && (wrapper->decoded_value != nullptr))
@@ -198,28 +220,6 @@ void MapStructHandles(Decoded_VkDescriptorGetInfoEXT* wrapper, const CommonObjec
             default:
                 break;
         }
-    }
-}
-
-void MapStructHandles(Decoded_VkCopyMemoryToImageInfo* wrapper, const CommonObjectInfoTable& object_info_table)
-{
-    if ((wrapper != nullptr) && (wrapper->decoded_value != nullptr))
-    {
-        VkCopyMemoryToImageInfo* value = wrapper->decoded_value;
-
-        value->dstImage = handle_mapping::MapHandle<VulkanImageInfo>(
-            wrapper->dstImage, object_info_table, &CommonObjectInfoTable::GetVkImageInfo);
-    }
-}
-
-void MapStructHandles(Decoded_VkCopyImageToMemoryInfo* wrapper, const CommonObjectInfoTable& object_info_table)
-{
-    if ((wrapper != nullptr) && (wrapper->decoded_value != nullptr))
-    {
-        VkCopyImageToMemoryInfo* value = wrapper->decoded_value;
-
-        value->srcImage = handle_mapping::MapHandle<VulkanImageInfo>(
-            wrapper->srcImage, object_info_table, &CommonObjectInfoTable::GetVkImageInfo);
     }
 }
 
