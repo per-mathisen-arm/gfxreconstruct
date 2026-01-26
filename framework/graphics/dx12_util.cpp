@@ -860,7 +860,7 @@ void TrackAdapterDesc(IDXGIAdapter*                     adapter,
                       graphics::dx12::ActiveAdapterMap& adapters,
                       format::AdapterType               type)
 {
-    const int64_t packed_luid = (dxgi_desc.AdapterLuid.HighPart << 31) | dxgi_desc.AdapterLuid.LowPart;
+    const int64_t packed_luid = pack_luid(dxgi_desc.AdapterLuid);
 
     if (adapters.count(packed_luid) == 0)
     {
@@ -980,7 +980,7 @@ format::DxgiAdapterDesc* MarkActiveAdapter(ID3D12Device* device, graphics::dx12:
         // Get the device's parent adapter identifier
         LUID parent_adapter_luid = device->GetAdapterLuid();
 
-        const int64_t packed_luid = (parent_adapter_luid.HighPart << 31) | parent_adapter_luid.LowPart;
+        const int64_t packed_luid = pack_luid(parent_adapter_luid);
 
         // Mark an adapter as active
         for (auto& adapter : adapters)
@@ -1063,7 +1063,7 @@ bool GetAdapterAndIndexbyLUID(LUID                              luid,
 {
     bool success = false;
 
-    const int64_t packed_luid = (luid.HighPart << 31) | luid.LowPart;
+    const int64_t packed_luid = pack_luid(luid);
 
     auto search = adapters.find(packed_luid);
     if (search != adapters.end())
@@ -1145,7 +1145,7 @@ bool GetAdapterAndIndexbyDevice(ID3D12Device*                     device,
 
 format::DxgiAdapterDesc* GetAdapterDescByLUID(LUID parent_adapter_luid, graphics::dx12::ActiveAdapterMap& adapters)
 {
-    const int64_t            packed_luid         = (parent_adapter_luid.HighPart << 31) | parent_adapter_luid.LowPart;
+    const int64_t            packed_luid         = pack_luid(parent_adapter_luid);
     format::DxgiAdapterDesc* parent_adapter_desc = nullptr;
     for (auto& adapter : adapters)
     {
