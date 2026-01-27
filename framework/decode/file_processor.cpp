@@ -74,10 +74,21 @@ bool FileProcessor::Initialize(const std::string& filename)
         error_state_ = kErrorOpeningFile;
     }
 
-    // Find absolute path of capture file
     if (success)
     {
+        // Find absolute path of capture file
         absolute_path_ = util::filepath::GetBasedir(filename);
+
+        // Initialize block parser, with the compressor created during file header processing.
+        auto err_handler = BlockParser::ErrorHandler{ [this](BlockIOError err, const char* message) {
+            HandleBlockReadError(err, message);
+        } };
+        block_parser_ = std::make_unique<BlockParser>(err_handler, pool_, compressor_.get(), file_header_);
+        success       = block_parser_.get() != nullptr;
+        if (!success)
+        {
+            error_state_ = kErrorOpeningFile;
+        }
     }
 
     return success;
@@ -105,6 +116,7 @@ bool FileProcessor::ProcessBlocksOneFrame()
     {
         decoder->SetCurrentFrameNumber(current_frame_number_);
     }
+    block_parser_->SetDecompressionPolicy(BlockParser::DecompressionPolicy::kAlways);
     return ProcessBlocks();
 }
 
@@ -306,10 +318,7 @@ bool FileProcessor::ProcessBlocks()
     BlockBuffer block_buffer;
     bool        success = true;
 
-    BlockParser block_parser([this](BlockIOError err, const char* message) { HandleBlockReadError(err, message); },
-                             pool_,
-                             compressor_.get(),
-                             file_header_);
+    BlockParser& block_parser = GetBlockParser();
     // NOTE: To test deferred decompression operation uncomment next line
     // block_parser.SetDecompressionPolicy(BlockParser::DecompressionPolicy::kQueueOptimized);
 
@@ -411,30 +420,6 @@ bool FileProcessor::ReadBlockBuffer(BlockParser& parser, BlockBuffer& block_buff
 bool FileProcessor::GetBlockBuffer(BlockParser& parser, BlockBuffer& block_buffer)
 {
     return ReadBlockBuffer(parser, block_buffer);
-}
-
-bool FileProcessor::PeekBytes(void* buffer, size_t buffer_size)
-{
-    // File entry is non-const to allow read bytes to be non-const (i.e. potentially reflect a stateful operation)
-    // without forcing use of mutability
-    const auto& active_file = file_stack_.back().active_file;
-    assert(active_file);
-
-    return active_file->PeekBytes(buffer, buffer_size);
-}
-
-bool FileProcessor::PeekBlockHeader(format::BlockHeader* block_header)
-{
-    assert(block_header != nullptr);
-
-    bool success = false;
-
-    if (PeekBytes(block_header, sizeof(*block_header)))
-    {
-        success = true;
-    }
-
-    return success;
 }
 
 bool FileProcessor::ReadBytes(void* buffer, size_t buffer_size)
