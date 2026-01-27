@@ -986,11 +986,16 @@ void VulkanReplayConsumer::Process_vkCmdCopyBuffer(
     auto in_srcBuffer = GetObjectInfoTable().GetVkBufferInfo(srcBuffer);
     auto in_dstBuffer = GetObjectInfoTable().GetVkBufferInfo(dstBuffer);
 
+    if (options_.dumping_resources && options_.dump_resources_before)
+    {
+        resource_dumper_->Process_vkCmdCopyBuffer(call_info, GetDeviceTable(in_commandBuffer->handle)->CmdCopyBuffer, in_commandBuffer->handle, in_srcBuffer, in_dstBuffer, regionCount, pRegions, true);
+    }
+
     OverrideCmdCopyBuffer(GetDeviceTable(in_commandBuffer->handle)->CmdCopyBuffer, in_commandBuffer, in_srcBuffer, in_dstBuffer, regionCount, pRegions);
 
     if (options_.dumping_resources)
     {
-        resource_dumper_->Process_vkCmdCopyBuffer(call_info, GetDeviceTable(in_commandBuffer->handle)->CmdCopyBuffer, in_commandBuffer->handle, in_srcBuffer->handle, in_dstBuffer->handle, regionCount, pRegions->GetPointer());
+        resource_dumper_->Process_vkCmdCopyBuffer(call_info, GetDeviceTable(in_commandBuffer->handle)->CmdCopyBuffer, in_commandBuffer->handle, in_srcBuffer, in_dstBuffer, regionCount, pRegions, false);
     }
 }
 
@@ -1009,11 +1014,16 @@ void VulkanReplayConsumer::Process_vkCmdCopyImage(
     VkImage in_dstImage = MapHandle<VulkanImageInfo>(dstImage, &CommonObjectInfoTable::GetVkImageInfo);
     const VkImageCopy* in_pRegions = pRegions->GetPointer();
 
+    if (options_.dumping_resources && options_.dump_resources_before)
+    {
+        resource_dumper_->Process_vkCmdCopyImage(call_info, GetDeviceTable(in_commandBuffer)->CmdCopyImage, in_commandBuffer, GetObjectInfoTable().GetVkImageInfo(srcImage), srcImageLayout, GetObjectInfoTable().GetVkImageInfo(dstImage), dstImageLayout, regionCount, pRegions, true);
+    }
+
     GetDeviceTable(in_commandBuffer)->CmdCopyImage(in_commandBuffer, in_srcImage, srcImageLayout, in_dstImage, dstImageLayout, regionCount, in_pRegions);
 
     if (options_.dumping_resources)
     {
-        resource_dumper_->Process_vkCmdCopyImage(call_info, GetDeviceTable(in_commandBuffer)->CmdCopyImage, in_commandBuffer, in_srcImage, srcImageLayout, in_dstImage, dstImageLayout, regionCount, in_pRegions);
+        resource_dumper_->Process_vkCmdCopyImage(call_info, GetDeviceTable(in_commandBuffer)->CmdCopyImage, in_commandBuffer, GetObjectInfoTable().GetVkImageInfo(srcImage), srcImageLayout, GetObjectInfoTable().GetVkImageInfo(dstImage), dstImageLayout, regionCount, pRegions, false);
     }
 }
 
@@ -1031,11 +1041,16 @@ void VulkanReplayConsumer::Process_vkCmdCopyBufferToImage(
     VkImage in_dstImage = MapHandle<VulkanImageInfo>(dstImage, &CommonObjectInfoTable::GetVkImageInfo);
     const VkBufferImageCopy* in_pRegions = pRegions->GetPointer();
 
+    if (options_.dumping_resources && options_.dump_resources_before)
+    {
+        resource_dumper_->Process_vkCmdCopyBufferToImage(call_info, GetDeviceTable(in_commandBuffer)->CmdCopyBufferToImage, in_commandBuffer, GetObjectInfoTable().GetVkBufferInfo(srcBuffer), GetObjectInfoTable().GetVkImageInfo(dstImage), dstImageLayout, regionCount, pRegions, true);
+    }
+
     GetDeviceTable(in_commandBuffer)->CmdCopyBufferToImage(in_commandBuffer, in_srcBuffer, in_dstImage, dstImageLayout, regionCount, in_pRegions);
 
     if (options_.dumping_resources)
     {
-        resource_dumper_->Process_vkCmdCopyBufferToImage(call_info, GetDeviceTable(in_commandBuffer)->CmdCopyBufferToImage, in_commandBuffer, in_srcBuffer, in_dstImage, dstImageLayout, regionCount, in_pRegions);
+        resource_dumper_->Process_vkCmdCopyBufferToImage(call_info, GetDeviceTable(in_commandBuffer)->CmdCopyBufferToImage, in_commandBuffer, GetObjectInfoTable().GetVkBufferInfo(srcBuffer), GetObjectInfoTable().GetVkImageInfo(dstImage), dstImageLayout, regionCount, pRegions, false);
     }
 }
 
@@ -1053,11 +1068,16 @@ void VulkanReplayConsumer::Process_vkCmdCopyImageToBuffer(
     VkBuffer in_dstBuffer = MapHandle<VulkanBufferInfo>(dstBuffer, &CommonObjectInfoTable::GetVkBufferInfo);
     const VkBufferImageCopy* in_pRegions = pRegions->GetPointer();
 
+    if (options_.dumping_resources && options_.dump_resources_before)
+    {
+        resource_dumper_->Process_vkCmdCopyImageToBuffer(call_info, GetDeviceTable(in_commandBuffer)->CmdCopyImageToBuffer, in_commandBuffer, GetObjectInfoTable().GetVkImageInfo(srcImage), srcImageLayout, GetObjectInfoTable().GetVkBufferInfo(dstBuffer), regionCount, pRegions, true);
+    }
+
     GetDeviceTable(in_commandBuffer)->CmdCopyImageToBuffer(in_commandBuffer, in_srcImage, srcImageLayout, in_dstBuffer, regionCount, in_pRegions);
 
     if (options_.dumping_resources)
     {
-        resource_dumper_->Process_vkCmdCopyImageToBuffer(call_info, GetDeviceTable(in_commandBuffer)->CmdCopyImageToBuffer, in_commandBuffer, in_srcImage, srcImageLayout, in_dstBuffer, regionCount, in_pRegions);
+        resource_dumper_->Process_vkCmdCopyImageToBuffer(call_info, GetDeviceTable(in_commandBuffer)->CmdCopyImageToBuffer, in_commandBuffer, GetObjectInfoTable().GetVkImageInfo(srcImage), srcImageLayout, GetObjectInfoTable().GetVkBufferInfo(dstBuffer), regionCount, pRegions, false);
     }
 }
 
@@ -2335,11 +2355,16 @@ void VulkanReplayConsumer::Process_vkCmdBlitImage(
     VkImage in_dstImage = MapHandle<VulkanImageInfo>(dstImage, &CommonObjectInfoTable::GetVkImageInfo);
     const VkImageBlit* in_pRegions = pRegions->GetPointer();
 
+    if (options_.dumping_resources && options_.dump_resources_before)
+    {
+        resource_dumper_->Process_vkCmdBlitImage(call_info, GetDeviceTable(in_commandBuffer)->CmdBlitImage, in_commandBuffer, GetObjectInfoTable().GetVkImageInfo(srcImage), srcImageLayout, GetObjectInfoTable().GetVkImageInfo(dstImage), dstImageLayout, regionCount, pRegions, filter, true);
+    }
+
     GetDeviceTable(in_commandBuffer)->CmdBlitImage(in_commandBuffer, in_srcImage, srcImageLayout, in_dstImage, dstImageLayout, regionCount, in_pRegions, filter);
 
     if (options_.dumping_resources)
     {
-        resource_dumper_->Process_vkCmdBlitImage(call_info, GetDeviceTable(in_commandBuffer)->CmdBlitImage, in_commandBuffer, in_srcImage, srcImageLayout, in_dstImage, dstImageLayout, regionCount, in_pRegions, filter);
+        resource_dumper_->Process_vkCmdBlitImage(call_info, GetDeviceTable(in_commandBuffer)->CmdBlitImage, in_commandBuffer, GetObjectInfoTable().GetVkImageInfo(srcImage), srcImageLayout, GetObjectInfoTable().GetVkImageInfo(dstImage), dstImageLayout, regionCount, pRegions, filter, false);
     }
 }
 
@@ -3249,11 +3274,16 @@ void VulkanReplayConsumer::Process_vkCmdCopyBuffer2(
     const VkCopyBufferInfo2* in_pCopyBufferInfo = pCopyBufferInfo->GetPointer();
     MapStructHandles(pCopyBufferInfo->GetMetaStructPointer(), GetObjectInfoTable());
 
+    if (options_.dumping_resources && options_.dump_resources_before)
+    {
+        resource_dumper_->Process_vkCmdCopyBuffer2(call_info, GetDeviceTable(in_commandBuffer)->CmdCopyBuffer2, in_commandBuffer, pCopyBufferInfo, true);
+    }
+
     GetDeviceTable(in_commandBuffer)->CmdCopyBuffer2(in_commandBuffer, in_pCopyBufferInfo);
 
     if (options_.dumping_resources)
     {
-        resource_dumper_->Process_vkCmdCopyBuffer2(call_info, GetDeviceTable(in_commandBuffer)->CmdCopyBuffer2, in_commandBuffer, in_pCopyBufferInfo);
+        resource_dumper_->Process_vkCmdCopyBuffer2(call_info, GetDeviceTable(in_commandBuffer)->CmdCopyBuffer2, in_commandBuffer, pCopyBufferInfo, false);
     }
 }
 
@@ -3266,11 +3296,16 @@ void VulkanReplayConsumer::Process_vkCmdCopyImage2(
     const VkCopyImageInfo2* in_pCopyImageInfo = pCopyImageInfo->GetPointer();
     MapStructHandles(pCopyImageInfo->GetMetaStructPointer(), GetObjectInfoTable());
 
+    if (options_.dumping_resources && options_.dump_resources_before)
+    {
+        resource_dumper_->Process_vkCmdCopyImage2(call_info, GetDeviceTable(in_commandBuffer)->CmdCopyImage2, in_commandBuffer, pCopyImageInfo, true);
+    }
+
     GetDeviceTable(in_commandBuffer)->CmdCopyImage2(in_commandBuffer, in_pCopyImageInfo);
 
     if (options_.dumping_resources)
     {
-        resource_dumper_->Process_vkCmdCopyImage2(call_info, GetDeviceTable(in_commandBuffer)->CmdCopyImage2, in_commandBuffer, in_pCopyImageInfo);
+        resource_dumper_->Process_vkCmdCopyImage2(call_info, GetDeviceTable(in_commandBuffer)->CmdCopyImage2, in_commandBuffer, pCopyImageInfo, false);
     }
 }
 
@@ -3283,11 +3318,16 @@ void VulkanReplayConsumer::Process_vkCmdCopyBufferToImage2(
     const VkCopyBufferToImageInfo2* in_pCopyBufferToImageInfo = pCopyBufferToImageInfo->GetPointer();
     MapStructHandles(pCopyBufferToImageInfo->GetMetaStructPointer(), GetObjectInfoTable());
 
+    if (options_.dumping_resources && options_.dump_resources_before)
+    {
+        resource_dumper_->Process_vkCmdCopyBufferToImage2(call_info, GetDeviceTable(in_commandBuffer)->CmdCopyBufferToImage2, in_commandBuffer, pCopyBufferToImageInfo, true);
+    }
+
     GetDeviceTable(in_commandBuffer)->CmdCopyBufferToImage2(in_commandBuffer, in_pCopyBufferToImageInfo);
 
     if (options_.dumping_resources)
     {
-        resource_dumper_->Process_vkCmdCopyBufferToImage2(call_info, GetDeviceTable(in_commandBuffer)->CmdCopyBufferToImage2, in_commandBuffer, in_pCopyBufferToImageInfo);
+        resource_dumper_->Process_vkCmdCopyBufferToImage2(call_info, GetDeviceTable(in_commandBuffer)->CmdCopyBufferToImage2, in_commandBuffer, pCopyBufferToImageInfo, false);
     }
 }
 
@@ -3300,11 +3340,16 @@ void VulkanReplayConsumer::Process_vkCmdCopyImageToBuffer2(
     const VkCopyImageToBufferInfo2* in_pCopyImageToBufferInfo = pCopyImageToBufferInfo->GetPointer();
     MapStructHandles(pCopyImageToBufferInfo->GetMetaStructPointer(), GetObjectInfoTable());
 
+    if (options_.dumping_resources && options_.dump_resources_before)
+    {
+        resource_dumper_->Process_vkCmdCopyImageToBuffer2(call_info, GetDeviceTable(in_commandBuffer)->CmdCopyImageToBuffer2, in_commandBuffer, pCopyImageToBufferInfo, true);
+    }
+
     GetDeviceTable(in_commandBuffer)->CmdCopyImageToBuffer2(in_commandBuffer, in_pCopyImageToBufferInfo);
 
     if (options_.dumping_resources)
     {
-        resource_dumper_->Process_vkCmdCopyImageToBuffer2(call_info, GetDeviceTable(in_commandBuffer)->CmdCopyImageToBuffer2, in_commandBuffer, in_pCopyImageToBufferInfo);
+        resource_dumper_->Process_vkCmdCopyImageToBuffer2(call_info, GetDeviceTable(in_commandBuffer)->CmdCopyImageToBuffer2, in_commandBuffer, pCopyImageToBufferInfo, false);
     }
 }
 
@@ -3420,11 +3465,16 @@ void VulkanReplayConsumer::Process_vkCmdBlitImage2(
     const VkBlitImageInfo2* in_pBlitImageInfo = pBlitImageInfo->GetPointer();
     MapStructHandles(pBlitImageInfo->GetMetaStructPointer(), GetObjectInfoTable());
 
+    if (options_.dumping_resources && options_.dump_resources_before)
+    {
+        resource_dumper_->Process_vkCmdBlitImage2(call_info, GetDeviceTable(in_commandBuffer)->CmdBlitImage2, in_commandBuffer, pBlitImageInfo, true);
+    }
+
     GetDeviceTable(in_commandBuffer)->CmdBlitImage2(in_commandBuffer, in_pBlitImageInfo);
 
     if (options_.dumping_resources)
     {
-        resource_dumper_->Process_vkCmdBlitImage2(call_info, GetDeviceTable(in_commandBuffer)->CmdBlitImage2, in_commandBuffer, in_pBlitImageInfo);
+        resource_dumper_->Process_vkCmdBlitImage2(call_info, GetDeviceTable(in_commandBuffer)->CmdBlitImage2, in_commandBuffer, pBlitImageInfo, false);
     }
 }
 
@@ -6424,11 +6474,16 @@ void VulkanReplayConsumer::Process_vkCmdCopyBuffer2KHR(
     const VkCopyBufferInfo2* in_pCopyBufferInfo = pCopyBufferInfo->GetPointer();
     MapStructHandles(pCopyBufferInfo->GetMetaStructPointer(), GetObjectInfoTable());
 
+    if (options_.dumping_resources && options_.dump_resources_before)
+    {
+        resource_dumper_->Process_vkCmdCopyBuffer2KHR(call_info, GetDeviceTable(in_commandBuffer)->CmdCopyBuffer2KHR, in_commandBuffer, pCopyBufferInfo, true);
+    }
+
     GetDeviceTable(in_commandBuffer)->CmdCopyBuffer2KHR(in_commandBuffer, in_pCopyBufferInfo);
 
     if (options_.dumping_resources)
     {
-        resource_dumper_->Process_vkCmdCopyBuffer2KHR(call_info, GetDeviceTable(in_commandBuffer)->CmdCopyBuffer2KHR, in_commandBuffer, in_pCopyBufferInfo);
+        resource_dumper_->Process_vkCmdCopyBuffer2KHR(call_info, GetDeviceTable(in_commandBuffer)->CmdCopyBuffer2KHR, in_commandBuffer, pCopyBufferInfo, false);
     }
 }
 
@@ -6441,11 +6496,16 @@ void VulkanReplayConsumer::Process_vkCmdCopyImage2KHR(
     const VkCopyImageInfo2* in_pCopyImageInfo = pCopyImageInfo->GetPointer();
     MapStructHandles(pCopyImageInfo->GetMetaStructPointer(), GetObjectInfoTable());
 
+    if (options_.dumping_resources && options_.dump_resources_before)
+    {
+        resource_dumper_->Process_vkCmdCopyImage2KHR(call_info, GetDeviceTable(in_commandBuffer)->CmdCopyImage2KHR, in_commandBuffer, pCopyImageInfo, true);
+    }
+
     GetDeviceTable(in_commandBuffer)->CmdCopyImage2KHR(in_commandBuffer, in_pCopyImageInfo);
 
     if (options_.dumping_resources)
     {
-        resource_dumper_->Process_vkCmdCopyImage2KHR(call_info, GetDeviceTable(in_commandBuffer)->CmdCopyImage2KHR, in_commandBuffer, in_pCopyImageInfo);
+        resource_dumper_->Process_vkCmdCopyImage2KHR(call_info, GetDeviceTable(in_commandBuffer)->CmdCopyImage2KHR, in_commandBuffer, pCopyImageInfo, false);
     }
 }
 
@@ -6458,11 +6518,16 @@ void VulkanReplayConsumer::Process_vkCmdCopyBufferToImage2KHR(
     const VkCopyBufferToImageInfo2* in_pCopyBufferToImageInfo = pCopyBufferToImageInfo->GetPointer();
     MapStructHandles(pCopyBufferToImageInfo->GetMetaStructPointer(), GetObjectInfoTable());
 
+    if (options_.dumping_resources && options_.dump_resources_before)
+    {
+        resource_dumper_->Process_vkCmdCopyBufferToImage2KHR(call_info, GetDeviceTable(in_commandBuffer)->CmdCopyBufferToImage2KHR, in_commandBuffer, pCopyBufferToImageInfo, true);
+    }
+
     GetDeviceTable(in_commandBuffer)->CmdCopyBufferToImage2KHR(in_commandBuffer, in_pCopyBufferToImageInfo);
 
     if (options_.dumping_resources)
     {
-        resource_dumper_->Process_vkCmdCopyBufferToImage2KHR(call_info, GetDeviceTable(in_commandBuffer)->CmdCopyBufferToImage2KHR, in_commandBuffer, in_pCopyBufferToImageInfo);
+        resource_dumper_->Process_vkCmdCopyBufferToImage2KHR(call_info, GetDeviceTable(in_commandBuffer)->CmdCopyBufferToImage2KHR, in_commandBuffer, pCopyBufferToImageInfo, false);
     }
 }
 
@@ -6475,11 +6540,16 @@ void VulkanReplayConsumer::Process_vkCmdCopyImageToBuffer2KHR(
     const VkCopyImageToBufferInfo2* in_pCopyImageToBufferInfo = pCopyImageToBufferInfo->GetPointer();
     MapStructHandles(pCopyImageToBufferInfo->GetMetaStructPointer(), GetObjectInfoTable());
 
+    if (options_.dumping_resources && options_.dump_resources_before)
+    {
+        resource_dumper_->Process_vkCmdCopyImageToBuffer2KHR(call_info, GetDeviceTable(in_commandBuffer)->CmdCopyImageToBuffer2KHR, in_commandBuffer, pCopyImageToBufferInfo, true);
+    }
+
     GetDeviceTable(in_commandBuffer)->CmdCopyImageToBuffer2KHR(in_commandBuffer, in_pCopyImageToBufferInfo);
 
     if (options_.dumping_resources)
     {
-        resource_dumper_->Process_vkCmdCopyImageToBuffer2KHR(call_info, GetDeviceTable(in_commandBuffer)->CmdCopyImageToBuffer2KHR, in_commandBuffer, in_pCopyImageToBufferInfo);
+        resource_dumper_->Process_vkCmdCopyImageToBuffer2KHR(call_info, GetDeviceTable(in_commandBuffer)->CmdCopyImageToBuffer2KHR, in_commandBuffer, pCopyImageToBufferInfo, false);
     }
 }
 
@@ -6492,11 +6562,16 @@ void VulkanReplayConsumer::Process_vkCmdBlitImage2KHR(
     const VkBlitImageInfo2* in_pBlitImageInfo = pBlitImageInfo->GetPointer();
     MapStructHandles(pBlitImageInfo->GetMetaStructPointer(), GetObjectInfoTable());
 
+    if (options_.dumping_resources && options_.dump_resources_before)
+    {
+        resource_dumper_->Process_vkCmdBlitImage2KHR(call_info, GetDeviceTable(in_commandBuffer)->CmdBlitImage2KHR, in_commandBuffer, pBlitImageInfo, true);
+    }
+
     GetDeviceTable(in_commandBuffer)->CmdBlitImage2KHR(in_commandBuffer, in_pBlitImageInfo);
 
     if (options_.dumping_resources)
     {
-        resource_dumper_->Process_vkCmdBlitImage2KHR(call_info, GetDeviceTable(in_commandBuffer)->CmdBlitImage2KHR, in_commandBuffer, in_pBlitImageInfo);
+        resource_dumper_->Process_vkCmdBlitImage2KHR(call_info, GetDeviceTable(in_commandBuffer)->CmdBlitImage2KHR, in_commandBuffer, pBlitImageInfo, false);
     }
 }
 
@@ -12411,11 +12486,16 @@ void VulkanReplayConsumer::Process_vkCmdBuildAccelerationStructuresKHR(
 
     MapStructArrayHandles(pInfos->GetMetaStructPointer(), pInfos->GetLength(), GetObjectInfoTable());
 
+    if (options_.dumping_resources && options_.dump_resources_before)
+    {
+        resource_dumper_->Process_vkCmdBuildAccelerationStructuresKHR(call_info, GetDeviceTable(in_commandBuffer->handle)->CmdBuildAccelerationStructuresKHR, in_commandBuffer->handle, infoCount, pInfos, ppBuildRangeInfos, true);
+    }
+
     OverrideCmdBuildAccelerationStructuresKHR(GetDeviceTable(in_commandBuffer->handle)->CmdBuildAccelerationStructuresKHR, in_commandBuffer, infoCount, pInfos, ppBuildRangeInfos);
 
     if (options_.dumping_resources)
     {
-        resource_dumper_->Process_vkCmdBuildAccelerationStructuresKHR(call_info, GetDeviceTable(in_commandBuffer->handle)->CmdBuildAccelerationStructuresKHR, in_commandBuffer->handle, infoCount, pInfos->GetPointer(), ppBuildRangeInfos->GetPointer());
+        resource_dumper_->Process_vkCmdBuildAccelerationStructuresKHR(call_info, GetDeviceTable(in_commandBuffer->handle)->CmdBuildAccelerationStructuresKHR, in_commandBuffer->handle, infoCount, pInfos, ppBuildRangeInfos, false);
     }
 }
 
@@ -12509,11 +12589,16 @@ void VulkanReplayConsumer::Process_vkCmdCopyAccelerationStructureKHR(
 
     MapStructHandles(pInfo->GetMetaStructPointer(), GetObjectInfoTable());
 
+    if (options_.dumping_resources && options_.dump_resources_before)
+    {
+        resource_dumper_->Process_vkCmdCopyAccelerationStructureKHR(call_info, GetDeviceTable(in_commandBuffer->handle)->CmdCopyAccelerationStructureKHR, in_commandBuffer->handle, pInfo, true);
+    }
+
     OverrideCmdCopyAccelerationStructureKHR(GetDeviceTable(in_commandBuffer->handle)->CmdCopyAccelerationStructureKHR, in_commandBuffer, pInfo);
 
     if (options_.dumping_resources)
     {
-        resource_dumper_->Process_vkCmdCopyAccelerationStructureKHR(call_info, GetDeviceTable(in_commandBuffer->handle)->CmdCopyAccelerationStructureKHR, in_commandBuffer->handle, pInfo->GetPointer());
+        resource_dumper_->Process_vkCmdCopyAccelerationStructureKHR(call_info, GetDeviceTable(in_commandBuffer->handle)->CmdCopyAccelerationStructureKHR, in_commandBuffer->handle, pInfo, false);
     }
 }
 

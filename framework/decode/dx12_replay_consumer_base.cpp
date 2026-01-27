@@ -2107,8 +2107,7 @@ void Dx12ReplayConsumerBase::DetectAdapters()
 
 void Dx12ReplayConsumerBase::AddAdapterLuid(const LUID& capture_luid, const LUID& replay_luid)
 {
-    auto key = ((static_cast<uint64_t>(capture_luid.HighPart) << 32) & 0xFFFFFFFF00000000) |
-               (static_cast<uint64_t>(capture_luid.LowPart) & 0xFFFFFFFF);
+    auto key = pack_luid(capture_luid);
 
     if (key != 0)
     {
@@ -2118,8 +2117,7 @@ void Dx12ReplayConsumerBase::AddAdapterLuid(const LUID& capture_luid, const LUID
 
 LUID Dx12ReplayConsumerBase::GetAdapterLuid(const LUID& capture_luid)
 {
-    auto key = ((static_cast<uint64_t>(capture_luid.HighPart) << 32) & 0xFFFFFFFF00000000) |
-               (static_cast<uint64_t>(capture_luid.LowPart) & 0xFFFFFFFF);
+    auto key   = pack_luid(capture_luid);
     auto value = adapter_luid_map_.find(key);
 
     if (value != adapter_luid_map_.end())
