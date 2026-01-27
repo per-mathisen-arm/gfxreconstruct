@@ -89,10 +89,13 @@ HRESULT IUnknown_Wrapper::QueryInterface(REFIID riid, void** object)
 
         if (SUCCEEDED(result))
         {
-            if ((riid != IID_ID3D12Object) && (riid != IID_ID3D12DeviceChild) && (riid != IID_ID3D12Pageable))
+            if ((riid == IID_ID3D12Object) || (riid == IID_ID3D12DeviceChild) || (riid == IID_ID3D12Pageable))
             {
-                WrapObject(target_interface_id, object, resources_);
+                GFXRECON_LOG_DEBUG("Mapping QueryInterface using original IID");
+                target_interface_id = riid_;
             }
+
+            WrapObject(target_interface_id, object, resources_);
         }
 
         Encode_IUnknown_QueryInterface(this, result, target_interface_id, object);
