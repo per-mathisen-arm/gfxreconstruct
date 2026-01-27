@@ -4090,28 +4090,9 @@ VulkanReplayConsumerBase::OverrideEnumeratePhysicalDevices(PFN_vkEnumeratePhysic
     assert((instance_info != nullptr) && (pPhysicalDeviceCount != nullptr) && !pPhysicalDeviceCount->IsNull() &&
            (pPhysicalDeviceCount->GetOutputPointer() != nullptr) && (pPhysicalDevices != nullptr));
 
-    VkInstance              instance                = instance_info->handle;
-    uint32_t*               replay_device_count_ptr = pPhysicalDeviceCount->GetOutputPointer();
-    VkPhysicalDevice*       replay_devices          = pPhysicalDevices->GetHandlePointer();
-    uint32_t                capture_device_count    = *pPhysicalDeviceCount->GetPointer();
-    const format::HandleId* capture_devices         = pPhysicalDevices->GetPointer();
-
-    // If it's not the first time we enumerate physical devices, they may already exist in the object info table.
-    // If they do, we want to copy them because otherwise they will be overwritten and capture data will be lost.
-    if (!pPhysicalDevices->IsNull())
-    {
-        for (uint32_t i = 0; i < capture_device_count; ++i)
-        {
-            VulkanPhysicalDeviceInfo* old_physical_device_info =
-                object_info_table_->GetVkPhysicalDeviceInfo(capture_devices[i]);
-            VulkanPhysicalDeviceInfo* new_physical_device_info =
-                reinterpret_cast<VulkanPhysicalDeviceInfo*>(pPhysicalDevices->GetConsumerData(i));
-            if (old_physical_device_info != nullptr && new_physical_device_info != nullptr)
-            {
-                *new_physical_device_info = *old_physical_device_info;
-            }
-        }
-    }
+    VkInstance        instance                = instance_info->handle;
+    uint32_t*         replay_device_count_ptr = pPhysicalDeviceCount->GetOutputPointer();
+    VkPhysicalDevice* replay_devices          = pPhysicalDevices->GetHandlePointer();
 
     VkResult result = func(instance, replay_device_count_ptr, replay_devices);
 
@@ -4119,10 +4100,27 @@ VulkanReplayConsumerBase::OverrideEnumeratePhysicalDevices(PFN_vkEnumeratePhysic
     {
         assert(!pPhysicalDevices->IsNull());
 
-        uint32_t replay_device_count = (*replay_device_count_ptr);
+        uint32_t                replay_device_count  = (*replay_device_count_ptr);
+        uint32_t                capture_device_count = (*pPhysicalDeviceCount->GetPointer());
+        const format::HandleId* capture_devices      = pPhysicalDevices->GetPointer();
 
         SetInstancePhysicalDeviceEntries(
             instance_info, capture_device_count, capture_devices, replay_device_count, replay_devices);
+
+        // If it's not the first time we enumerate physical devices, they may already exist in the object info table.
+        // If they do, we want to copy them because otherwise they will be overwritten and capture data will be lost.
+        GetObjectInfoTable().VisitVkPhysicalDeviceInfo([&](const VulkanPhysicalDeviceInfo* old_physical_device_info) {
+            for (uint32_t i = 0; i < replay_device_count; ++i)
+            {
+                VulkanPhysicalDeviceInfo* new_physical_device_info =
+                    reinterpret_cast<VulkanPhysicalDeviceInfo*>(pPhysicalDevices->GetConsumerData(i));
+
+                if (old_physical_device_info->handle == new_physical_device_info->handle)
+                {
+                    *new_physical_device_info = *old_physical_device_info;
+                }
+            }
+        });
 
         for (uint32_t i = 0; i < replay_device_count; ++i)
         {
