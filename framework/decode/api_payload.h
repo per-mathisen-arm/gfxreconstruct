@@ -24,6 +24,7 @@
 #define GFXRECON_API_PAYLOAD_H
 
 #include "api_decoder.h" // for ApiDecoder method pointers
+#include "util/type_traits_extras.h"
 
 #include <array>
 #include <memory>
@@ -1088,6 +1089,35 @@ using DispatchArgs = std::variant<DispatchStore<FunctionCallArgs>,
                                   DispatchStore<FillMemoryResourceAddressArgs>,
                                   DispatchStore<AnnotationArgs>,
                                   DispatchStore<SetOpaqueDescriptorDataArgs>>;
+
+// Helper to create DispatchArgs variant from arbitrary ArgPayload type, with sanity checks
+template <typename ArgPayload>
+inline DispatchArgs MakeDispatchArgs(ArgPayload&& payload)
+{
+    using Args     = util::RemoveCvRef_t<ArgPayload>;
+    using ArgStore = DispatchStore<Args>;
+
+    static_assert(util::IsVariantAlternative_v<ArgStore, DispatchArgs>,
+                  "Invalid ArgPayload type, not storable in DispatchArgs");
+    static_assert(std::is_constructible_v<Args, ArgPayload&&>,
+                  "DispatchArgs alternative not constructible from supplied payload");
+
+    return DispatchArgs{ std::in_place_type<ArgStore>, std::forward<ArgPayload>(payload) };
+}
+
+template <typename Args>
+inline size_t GetDispatchArgsDataSize(Args& args)
+{
+    if constexpr (DispatchTraits<Args>::kHasDataSize)
+    {
+        return args.data_size;
+    }
+    else if constexpr (DispatchTraits<Args>::kHasCommandHeader)
+    {
+        return args.command_header.data_size;
+    }
+    return 0;
+}
 
 GFXRECON_END_NAMESPACE(decode)
 GFXRECON_END_NAMESPACE(gfxrecon)

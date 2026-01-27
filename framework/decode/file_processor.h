@@ -187,9 +187,6 @@ class FileProcessor
     util::DataSpan ReadSpan(size_t buffer_size);
     bool           ReadBytes(void* buffer, size_t buffer_size);
 
-    bool PeekBytes(void* buffer, size_t buffer_size);
-    bool PeekBlockHeader(format::BlockHeader* block_header);
-
     // Reads block header, from input stream.
     bool ReadBlockBuffer(BlockParser& parser, BlockBuffer& buffer);
 
@@ -244,6 +241,12 @@ class FileProcessor
             return true;
         }
         return file_stack_.back().active_file->IsEof();
+    }
+
+    BlockParser& GetBlockParser()
+    {
+        GFXRECON_ASSERT(block_parser_.get() != nullptr);
+        return *block_parser_;
     }
 
   private:
@@ -427,12 +430,13 @@ class FileProcessor
     bool                                loading_trimmed_capture_state_;
     graphics::FpsInfo*                  fps_info_{ nullptr };
 
-    std::string absolute_path_;
+    std::string        absolute_path_;
+    format::FileHeader file_header_;
 
   protected:
     BufferPool                        pool_;
     std::unique_ptr<util::Compressor> compressor_;
-    format::FileHeader                file_header_;
+    std::unique_ptr<BlockParser>      block_parser_;
 
     struct ActiveFileContext
     {
