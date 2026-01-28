@@ -23,7 +23,7 @@
 #include "decode/vulkan_offscreen_swapchain.h"
 #include "encode/vulkan_handle_wrapper_util.h"
 #include "decode/decoder_util.h"
-#include "util/marking_layers.h"
+#include "util/callbacks.h"
 
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(decode)

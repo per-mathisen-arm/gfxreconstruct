@@ -2754,6 +2754,13 @@ class VulkanSkiaModifier : public util::VulkanModifierBase
         format::HandleId                            device,
         format::HandleId                            imageView,
         StructPointerDecoder<Decoded_VkImageViewAddressPropertiesNVX>* pProperties){ CheckSkiavk(device);}
+
+    virtual void Process_vkGetDeviceCombinedImageSamplerIndexNVX(
+        const ApiCallInfo&                          call_info,
+        uint64_t                                    returnValue,
+        format::HandleId                            device,
+        uint64_t                                    imageViewIndex,
+        uint64_t                                    samplerIndex){ CheckSkiavk(device);}
     virtual void Process_vkCmdDrawIndirectCountAMD(
         const ApiCallInfo&                          call_info,
         format::HandleId                            commandBuffer,

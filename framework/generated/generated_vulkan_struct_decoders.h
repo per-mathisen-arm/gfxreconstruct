@@ -5465,6 +5465,15 @@ struct Decoded_VkReleaseSwapchainImagesInfoKHR
     PointerDecoder<uint32_t> pImageIndices;
 };
 
+struct Decoded_VkPhysicalDeviceInternallySynchronizedQueuesFeaturesKHR
+{
+    using struct_type = VkPhysicalDeviceInternallySynchronizedQueuesFeaturesKHR;
+
+    VkPhysicalDeviceInternallySynchronizedQueuesFeaturesKHR* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+};
+
 struct Decoded_VkCooperativeMatrixPropertiesKHR
 {
     using struct_type = VkCooperativeMatrixPropertiesKHR;
@@ -11383,6 +11392,33 @@ struct Decoded_VkImageAlignmentControlCreateInfoMESA
     PNextNode* pNext{ nullptr };
 };
 
+struct Decoded_VkPushConstantBankInfoNV
+{
+    using struct_type = VkPushConstantBankInfoNV;
+
+    VkPushConstantBankInfoNV* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+};
+
+struct Decoded_VkPhysicalDevicePushConstantBankFeaturesNV
+{
+    using struct_type = VkPhysicalDevicePushConstantBankFeaturesNV;
+
+    VkPhysicalDevicePushConstantBankFeaturesNV* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+};
+
+struct Decoded_VkPhysicalDevicePushConstantBankPropertiesNV
+{
+    using struct_type = VkPhysicalDevicePushConstantBankPropertiesNV;
+
+    VkPhysicalDevicePushConstantBankPropertiesNV* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+};
+
 struct Decoded_VkPhysicalDeviceRayTracingInvocationReorderPropertiesEXT
 {
     using struct_type = VkPhysicalDeviceRayTracingInvocationReorderPropertiesEXT;
@@ -11740,6 +11776,15 @@ struct Decoded_VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV
     using struct_type = VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV;
 
     VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+};
+
+struct Decoded_VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT
+{
+    using struct_type = VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT;
+
+    VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT* decoded_value{ nullptr };
 
     PNextNode* pNext{ nullptr };
 };

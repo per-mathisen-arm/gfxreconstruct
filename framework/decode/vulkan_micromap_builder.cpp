@@ -23,7 +23,7 @@
 
 #include "graphics/vulkan_resources_util.h"
 #include "decode/vulkan_micromap_builder.h"
-#include "util/marking_layers.h"
+#include "util/callbacks.h"
 #include <algorithm>
 
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)

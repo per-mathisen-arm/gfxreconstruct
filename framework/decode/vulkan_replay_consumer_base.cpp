@@ -55,8 +55,7 @@
 #include "util/hash.h"
 #include "util/platform.h"
 #include "util/logging.h"
-#include "util/marking_layers.h"
-#include "format/format.h"
+#include "util/callbacks.h"
 #include "util/spirv_parsing_util.h"
 #include "util/vulkan_device_table_dispatcher.h"
 
@@ -3105,7 +3104,6 @@ bool VulkanReplayConsumerBase::CheckCommandBufferInfoForFrameBoundary(
             // queries.
             VkPhysicalDeviceMemoryProperties memory_properties;
 
-            util::MarkingLayersUtil::instance().BeginInjected(device_info);
             instance_table->GetPhysicalDeviceMemoryProperties(device_info->parent, &memory_properties);
 
             for (size_t i = 0; i < command_buffer_info->frame_buffer_ids.size(); ++i)
@@ -3165,7 +3163,6 @@ bool VulkanReplayConsumerBase::CheckCommandBufferInfoForFrameBoundary(
                                                     image_info->current_layout);
                 }
             }
-            util::MarkingLayersUtil::instance().EndInjected(device_info);
         }
         screenshot_handler_->EndFrame();
         return true;
@@ -3188,7 +3185,6 @@ bool VulkanReplayConsumerBase::CheckPNextChainForFrameBoundary(const VulkanDevic
 
     VkPhysicalDeviceMemoryProperties memory_properties;
 
-    util::MarkingLayersUtil::instance().BeginInjected(device_info);
     instance_table->GetPhysicalDeviceMemoryProperties(device_info->parent, &memory_properties);
 
     if (screenshot_handler_->IsScreenshotFrame())
@@ -3225,7 +3221,6 @@ bool VulkanReplayConsumerBase::CheckPNextChainForFrameBoundary(const VulkanDevic
         }
     }
 
-    util::MarkingLayersUtil::instance().EndInjected(device_info);
     screenshot_handler_->EndFrame();
 
     return true;
@@ -4766,6 +4761,9 @@ VkResult VulkanReplayConsumerBase::OverrideQueueSubmit(PFN_vkQueueSubmit        
 
     if (UseAddressReplacement(device_info) && submit_info_data != nullptr)
     {
+        const auto& address_tracker  = GetDeviceAddressTracker(device_info);
+        auto&       address_replacer = GetDeviceAddressReplacer(device_info);
+
         for (uint32_t i = 0; i < submitCount; i++)
         {
             std::vector<VkDeviceAddress> addresses_to_replace;
@@ -4781,6 +4779,11 @@ VkResult VulkanReplayConsumerBase::OverrideQueueSubmit(PFN_vkQueueSubmit        
             {
                 auto* command_buffer_info = GetObjectInfoTable().GetVkCommandBufferInfo(cmd_buf_handles[c]);
                 GFXRECON_ASSERT(command_buffer_info != nullptr);
+
+                // resolve pointer-chains, discover additional referenced buffers
+                address_replacer.ResolveBufferAddresses(command_buffer_info, address_tracker);
+
+                // collect buffer-device-address from all command-buffers
                 addresses_to_replace.insert(addresses_to_replace.end(),
                                             command_buffer_info->addresses_to_replace.begin(),
                                             command_buffer_info->addresses_to_replace.end());
@@ -4795,9 +4798,7 @@ VkResult VulkanReplayConsumerBase::OverrideQueueSubmit(PFN_vkQueueSubmit        
             {
                 VkSubmitInfo& submit_info_mut = pSubmits->GetPointer()[i];
                 auto          wait_semaphores = graphics::StripWaitSemaphores(&submit_info_mut);
-
-                auto& address_replacer = GetDeviceAddressReplacer(device_info);
-                semaphores[i]          = address_replacer.UpdateBufferAddresses(cmd_buf_info,
+                semaphores[i]                 = address_replacer.UpdateBufferAddresses(cmd_buf_info,
                                                                        addresses_to_replace.data(),
                                                                        addresses_to_replace.size(),
                                                                        GetDeviceAddressTracker(device_info),
@@ -4807,6 +4808,11 @@ VkResult VulkanReplayConsumerBase::OverrideQueueSubmit(PFN_vkQueueSubmit        
                 // inject wait-semaphore into submit-info
                 submit_info_mut.waitSemaphoreCount = 1;
                 submit_info_mut.pWaitSemaphores    = &semaphores[i];
+
+                // If waitSemaphoreCount was 0, pWaitDstStageMask might be nullptr.
+                // Make sure it points to valid data in all cases.
+                static VkPipelineStageFlags wait_stage_mask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                submit_info_mut.pWaitDstStageMask           = &wait_stage_mask;
 
                 // handle potential timeline-semaphores in pnext-chain
                 if (auto* timeline_info =
@@ -4934,6 +4940,8 @@ VkResult VulkanReplayConsumerBase::OverrideQueueSubmit(PFN_vkQueueSubmit        
 
     if (screenshot_handler_ != nullptr)
     {
+        util::MarkingLayersUtil::instance().BeginInjected(queue_info);
+
         VulkanCommandBufferInfo* frame_boundary_command_buffer_info = nullptr;
         for (uint32_t i = 0; i < submitCount; ++i)
         {
@@ -4969,6 +4977,8 @@ VkResult VulkanReplayConsumerBase::OverrideQueueSubmit(PFN_vkQueueSubmit        
                 }
             }
         }
+
+        util::MarkingLayersUtil::instance().EndInjected(queue_info);
     }
 
     if ((use_acceleration_structure_builder_) && (fence != VK_NULL_HANDLE))
@@ -5012,6 +5022,9 @@ VkResult VulkanReplayConsumerBase::OverrideQueueSubmit2(PFN_vkQueueSubmit2      
 
     if (UseAddressReplacement(device_info) && submit_info_data != nullptr)
     {
+        const auto& address_tracker  = GetDeviceAddressTracker(device_info);
+        auto&       address_replacer = GetDeviceAddressReplacer(device_info);
+
         for (uint32_t i = 0; i < submitCount; i++)
         {
             std::vector<VkDeviceAddress> addresses_to_replace;
@@ -5028,6 +5041,11 @@ VkResult VulkanReplayConsumerBase::OverrideQueueSubmit2(PFN_vkQueueSubmit2      
                 auto* command_buffer_info =
                     GetObjectInfoTable().GetVkCommandBufferInfo(cmd_buf_info_metas[c].commandBuffer);
                 GFXRECON_ASSERT(command_buffer_info != nullptr);
+
+                // resolve pointer-chains, discover additional referenced buffers
+                address_replacer.ResolveBufferAddresses(command_buffer_info, address_tracker);
+
+                // collect buffer-device-address from all command-buffers
                 addresses_to_replace.insert(addresses_to_replace.end(),
                                             command_buffer_info->addresses_to_replace.begin(),
                                             command_buffer_info->addresses_to_replace.end());
@@ -5046,9 +5064,9 @@ VkResult VulkanReplayConsumerBase::OverrideQueueSubmit2(PFN_vkQueueSubmit2      
                 VkSemaphoreSubmitInfo& semaphore_info = semaphore_infos[i];
                 semaphore_info.sType                  = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
                 semaphore_info.value                  = 1;
+                semaphore_info.stageMask              = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 
                 // runs replacer, sync via semaphore
-                auto& address_replacer   = GetDeviceAddressReplacer(device_info);
                 semaphore_info.semaphore = address_replacer.UpdateBufferAddresses(cmd_buf_info,
                                                                                   addresses_to_replace.data(),
                                                                                   addresses_to_replace.size(),
@@ -5177,6 +5195,8 @@ VkResult VulkanReplayConsumerBase::OverrideQueueSubmit2(PFN_vkQueueSubmit2      
     // Check whether any of the submitted command buffers are frame boundaries.
     if (screenshot_handler_ != nullptr)
     {
+        util::MarkingLayersUtil::instance().BeginInjected(queue_info);
+
         bool is_frame_boundary = false;
         for (uint32_t i = 0; i < submitCount; ++i)
         {
@@ -5201,6 +5221,8 @@ VkResult VulkanReplayConsumerBase::OverrideQueueSubmit2(PFN_vkQueueSubmit2      
                 }
             }
         }
+
+        util::MarkingLayersUtil::instance().EndInjected(queue_info);
     }
 
     if ((use_acceleration_structure_builder_) && (fence != VK_NULL_HANDLE))
@@ -5743,8 +5765,10 @@ VkResult VulkanReplayConsumerBase::OverrideAllocateDescriptorSets(
                 create_info.pNext = &inline_uniform_block;
             }
 
+            util::MarkingLayersUtil::instance().BeginInjected(device_info);
             result = GetDeviceTable(device_info->handle)
                          ->CreateDescriptorPool(device_info->handle, &create_info, nullptr, &new_pool);
+            util::MarkingLayersUtil::instance().EndInjected(device_info);
 
             if (result == VK_SUCCESS)
             {
@@ -9376,6 +9400,25 @@ VulkanReplayConsumerBase::OverrideQueuePresentKHR(PFN_vkQueuePresentKHR         
     capture_image_indices_.clear();
     swapchain_infos_.clear();
 
+    struct local_fence_t
+    {
+        VkFence                            fence        = VK_NULL_HANDLE;
+        VkDevice                           device       = VK_NULL_HANDLE;
+        const graphics::VulkanDeviceTable* device_table = nullptr;
+
+        local_fence_t(VkDevice d, const graphics::VulkanDeviceTable* t) : device(d), device_table(t)
+        {
+            VkFenceCreateInfo fence_create_info = { VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
+            fence_create_info.pNext             = nullptr;
+            fence_create_info.flags             = 0;
+            VkResult result = device_table->CreateFence(device, &fence_create_info, nullptr, &fence);
+            GFXRECON_ASSERT(result == VK_SUCCESS);
+        }
+        ~local_fence_t() { device_table->DestroyFence(device, fence, nullptr); }
+    };
+
+    util::MarkingLayersUtil::instance().BeginInjected(queue_info);
+
     if ((screenshot_handler_ != nullptr) && (screenshot_handler_->IsScreenshotFrame()))
     {
         auto meta_info = pPresentInfo->GetMetaStructPointer();
@@ -9413,15 +9456,10 @@ VulkanReplayConsumerBase::OverrideQueuePresentKHR(PFN_vkQueuePresentKHR         
                     VkDevice device = swapchain_info->device_info->handle;
                     GFXRECON_ASSERT(device);
 
-                    auto    device_table  = GetDeviceTable(device);
-                    VkFence acquire_fence = VK_NULL_HANDLE;
+                    auto device_table = GetDeviceTable(device);
 
-                    VkFenceCreateInfo fence_create_info = { VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
-                    fence_create_info.pNext             = nullptr;
-                    fence_create_info.flags             = 0;
-                    util::MarkingLayersUtil::instance().BeginInjected(queue_info);
-                    result = device_table->CreateFence(device, &fence_create_info, nullptr, &acquire_fence);
-                    GFXRECON_ASSERT(result == VK_SUCCESS);
+                    // create a local fence
+                    local_fence_t acquire_fence(device, device_table);
 
                     uint32_t replay_index = 0;
                     result                = swapchain_->AcquireNextImageKHR(original_result,
@@ -9430,15 +9468,14 @@ VulkanReplayConsumerBase::OverrideQueuePresentKHR(PFN_vkQueuePresentKHR         
                                                              swapchain_info,
                                                              std::numeric_limits<uint64_t>::max(),
                                                              VK_NULL_HANDLE,
-                                                             acquire_fence,
+                                                             acquire_fence.fence,
                                                              capture_image_index,
                                                              &replay_index);
                     GFXRECON_ASSERT((result == VK_SUCCESS) || (result == VK_SUBOPTIMAL_KHR));
 
                     result = device_table->WaitForFences(
-                        device, 1, &acquire_fence, true, std::numeric_limits<uint64_t>::max());
+                        device, 1, &acquire_fence.fence, true, std::numeric_limits<uint64_t>::max());
                     GFXRECON_ASSERT(result == VK_SUCCESS);
-                    util::MarkingLayersUtil::instance().EndInjected(queue_info);
 
                     swapchain_info->acquired_indices[capture_image_index] = { replay_index, true };
                 }
@@ -9569,14 +9606,8 @@ VulkanReplayConsumerBase::OverrideQueuePresentKHR(PFN_vkQueuePresentKHR         
                     auto device_table = GetDeviceTable(device);
                     GFXRECON_ASSERT(device_table);
 
-                    VkFence acquire_fence = VK_NULL_HANDLE;
-
-                    VkFenceCreateInfo fence_create_info = { VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
-                    fence_create_info.pNext             = nullptr;
-                    fence_create_info.flags             = 0;
-                    util::MarkingLayersUtil::instance().BeginInjected(queue_info);
-                    result = device_table->CreateFence(device, &fence_create_info, nullptr, &acquire_fence);
-                    GFXRECON_ASSERT(result == VK_SUCCESS);
+                    // create a local fence
+                    local_fence_t acquire_fence(device, device_table);
 
                     uint32_t replay_index = 0;
                     result                = swapchain_->AcquireNextImageKHR(original_result,
@@ -9585,15 +9616,14 @@ VulkanReplayConsumerBase::OverrideQueuePresentKHR(PFN_vkQueuePresentKHR         
                                                              swapchain_info,
                                                              std::numeric_limits<uint64_t>::max(),
                                                              VK_NULL_HANDLE,
-                                                             acquire_fence,
+                                                             acquire_fence.fence,
                                                              capture_image_index,
                                                              &replay_index);
                     GFXRECON_ASSERT((result == VK_SUCCESS) || (result == VK_SUBOPTIMAL_KHR));
 
                     result = device_table->WaitForFences(
-                        device, 1, &acquire_fence, true, std::numeric_limits<uint64_t>::max());
+                        device, 1, &acquire_fence.fence, true, std::numeric_limits<uint64_t>::max());
                     GFXRECON_ASSERT(result == VK_SUCCESS);
-                    util::MarkingLayersUtil::instance().EndInjected(queue_info);
 
                     swapchain_info->acquired_indices[capture_image_index] = { replay_index, true };
                 }
@@ -9607,11 +9637,11 @@ VulkanReplayConsumerBase::OverrideQueuePresentKHR(PFN_vkQueuePresentKHR         
 
     if (options_.wait_before_present)
     {
-        util::MarkingLayersUtil::instance().BeginInjected(queue_info);
         VkDevice device = MapHandle<VulkanDeviceInfo>(queue_info->parent_id, &CommonObjectInfoTable::GetVkDeviceInfo);
         GetDeviceTable(device)->DeviceWaitIdle(device);
-        util::MarkingLayersUtil::instance().EndInjected(queue_info);
     }
+
+    util::MarkingLayersUtil::instance().EndInjected(queue_info);
 
     // Only attempt to find imported or shadow semaphores if we know at least one around.
     if ((!have_imported_semaphores_) && (shadow_semaphores_.empty()) && (modified_present_info.swapchainCount != 0))
@@ -11159,6 +11189,7 @@ void VulkanReplayConsumerBase::ClearCommandBufferInfo(VulkanCommandBufferInfo* c
     command_buffer_info->push_constant_stage_flags     = 0;
     command_buffer_info->push_constant_pipeline_layout = VK_NULL_HANDLE;
     command_buffer_info->addresses_to_replace.clear();
+    command_buffer_info->addresses_to_resolve.clear();
     command_buffer_info->inside_renderpass = false;
 
     // free potential shadow-resources associated with this command-buffer
@@ -11826,6 +11857,8 @@ void VulkanReplayConsumerBase::OverrideFrameBoundaryANDROID(PFN_vkFrameBoundaryA
 
     if (screenshot_handler_ != nullptr && !options_.screenshot_ignore_frameBoundaryAndroid)
     {
+        util::MarkingLayersUtil::instance().BeginInjected(device_info);
+
         if (screenshot_handler_->IsScreenshotFrame() && image_info != nullptr)
         {
             const std::string filename_prefix =
@@ -11845,7 +11878,6 @@ void VulkanReplayConsumerBase::OverrideFrameBoundaryANDROID(PFN_vkFrameBoundaryA
             GFXRECON_ASSERT(instance_table != nullptr);
 
             VkPhysicalDeviceMemoryProperties memory_properties;
-            util::MarkingLayersUtil::instance().BeginInjected(device_info);
             instance_table->GetPhysicalDeviceMemoryProperties(device_info->parent, &memory_properties);
 
             screenshot_handler_->WriteImage(filename_prefix,
@@ -11860,10 +11892,11 @@ void VulkanReplayConsumerBase::OverrideFrameBoundaryANDROID(PFN_vkFrameBoundaryA
                                             screenshot_width,
                                             screenshot_height,
                                             image_info->current_layout);
-            util::MarkingLayersUtil::instance().EndInjected(device_info);
         }
 
         screenshot_handler_->EndFrame();
+
+        util::MarkingLayersUtil::instance().EndInjected(device_info);
     }
 
     if (!arm_features_->UseExtFrameBoundaryAndroid(device_info, semaphore, image))

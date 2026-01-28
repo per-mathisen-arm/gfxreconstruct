@@ -27,8 +27,8 @@
 #include "decode/vulkan_resource_allocator.h"
 #include "util/vulkan_device_table_dispatcher.h"
 
+#include "util/callbacks.h"
 #include "util/defines.h"
-#include "util/marking_layers.h"
 
 #include <vector>
 

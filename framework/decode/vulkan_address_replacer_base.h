@@ -46,9 +46,9 @@ class VulkanAddressReplacerBase
 
     VulkanAddressReplacerBase(VulkanAddressReplacerBase&& other) noexcept;
 
-    virtual ~VulkanAddressReplacerBase(){};
+    virtual ~VulkanAddressReplacerBase() {}
 
-    virtual void SetRaytracingProperties(const decode::VulkanPhysicalDeviceInfo* physical_device_info){};
+    virtual void SetRaytracingProperties(const decode::VulkanPhysicalDeviceInfo* physical_device_info) {}
 
     virtual VkSemaphore
     UpdateBufferAddresses(const VulkanCommandBufferInfo*                                      command_buffer_info,
@@ -58,21 +58,27 @@ class VulkanAddressReplacerBase
                           const std::optional<std::vector<std::pair<VkSemaphore, uint64_t>>>& wait_semaphores = {})
     {
         return VK_NULL_HANDLE;
-    };
+    }
+
+    virtual void ResolveBufferAddresses(VulkanCommandBufferInfo*                  command_buffer_info,
+                                        const decode::VulkanDeviceAddressTracker& address_tracker)
+    {}
 
     virtual void ProcessCmdPushConstants(const VulkanCommandBufferInfo*            command_buffer_info,
                                          VkShaderStageFlags                        stage_flags,
                                          uint32_t                                  offset,
                                          uint32_t                                  size,
                                          void*                                     data,
-                                         const decode::VulkanDeviceAddressTracker& address_tracker){};
+                                         const decode::VulkanDeviceAddressTracker& address_tracker)
+    {}
 
     virtual void ProcessCmdBindDescriptorSets(VulkanCommandBufferInfo*               command_buffer_info,
                                               VkPipelineBindPoint                    pipelineBindPoint,
                                               uint32_t                               firstSet,
                                               uint32_t                               descriptorSetCount,
                                               HandlePointerDecoder<VkDescriptorSet>* pDescriptorSets,
-                                              decode::VulkanDeviceAddressTracker&    address_tracker){};
+                                              decode::VulkanDeviceAddressTracker&    address_tracker)
+    {}
 
     virtual void ProcessCmdTraceRays(
         const VulkanCommandBufferInfo*                                                              command_buffer_info,
@@ -81,7 +87,8 @@ class VulkanAddressReplacerBase
         VkStridedDeviceAddressRegionKHR*                                                            hit_sbt,
         VkStridedDeviceAddressRegionKHR*                                                            callable_sbt,
         const decode::VulkanDeviceAddressTracker&                                                   address_tracker,
-        const std::unordered_map<graphics::shader_group_handle_t, graphics::shader_group_handle_t>& group_handle_map){};
+        const std::unordered_map<graphics::shader_group_handle_t, graphics::shader_group_handle_t>& group_handle_map)
+    {}
 
     virtual void
     ProcessCmdBuildAccelerationStructuresKHR(const VulkanCommandBufferInfo*               command_buffer_info,
@@ -89,20 +96,23 @@ class VulkanAddressReplacerBase
                                              VkAccelerationStructureBuildGeometryInfoKHR* build_geometry_infos,
                                              VkAccelerationStructureBuildRangeInfoKHR**   build_range_infos,
                                              const decode::VulkanDeviceAddressTracker&    address_tracker,
-                                             bool                                         process_scratch_buffers){};
+                                             bool                                         process_scratch_buffers)
+    {}
 
     virtual void ProcessGetDescriptorEXT(const VulkanDeviceInfo*           device_info,
                                          VkDescriptorGetInfoEXT*           descriptorInfo,
-                                         const VulkanDeviceAddressTracker& address_tracker){};
+                                         const VulkanDeviceAddressTracker& address_tracker)
+    {}
 
     virtual void ProcessCmdBindDescriptorBuffersEXT(const VulkanCommandBufferInfo*    commandBuffer_info,
                                                     uint32_t                          bufferCount,
                                                     VkDescriptorBufferBindingInfoEXT* bindingInfos,
-                                                    const VulkanDeviceAddressTracker& address_tracker){};
+                                                    const VulkanDeviceAddressTracker& address_tracker)
+    {}
 
-    virtual void DestroyShadowResources(VkAccelerationStructureKHR handle){};
+    virtual void DestroyShadowResources(VkAccelerationStructureKHR handle) {}
 
-    virtual void DestroyShadowResources(VkCommandBuffer handle){};
+    virtual void DestroyShadowResources(VkCommandBuffer handle) {}
 
     void ProcessUpdateDescriptorSets(uint32_t                                  descriptor_write_count,
                                      VkWriteDescriptorSet*                     descriptor_writes,

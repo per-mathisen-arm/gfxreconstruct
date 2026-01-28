@@ -24,8 +24,8 @@
 #include "format/format.h"
 #include "decode/vulkan_acceleration_structure_builder.h"
 #include "decode/vulkan_micromap_builder.h"
+#include "util/callbacks.h"
 #include "util/logging.h"
-#include "util/marking_layers.h"
 
 #include <algorithm>
 #include <cstdint>
