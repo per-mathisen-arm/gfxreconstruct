@@ -1,7 +1,7 @@
 include_guard(GLOBAL)
 
 set(GFXRECONSTRUCT_PROJECT_ARM_VERSION_MAJOR 4)
-set(GFXRECONSTRUCT_PROJECT_ARM_VERSION_MINOR 1)
+set(GFXRECONSTRUCT_PROJECT_ARM_VERSION_MINOR 2)
 
 get_cmake_property(_variableNames VARIABLES)
 
@@ -9,7 +9,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/../cmake" "${CMAKE_CURRENT_LIST
 include(GetGitRevisionDescription)
 get_git_head_revision(GIT_REFSPEC GIT_SHA1)
 set(GIT_BRANCH "")
-set(GFXRECON_PROJECT_VERSION_DESIGNATION "")
+set(GFXRECON_PROJECT_VERSION_DESIGNATION "$ENV{GFXRECON_PROJECT_VERSION_DESIGNATION}")
 
 git_local_changes(GIT_LOCAL_STATE)
 string(COMPARE EQUAL ${GIT_LOCAL_STATE} "DIRTY" GIT_DIRTY)
@@ -22,15 +22,14 @@ endif ()
 
 if (GIT_REFSPEC)
     string(REGEX REPLACE ".*/(.+)$" "\\1" GIT_BRANCH ${GIT_REFSPEC})
-    string(COMPARE EQUAL ${GIT_BRANCH} "release-internal" GIT_IS_RELEASE_INTERNAL)
     ## Skip designation information on release branch, otherwise set it to:
     ## <branch name>-<sha><"*" if local changes>
-    if (GIT_IS_RELEASE_INTERNAL STREQUAL "0")
-        set(GFXRECON_PROJECT_VERSION_DESIGNATION " ${GIT_BRANCH}:${GIT_SHA1_SHORT}")
+    if (NOT GIT_BRANCH MATCHES "^release-.*$")
+        string(APPEND GFXRECON_PROJECT_VERSION_DESIGNATION " ${GIT_BRANCH}:${GIT_SHA1_SHORT}")
     endif ()
 else ()
 ## GIT_REFSPEC may not exist in detached state - use "DETACHED" branch name and GIT_SHA1_SHORT as designation
-    set(GFXRECON_PROJECT_VERSION_DESIGNATION " DETACHED:${GIT_SHA1_SHORT}")
+    string(APPEND GFXRECON_PROJECT_VERSION_DESIGNATION " DETACHED:${GIT_SHA1_SHORT}")
 endif ()
 
 # Build type may come from CMAKE_BUILD_TYPE or - for gradle builds - from command line

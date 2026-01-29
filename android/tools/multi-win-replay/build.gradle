@@ -1,7 +1,6 @@
 apply plugin: 'com.android.application'
 
 android {
-    def propVersion = providers.gradleProperty("Version")
     def propMaxThreadsPerBuildTask = providers.gradleProperty("MaxThreadsPerBuildTask")
     def propEnableCcache = providers.gradleProperty("EnableCcache")
 
@@ -30,11 +29,6 @@ android {
             cmake {
                 cppFlags "-fexceptions", "-Wno-nullability-completeness"
                 arguments "-DANDROID_TOOLCHAIN=clang", "-DANDROID_STL=c++_static"
-
-                if (propVersion.present)
-                {
-                    arguments.add("-DGFXRECON_PROJECT_VERSION_DESIGNATION=-${propVersion.get()}")
-                }
 
                 if (propMaxThreadsPerBuildTask.present) {
                     arguments.add("-DCMAKE_JOB_POOL_COMPILE:STRING=build")
