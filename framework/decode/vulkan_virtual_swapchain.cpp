@@ -28,10 +28,46 @@
 #include "graphics/vulkan_resources_util.h"
 
 #include "vulkan/vulkan_core.h"
-#include <array>
 
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(decode)
+
+void VulkanVirtualSwapchain::CleanDeviceResources(VkDevice device, const graphics::VulkanDeviceTable* device_table)
+{
+    GFXRECON_ASSERT(device != VK_NULL_HANDLE);
+    GFXRECON_ASSERT(device_table != nullptr);
+
+    // cleanup offscreen-frame-boundary (OFB) assets
+    if (auto it = ofb_data_.find(device); it != ofb_data_.end())
+    {
+        const auto& ofb_data = it->second;
+
+        for (auto semaphore : ofb_data.acquire_semaphores)
+        {
+            device_table->DestroySemaphore(device, semaphore, nullptr);
+        }
+
+        for (auto& img_data : ofb_data.image_datas)
+        {
+            if (img_data.copy_command_buffer != VK_NULL_HANDLE)
+            {
+                device_table->FreeCommandBuffers(device, ofb_data.command_pool, 1, &img_data.copy_command_buffer);
+            }
+
+            if (img_data.copy_semaphore != VK_NULL_HANDLE)
+            {
+                device_table->DestroySemaphore(device, img_data.copy_semaphore, nullptr);
+            }
+        }
+
+        if (ofb_data.command_pool != VK_NULL_HANDLE)
+        {
+            device_table->DestroyCommandPool(device, ofb_data.command_pool, nullptr);
+        }
+
+        ofb_data_.erase(device);
+    }
+}
 
 bool VulkanVirtualSwapchain::AddSwapchainResourceData(VkSwapchainKHR swapchain)
 {
@@ -1120,29 +1156,31 @@ void VulkanVirtualSwapchain::FrameBoundaryANDROID(PFN_vkFrameBoundaryANDROID    
     util::MarkingLayersUtil::instance().BeginInjected(device_info);
 
     // Create a new surface if necessary
+    GFXRECON_ASSERT(device != VK_NULL_HANDLE);
+    auto& ofb_data = ofb_data_[device];
 
-    if (ofb_data_.surface_info.handle == VK_NULL_HANDLE)
+    if (ofb_data.surface_info.handle == VK_NULL_HANDLE)
     {
         // Create a window and surface
 
-        ofb_data_.surface_ptr.SetHandleLength(1);
-        ofb_data_.surface_ptr.SetConsumerData(0, &ofb_data_.surface_info);
+        ofb_data.surface_ptr.SetHandleLength(1);
+        ofb_data.surface_ptr.SetConsumerData(0, &ofb_data.surface_info);
 
         result = CreateSurface(VK_SUCCESS,
                                instance_info,
                                VK_KHR_ANDROID_SURFACE_EXTENSION_NAME,
                                0,
-                               &ofb_data_.surface_ptr,
+                               &ofb_data.surface_ptr,
                                instance_table,
                                application);
         GFXRECON_ASSERT(result == VK_SUCCESS);
 
-        ofb_data_.surface_info.handle = *ofb_data_.surface_ptr.GetHandlePointer();
-        ofb_data_.surface_info.window->SetSize(image_info->extent.width, image_info->extent.height);
+        ofb_data.surface_info.handle = *ofb_data.surface_ptr.GetHandlePointer();
+        ofb_data.surface_info.window->SetSize(image_info->extent.width, image_info->extent.height);
 
         // Retrieve the queue that will be used for presentation/image copy and create a command pool
 
-        device_table->GetDeviceQueue(device, 0, 0, &ofb_data_.queue);
+        device_table->GetDeviceQueue(device, 0, 0, &ofb_data.queue);
 
         VkCommandPoolCreateInfo command_pool_create_info;
         command_pool_create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -1151,15 +1189,15 @@ void VulkanVirtualSwapchain::FrameBoundaryANDROID(PFN_vkFrameBoundaryANDROID    
             VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
         command_pool_create_info.queueFamilyIndex = 0;
 
-        result = device_table->CreateCommandPool(device, &command_pool_create_info, nullptr, &ofb_data_.command_pool);
+        result = device_table->CreateCommandPool(device, &command_pool_create_info, nullptr, &ofb_data.command_pool);
         GFXRECON_ASSERT(result == VK_SUCCESS);
     }
 
     // Create/Re-create a swapchain if necessary
 
-    VkExtent2D window_size = ofb_data_.surface_info.window->GetSize();
+    VkExtent2D window_size = ofb_data.surface_info.window->GetSize();
     if (image_info->extent.width != window_size.width || image_info->extent.height != window_size.height ||
-        ofb_data_.swapchain == VK_NULL_HANDLE)
+        ofb_data.swapchain == VK_NULL_HANDLE)
     {
 
         // Create a swapchain
@@ -1168,7 +1206,7 @@ void VulkanVirtualSwapchain::FrameBoundaryANDROID(PFN_vkFrameBoundaryANDROID    
         swapchain_create_info.sType                 = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
         swapchain_create_info.pNext                 = nullptr;
         swapchain_create_info.flags                 = 0;
-        swapchain_create_info.surface               = ofb_data_.surface_info.handle;
+        swapchain_create_info.surface               = ofb_data.surface_info.handle;
         swapchain_create_info.minImageCount         = 3;
         swapchain_create_info.imageFormat           = VK_FORMAT_B8G8R8A8_UNORM;
         swapchain_create_info.imageColorSpace       = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
@@ -1182,13 +1220,13 @@ void VulkanVirtualSwapchain::FrameBoundaryANDROID(PFN_vkFrameBoundaryANDROID    
         swapchain_create_info.preTransform          = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
         swapchain_create_info.compositeAlpha        = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
         swapchain_create_info.clipped               = VK_TRUE;
-        swapchain_create_info.oldSwapchain          = ofb_data_.swapchain;
+        swapchain_create_info.oldSwapchain          = ofb_data.swapchain;
 
         switch (swapchain_options_.present_mode_option)
         {
             case util::PresentModeOption::kCapture:
-                // There is no "capture", but the closest is immediate as it is non-blocking.
-                swapchain_create_info.presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
+                // There is no corresponding present-mode for "capture", so we fall back to FIFO.
+                swapchain_create_info.presentMode = VK_PRESENT_MODE_FIFO_KHR;
                 break;
             case util::PresentModeOption::kImmediate:
                 swapchain_create_info.presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
@@ -1214,42 +1252,41 @@ void VulkanVirtualSwapchain::FrameBoundaryANDROID(PFN_vkFrameBoundaryANDROID    
 
         // Destroy old swapchain resources if necessary
 
-        if (ofb_data_.swapchain != VK_NULL_HANDLE)
+        if (ofb_data.swapchain != VK_NULL_HANDLE)
         {
             // We need to be sure that swapchain resources are not in use anymore
-            result = device_table->QueueWaitIdle(ofb_data_.queue);
+            result = device_table->QueueWaitIdle(ofb_data.queue);
             GFXRECON_ASSERT(result == VK_SUCCESS);
 
-            for (VkSemaphore acquire_semaphore : ofb_data_.acquire_semaphores)
+            for (VkSemaphore acquire_semaphore : ofb_data.acquire_semaphores)
             {
                 device_table->DestroySemaphore(device, acquire_semaphore, nullptr);
             }
-            for (auto& image_data : ofb_data_.image_datas)
+            for (auto& image_data : ofb_data.image_datas)
             {
                 device_table->DestroySemaphore(device, image_data.copy_semaphore, nullptr);
-                device_table->FreeCommandBuffers(device, ofb_data_.command_pool, 1, &image_data.copy_command_buffer);
+                device_table->FreeCommandBuffers(device, ofb_data.command_pool, 1, &image_data.copy_command_buffer);
             }
-            device_table->DestroySwapchainKHR(device, ofb_data_.swapchain, nullptr);
+            device_table->DestroySwapchainKHR(device, ofb_data.swapchain, nullptr);
 
-            ofb_data_.acquire_semaphores.clear();
-            ofb_data_.image_datas.clear();
+            ofb_data.acquire_semaphores.clear();
+            ofb_data.image_datas.clear();
         }
 
-        ofb_data_.swapchain = swapchain;
+        ofb_data.swapchain = swapchain;
 
         // Get swapchain images and create swapchain resources
 
         uint32_t image_count = 0;
-        result               = device_table->GetSwapchainImagesKHR(device, ofb_data_.swapchain, &image_count, nullptr);
+        result               = device_table->GetSwapchainImagesKHR(device, ofb_data.swapchain, &image_count, nullptr);
         GFXRECON_ASSERT(result == VK_SUCCESS);
 
         std::vector<VkImage> swapchain_images(image_count, VK_NULL_HANDLE);
-        result =
-            device_table->GetSwapchainImagesKHR(device, ofb_data_.swapchain, &image_count, swapchain_images.data());
+        result = device_table->GetSwapchainImagesKHR(device, ofb_data.swapchain, &image_count, swapchain_images.data());
         GFXRECON_ASSERT((result == VK_SUCCESS) && (swapchain_images.size() == image_count));
 
-        ofb_data_.acquire_semaphores.resize(image_count);
-        ofb_data_.image_datas.resize(image_count);
+        ofb_data.acquire_semaphores.resize(image_count);
+        ofb_data.image_datas.resize(image_count);
 
         VkSemaphoreCreateInfo semaphore_create_info;
         semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -1259,39 +1296,39 @@ void VulkanVirtualSwapchain::FrameBoundaryANDROID(PFN_vkFrameBoundaryANDROID    
         VkCommandBufferAllocateInfo command_buffer_alloc_info;
         command_buffer_alloc_info.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
         command_buffer_alloc_info.pNext              = nullptr;
-        command_buffer_alloc_info.commandPool        = ofb_data_.command_pool;
+        command_buffer_alloc_info.commandPool        = ofb_data.command_pool;
         command_buffer_alloc_info.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         command_buffer_alloc_info.commandBufferCount = 1;
 
         for (uint32_t i = 0; i < image_count; ++i)
         {
-            ofb_data_.image_datas[i].image = swapchain_images[i];
+            ofb_data.image_datas[i].image = swapchain_images[i];
 
-            result = device_table->CreateSemaphore(
-                device, &semaphore_create_info, nullptr, &ofb_data_.acquire_semaphores[i]);
+            result =
+                device_table->CreateSemaphore(device, &semaphore_create_info, nullptr, &ofb_data.acquire_semaphores[i]);
             GFXRECON_ASSERT(result == VK_SUCCESS);
 
             result = device_table->CreateSemaphore(
-                device, &semaphore_create_info, nullptr, &ofb_data_.image_datas[i].copy_semaphore);
+                device, &semaphore_create_info, nullptr, &ofb_data.image_datas[i].copy_semaphore);
             GFXRECON_ASSERT(result == VK_SUCCESS);
 
             result = device_table->AllocateCommandBuffers(
-                device, &command_buffer_alloc_info, &ofb_data_.image_datas[i].copy_command_buffer);
+                device, &command_buffer_alloc_info, &ofb_data.image_datas[i].copy_command_buffer);
             GFXRECON_ASSERT(result == VK_SUCCESS);
         }
     }
 
     // Acquire next image from the swapchain
 
-    VkSemaphore& acquire_semaphore     = ofb_data_.acquire_semaphores[ofb_data_.acquire_index];
+    VkSemaphore& acquire_semaphore     = ofb_data.acquire_semaphores[ofb_data.acquire_index];
     uint32_t     swapchain_image_index = 0;
 
     result = device_table->AcquireNextImageKHR(
-        device, ofb_data_.swapchain, UINT64_MAX, acquire_semaphore, VK_NULL_HANDLE, &swapchain_image_index);
+        device, ofb_data.swapchain, UINT64_MAX, acquire_semaphore, VK_NULL_HANDLE, &swapchain_image_index);
 
-    auto& image_data = ofb_data_.image_datas[swapchain_image_index];
+    auto& image_data = ofb_data.image_datas[swapchain_image_index];
 
-    ofb_data_.acquire_index = (ofb_data_.acquire_index + 1) % ofb_data_.acquire_semaphores.size();
+    ofb_data.acquire_index = (ofb_data.acquire_index + 1) % ofb_data.acquire_semaphores.size();
 
     std::vector<VkSemaphore> submit_wait_semaphores = { acquire_semaphore };
     if (semaphore != VK_NULL_HANDLE)
@@ -1362,7 +1399,7 @@ void VulkanVirtualSwapchain::FrameBoundaryANDROID(PFN_vkFrameBoundaryANDROID    
         submit_info.signalSemaphoreCount = 1;
         submit_info.pSignalSemaphores    = &image_data.copy_semaphore;
 
-        result = device_table->QueueSubmit(ofb_data_.queue, 1, &submit_info, VK_NULL_HANDLE);
+        result = device_table->QueueSubmit(ofb_data.queue, 1, &submit_info, VK_NULL_HANDLE);
         GFXRECON_ASSERT(result == VK_SUCCESS);
     }
 
@@ -1372,7 +1409,7 @@ void VulkanVirtualSwapchain::FrameBoundaryANDROID(PFN_vkFrameBoundaryANDROID    
     present_info.sType          = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     present_info.pNext          = nullptr;
     present_info.swapchainCount = 1;
-    present_info.pSwapchains    = &ofb_data_.swapchain;
+    present_info.pSwapchains    = &ofb_data.swapchain;
     present_info.pImageIndices  = &swapchain_image_index;
     present_info.pResults       = nullptr;
 
@@ -1387,7 +1424,7 @@ void VulkanVirtualSwapchain::FrameBoundaryANDROID(PFN_vkFrameBoundaryANDROID    
         present_info.pWaitSemaphores    = &image_data.copy_semaphore;
     }
 
-    result = device_table->QueuePresentKHR(ofb_data_.queue, &present_info);
+    result = device_table->QueuePresentKHR(ofb_data.queue, &present_info);
 
     util::MarkingLayersUtil::instance().EndInjected(device_info);
 }
