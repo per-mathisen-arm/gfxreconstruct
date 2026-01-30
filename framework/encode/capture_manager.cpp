@@ -1816,6 +1816,10 @@ void CommonCaptureManager::WriteCaptureOptions(nlohmann::ordered_json& operation
     {
         capture_options["memory-tracking-mode"] = "assisted";
     }
+    else if (memory_tracking_mode_ == CaptureSettings::MemoryTrackingMode::kNone)
+    {
+        capture_options["memory-tracking-mode"] = "none";
+    }
     else
     {
         nlohmann::ordered_json page_guard_options;

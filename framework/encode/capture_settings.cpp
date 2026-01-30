@@ -770,6 +770,10 @@ CaptureSettings::ParseMemoryTrackingModeString(const std::string&               
     {
         result = MemoryTrackingMode::kUnassisted;
     }
+    else if (util::platform::StringCompareNoCase("none", value_string.c_str()) == 0)
+    {
+        result = MemoryTrackingMode::kNone;
+    }
     else
     {
         if (!value_string.empty())
