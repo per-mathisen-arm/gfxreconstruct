@@ -500,6 +500,7 @@ class MetadataJsonConsumer : public Base
         HandleToJson(jdata["device_id"], device_id, json_options);
         FieldToJson(jdata["queryType"], query_type, json_options);
         HandleToJson(jdata["acceleration_structure_id"], acceleration_structure_id, json_options);
+        WriteBlockEnd();
     }
 
     /// @}
