@@ -1783,6 +1783,28 @@ HRESULT Dx12ReplayConsumerBase::OverrideCreateDXGIFactory2(HRESULT              
     return replay_result;
 }
 
+HRESULT Dx12ReplayConsumerBase::OverrideDXGIGetDebugInterface(HRESULT                      original_result,
+                                                              Decoded_GUID                 riid,
+                                                              HandlePointerDecoder<void*>* debug)
+{
+    using PFN_DXGIGetDebugInterface = HRESULT(WINAPI*)(REFIID, void**);
+    auto    replay_result           = E_FAIL;
+    HMODULE module                  = GetModuleHandleA("dxgidebug.dll");
+    if (!module)
+    {
+        return replay_result;
+    }
+
+    PFN_DXGIGetDebugInterface dxgi_debug_interface =
+        reinterpret_cast<PFN_DXGIGetDebugInterface>(GetProcAddress(module, "DXGIGetDebugInterface"));
+    if (dxgi_debug_interface)
+    {
+        replay_result = dxgi_debug_interface(*riid.decoded_value, debug->GetHandlePointer());
+    }
+
+    return replay_result;
+}
+
 HRESULT Dx12ReplayConsumerBase::OverrideD3D12CreateDevice(HRESULT                      original_result,
                                                           DxObjectInfo*                adapter_info,
                                                           D3D_FEATURE_LEVEL            minimum_feature_level,

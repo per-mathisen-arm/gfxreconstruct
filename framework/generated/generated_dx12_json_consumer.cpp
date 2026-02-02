@@ -10007,6 +10007,793 @@ void Dx12JsonConsumer::Process_IDXGIFactory7_UnregisterAdaptersChangedEvent(
 }
 
 /*
+** This part is generated from dxgidebug.h in Windows SDK: 10.0.26100.0
+**
+*/
+void Dx12JsonConsumer::Process_DXGIGetDebugInterface(
+        const ApiCallInfo& call_info,
+        HRESULT return_value,
+        Decoded_GUID riid,
+        HandlePointerDecoder<void*>* ppDebug)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& function = writer_->WriteApiCallStart(call_info, "DXGIGetDebugInterface");
+    const JsonOptions& options = writer_->GetOptions();
+    HresultToJson(function[format::kNameReturn], return_value, options);
+    nlohmann::ordered_json& args = function[format::kNameArgs];
+    {
+        FieldToJson(args["riid"], riid, options);
+        FieldToJson(args["ppDebug"], ppDebug, options);
+    }
+    writer_->WriteBlockEnd();
+
+}
+
+void Dx12JsonConsumer::Process_IDXGIInfoQueue_SetMessageCountLimit(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        HRESULT return_value,
+        Decoded_GUID Producer,
+        UINT64 MessageCountLimit)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& method = writer_->WriteApiCallStart(call_info, "IDXGIInfoQueue", object_id, "SetMessageCountLimit");
+    const JsonOptions& options = writer_->GetOptions();
+    HresultToJson(method[format::kNameReturn], return_value, options);
+    nlohmann::ordered_json& args = method[format::kNameArgs];
+    {
+        FieldToJson(args["Producer"], Producer, options);
+        FieldToJson(args["MessageCountLimit"], MessageCountLimit, options);
+    }
+    writer_->WriteBlockEnd();
+}
+
+void Dx12JsonConsumer::Process_IDXGIInfoQueue_ClearStoredMessages(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        Decoded_GUID Producer)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& method = writer_->WriteApiCallStart(call_info, "IDXGIInfoQueue", object_id, "ClearStoredMessages");
+    const JsonOptions& options = writer_->GetOptions();
+    nlohmann::ordered_json& args = method[format::kNameArgs];
+    {
+        FieldToJson(args["Producer"], Producer, options);
+    }
+    writer_->WriteBlockEnd();
+}
+
+void Dx12JsonConsumer::Process_IDXGIInfoQueue_GetMessage(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        HRESULT return_value,
+        Decoded_GUID Producer,
+        UINT64 MessageIndex,
+        StructPointerDecoder<Decoded_DXGI_INFO_QUEUE_MESSAGE>* pMessage,
+        PointerDecoder<SIZE_T>* pMessageByteLength)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& method = writer_->WriteApiCallStart(call_info, "IDXGIInfoQueue", object_id, "GetMessage");
+    const JsonOptions& options = writer_->GetOptions();
+    HresultToJson(method[format::kNameReturn], return_value, options);
+    nlohmann::ordered_json& args = method[format::kNameArgs];
+    {
+        FieldToJson(args["Producer"], Producer, options);
+        FieldToJson(args["MessageIndex"], MessageIndex, options);
+        FieldToJson(args["pMessage"], pMessage, options);
+        FieldToJson(args["pMessageByteLength"], pMessageByteLength, options);
+    }
+    writer_->WriteBlockEnd();
+}
+
+void Dx12JsonConsumer::Process_IDXGIInfoQueue_GetNumStoredMessagesAllowedByRetrievalFilters(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        UINT64 return_value,
+        Decoded_GUID Producer)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& method = writer_->WriteApiCallStart(call_info, "IDXGIInfoQueue", object_id, "GetNumStoredMessagesAllowedByRetrievalFilters");
+    const JsonOptions& options = writer_->GetOptions();
+    FieldToJson(method[format::kNameReturn], return_value, options);
+    nlohmann::ordered_json& args = method[format::kNameArgs];
+    {
+        FieldToJson(args["Producer"], Producer, options);
+    }
+    writer_->WriteBlockEnd();
+}
+
+void Dx12JsonConsumer::Process_IDXGIInfoQueue_GetNumStoredMessages(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        UINT64 return_value,
+        Decoded_GUID Producer)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& method = writer_->WriteApiCallStart(call_info, "IDXGIInfoQueue", object_id, "GetNumStoredMessages");
+    const JsonOptions& options = writer_->GetOptions();
+    FieldToJson(method[format::kNameReturn], return_value, options);
+    nlohmann::ordered_json& args = method[format::kNameArgs];
+    {
+        FieldToJson(args["Producer"], Producer, options);
+    }
+    writer_->WriteBlockEnd();
+}
+
+void Dx12JsonConsumer::Process_IDXGIInfoQueue_GetNumMessagesDiscardedByMessageCountLimit(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        UINT64 return_value,
+        Decoded_GUID Producer)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& method = writer_->WriteApiCallStart(call_info, "IDXGIInfoQueue", object_id, "GetNumMessagesDiscardedByMessageCountLimit");
+    const JsonOptions& options = writer_->GetOptions();
+    FieldToJson(method[format::kNameReturn], return_value, options);
+    nlohmann::ordered_json& args = method[format::kNameArgs];
+    {
+        FieldToJson(args["Producer"], Producer, options);
+    }
+    writer_->WriteBlockEnd();
+}
+
+void Dx12JsonConsumer::Process_IDXGIInfoQueue_GetMessageCountLimit(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        UINT64 return_value,
+        Decoded_GUID Producer)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& method = writer_->WriteApiCallStart(call_info, "IDXGIInfoQueue", object_id, "GetMessageCountLimit");
+    const JsonOptions& options = writer_->GetOptions();
+    FieldToJson(method[format::kNameReturn], return_value, options);
+    nlohmann::ordered_json& args = method[format::kNameArgs];
+    {
+        FieldToJson(args["Producer"], Producer, options);
+    }
+    writer_->WriteBlockEnd();
+}
+
+void Dx12JsonConsumer::Process_IDXGIInfoQueue_GetNumMessagesAllowedByStorageFilter(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        UINT64 return_value,
+        Decoded_GUID Producer)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& method = writer_->WriteApiCallStart(call_info, "IDXGIInfoQueue", object_id, "GetNumMessagesAllowedByStorageFilter");
+    const JsonOptions& options = writer_->GetOptions();
+    FieldToJson(method[format::kNameReturn], return_value, options);
+    nlohmann::ordered_json& args = method[format::kNameArgs];
+    {
+        FieldToJson(args["Producer"], Producer, options);
+    }
+    writer_->WriteBlockEnd();
+}
+
+void Dx12JsonConsumer::Process_IDXGIInfoQueue_GetNumMessagesDeniedByStorageFilter(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        UINT64 return_value,
+        Decoded_GUID Producer)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& method = writer_->WriteApiCallStart(call_info, "IDXGIInfoQueue", object_id, "GetNumMessagesDeniedByStorageFilter");
+    const JsonOptions& options = writer_->GetOptions();
+    FieldToJson(method[format::kNameReturn], return_value, options);
+    nlohmann::ordered_json& args = method[format::kNameArgs];
+    {
+        FieldToJson(args["Producer"], Producer, options);
+    }
+    writer_->WriteBlockEnd();
+}
+
+void Dx12JsonConsumer::Process_IDXGIInfoQueue_AddStorageFilterEntries(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        HRESULT return_value,
+        Decoded_GUID Producer,
+        StructPointerDecoder<Decoded_DXGI_INFO_QUEUE_FILTER>* pFilter)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& method = writer_->WriteApiCallStart(call_info, "IDXGIInfoQueue", object_id, "AddStorageFilterEntries");
+    const JsonOptions& options = writer_->GetOptions();
+    HresultToJson(method[format::kNameReturn], return_value, options);
+    nlohmann::ordered_json& args = method[format::kNameArgs];
+    {
+        FieldToJson(args["Producer"], Producer, options);
+        FieldToJson(args["pFilter"], pFilter, options);
+    }
+    writer_->WriteBlockEnd();
+}
+
+void Dx12JsonConsumer::Process_IDXGIInfoQueue_GetStorageFilter(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        HRESULT return_value,
+        Decoded_GUID Producer,
+        StructPointerDecoder<Decoded_DXGI_INFO_QUEUE_FILTER>* pFilter,
+        PointerDecoder<SIZE_T>* pFilterByteLength)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& method = writer_->WriteApiCallStart(call_info, "IDXGIInfoQueue", object_id, "GetStorageFilter");
+    const JsonOptions& options = writer_->GetOptions();
+    HresultToJson(method[format::kNameReturn], return_value, options);
+    nlohmann::ordered_json& args = method[format::kNameArgs];
+    {
+        FieldToJson(args["Producer"], Producer, options);
+        FieldToJson(args["pFilter"], pFilter, options);
+        FieldToJson(args["pFilterByteLength"], pFilterByteLength, options);
+    }
+    writer_->WriteBlockEnd();
+}
+
+void Dx12JsonConsumer::Process_IDXGIInfoQueue_ClearStorageFilter(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        Decoded_GUID Producer)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& method = writer_->WriteApiCallStart(call_info, "IDXGIInfoQueue", object_id, "ClearStorageFilter");
+    const JsonOptions& options = writer_->GetOptions();
+    nlohmann::ordered_json& args = method[format::kNameArgs];
+    {
+        FieldToJson(args["Producer"], Producer, options);
+    }
+    writer_->WriteBlockEnd();
+}
+
+void Dx12JsonConsumer::Process_IDXGIInfoQueue_PushEmptyStorageFilter(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        HRESULT return_value,
+        Decoded_GUID Producer)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& method = writer_->WriteApiCallStart(call_info, "IDXGIInfoQueue", object_id, "PushEmptyStorageFilter");
+    const JsonOptions& options = writer_->GetOptions();
+    HresultToJson(method[format::kNameReturn], return_value, options);
+    nlohmann::ordered_json& args = method[format::kNameArgs];
+    {
+        FieldToJson(args["Producer"], Producer, options);
+    }
+    writer_->WriteBlockEnd();
+}
+
+void Dx12JsonConsumer::Process_IDXGIInfoQueue_PushDenyAllStorageFilter(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        HRESULT return_value,
+        Decoded_GUID Producer)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& method = writer_->WriteApiCallStart(call_info, "IDXGIInfoQueue", object_id, "PushDenyAllStorageFilter");
+    const JsonOptions& options = writer_->GetOptions();
+    HresultToJson(method[format::kNameReturn], return_value, options);
+    nlohmann::ordered_json& args = method[format::kNameArgs];
+    {
+        FieldToJson(args["Producer"], Producer, options);
+    }
+    writer_->WriteBlockEnd();
+}
+
+void Dx12JsonConsumer::Process_IDXGIInfoQueue_PushCopyOfStorageFilter(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        HRESULT return_value,
+        Decoded_GUID Producer)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& method = writer_->WriteApiCallStart(call_info, "IDXGIInfoQueue", object_id, "PushCopyOfStorageFilter");
+    const JsonOptions& options = writer_->GetOptions();
+    HresultToJson(method[format::kNameReturn], return_value, options);
+    nlohmann::ordered_json& args = method[format::kNameArgs];
+    {
+        FieldToJson(args["Producer"], Producer, options);
+    }
+    writer_->WriteBlockEnd();
+}
+
+void Dx12JsonConsumer::Process_IDXGIInfoQueue_PushStorageFilter(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        HRESULT return_value,
+        Decoded_GUID Producer,
+        StructPointerDecoder<Decoded_DXGI_INFO_QUEUE_FILTER>* pFilter)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& method = writer_->WriteApiCallStart(call_info, "IDXGIInfoQueue", object_id, "PushStorageFilter");
+    const JsonOptions& options = writer_->GetOptions();
+    HresultToJson(method[format::kNameReturn], return_value, options);
+    nlohmann::ordered_json& args = method[format::kNameArgs];
+    {
+        FieldToJson(args["Producer"], Producer, options);
+        FieldToJson(args["pFilter"], pFilter, options);
+    }
+    writer_->WriteBlockEnd();
+}
+
+void Dx12JsonConsumer::Process_IDXGIInfoQueue_PopStorageFilter(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        Decoded_GUID Producer)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& method = writer_->WriteApiCallStart(call_info, "IDXGIInfoQueue", object_id, "PopStorageFilter");
+    const JsonOptions& options = writer_->GetOptions();
+    nlohmann::ordered_json& args = method[format::kNameArgs];
+    {
+        FieldToJson(args["Producer"], Producer, options);
+    }
+    writer_->WriteBlockEnd();
+}
+
+void Dx12JsonConsumer::Process_IDXGIInfoQueue_GetStorageFilterStackSize(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        UINT return_value,
+        Decoded_GUID Producer)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& method = writer_->WriteApiCallStart(call_info, "IDXGIInfoQueue", object_id, "GetStorageFilterStackSize");
+    const JsonOptions& options = writer_->GetOptions();
+    FieldToJson(method[format::kNameReturn], return_value, options);
+    nlohmann::ordered_json& args = method[format::kNameArgs];
+    {
+        FieldToJson(args["Producer"], Producer, options);
+    }
+    writer_->WriteBlockEnd();
+}
+
+void Dx12JsonConsumer::Process_IDXGIInfoQueue_AddRetrievalFilterEntries(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        HRESULT return_value,
+        Decoded_GUID Producer,
+        StructPointerDecoder<Decoded_DXGI_INFO_QUEUE_FILTER>* pFilter)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& method = writer_->WriteApiCallStart(call_info, "IDXGIInfoQueue", object_id, "AddRetrievalFilterEntries");
+    const JsonOptions& options = writer_->GetOptions();
+    HresultToJson(method[format::kNameReturn], return_value, options);
+    nlohmann::ordered_json& args = method[format::kNameArgs];
+    {
+        FieldToJson(args["Producer"], Producer, options);
+        FieldToJson(args["pFilter"], pFilter, options);
+    }
+    writer_->WriteBlockEnd();
+}
+
+void Dx12JsonConsumer::Process_IDXGIInfoQueue_GetRetrievalFilter(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        HRESULT return_value,
+        Decoded_GUID Producer,
+        StructPointerDecoder<Decoded_DXGI_INFO_QUEUE_FILTER>* pFilter,
+        PointerDecoder<SIZE_T>* pFilterByteLength)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& method = writer_->WriteApiCallStart(call_info, "IDXGIInfoQueue", object_id, "GetRetrievalFilter");
+    const JsonOptions& options = writer_->GetOptions();
+    HresultToJson(method[format::kNameReturn], return_value, options);
+    nlohmann::ordered_json& args = method[format::kNameArgs];
+    {
+        FieldToJson(args["Producer"], Producer, options);
+        FieldToJson(args["pFilter"], pFilter, options);
+        FieldToJson(args["pFilterByteLength"], pFilterByteLength, options);
+    }
+    writer_->WriteBlockEnd();
+}
+
+void Dx12JsonConsumer::Process_IDXGIInfoQueue_ClearRetrievalFilter(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        Decoded_GUID Producer)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& method = writer_->WriteApiCallStart(call_info, "IDXGIInfoQueue", object_id, "ClearRetrievalFilter");
+    const JsonOptions& options = writer_->GetOptions();
+    nlohmann::ordered_json& args = method[format::kNameArgs];
+    {
+        FieldToJson(args["Producer"], Producer, options);
+    }
+    writer_->WriteBlockEnd();
+}
+
+void Dx12JsonConsumer::Process_IDXGIInfoQueue_PushEmptyRetrievalFilter(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        HRESULT return_value,
+        Decoded_GUID Producer)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& method = writer_->WriteApiCallStart(call_info, "IDXGIInfoQueue", object_id, "PushEmptyRetrievalFilter");
+    const JsonOptions& options = writer_->GetOptions();
+    HresultToJson(method[format::kNameReturn], return_value, options);
+    nlohmann::ordered_json& args = method[format::kNameArgs];
+    {
+        FieldToJson(args["Producer"], Producer, options);
+    }
+    writer_->WriteBlockEnd();
+}
+
+void Dx12JsonConsumer::Process_IDXGIInfoQueue_PushDenyAllRetrievalFilter(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        HRESULT return_value,
+        Decoded_GUID Producer)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& method = writer_->WriteApiCallStart(call_info, "IDXGIInfoQueue", object_id, "PushDenyAllRetrievalFilter");
+    const JsonOptions& options = writer_->GetOptions();
+    HresultToJson(method[format::kNameReturn], return_value, options);
+    nlohmann::ordered_json& args = method[format::kNameArgs];
+    {
+        FieldToJson(args["Producer"], Producer, options);
+    }
+    writer_->WriteBlockEnd();
+}
+
+void Dx12JsonConsumer::Process_IDXGIInfoQueue_PushCopyOfRetrievalFilter(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        HRESULT return_value,
+        Decoded_GUID Producer)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& method = writer_->WriteApiCallStart(call_info, "IDXGIInfoQueue", object_id, "PushCopyOfRetrievalFilter");
+    const JsonOptions& options = writer_->GetOptions();
+    HresultToJson(method[format::kNameReturn], return_value, options);
+    nlohmann::ordered_json& args = method[format::kNameArgs];
+    {
+        FieldToJson(args["Producer"], Producer, options);
+    }
+    writer_->WriteBlockEnd();
+}
+
+void Dx12JsonConsumer::Process_IDXGIInfoQueue_PushRetrievalFilter(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        HRESULT return_value,
+        Decoded_GUID Producer,
+        StructPointerDecoder<Decoded_DXGI_INFO_QUEUE_FILTER>* pFilter)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& method = writer_->WriteApiCallStart(call_info, "IDXGIInfoQueue", object_id, "PushRetrievalFilter");
+    const JsonOptions& options = writer_->GetOptions();
+    HresultToJson(method[format::kNameReturn], return_value, options);
+    nlohmann::ordered_json& args = method[format::kNameArgs];
+    {
+        FieldToJson(args["Producer"], Producer, options);
+        FieldToJson(args["pFilter"], pFilter, options);
+    }
+    writer_->WriteBlockEnd();
+}
+
+void Dx12JsonConsumer::Process_IDXGIInfoQueue_PopRetrievalFilter(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        Decoded_GUID Producer)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& method = writer_->WriteApiCallStart(call_info, "IDXGIInfoQueue", object_id, "PopRetrievalFilter");
+    const JsonOptions& options = writer_->GetOptions();
+    nlohmann::ordered_json& args = method[format::kNameArgs];
+    {
+        FieldToJson(args["Producer"], Producer, options);
+    }
+    writer_->WriteBlockEnd();
+}
+
+void Dx12JsonConsumer::Process_IDXGIInfoQueue_GetRetrievalFilterStackSize(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        UINT return_value,
+        Decoded_GUID Producer)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& method = writer_->WriteApiCallStart(call_info, "IDXGIInfoQueue", object_id, "GetRetrievalFilterStackSize");
+    const JsonOptions& options = writer_->GetOptions();
+    FieldToJson(method[format::kNameReturn], return_value, options);
+    nlohmann::ordered_json& args = method[format::kNameArgs];
+    {
+        FieldToJson(args["Producer"], Producer, options);
+    }
+    writer_->WriteBlockEnd();
+}
+
+void Dx12JsonConsumer::Process_IDXGIInfoQueue_AddMessage(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        HRESULT return_value,
+        Decoded_GUID Producer,
+        DXGI_INFO_QUEUE_MESSAGE_CATEGORY Category,
+        DXGI_INFO_QUEUE_MESSAGE_SEVERITY Severity,
+        int ID,
+        StringDecoder* pDescription)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& method = writer_->WriteApiCallStart(call_info, "IDXGIInfoQueue", object_id, "AddMessage");
+    const JsonOptions& options = writer_->GetOptions();
+    HresultToJson(method[format::kNameReturn], return_value, options);
+    nlohmann::ordered_json& args = method[format::kNameArgs];
+    {
+        FieldToJson(args["Producer"], Producer, options);
+        FieldToJson(args["Category"], Category, options);
+        FieldToJson(args["Severity"], Severity, options);
+        FieldToJson(args["ID"], ID, options);
+        FieldToJson(args["pDescription"], pDescription, options);
+    }
+    writer_->WriteBlockEnd();
+}
+
+void Dx12JsonConsumer::Process_IDXGIInfoQueue_AddApplicationMessage(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        HRESULT return_value,
+        DXGI_INFO_QUEUE_MESSAGE_SEVERITY Severity,
+        StringDecoder* pDescription)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& method = writer_->WriteApiCallStart(call_info, "IDXGIInfoQueue", object_id, "AddApplicationMessage");
+    const JsonOptions& options = writer_->GetOptions();
+    HresultToJson(method[format::kNameReturn], return_value, options);
+    nlohmann::ordered_json& args = method[format::kNameArgs];
+    {
+        FieldToJson(args["Severity"], Severity, options);
+        FieldToJson(args["pDescription"], pDescription, options);
+    }
+    writer_->WriteBlockEnd();
+}
+
+void Dx12JsonConsumer::Process_IDXGIInfoQueue_SetBreakOnCategory(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        HRESULT return_value,
+        Decoded_GUID Producer,
+        DXGI_INFO_QUEUE_MESSAGE_CATEGORY Category,
+        BOOL bEnable)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& method = writer_->WriteApiCallStart(call_info, "IDXGIInfoQueue", object_id, "SetBreakOnCategory");
+    const JsonOptions& options = writer_->GetOptions();
+    HresultToJson(method[format::kNameReturn], return_value, options);
+    nlohmann::ordered_json& args = method[format::kNameArgs];
+    {
+        FieldToJson(args["Producer"], Producer, options);
+        FieldToJson(args["Category"], Category, options);
+        Bool32ToJson(args["bEnable"], bEnable, options);
+    }
+    writer_->WriteBlockEnd();
+}
+
+void Dx12JsonConsumer::Process_IDXGIInfoQueue_SetBreakOnSeverity(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        HRESULT return_value,
+        Decoded_GUID Producer,
+        DXGI_INFO_QUEUE_MESSAGE_SEVERITY Severity,
+        BOOL bEnable)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& method = writer_->WriteApiCallStart(call_info, "IDXGIInfoQueue", object_id, "SetBreakOnSeverity");
+    const JsonOptions& options = writer_->GetOptions();
+    HresultToJson(method[format::kNameReturn], return_value, options);
+    nlohmann::ordered_json& args = method[format::kNameArgs];
+    {
+        FieldToJson(args["Producer"], Producer, options);
+        FieldToJson(args["Severity"], Severity, options);
+        Bool32ToJson(args["bEnable"], bEnable, options);
+    }
+    writer_->WriteBlockEnd();
+}
+
+void Dx12JsonConsumer::Process_IDXGIInfoQueue_SetBreakOnID(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        HRESULT return_value,
+        Decoded_GUID Producer,
+        int ID,
+        BOOL bEnable)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& method = writer_->WriteApiCallStart(call_info, "IDXGIInfoQueue", object_id, "SetBreakOnID");
+    const JsonOptions& options = writer_->GetOptions();
+    HresultToJson(method[format::kNameReturn], return_value, options);
+    nlohmann::ordered_json& args = method[format::kNameArgs];
+    {
+        FieldToJson(args["Producer"], Producer, options);
+        FieldToJson(args["ID"], ID, options);
+        Bool32ToJson(args["bEnable"], bEnable, options);
+    }
+    writer_->WriteBlockEnd();
+}
+
+void Dx12JsonConsumer::Process_IDXGIInfoQueue_GetBreakOnCategory(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        BOOL return_value,
+        Decoded_GUID Producer,
+        DXGI_INFO_QUEUE_MESSAGE_CATEGORY Category)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& method = writer_->WriteApiCallStart(call_info, "IDXGIInfoQueue", object_id, "GetBreakOnCategory");
+    const JsonOptions& options = writer_->GetOptions();
+    Bool32ToJson(method[format::kNameReturn], return_value, options);
+    nlohmann::ordered_json& args = method[format::kNameArgs];
+    {
+        FieldToJson(args["Producer"], Producer, options);
+        FieldToJson(args["Category"], Category, options);
+    }
+    writer_->WriteBlockEnd();
+}
+
+void Dx12JsonConsumer::Process_IDXGIInfoQueue_GetBreakOnSeverity(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        BOOL return_value,
+        Decoded_GUID Producer,
+        DXGI_INFO_QUEUE_MESSAGE_SEVERITY Severity)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& method = writer_->WriteApiCallStart(call_info, "IDXGIInfoQueue", object_id, "GetBreakOnSeverity");
+    const JsonOptions& options = writer_->GetOptions();
+    Bool32ToJson(method[format::kNameReturn], return_value, options);
+    nlohmann::ordered_json& args = method[format::kNameArgs];
+    {
+        FieldToJson(args["Producer"], Producer, options);
+        FieldToJson(args["Severity"], Severity, options);
+    }
+    writer_->WriteBlockEnd();
+}
+
+void Dx12JsonConsumer::Process_IDXGIInfoQueue_GetBreakOnID(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        BOOL return_value,
+        Decoded_GUID Producer,
+        int ID)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& method = writer_->WriteApiCallStart(call_info, "IDXGIInfoQueue", object_id, "GetBreakOnID");
+    const JsonOptions& options = writer_->GetOptions();
+    Bool32ToJson(method[format::kNameReturn], return_value, options);
+    nlohmann::ordered_json& args = method[format::kNameArgs];
+    {
+        FieldToJson(args["Producer"], Producer, options);
+        FieldToJson(args["ID"], ID, options);
+    }
+    writer_->WriteBlockEnd();
+}
+
+void Dx12JsonConsumer::Process_IDXGIInfoQueue_SetMuteDebugOutput(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        Decoded_GUID Producer,
+        BOOL bMute)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& method = writer_->WriteApiCallStart(call_info, "IDXGIInfoQueue", object_id, "SetMuteDebugOutput");
+    const JsonOptions& options = writer_->GetOptions();
+    nlohmann::ordered_json& args = method[format::kNameArgs];
+    {
+        FieldToJson(args["Producer"], Producer, options);
+        Bool32ToJson(args["bMute"], bMute, options);
+    }
+    writer_->WriteBlockEnd();
+}
+
+void Dx12JsonConsumer::Process_IDXGIInfoQueue_GetMuteDebugOutput(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        BOOL return_value,
+        Decoded_GUID Producer)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& method = writer_->WriteApiCallStart(call_info, "IDXGIInfoQueue", object_id, "GetMuteDebugOutput");
+    const JsonOptions& options = writer_->GetOptions();
+    Bool32ToJson(method[format::kNameReturn], return_value, options);
+    nlohmann::ordered_json& args = method[format::kNameArgs];
+    {
+        FieldToJson(args["Producer"], Producer, options);
+    }
+    writer_->WriteBlockEnd();
+}
+
+void Dx12JsonConsumer::Process_IDXGIDebug_ReportLiveObjects(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        HRESULT return_value,
+        Decoded_GUID apiid,
+        DXGI_DEBUG_RLO_FLAGS flags)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& method = writer_->WriteApiCallStart(call_info, "IDXGIDebug", object_id, "ReportLiveObjects");
+    const JsonOptions& options = writer_->GetOptions();
+    HresultToJson(method[format::kNameReturn], return_value, options);
+    nlohmann::ordered_json& args = method[format::kNameArgs];
+    {
+        FieldToJson(args["apiid"], apiid, options);
+        FieldToJson_DXGI_DEBUG_RLO_FLAGS(args["flags"], flags, options);
+    }
+    writer_->WriteBlockEnd();
+}
+
+void Dx12JsonConsumer::Process_IDXGIDebug1_EnableLeakTrackingForThread(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& method = writer_->WriteApiCallStart(call_info, "IDXGIDebug1", object_id, "EnableLeakTrackingForThread");
+    const JsonOptions& options = writer_->GetOptions();
+    writer_->WriteBlockEnd();
+}
+
+void Dx12JsonConsumer::Process_IDXGIDebug1_DisableLeakTrackingForThread(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& method = writer_->WriteApiCallStart(call_info, "IDXGIDebug1", object_id, "DisableLeakTrackingForThread");
+    const JsonOptions& options = writer_->GetOptions();
+    writer_->WriteBlockEnd();
+}
+
+void Dx12JsonConsumer::Process_IDXGIDebug1_IsLeakTrackingEnabledForThread(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        BOOL return_value)
+{
+    using namespace gfxrecon::util;
+
+    nlohmann::ordered_json& method = writer_->WriteApiCallStart(call_info, "IDXGIDebug1", object_id, "IsLeakTrackingEnabledForThread");
+    const JsonOptions& options = writer_->GetOptions();
+    Bool32ToJson(method[format::kNameReturn], return_value, options);
+    writer_->WriteBlockEnd();
+}
+
+/*
 ** This part is generated from Unknwnbase.h in Windows SDK: 10.0.26100.0
 **
 */

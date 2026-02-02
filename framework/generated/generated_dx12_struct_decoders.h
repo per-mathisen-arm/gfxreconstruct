@@ -43,6 +43,7 @@
 #include <dxgi1_6.h>
 #include <dxgicommon.h>
 #include <dxgitype.h>
+#include <dxgidebug.h>
 #include <Unknwnbase.h>
 #include <guiddef.h>
 #include <windef.h>
@@ -2487,6 +2488,37 @@ struct Decoded_DXGI_JPEG_QUANTIZATION_TABLE
     DXGI_JPEG_QUANTIZATION_TABLE* decoded_value{ nullptr };
 
     PointerDecoder<BYTE> Elements;
+};
+
+struct Decoded_DXGI_INFO_QUEUE_MESSAGE
+{
+    using struct_type = DXGI_INFO_QUEUE_MESSAGE;
+
+    DXGI_INFO_QUEUE_MESSAGE* decoded_value{ nullptr };
+
+    Decoded_GUID* Producer{ nullptr };
+    StringDecoder pDescription;
+};
+
+struct Decoded_DXGI_INFO_QUEUE_FILTER_DESC
+{
+    using struct_type = DXGI_INFO_QUEUE_FILTER_DESC;
+
+    DXGI_INFO_QUEUE_FILTER_DESC* decoded_value{ nullptr };
+
+    PointerDecoder<DXGI_INFO_QUEUE_MESSAGE_CATEGORY> pCategoryList;
+    PointerDecoder<DXGI_INFO_QUEUE_MESSAGE_SEVERITY> pSeverityList;
+    PointerDecoder<int> pIDList;
+};
+
+struct Decoded_DXGI_INFO_QUEUE_FILTER
+{
+    using struct_type = DXGI_INFO_QUEUE_FILTER;
+
+    DXGI_INFO_QUEUE_FILTER* decoded_value{ nullptr };
+
+    Decoded_DXGI_INFO_QUEUE_FILTER_DESC* AllowList{ nullptr };
+    Decoded_DXGI_INFO_QUEUE_FILTER_DESC* DenyList{ nullptr };
 };
 
 struct Decoded_GUID

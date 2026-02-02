@@ -1,0 +1,4 @@
+LIBRARY dxgidebug_ms
+EXPORTS
+DXGI_SDK_MESSAGE @1
+DXGIGetDebugInterface @2

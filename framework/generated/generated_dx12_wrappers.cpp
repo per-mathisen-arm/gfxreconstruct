@@ -54,6 +54,7 @@
 #include <dxgi1_6.h>
 #include <dxgicommon.h>
 #include <dxgitype.h>
+#include <dxgidebug.h>
 #include <Unknwnbase.h>
 #include <guiddef.h>
 #include <windef.h>
@@ -184,6 +185,10 @@ IDXGIOutput_Wrapper::ObjectMap IDXGIOutput_Wrapper::object_map_;
 std::mutex IDXGIOutput_Wrapper::object_map_lock_;
 IDXGIFactory_Wrapper::ObjectMap IDXGIFactory_Wrapper::object_map_;
 std::mutex IDXGIFactory_Wrapper::object_map_lock_;
+IDXGIInfoQueue_Wrapper::ObjectMap IDXGIInfoQueue_Wrapper::object_map_;
+std::mutex IDXGIInfoQueue_Wrapper::object_map_lock_;
+IDXGIDebug_Wrapper::ObjectMap IDXGIDebug_Wrapper::object_map_;
+std::mutex IDXGIDebug_Wrapper::object_map_lock_;
 
 /*
 ** This part is generated from dxgiformat.h in Windows SDK: 10.0.26100.0
@@ -33420,6 +33425,2350 @@ HRESULT STDMETHODCALLTYPE IDXGIFactory7_Wrapper::UnregisterAdaptersChangedEvent(
 ** This part is generated from dxgitype.h in Windows SDK: 10.0.26100.0
 **
 */
+
+
+/*
+** This part is generated from dxgidebug.h in Windows SDK: 10.0.26100.0
+**
+*/
+
+HRESULT WINAPI DXGIGetDebugInterface(
+    REFIID riid,
+    void** ppDebug)
+{
+    HRESULT result{};
+
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_DXGIGetDebugInterface>::Dispatch(
+            manager,
+            riid,
+            ppDebug);
+
+        result = manager->GetDxgiDebugDispatchTable().DXGIGetDebugInterface(
+            riid,
+            ppDebug);
+
+        if (SUCCEEDED(result))
+        {
+            WrapObject(riid, ppDebug, nullptr);
+        }
+
+        Encode_DXGIGetDebugInterface(
+            result,
+            riid,
+            ppDebug);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_DXGIGetDebugInterface>::Dispatch(
+            manager,
+            result,
+            riid,
+            ppDebug);
+    }
+    else
+    {
+        result = manager->GetDxgiDebugDispatchTable().DXGIGetDebugInterface(
+            riid,
+            ppDebug);
+    }
+
+    manager->DecrementCallScope();
+
+    return result;
+}
+
+IDXGIInfoQueue_Wrapper::IDXGIInfoQueue_Wrapper(REFIID riid, IUnknown* object, DxWrapperResources* resources, const std::function<void(IUnknown_Wrapper*)>& destructor) : IUnknown_Wrapper(riid, object, resources, destructor)
+{
+    info_ = std::make_shared<IDXGIInfoQueueInfo>();
+    info_->SetWrapper(this);
+    AddWrapperMapEntry(object, this, object_map_, object_map_lock_);
+}
+
+IDXGIInfoQueue_Wrapper::~IDXGIInfoQueue_Wrapper()
+{
+    CustomWrapperDestroyCall(this);
+    RemoveWrapperMapEntry(GetWrappedObjectAs<IDXGIInfoQueue>(), object_map_, object_map_lock_);
+    D3D12CaptureManager::Get()->ProcessWrapperDestroy(this);
+    info_->SetWrapper(nullptr);
+}
+
+IDXGIInfoQueue_Wrapper* IDXGIInfoQueue_Wrapper::GetExistingWrapper(IUnknown* object)
+{
+    return FindMapEntry<IDXGIInfoQueue_Wrapper>(object, object_map_, object_map_lock_);
+}
+
+HRESULT STDMETHODCALLTYPE IDXGIInfoQueue_Wrapper::SetMessageCountLimit(
+    DXGI_DEBUG_ID Producer,
+    UINT64 MessageCountLimit)
+{
+    HRESULT result{};
+
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_SetMessageCountLimit>::Dispatch(
+            manager,
+            this,
+            Producer,
+            MessageCountLimit);
+
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->SetMessageCountLimit(
+            Producer,
+            MessageCountLimit);
+
+        Encode_IDXGIInfoQueue_SetMessageCountLimit(
+            this,
+            result,
+            Producer,
+            MessageCountLimit);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_SetMessageCountLimit>::Dispatch(
+            manager,
+            this,
+            result,
+            Producer,
+            MessageCountLimit);
+    }
+    else
+    {
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->SetMessageCountLimit(
+            Producer,
+            MessageCountLimit);
+    }
+
+    manager->DecrementCallScope();
+
+    return result;
+}
+
+void STDMETHODCALLTYPE IDXGIInfoQueue_Wrapper::ClearStoredMessages(
+    DXGI_DEBUG_ID Producer)
+{
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_ClearStoredMessages>::Dispatch(
+            manager,
+            this,
+            Producer);
+
+        GetWrappedObjectAs<IDXGIInfoQueue>()->ClearStoredMessages(
+            Producer);
+
+        Encode_IDXGIInfoQueue_ClearStoredMessages(
+            this,
+            Producer);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_ClearStoredMessages>::Dispatch(
+            manager,
+            this,
+            Producer);
+    }
+    else
+    {
+        GetWrappedObjectAs<IDXGIInfoQueue>()->ClearStoredMessages(
+            Producer);
+    }
+
+    manager->DecrementCallScope();
+}
+
+HRESULT STDMETHODCALLTYPE IDXGIInfoQueue_Wrapper::GetMessage(
+    DXGI_DEBUG_ID Producer,
+    UINT64 MessageIndex,
+    DXGI_INFO_QUEUE_MESSAGE* pMessage,
+    SIZE_T* pMessageByteLength)
+{
+    HRESULT result{};
+
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetMessage>::Dispatch(
+            manager,
+            this,
+            Producer,
+            MessageIndex,
+            pMessage,
+            pMessageByteLength);
+
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->GetMessage(
+            Producer,
+            MessageIndex,
+            pMessage,
+            pMessageByteLength);
+
+        Encode_IDXGIInfoQueue_GetMessage(
+            this,
+            result,
+            Producer,
+            MessageIndex,
+            pMessage,
+            pMessageByteLength);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetMessage>::Dispatch(
+            manager,
+            this,
+            result,
+            Producer,
+            MessageIndex,
+            pMessage,
+            pMessageByteLength);
+    }
+    else
+    {
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->GetMessage(
+            Producer,
+            MessageIndex,
+            pMessage,
+            pMessageByteLength);
+    }
+
+    manager->DecrementCallScope();
+
+    return result;
+}
+
+UINT64 STDMETHODCALLTYPE IDXGIInfoQueue_Wrapper::GetNumStoredMessagesAllowedByRetrievalFilters(
+    DXGI_DEBUG_ID Producer)
+{
+    UINT64 result{};
+
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetNumStoredMessagesAllowedByRetrievalFilters>::Dispatch(
+            manager,
+            this,
+            Producer);
+
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->GetNumStoredMessagesAllowedByRetrievalFilters(
+            Producer);
+
+        Encode_IDXGIInfoQueue_GetNumStoredMessagesAllowedByRetrievalFilters(
+            this,
+            result,
+            Producer);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetNumStoredMessagesAllowedByRetrievalFilters>::Dispatch(
+            manager,
+            this,
+            result,
+            Producer);
+    }
+    else
+    {
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->GetNumStoredMessagesAllowedByRetrievalFilters(
+            Producer);
+    }
+
+    manager->DecrementCallScope();
+
+    return result;
+}
+
+UINT64 STDMETHODCALLTYPE IDXGIInfoQueue_Wrapper::GetNumStoredMessages(
+    DXGI_DEBUG_ID Producer)
+{
+    UINT64 result{};
+
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetNumStoredMessages>::Dispatch(
+            manager,
+            this,
+            Producer);
+
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->GetNumStoredMessages(
+            Producer);
+
+        Encode_IDXGIInfoQueue_GetNumStoredMessages(
+            this,
+            result,
+            Producer);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetNumStoredMessages>::Dispatch(
+            manager,
+            this,
+            result,
+            Producer);
+    }
+    else
+    {
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->GetNumStoredMessages(
+            Producer);
+    }
+
+    manager->DecrementCallScope();
+
+    return result;
+}
+
+UINT64 STDMETHODCALLTYPE IDXGIInfoQueue_Wrapper::GetNumMessagesDiscardedByMessageCountLimit(
+    DXGI_DEBUG_ID Producer)
+{
+    UINT64 result{};
+
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetNumMessagesDiscardedByMessageCountLimit>::Dispatch(
+            manager,
+            this,
+            Producer);
+
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->GetNumMessagesDiscardedByMessageCountLimit(
+            Producer);
+
+        Encode_IDXGIInfoQueue_GetNumMessagesDiscardedByMessageCountLimit(
+            this,
+            result,
+            Producer);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetNumMessagesDiscardedByMessageCountLimit>::Dispatch(
+            manager,
+            this,
+            result,
+            Producer);
+    }
+    else
+    {
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->GetNumMessagesDiscardedByMessageCountLimit(
+            Producer);
+    }
+
+    manager->DecrementCallScope();
+
+    return result;
+}
+
+UINT64 STDMETHODCALLTYPE IDXGIInfoQueue_Wrapper::GetMessageCountLimit(
+    DXGI_DEBUG_ID Producer)
+{
+    UINT64 result{};
+
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetMessageCountLimit>::Dispatch(
+            manager,
+            this,
+            Producer);
+
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->GetMessageCountLimit(
+            Producer);
+
+        Encode_IDXGIInfoQueue_GetMessageCountLimit(
+            this,
+            result,
+            Producer);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetMessageCountLimit>::Dispatch(
+            manager,
+            this,
+            result,
+            Producer);
+    }
+    else
+    {
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->GetMessageCountLimit(
+            Producer);
+    }
+
+    manager->DecrementCallScope();
+
+    return result;
+}
+
+UINT64 STDMETHODCALLTYPE IDXGIInfoQueue_Wrapper::GetNumMessagesAllowedByStorageFilter(
+    DXGI_DEBUG_ID Producer)
+{
+    UINT64 result{};
+
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetNumMessagesAllowedByStorageFilter>::Dispatch(
+            manager,
+            this,
+            Producer);
+
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->GetNumMessagesAllowedByStorageFilter(
+            Producer);
+
+        Encode_IDXGIInfoQueue_GetNumMessagesAllowedByStorageFilter(
+            this,
+            result,
+            Producer);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetNumMessagesAllowedByStorageFilter>::Dispatch(
+            manager,
+            this,
+            result,
+            Producer);
+    }
+    else
+    {
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->GetNumMessagesAllowedByStorageFilter(
+            Producer);
+    }
+
+    manager->DecrementCallScope();
+
+    return result;
+}
+
+UINT64 STDMETHODCALLTYPE IDXGIInfoQueue_Wrapper::GetNumMessagesDeniedByStorageFilter(
+    DXGI_DEBUG_ID Producer)
+{
+    UINT64 result{};
+
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetNumMessagesDeniedByStorageFilter>::Dispatch(
+            manager,
+            this,
+            Producer);
+
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->GetNumMessagesDeniedByStorageFilter(
+            Producer);
+
+        Encode_IDXGIInfoQueue_GetNumMessagesDeniedByStorageFilter(
+            this,
+            result,
+            Producer);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetNumMessagesDeniedByStorageFilter>::Dispatch(
+            manager,
+            this,
+            result,
+            Producer);
+    }
+    else
+    {
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->GetNumMessagesDeniedByStorageFilter(
+            Producer);
+    }
+
+    manager->DecrementCallScope();
+
+    return result;
+}
+
+HRESULT STDMETHODCALLTYPE IDXGIInfoQueue_Wrapper::AddStorageFilterEntries(
+    DXGI_DEBUG_ID Producer,
+    DXGI_INFO_QUEUE_FILTER* pFilter)
+{
+    HRESULT result{};
+
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_AddStorageFilterEntries>::Dispatch(
+            manager,
+            this,
+            Producer,
+            pFilter);
+
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->AddStorageFilterEntries(
+            Producer,
+            pFilter);
+
+        Encode_IDXGIInfoQueue_AddStorageFilterEntries(
+            this,
+            result,
+            Producer,
+            pFilter);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_AddStorageFilterEntries>::Dispatch(
+            manager,
+            this,
+            result,
+            Producer,
+            pFilter);
+    }
+    else
+    {
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->AddStorageFilterEntries(
+            Producer,
+            pFilter);
+    }
+
+    manager->DecrementCallScope();
+
+    return result;
+}
+
+HRESULT STDMETHODCALLTYPE IDXGIInfoQueue_Wrapper::GetStorageFilter(
+    DXGI_DEBUG_ID Producer,
+    DXGI_INFO_QUEUE_FILTER* pFilter,
+    SIZE_T* pFilterByteLength)
+{
+    HRESULT result{};
+
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetStorageFilter>::Dispatch(
+            manager,
+            this,
+            Producer,
+            pFilter,
+            pFilterByteLength);
+
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->GetStorageFilter(
+            Producer,
+            pFilter,
+            pFilterByteLength);
+
+        Encode_IDXGIInfoQueue_GetStorageFilter(
+            this,
+            result,
+            Producer,
+            pFilter,
+            pFilterByteLength);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetStorageFilter>::Dispatch(
+            manager,
+            this,
+            result,
+            Producer,
+            pFilter,
+            pFilterByteLength);
+    }
+    else
+    {
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->GetStorageFilter(
+            Producer,
+            pFilter,
+            pFilterByteLength);
+    }
+
+    manager->DecrementCallScope();
+
+    return result;
+}
+
+void STDMETHODCALLTYPE IDXGIInfoQueue_Wrapper::ClearStorageFilter(
+    DXGI_DEBUG_ID Producer)
+{
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_ClearStorageFilter>::Dispatch(
+            manager,
+            this,
+            Producer);
+
+        GetWrappedObjectAs<IDXGIInfoQueue>()->ClearStorageFilter(
+            Producer);
+
+        Encode_IDXGIInfoQueue_ClearStorageFilter(
+            this,
+            Producer);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_ClearStorageFilter>::Dispatch(
+            manager,
+            this,
+            Producer);
+    }
+    else
+    {
+        GetWrappedObjectAs<IDXGIInfoQueue>()->ClearStorageFilter(
+            Producer);
+    }
+
+    manager->DecrementCallScope();
+}
+
+HRESULT STDMETHODCALLTYPE IDXGIInfoQueue_Wrapper::PushEmptyStorageFilter(
+    DXGI_DEBUG_ID Producer)
+{
+    HRESULT result{};
+
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_PushEmptyStorageFilter>::Dispatch(
+            manager,
+            this,
+            Producer);
+
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->PushEmptyStorageFilter(
+            Producer);
+
+        Encode_IDXGIInfoQueue_PushEmptyStorageFilter(
+            this,
+            result,
+            Producer);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_PushEmptyStorageFilter>::Dispatch(
+            manager,
+            this,
+            result,
+            Producer);
+    }
+    else
+    {
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->PushEmptyStorageFilter(
+            Producer);
+    }
+
+    manager->DecrementCallScope();
+
+    return result;
+}
+
+HRESULT STDMETHODCALLTYPE IDXGIInfoQueue_Wrapper::PushDenyAllStorageFilter(
+    DXGI_DEBUG_ID Producer)
+{
+    HRESULT result{};
+
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_PushDenyAllStorageFilter>::Dispatch(
+            manager,
+            this,
+            Producer);
+
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->PushDenyAllStorageFilter(
+            Producer);
+
+        Encode_IDXGIInfoQueue_PushDenyAllStorageFilter(
+            this,
+            result,
+            Producer);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_PushDenyAllStorageFilter>::Dispatch(
+            manager,
+            this,
+            result,
+            Producer);
+    }
+    else
+    {
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->PushDenyAllStorageFilter(
+            Producer);
+    }
+
+    manager->DecrementCallScope();
+
+    return result;
+}
+
+HRESULT STDMETHODCALLTYPE IDXGIInfoQueue_Wrapper::PushCopyOfStorageFilter(
+    DXGI_DEBUG_ID Producer)
+{
+    HRESULT result{};
+
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_PushCopyOfStorageFilter>::Dispatch(
+            manager,
+            this,
+            Producer);
+
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->PushCopyOfStorageFilter(
+            Producer);
+
+        Encode_IDXGIInfoQueue_PushCopyOfStorageFilter(
+            this,
+            result,
+            Producer);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_PushCopyOfStorageFilter>::Dispatch(
+            manager,
+            this,
+            result,
+            Producer);
+    }
+    else
+    {
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->PushCopyOfStorageFilter(
+            Producer);
+    }
+
+    manager->DecrementCallScope();
+
+    return result;
+}
+
+HRESULT STDMETHODCALLTYPE IDXGIInfoQueue_Wrapper::PushStorageFilter(
+    DXGI_DEBUG_ID Producer,
+    DXGI_INFO_QUEUE_FILTER* pFilter)
+{
+    HRESULT result{};
+
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_PushStorageFilter>::Dispatch(
+            manager,
+            this,
+            Producer,
+            pFilter);
+
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->PushStorageFilter(
+            Producer,
+            pFilter);
+
+        Encode_IDXGIInfoQueue_PushStorageFilter(
+            this,
+            result,
+            Producer,
+            pFilter);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_PushStorageFilter>::Dispatch(
+            manager,
+            this,
+            result,
+            Producer,
+            pFilter);
+    }
+    else
+    {
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->PushStorageFilter(
+            Producer,
+            pFilter);
+    }
+
+    manager->DecrementCallScope();
+
+    return result;
+}
+
+void STDMETHODCALLTYPE IDXGIInfoQueue_Wrapper::PopStorageFilter(
+    DXGI_DEBUG_ID Producer)
+{
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_PopStorageFilter>::Dispatch(
+            manager,
+            this,
+            Producer);
+
+        GetWrappedObjectAs<IDXGIInfoQueue>()->PopStorageFilter(
+            Producer);
+
+        Encode_IDXGIInfoQueue_PopStorageFilter(
+            this,
+            Producer);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_PopStorageFilter>::Dispatch(
+            manager,
+            this,
+            Producer);
+    }
+    else
+    {
+        GetWrappedObjectAs<IDXGIInfoQueue>()->PopStorageFilter(
+            Producer);
+    }
+
+    manager->DecrementCallScope();
+}
+
+UINT STDMETHODCALLTYPE IDXGIInfoQueue_Wrapper::GetStorageFilterStackSize(
+    DXGI_DEBUG_ID Producer)
+{
+    UINT result{};
+
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetStorageFilterStackSize>::Dispatch(
+            manager,
+            this,
+            Producer);
+
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->GetStorageFilterStackSize(
+            Producer);
+
+        Encode_IDXGIInfoQueue_GetStorageFilterStackSize(
+            this,
+            result,
+            Producer);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetStorageFilterStackSize>::Dispatch(
+            manager,
+            this,
+            result,
+            Producer);
+    }
+    else
+    {
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->GetStorageFilterStackSize(
+            Producer);
+    }
+
+    manager->DecrementCallScope();
+
+    return result;
+}
+
+HRESULT STDMETHODCALLTYPE IDXGIInfoQueue_Wrapper::AddRetrievalFilterEntries(
+    DXGI_DEBUG_ID Producer,
+    DXGI_INFO_QUEUE_FILTER* pFilter)
+{
+    HRESULT result{};
+
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_AddRetrievalFilterEntries>::Dispatch(
+            manager,
+            this,
+            Producer,
+            pFilter);
+
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->AddRetrievalFilterEntries(
+            Producer,
+            pFilter);
+
+        Encode_IDXGIInfoQueue_AddRetrievalFilterEntries(
+            this,
+            result,
+            Producer,
+            pFilter);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_AddRetrievalFilterEntries>::Dispatch(
+            manager,
+            this,
+            result,
+            Producer,
+            pFilter);
+    }
+    else
+    {
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->AddRetrievalFilterEntries(
+            Producer,
+            pFilter);
+    }
+
+    manager->DecrementCallScope();
+
+    return result;
+}
+
+HRESULT STDMETHODCALLTYPE IDXGIInfoQueue_Wrapper::GetRetrievalFilter(
+    DXGI_DEBUG_ID Producer,
+    DXGI_INFO_QUEUE_FILTER* pFilter,
+    SIZE_T* pFilterByteLength)
+{
+    HRESULT result{};
+
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetRetrievalFilter>::Dispatch(
+            manager,
+            this,
+            Producer,
+            pFilter,
+            pFilterByteLength);
+
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->GetRetrievalFilter(
+            Producer,
+            pFilter,
+            pFilterByteLength);
+
+        Encode_IDXGIInfoQueue_GetRetrievalFilter(
+            this,
+            result,
+            Producer,
+            pFilter,
+            pFilterByteLength);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetRetrievalFilter>::Dispatch(
+            manager,
+            this,
+            result,
+            Producer,
+            pFilter,
+            pFilterByteLength);
+    }
+    else
+    {
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->GetRetrievalFilter(
+            Producer,
+            pFilter,
+            pFilterByteLength);
+    }
+
+    manager->DecrementCallScope();
+
+    return result;
+}
+
+void STDMETHODCALLTYPE IDXGIInfoQueue_Wrapper::ClearRetrievalFilter(
+    DXGI_DEBUG_ID Producer)
+{
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_ClearRetrievalFilter>::Dispatch(
+            manager,
+            this,
+            Producer);
+
+        GetWrappedObjectAs<IDXGIInfoQueue>()->ClearRetrievalFilter(
+            Producer);
+
+        Encode_IDXGIInfoQueue_ClearRetrievalFilter(
+            this,
+            Producer);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_ClearRetrievalFilter>::Dispatch(
+            manager,
+            this,
+            Producer);
+    }
+    else
+    {
+        GetWrappedObjectAs<IDXGIInfoQueue>()->ClearRetrievalFilter(
+            Producer);
+    }
+
+    manager->DecrementCallScope();
+}
+
+HRESULT STDMETHODCALLTYPE IDXGIInfoQueue_Wrapper::PushEmptyRetrievalFilter(
+    DXGI_DEBUG_ID Producer)
+{
+    HRESULT result{};
+
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_PushEmptyRetrievalFilter>::Dispatch(
+            manager,
+            this,
+            Producer);
+
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->PushEmptyRetrievalFilter(
+            Producer);
+
+        Encode_IDXGIInfoQueue_PushEmptyRetrievalFilter(
+            this,
+            result,
+            Producer);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_PushEmptyRetrievalFilter>::Dispatch(
+            manager,
+            this,
+            result,
+            Producer);
+    }
+    else
+    {
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->PushEmptyRetrievalFilter(
+            Producer);
+    }
+
+    manager->DecrementCallScope();
+
+    return result;
+}
+
+HRESULT STDMETHODCALLTYPE IDXGIInfoQueue_Wrapper::PushDenyAllRetrievalFilter(
+    DXGI_DEBUG_ID Producer)
+{
+    HRESULT result{};
+
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_PushDenyAllRetrievalFilter>::Dispatch(
+            manager,
+            this,
+            Producer);
+
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->PushDenyAllRetrievalFilter(
+            Producer);
+
+        Encode_IDXGIInfoQueue_PushDenyAllRetrievalFilter(
+            this,
+            result,
+            Producer);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_PushDenyAllRetrievalFilter>::Dispatch(
+            manager,
+            this,
+            result,
+            Producer);
+    }
+    else
+    {
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->PushDenyAllRetrievalFilter(
+            Producer);
+    }
+
+    manager->DecrementCallScope();
+
+    return result;
+}
+
+HRESULT STDMETHODCALLTYPE IDXGIInfoQueue_Wrapper::PushCopyOfRetrievalFilter(
+    DXGI_DEBUG_ID Producer)
+{
+    HRESULT result{};
+
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_PushCopyOfRetrievalFilter>::Dispatch(
+            manager,
+            this,
+            Producer);
+
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->PushCopyOfRetrievalFilter(
+            Producer);
+
+        Encode_IDXGIInfoQueue_PushCopyOfRetrievalFilter(
+            this,
+            result,
+            Producer);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_PushCopyOfRetrievalFilter>::Dispatch(
+            manager,
+            this,
+            result,
+            Producer);
+    }
+    else
+    {
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->PushCopyOfRetrievalFilter(
+            Producer);
+    }
+
+    manager->DecrementCallScope();
+
+    return result;
+}
+
+HRESULT STDMETHODCALLTYPE IDXGIInfoQueue_Wrapper::PushRetrievalFilter(
+    DXGI_DEBUG_ID Producer,
+    DXGI_INFO_QUEUE_FILTER* pFilter)
+{
+    HRESULT result{};
+
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_PushRetrievalFilter>::Dispatch(
+            manager,
+            this,
+            Producer,
+            pFilter);
+
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->PushRetrievalFilter(
+            Producer,
+            pFilter);
+
+        Encode_IDXGIInfoQueue_PushRetrievalFilter(
+            this,
+            result,
+            Producer,
+            pFilter);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_PushRetrievalFilter>::Dispatch(
+            manager,
+            this,
+            result,
+            Producer,
+            pFilter);
+    }
+    else
+    {
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->PushRetrievalFilter(
+            Producer,
+            pFilter);
+    }
+
+    manager->DecrementCallScope();
+
+    return result;
+}
+
+void STDMETHODCALLTYPE IDXGIInfoQueue_Wrapper::PopRetrievalFilter(
+    DXGI_DEBUG_ID Producer)
+{
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_PopRetrievalFilter>::Dispatch(
+            manager,
+            this,
+            Producer);
+
+        GetWrappedObjectAs<IDXGIInfoQueue>()->PopRetrievalFilter(
+            Producer);
+
+        Encode_IDXGIInfoQueue_PopRetrievalFilter(
+            this,
+            Producer);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_PopRetrievalFilter>::Dispatch(
+            manager,
+            this,
+            Producer);
+    }
+    else
+    {
+        GetWrappedObjectAs<IDXGIInfoQueue>()->PopRetrievalFilter(
+            Producer);
+    }
+
+    manager->DecrementCallScope();
+}
+
+UINT STDMETHODCALLTYPE IDXGIInfoQueue_Wrapper::GetRetrievalFilterStackSize(
+    DXGI_DEBUG_ID Producer)
+{
+    UINT result{};
+
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetRetrievalFilterStackSize>::Dispatch(
+            manager,
+            this,
+            Producer);
+
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->GetRetrievalFilterStackSize(
+            Producer);
+
+        Encode_IDXGIInfoQueue_GetRetrievalFilterStackSize(
+            this,
+            result,
+            Producer);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetRetrievalFilterStackSize>::Dispatch(
+            manager,
+            this,
+            result,
+            Producer);
+    }
+    else
+    {
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->GetRetrievalFilterStackSize(
+            Producer);
+    }
+
+    manager->DecrementCallScope();
+
+    return result;
+}
+
+HRESULT STDMETHODCALLTYPE IDXGIInfoQueue_Wrapper::AddMessage(
+    DXGI_DEBUG_ID Producer,
+    DXGI_INFO_QUEUE_MESSAGE_CATEGORY Category,
+    DXGI_INFO_QUEUE_MESSAGE_SEVERITY Severity,
+    DXGI_INFO_QUEUE_MESSAGE_ID ID,
+    LPCSTR pDescription)
+{
+    HRESULT result{};
+
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_AddMessage>::Dispatch(
+            manager,
+            this,
+            Producer,
+            Category,
+            Severity,
+            ID,
+            pDescription);
+
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->AddMessage(
+            Producer,
+            Category,
+            Severity,
+            ID,
+            pDescription);
+
+        Encode_IDXGIInfoQueue_AddMessage(
+            this,
+            result,
+            Producer,
+            Category,
+            Severity,
+            ID,
+            pDescription);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_AddMessage>::Dispatch(
+            manager,
+            this,
+            result,
+            Producer,
+            Category,
+            Severity,
+            ID,
+            pDescription);
+    }
+    else
+    {
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->AddMessage(
+            Producer,
+            Category,
+            Severity,
+            ID,
+            pDescription);
+    }
+
+    manager->DecrementCallScope();
+
+    return result;
+}
+
+HRESULT STDMETHODCALLTYPE IDXGIInfoQueue_Wrapper::AddApplicationMessage(
+    DXGI_INFO_QUEUE_MESSAGE_SEVERITY Severity,
+    LPCSTR pDescription)
+{
+    HRESULT result{};
+
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_AddApplicationMessage>::Dispatch(
+            manager,
+            this,
+            Severity,
+            pDescription);
+
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->AddApplicationMessage(
+            Severity,
+            pDescription);
+
+        Encode_IDXGIInfoQueue_AddApplicationMessage(
+            this,
+            result,
+            Severity,
+            pDescription);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_AddApplicationMessage>::Dispatch(
+            manager,
+            this,
+            result,
+            Severity,
+            pDescription);
+    }
+    else
+    {
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->AddApplicationMessage(
+            Severity,
+            pDescription);
+    }
+
+    manager->DecrementCallScope();
+
+    return result;
+}
+
+HRESULT STDMETHODCALLTYPE IDXGIInfoQueue_Wrapper::SetBreakOnCategory(
+    DXGI_DEBUG_ID Producer,
+    DXGI_INFO_QUEUE_MESSAGE_CATEGORY Category,
+    BOOL bEnable)
+{
+    HRESULT result{};
+
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_SetBreakOnCategory>::Dispatch(
+            manager,
+            this,
+            Producer,
+            Category,
+            bEnable);
+
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->SetBreakOnCategory(
+            Producer,
+            Category,
+            bEnable);
+
+        Encode_IDXGIInfoQueue_SetBreakOnCategory(
+            this,
+            result,
+            Producer,
+            Category,
+            bEnable);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_SetBreakOnCategory>::Dispatch(
+            manager,
+            this,
+            result,
+            Producer,
+            Category,
+            bEnable);
+    }
+    else
+    {
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->SetBreakOnCategory(
+            Producer,
+            Category,
+            bEnable);
+    }
+
+    manager->DecrementCallScope();
+
+    return result;
+}
+
+HRESULT STDMETHODCALLTYPE IDXGIInfoQueue_Wrapper::SetBreakOnSeverity(
+    DXGI_DEBUG_ID Producer,
+    DXGI_INFO_QUEUE_MESSAGE_SEVERITY Severity,
+    BOOL bEnable)
+{
+    HRESULT result{};
+
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_SetBreakOnSeverity>::Dispatch(
+            manager,
+            this,
+            Producer,
+            Severity,
+            bEnable);
+
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->SetBreakOnSeverity(
+            Producer,
+            Severity,
+            bEnable);
+
+        Encode_IDXGIInfoQueue_SetBreakOnSeverity(
+            this,
+            result,
+            Producer,
+            Severity,
+            bEnable);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_SetBreakOnSeverity>::Dispatch(
+            manager,
+            this,
+            result,
+            Producer,
+            Severity,
+            bEnable);
+    }
+    else
+    {
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->SetBreakOnSeverity(
+            Producer,
+            Severity,
+            bEnable);
+    }
+
+    manager->DecrementCallScope();
+
+    return result;
+}
+
+HRESULT STDMETHODCALLTYPE IDXGIInfoQueue_Wrapper::SetBreakOnID(
+    DXGI_DEBUG_ID Producer,
+    DXGI_INFO_QUEUE_MESSAGE_ID ID,
+    BOOL bEnable)
+{
+    HRESULT result{};
+
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_SetBreakOnID>::Dispatch(
+            manager,
+            this,
+            Producer,
+            ID,
+            bEnable);
+
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->SetBreakOnID(
+            Producer,
+            ID,
+            bEnable);
+
+        Encode_IDXGIInfoQueue_SetBreakOnID(
+            this,
+            result,
+            Producer,
+            ID,
+            bEnable);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_SetBreakOnID>::Dispatch(
+            manager,
+            this,
+            result,
+            Producer,
+            ID,
+            bEnable);
+    }
+    else
+    {
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->SetBreakOnID(
+            Producer,
+            ID,
+            bEnable);
+    }
+
+    manager->DecrementCallScope();
+
+    return result;
+}
+
+BOOL STDMETHODCALLTYPE IDXGIInfoQueue_Wrapper::GetBreakOnCategory(
+    DXGI_DEBUG_ID Producer,
+    DXGI_INFO_QUEUE_MESSAGE_CATEGORY Category)
+{
+    BOOL result{};
+
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetBreakOnCategory>::Dispatch(
+            manager,
+            this,
+            Producer,
+            Category);
+
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->GetBreakOnCategory(
+            Producer,
+            Category);
+
+        Encode_IDXGIInfoQueue_GetBreakOnCategory(
+            this,
+            result,
+            Producer,
+            Category);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetBreakOnCategory>::Dispatch(
+            manager,
+            this,
+            result,
+            Producer,
+            Category);
+    }
+    else
+    {
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->GetBreakOnCategory(
+            Producer,
+            Category);
+    }
+
+    manager->DecrementCallScope();
+
+    return result;
+}
+
+BOOL STDMETHODCALLTYPE IDXGIInfoQueue_Wrapper::GetBreakOnSeverity(
+    DXGI_DEBUG_ID Producer,
+    DXGI_INFO_QUEUE_MESSAGE_SEVERITY Severity)
+{
+    BOOL result{};
+
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetBreakOnSeverity>::Dispatch(
+            manager,
+            this,
+            Producer,
+            Severity);
+
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->GetBreakOnSeverity(
+            Producer,
+            Severity);
+
+        Encode_IDXGIInfoQueue_GetBreakOnSeverity(
+            this,
+            result,
+            Producer,
+            Severity);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetBreakOnSeverity>::Dispatch(
+            manager,
+            this,
+            result,
+            Producer,
+            Severity);
+    }
+    else
+    {
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->GetBreakOnSeverity(
+            Producer,
+            Severity);
+    }
+
+    manager->DecrementCallScope();
+
+    return result;
+}
+
+BOOL STDMETHODCALLTYPE IDXGIInfoQueue_Wrapper::GetBreakOnID(
+    DXGI_DEBUG_ID Producer,
+    DXGI_INFO_QUEUE_MESSAGE_ID ID)
+{
+    BOOL result{};
+
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetBreakOnID>::Dispatch(
+            manager,
+            this,
+            Producer,
+            ID);
+
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->GetBreakOnID(
+            Producer,
+            ID);
+
+        Encode_IDXGIInfoQueue_GetBreakOnID(
+            this,
+            result,
+            Producer,
+            ID);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetBreakOnID>::Dispatch(
+            manager,
+            this,
+            result,
+            Producer,
+            ID);
+    }
+    else
+    {
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->GetBreakOnID(
+            Producer,
+            ID);
+    }
+
+    manager->DecrementCallScope();
+
+    return result;
+}
+
+void STDMETHODCALLTYPE IDXGIInfoQueue_Wrapper::SetMuteDebugOutput(
+    DXGI_DEBUG_ID Producer,
+    BOOL bMute)
+{
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_SetMuteDebugOutput>::Dispatch(
+            manager,
+            this,
+            Producer,
+            bMute);
+
+        GetWrappedObjectAs<IDXGIInfoQueue>()->SetMuteDebugOutput(
+            Producer,
+            bMute);
+
+        Encode_IDXGIInfoQueue_SetMuteDebugOutput(
+            this,
+            Producer,
+            bMute);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_SetMuteDebugOutput>::Dispatch(
+            manager,
+            this,
+            Producer,
+            bMute);
+    }
+    else
+    {
+        GetWrappedObjectAs<IDXGIInfoQueue>()->SetMuteDebugOutput(
+            Producer,
+            bMute);
+    }
+
+    manager->DecrementCallScope();
+}
+
+BOOL STDMETHODCALLTYPE IDXGIInfoQueue_Wrapper::GetMuteDebugOutput(
+    DXGI_DEBUG_ID Producer)
+{
+    BOOL result{};
+
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetMuteDebugOutput>::Dispatch(
+            manager,
+            this,
+            Producer);
+
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->GetMuteDebugOutput(
+            Producer);
+
+        Encode_IDXGIInfoQueue_GetMuteDebugOutput(
+            this,
+            result,
+            Producer);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetMuteDebugOutput>::Dispatch(
+            manager,
+            this,
+            result,
+            Producer);
+    }
+    else
+    {
+        result = GetWrappedObjectAs<IDXGIInfoQueue>()->GetMuteDebugOutput(
+            Producer);
+    }
+
+    manager->DecrementCallScope();
+
+    return result;
+}
+
+IDXGIDebug_Wrapper::IDXGIDebug_Wrapper(REFIID riid, IUnknown* object, DxWrapperResources* resources, const std::function<void(IUnknown_Wrapper*)>& destructor) : IUnknown_Wrapper(riid, object, resources, destructor)
+{
+    info_ = std::make_shared<IDXGIDebugInfo>();
+    info_->SetWrapper(this);
+    AddWrapperMapEntry(object, this, object_map_, object_map_lock_);
+}
+
+IDXGIDebug_Wrapper::~IDXGIDebug_Wrapper()
+{
+    CustomWrapperDestroyCall(this);
+    RemoveWrapperMapEntry(GetWrappedObjectAs<IDXGIDebug>(), object_map_, object_map_lock_);
+    D3D12CaptureManager::Get()->ProcessWrapperDestroy(this);
+    info_->SetWrapper(nullptr);
+}
+
+IDXGIDebug_Wrapper* IDXGIDebug_Wrapper::GetExistingWrapper(IUnknown* object)
+{
+    return FindMapEntry<IDXGIDebug_Wrapper>(object, object_map_, object_map_lock_);
+}
+
+HRESULT STDMETHODCALLTYPE IDXGIDebug_Wrapper::ReportLiveObjects(
+    GUID apiid,
+    DXGI_DEBUG_RLO_FLAGS flags)
+{
+    HRESULT result{};
+
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIDebug_ReportLiveObjects>::Dispatch(
+            manager,
+            this,
+            apiid,
+            flags);
+
+        result = GetWrappedObjectAs<IDXGIDebug>()->ReportLiveObjects(
+            apiid,
+            flags);
+
+        Encode_IDXGIDebug_ReportLiveObjects(
+            this,
+            result,
+            apiid,
+            flags);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_IDXGIDebug_ReportLiveObjects>::Dispatch(
+            manager,
+            this,
+            result,
+            apiid,
+            flags);
+    }
+    else
+    {
+        result = GetWrappedObjectAs<IDXGIDebug>()->ReportLiveObjects(
+            apiid,
+            flags);
+    }
+
+    manager->DecrementCallScope();
+
+    return result;
+}
+
+IDXGIDebug1_Wrapper::IDXGIDebug1_Wrapper(REFIID riid, IUnknown* object, DxWrapperResources* resources, const std::function<void(IUnknown_Wrapper*)>& destructor) : IDXGIDebug_Wrapper(riid, object, resources, destructor)
+{
+}
+
+void STDMETHODCALLTYPE IDXGIDebug1_Wrapper::EnableLeakTrackingForThread()
+{
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIDebug1_EnableLeakTrackingForThread>::Dispatch(
+            manager,
+            this);
+
+        GetWrappedObjectAs<IDXGIDebug1>()->EnableLeakTrackingForThread();
+
+        Encode_IDXGIDebug1_EnableLeakTrackingForThread(
+            this);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_IDXGIDebug1_EnableLeakTrackingForThread>::Dispatch(
+            manager,
+            this);
+    }
+    else
+    {
+        GetWrappedObjectAs<IDXGIDebug1>()->EnableLeakTrackingForThread();
+    }
+
+    manager->DecrementCallScope();
+}
+
+void STDMETHODCALLTYPE IDXGIDebug1_Wrapper::DisableLeakTrackingForThread()
+{
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIDebug1_DisableLeakTrackingForThread>::Dispatch(
+            manager,
+            this);
+
+        GetWrappedObjectAs<IDXGIDebug1>()->DisableLeakTrackingForThread();
+
+        Encode_IDXGIDebug1_DisableLeakTrackingForThread(
+            this);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_IDXGIDebug1_DisableLeakTrackingForThread>::Dispatch(
+            manager,
+            this);
+    }
+    else
+    {
+        GetWrappedObjectAs<IDXGIDebug1>()->DisableLeakTrackingForThread();
+    }
+
+    manager->DecrementCallScope();
+}
+
+BOOL STDMETHODCALLTYPE IDXGIDebug1_Wrapper::IsLeakTrackingEnabledForThread()
+{
+    BOOL result{};
+
+    auto manager = D3D12CaptureManager::Get();
+    auto call_scope = manager->IncrementCallScope();
+
+    if (call_scope == 1)
+    {
+        auto force_command_serialization = D3D12CaptureManager::Get()->GetForceCommandSerialization();
+        std::shared_lock<CommonCaptureManager::ApiCallMutexT> shared_api_call_lock;
+        std::unique_lock<CommonCaptureManager::ApiCallMutexT> exclusive_api_call_lock;
+        if (force_command_serialization)
+        {
+            exclusive_api_call_lock = D3D12CaptureManager::AcquireExclusiveApiCallLock();
+        }
+        else
+        {
+            shared_api_call_lock = D3D12CaptureManager::AcquireSharedApiCallLock();
+        }
+
+        CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIDebug1_IsLeakTrackingEnabledForThread>::Dispatch(
+            manager,
+            this);
+
+        result = GetWrappedObjectAs<IDXGIDebug1>()->IsLeakTrackingEnabledForThread();
+
+        Encode_IDXGIDebug1_IsLeakTrackingEnabledForThread(
+            this,
+            result);
+
+        CustomWrapperPostCall<format::ApiCallId::ApiCall_IDXGIDebug1_IsLeakTrackingEnabledForThread>::Dispatch(
+            manager,
+            this,
+            result);
+    }
+    else
+    {
+        result = GetWrappedObjectAs<IDXGIDebug1>()->IsLeakTrackingEnabledForThread();
+    }
+
+    manager->DecrementCallScope();
+
+    return result;
+}
 
 
 /*

@@ -48,6 +48,7 @@
 #include <dxgi1_6.h>
 #include <dxgicommon.h>
 #include <dxgitype.h>
+#include <dxgidebug.h>
 #include <Unknwnbase.h>
 #include <guiddef.h>
 #include <windef.h>

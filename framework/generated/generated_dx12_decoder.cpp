@@ -84,6 +84,9 @@ void Dx12Decoder::DecodeFunctionCall(format::ApiCallId  call_id,
     case format::ApiCallId::ApiCall_DXGIDeclareAdapterRemovalSupport:
         Decode_DXGIDeclareAdapterRemovalSupport(call_info, parameter_buffer, buffer_size);
         break;
+    case format::ApiCallId::ApiCall_DXGIGetDebugInterface:
+        Decode_DXGIGetDebugInterface(call_info, parameter_buffer, buffer_size);
+        break;
     default:
         Dx12DecoderBase::DecodeFunctionCall(call_id, call_info, parameter_buffer, buffer_size);
         break;
@@ -1597,6 +1600,129 @@ void Dx12Decoder::DecodeMethodCall(format::ApiCallId  call_id,
     case format::ApiCallId::ApiCall_IDXGIFactory7_UnregisterAdaptersChangedEvent:
         Decode_IDXGIFactory7_UnregisterAdaptersChangedEvent(object_id, call_info, parameter_buffer, buffer_size);
         break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_SetMessageCountLimit:
+        Decode_IDXGIInfoQueue_SetMessageCountLimit(object_id, call_info, parameter_buffer, buffer_size);
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_ClearStoredMessages:
+        Decode_IDXGIInfoQueue_ClearStoredMessages(object_id, call_info, parameter_buffer, buffer_size);
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_GetMessage:
+        Decode_IDXGIInfoQueue_GetMessage(object_id, call_info, parameter_buffer, buffer_size);
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_GetNumStoredMessagesAllowedByRetrievalFilters:
+        Decode_IDXGIInfoQueue_GetNumStoredMessagesAllowedByRetrievalFilters(object_id, call_info, parameter_buffer, buffer_size);
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_GetNumStoredMessages:
+        Decode_IDXGIInfoQueue_GetNumStoredMessages(object_id, call_info, parameter_buffer, buffer_size);
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_GetNumMessagesDiscardedByMessageCountLimit:
+        Decode_IDXGIInfoQueue_GetNumMessagesDiscardedByMessageCountLimit(object_id, call_info, parameter_buffer, buffer_size);
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_GetMessageCountLimit:
+        Decode_IDXGIInfoQueue_GetMessageCountLimit(object_id, call_info, parameter_buffer, buffer_size);
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_GetNumMessagesAllowedByStorageFilter:
+        Decode_IDXGIInfoQueue_GetNumMessagesAllowedByStorageFilter(object_id, call_info, parameter_buffer, buffer_size);
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_GetNumMessagesDeniedByStorageFilter:
+        Decode_IDXGIInfoQueue_GetNumMessagesDeniedByStorageFilter(object_id, call_info, parameter_buffer, buffer_size);
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_AddStorageFilterEntries:
+        Decode_IDXGIInfoQueue_AddStorageFilterEntries(object_id, call_info, parameter_buffer, buffer_size);
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_GetStorageFilter:
+        Decode_IDXGIInfoQueue_GetStorageFilter(object_id, call_info, parameter_buffer, buffer_size);
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_ClearStorageFilter:
+        Decode_IDXGIInfoQueue_ClearStorageFilter(object_id, call_info, parameter_buffer, buffer_size);
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_PushEmptyStorageFilter:
+        Decode_IDXGIInfoQueue_PushEmptyStorageFilter(object_id, call_info, parameter_buffer, buffer_size);
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_PushDenyAllStorageFilter:
+        Decode_IDXGIInfoQueue_PushDenyAllStorageFilter(object_id, call_info, parameter_buffer, buffer_size);
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_PushCopyOfStorageFilter:
+        Decode_IDXGIInfoQueue_PushCopyOfStorageFilter(object_id, call_info, parameter_buffer, buffer_size);
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_PushStorageFilter:
+        Decode_IDXGIInfoQueue_PushStorageFilter(object_id, call_info, parameter_buffer, buffer_size);
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_PopStorageFilter:
+        Decode_IDXGIInfoQueue_PopStorageFilter(object_id, call_info, parameter_buffer, buffer_size);
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_GetStorageFilterStackSize:
+        Decode_IDXGIInfoQueue_GetStorageFilterStackSize(object_id, call_info, parameter_buffer, buffer_size);
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_AddRetrievalFilterEntries:
+        Decode_IDXGIInfoQueue_AddRetrievalFilterEntries(object_id, call_info, parameter_buffer, buffer_size);
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_GetRetrievalFilter:
+        Decode_IDXGIInfoQueue_GetRetrievalFilter(object_id, call_info, parameter_buffer, buffer_size);
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_ClearRetrievalFilter:
+        Decode_IDXGIInfoQueue_ClearRetrievalFilter(object_id, call_info, parameter_buffer, buffer_size);
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_PushEmptyRetrievalFilter:
+        Decode_IDXGIInfoQueue_PushEmptyRetrievalFilter(object_id, call_info, parameter_buffer, buffer_size);
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_PushDenyAllRetrievalFilter:
+        Decode_IDXGIInfoQueue_PushDenyAllRetrievalFilter(object_id, call_info, parameter_buffer, buffer_size);
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_PushCopyOfRetrievalFilter:
+        Decode_IDXGIInfoQueue_PushCopyOfRetrievalFilter(object_id, call_info, parameter_buffer, buffer_size);
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_PushRetrievalFilter:
+        Decode_IDXGIInfoQueue_PushRetrievalFilter(object_id, call_info, parameter_buffer, buffer_size);
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_PopRetrievalFilter:
+        Decode_IDXGIInfoQueue_PopRetrievalFilter(object_id, call_info, parameter_buffer, buffer_size);
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_GetRetrievalFilterStackSize:
+        Decode_IDXGIInfoQueue_GetRetrievalFilterStackSize(object_id, call_info, parameter_buffer, buffer_size);
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_AddMessage:
+        Decode_IDXGIInfoQueue_AddMessage(object_id, call_info, parameter_buffer, buffer_size);
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_AddApplicationMessage:
+        Decode_IDXGIInfoQueue_AddApplicationMessage(object_id, call_info, parameter_buffer, buffer_size);
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_SetBreakOnCategory:
+        Decode_IDXGIInfoQueue_SetBreakOnCategory(object_id, call_info, parameter_buffer, buffer_size);
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_SetBreakOnSeverity:
+        Decode_IDXGIInfoQueue_SetBreakOnSeverity(object_id, call_info, parameter_buffer, buffer_size);
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_SetBreakOnID:
+        Decode_IDXGIInfoQueue_SetBreakOnID(object_id, call_info, parameter_buffer, buffer_size);
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_GetBreakOnCategory:
+        Decode_IDXGIInfoQueue_GetBreakOnCategory(object_id, call_info, parameter_buffer, buffer_size);
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_GetBreakOnSeverity:
+        Decode_IDXGIInfoQueue_GetBreakOnSeverity(object_id, call_info, parameter_buffer, buffer_size);
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_GetBreakOnID:
+        Decode_IDXGIInfoQueue_GetBreakOnID(object_id, call_info, parameter_buffer, buffer_size);
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_SetMuteDebugOutput:
+        Decode_IDXGIInfoQueue_SetMuteDebugOutput(object_id, call_info, parameter_buffer, buffer_size);
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_GetMuteDebugOutput:
+        Decode_IDXGIInfoQueue_GetMuteDebugOutput(object_id, call_info, parameter_buffer, buffer_size);
+        break;
+    case format::ApiCallId::ApiCall_IDXGIDebug_ReportLiveObjects:
+        Decode_IDXGIDebug_ReportLiveObjects(object_id, call_info, parameter_buffer, buffer_size);
+        break;
+    case format::ApiCallId::ApiCall_IDXGIDebug1_EnableLeakTrackingForThread:
+        Decode_IDXGIDebug1_EnableLeakTrackingForThread(object_id, call_info, parameter_buffer, buffer_size);
+        break;
+    case format::ApiCallId::ApiCall_IDXGIDebug1_DisableLeakTrackingForThread:
+        Decode_IDXGIDebug1_DisableLeakTrackingForThread(object_id, call_info, parameter_buffer, buffer_size);
+        break;
+    case format::ApiCallId::ApiCall_IDXGIDebug1_IsLeakTrackingEnabledForThread:
+        Decode_IDXGIDebug1_IsLeakTrackingEnabledForThread(object_id, call_info, parameter_buffer, buffer_size);
+        break;
     case format::ApiCallId::ApiCall_IUnknown_QueryInterface:
         Decode_IUnknown_QueryInterface(object_id, call_info, parameter_buffer, buffer_size);
         break;
@@ -1940,6 +2066,28 @@ size_t Dx12Decoder::Decode_DXGIDeclareAdapterRemovalSupport(const ApiCallInfo& c
     for (auto consumer : GetConsumers())
     {
         consumer->Process_DXGIDeclareAdapterRemovalSupport(call_info, return_value);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_DXGIGetDebugInterface(const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+    Decoded_GUID riid;
+    GUID value_riid;
+    riid.decoded_value = &value_riid;
+    HandlePointerDecoder<void*> ppDebug;
+    HRESULT return_value;
+
+    bytes_read += DecodeStruct((parameter_buffer + bytes_read), (buffer_size - bytes_read), &riid);
+    bytes_read += ppDebug.Decode((parameter_buffer + bytes_read), (buffer_size - bytes_read));
+    bytes_read += ValueDecoder::DecodeInt32Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &return_value);
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_DXGIGetDebugInterface(call_info, return_value, riid, &ppDebug);
     }
 
     return bytes_read;
@@ -12032,6 +12180,852 @@ size_t Dx12Decoder::Decode_IDXGIFactory7_UnregisterAdaptersChangedEvent(format::
     for (auto consumer : GetConsumers())
     {
         consumer->Process_IDXGIFactory7_UnregisterAdaptersChangedEvent(call_info, object_id, return_value, dwCookie);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_IDXGIInfoQueue_SetMessageCountLimit(format::HandleId object_id, const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+    Decoded_GUID Producer;
+    GUID value_Producer;
+    Producer.decoded_value = &value_Producer;
+    UINT64 MessageCountLimit;
+    HRESULT return_value;
+
+    bytes_read += DecodeStruct((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Producer);
+    bytes_read += ValueDecoder::DecodeUInt64Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &MessageCountLimit);
+    bytes_read += ValueDecoder::DecodeInt32Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &return_value);
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_IDXGIInfoQueue_SetMessageCountLimit(call_info, object_id, return_value, Producer, MessageCountLimit);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_IDXGIInfoQueue_ClearStoredMessages(format::HandleId object_id, const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+    Decoded_GUID Producer;
+    GUID value_Producer;
+    Producer.decoded_value = &value_Producer;
+
+    bytes_read += DecodeStruct((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Producer);
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_IDXGIInfoQueue_ClearStoredMessages(call_info, object_id, Producer);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_IDXGIInfoQueue_GetMessage(format::HandleId object_id, const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+    Decoded_GUID Producer;
+    GUID value_Producer;
+    Producer.decoded_value = &value_Producer;
+    UINT64 MessageIndex;
+    StructPointerDecoder<Decoded_DXGI_INFO_QUEUE_MESSAGE> pMessage;
+    PointerDecoder<SIZE_T> pMessageByteLength;
+    HRESULT return_value;
+
+    bytes_read += DecodeStruct((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Producer);
+    bytes_read += ValueDecoder::DecodeUInt64Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &MessageIndex);
+    bytes_read += pMessage.Decode((parameter_buffer + bytes_read), (buffer_size - bytes_read));
+    bytes_read += pMessageByteLength.DecodeSizeT((parameter_buffer + bytes_read), (buffer_size - bytes_read));
+    bytes_read += ValueDecoder::DecodeInt32Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &return_value);
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_IDXGIInfoQueue_GetMessage(call_info, object_id, return_value, Producer, MessageIndex, &pMessage, &pMessageByteLength);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_IDXGIInfoQueue_GetNumStoredMessagesAllowedByRetrievalFilters(format::HandleId object_id, const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+    Decoded_GUID Producer;
+    GUID value_Producer;
+    Producer.decoded_value = &value_Producer;
+    UINT64 return_value;
+
+    bytes_read += DecodeStruct((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Producer);
+    bytes_read += ValueDecoder::DecodeUInt64Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &return_value);
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_IDXGIInfoQueue_GetNumStoredMessagesAllowedByRetrievalFilters(call_info, object_id, return_value, Producer);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_IDXGIInfoQueue_GetNumStoredMessages(format::HandleId object_id, const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+    Decoded_GUID Producer;
+    GUID value_Producer;
+    Producer.decoded_value = &value_Producer;
+    UINT64 return_value;
+
+    bytes_read += DecodeStruct((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Producer);
+    bytes_read += ValueDecoder::DecodeUInt64Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &return_value);
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_IDXGIInfoQueue_GetNumStoredMessages(call_info, object_id, return_value, Producer);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_IDXGIInfoQueue_GetNumMessagesDiscardedByMessageCountLimit(format::HandleId object_id, const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+    Decoded_GUID Producer;
+    GUID value_Producer;
+    Producer.decoded_value = &value_Producer;
+    UINT64 return_value;
+
+    bytes_read += DecodeStruct((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Producer);
+    bytes_read += ValueDecoder::DecodeUInt64Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &return_value);
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_IDXGIInfoQueue_GetNumMessagesDiscardedByMessageCountLimit(call_info, object_id, return_value, Producer);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_IDXGIInfoQueue_GetMessageCountLimit(format::HandleId object_id, const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+    Decoded_GUID Producer;
+    GUID value_Producer;
+    Producer.decoded_value = &value_Producer;
+    UINT64 return_value;
+
+    bytes_read += DecodeStruct((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Producer);
+    bytes_read += ValueDecoder::DecodeUInt64Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &return_value);
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_IDXGIInfoQueue_GetMessageCountLimit(call_info, object_id, return_value, Producer);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_IDXGIInfoQueue_GetNumMessagesAllowedByStorageFilter(format::HandleId object_id, const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+    Decoded_GUID Producer;
+    GUID value_Producer;
+    Producer.decoded_value = &value_Producer;
+    UINT64 return_value;
+
+    bytes_read += DecodeStruct((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Producer);
+    bytes_read += ValueDecoder::DecodeUInt64Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &return_value);
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_IDXGIInfoQueue_GetNumMessagesAllowedByStorageFilter(call_info, object_id, return_value, Producer);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_IDXGIInfoQueue_GetNumMessagesDeniedByStorageFilter(format::HandleId object_id, const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+    Decoded_GUID Producer;
+    GUID value_Producer;
+    Producer.decoded_value = &value_Producer;
+    UINT64 return_value;
+
+    bytes_read += DecodeStruct((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Producer);
+    bytes_read += ValueDecoder::DecodeUInt64Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &return_value);
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_IDXGIInfoQueue_GetNumMessagesDeniedByStorageFilter(call_info, object_id, return_value, Producer);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_IDXGIInfoQueue_AddStorageFilterEntries(format::HandleId object_id, const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+    Decoded_GUID Producer;
+    GUID value_Producer;
+    Producer.decoded_value = &value_Producer;
+    StructPointerDecoder<Decoded_DXGI_INFO_QUEUE_FILTER> pFilter;
+    HRESULT return_value;
+
+    bytes_read += DecodeStruct((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Producer);
+    bytes_read += pFilter.Decode((parameter_buffer + bytes_read), (buffer_size - bytes_read));
+    bytes_read += ValueDecoder::DecodeInt32Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &return_value);
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_IDXGIInfoQueue_AddStorageFilterEntries(call_info, object_id, return_value, Producer, &pFilter);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_IDXGIInfoQueue_GetStorageFilter(format::HandleId object_id, const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+    Decoded_GUID Producer;
+    GUID value_Producer;
+    Producer.decoded_value = &value_Producer;
+    StructPointerDecoder<Decoded_DXGI_INFO_QUEUE_FILTER> pFilter;
+    PointerDecoder<SIZE_T> pFilterByteLength;
+    HRESULT return_value;
+
+    bytes_read += DecodeStruct((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Producer);
+    bytes_read += pFilter.Decode((parameter_buffer + bytes_read), (buffer_size - bytes_read));
+    bytes_read += pFilterByteLength.DecodeSizeT((parameter_buffer + bytes_read), (buffer_size - bytes_read));
+    bytes_read += ValueDecoder::DecodeInt32Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &return_value);
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_IDXGIInfoQueue_GetStorageFilter(call_info, object_id, return_value, Producer, &pFilter, &pFilterByteLength);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_IDXGIInfoQueue_ClearStorageFilter(format::HandleId object_id, const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+    Decoded_GUID Producer;
+    GUID value_Producer;
+    Producer.decoded_value = &value_Producer;
+
+    bytes_read += DecodeStruct((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Producer);
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_IDXGIInfoQueue_ClearStorageFilter(call_info, object_id, Producer);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_IDXGIInfoQueue_PushEmptyStorageFilter(format::HandleId object_id, const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+    Decoded_GUID Producer;
+    GUID value_Producer;
+    Producer.decoded_value = &value_Producer;
+    HRESULT return_value;
+
+    bytes_read += DecodeStruct((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Producer);
+    bytes_read += ValueDecoder::DecodeInt32Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &return_value);
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_IDXGIInfoQueue_PushEmptyStorageFilter(call_info, object_id, return_value, Producer);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_IDXGIInfoQueue_PushDenyAllStorageFilter(format::HandleId object_id, const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+    Decoded_GUID Producer;
+    GUID value_Producer;
+    Producer.decoded_value = &value_Producer;
+    HRESULT return_value;
+
+    bytes_read += DecodeStruct((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Producer);
+    bytes_read += ValueDecoder::DecodeInt32Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &return_value);
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_IDXGIInfoQueue_PushDenyAllStorageFilter(call_info, object_id, return_value, Producer);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_IDXGIInfoQueue_PushCopyOfStorageFilter(format::HandleId object_id, const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+    Decoded_GUID Producer;
+    GUID value_Producer;
+    Producer.decoded_value = &value_Producer;
+    HRESULT return_value;
+
+    bytes_read += DecodeStruct((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Producer);
+    bytes_read += ValueDecoder::DecodeInt32Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &return_value);
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_IDXGIInfoQueue_PushCopyOfStorageFilter(call_info, object_id, return_value, Producer);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_IDXGIInfoQueue_PushStorageFilter(format::HandleId object_id, const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+    Decoded_GUID Producer;
+    GUID value_Producer;
+    Producer.decoded_value = &value_Producer;
+    StructPointerDecoder<Decoded_DXGI_INFO_QUEUE_FILTER> pFilter;
+    HRESULT return_value;
+
+    bytes_read += DecodeStruct((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Producer);
+    bytes_read += pFilter.Decode((parameter_buffer + bytes_read), (buffer_size - bytes_read));
+    bytes_read += ValueDecoder::DecodeInt32Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &return_value);
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_IDXGIInfoQueue_PushStorageFilter(call_info, object_id, return_value, Producer, &pFilter);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_IDXGIInfoQueue_PopStorageFilter(format::HandleId object_id, const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+    Decoded_GUID Producer;
+    GUID value_Producer;
+    Producer.decoded_value = &value_Producer;
+
+    bytes_read += DecodeStruct((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Producer);
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_IDXGIInfoQueue_PopStorageFilter(call_info, object_id, Producer);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_IDXGIInfoQueue_GetStorageFilterStackSize(format::HandleId object_id, const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+    Decoded_GUID Producer;
+    GUID value_Producer;
+    Producer.decoded_value = &value_Producer;
+    UINT return_value;
+
+    bytes_read += DecodeStruct((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Producer);
+    bytes_read += ValueDecoder::DecodeUInt32Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &return_value);
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_IDXGIInfoQueue_GetStorageFilterStackSize(call_info, object_id, return_value, Producer);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_IDXGIInfoQueue_AddRetrievalFilterEntries(format::HandleId object_id, const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+    Decoded_GUID Producer;
+    GUID value_Producer;
+    Producer.decoded_value = &value_Producer;
+    StructPointerDecoder<Decoded_DXGI_INFO_QUEUE_FILTER> pFilter;
+    HRESULT return_value;
+
+    bytes_read += DecodeStruct((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Producer);
+    bytes_read += pFilter.Decode((parameter_buffer + bytes_read), (buffer_size - bytes_read));
+    bytes_read += ValueDecoder::DecodeInt32Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &return_value);
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_IDXGIInfoQueue_AddRetrievalFilterEntries(call_info, object_id, return_value, Producer, &pFilter);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_IDXGIInfoQueue_GetRetrievalFilter(format::HandleId object_id, const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+    Decoded_GUID Producer;
+    GUID value_Producer;
+    Producer.decoded_value = &value_Producer;
+    StructPointerDecoder<Decoded_DXGI_INFO_QUEUE_FILTER> pFilter;
+    PointerDecoder<SIZE_T> pFilterByteLength;
+    HRESULT return_value;
+
+    bytes_read += DecodeStruct((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Producer);
+    bytes_read += pFilter.Decode((parameter_buffer + bytes_read), (buffer_size - bytes_read));
+    bytes_read += pFilterByteLength.DecodeSizeT((parameter_buffer + bytes_read), (buffer_size - bytes_read));
+    bytes_read += ValueDecoder::DecodeInt32Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &return_value);
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_IDXGIInfoQueue_GetRetrievalFilter(call_info, object_id, return_value, Producer, &pFilter, &pFilterByteLength);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_IDXGIInfoQueue_ClearRetrievalFilter(format::HandleId object_id, const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+    Decoded_GUID Producer;
+    GUID value_Producer;
+    Producer.decoded_value = &value_Producer;
+
+    bytes_read += DecodeStruct((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Producer);
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_IDXGIInfoQueue_ClearRetrievalFilter(call_info, object_id, Producer);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_IDXGIInfoQueue_PushEmptyRetrievalFilter(format::HandleId object_id, const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+    Decoded_GUID Producer;
+    GUID value_Producer;
+    Producer.decoded_value = &value_Producer;
+    HRESULT return_value;
+
+    bytes_read += DecodeStruct((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Producer);
+    bytes_read += ValueDecoder::DecodeInt32Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &return_value);
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_IDXGIInfoQueue_PushEmptyRetrievalFilter(call_info, object_id, return_value, Producer);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_IDXGIInfoQueue_PushDenyAllRetrievalFilter(format::HandleId object_id, const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+    Decoded_GUID Producer;
+    GUID value_Producer;
+    Producer.decoded_value = &value_Producer;
+    HRESULT return_value;
+
+    bytes_read += DecodeStruct((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Producer);
+    bytes_read += ValueDecoder::DecodeInt32Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &return_value);
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_IDXGIInfoQueue_PushDenyAllRetrievalFilter(call_info, object_id, return_value, Producer);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_IDXGIInfoQueue_PushCopyOfRetrievalFilter(format::HandleId object_id, const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+    Decoded_GUID Producer;
+    GUID value_Producer;
+    Producer.decoded_value = &value_Producer;
+    HRESULT return_value;
+
+    bytes_read += DecodeStruct((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Producer);
+    bytes_read += ValueDecoder::DecodeInt32Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &return_value);
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_IDXGIInfoQueue_PushCopyOfRetrievalFilter(call_info, object_id, return_value, Producer);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_IDXGIInfoQueue_PushRetrievalFilter(format::HandleId object_id, const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+    Decoded_GUID Producer;
+    GUID value_Producer;
+    Producer.decoded_value = &value_Producer;
+    StructPointerDecoder<Decoded_DXGI_INFO_QUEUE_FILTER> pFilter;
+    HRESULT return_value;
+
+    bytes_read += DecodeStruct((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Producer);
+    bytes_read += pFilter.Decode((parameter_buffer + bytes_read), (buffer_size - bytes_read));
+    bytes_read += ValueDecoder::DecodeInt32Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &return_value);
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_IDXGIInfoQueue_PushRetrievalFilter(call_info, object_id, return_value, Producer, &pFilter);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_IDXGIInfoQueue_PopRetrievalFilter(format::HandleId object_id, const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+    Decoded_GUID Producer;
+    GUID value_Producer;
+    Producer.decoded_value = &value_Producer;
+
+    bytes_read += DecodeStruct((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Producer);
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_IDXGIInfoQueue_PopRetrievalFilter(call_info, object_id, Producer);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_IDXGIInfoQueue_GetRetrievalFilterStackSize(format::HandleId object_id, const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+    Decoded_GUID Producer;
+    GUID value_Producer;
+    Producer.decoded_value = &value_Producer;
+    UINT return_value;
+
+    bytes_read += DecodeStruct((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Producer);
+    bytes_read += ValueDecoder::DecodeUInt32Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &return_value);
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_IDXGIInfoQueue_GetRetrievalFilterStackSize(call_info, object_id, return_value, Producer);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_IDXGIInfoQueue_AddMessage(format::HandleId object_id, const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+    Decoded_GUID Producer;
+    GUID value_Producer;
+    Producer.decoded_value = &value_Producer;
+    DXGI_INFO_QUEUE_MESSAGE_CATEGORY Category;
+    DXGI_INFO_QUEUE_MESSAGE_SEVERITY Severity;
+    int ID;
+    StringDecoder pDescription;
+    HRESULT return_value;
+
+    bytes_read += DecodeStruct((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Producer);
+    bytes_read += ValueDecoder::DecodeEnumValue((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Category);
+    bytes_read += ValueDecoder::DecodeEnumValue((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Severity);
+    bytes_read += ValueDecoder::DecodeInt32Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &ID);
+    bytes_read += pDescription.Decode((parameter_buffer + bytes_read), (buffer_size - bytes_read));
+    bytes_read += ValueDecoder::DecodeInt32Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &return_value);
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_IDXGIInfoQueue_AddMessage(call_info, object_id, return_value, Producer, Category, Severity, ID, &pDescription);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_IDXGIInfoQueue_AddApplicationMessage(format::HandleId object_id, const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+    DXGI_INFO_QUEUE_MESSAGE_SEVERITY Severity;
+    StringDecoder pDescription;
+    HRESULT return_value;
+
+    bytes_read += ValueDecoder::DecodeEnumValue((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Severity);
+    bytes_read += pDescription.Decode((parameter_buffer + bytes_read), (buffer_size - bytes_read));
+    bytes_read += ValueDecoder::DecodeInt32Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &return_value);
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_IDXGIInfoQueue_AddApplicationMessage(call_info, object_id, return_value, Severity, &pDescription);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_IDXGIInfoQueue_SetBreakOnCategory(format::HandleId object_id, const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+    Decoded_GUID Producer;
+    GUID value_Producer;
+    Producer.decoded_value = &value_Producer;
+    DXGI_INFO_QUEUE_MESSAGE_CATEGORY Category;
+    BOOL bEnable;
+    HRESULT return_value;
+
+    bytes_read += DecodeStruct((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Producer);
+    bytes_read += ValueDecoder::DecodeEnumValue((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Category);
+    bytes_read += ValueDecoder::DecodeInt32Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &bEnable);
+    bytes_read += ValueDecoder::DecodeInt32Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &return_value);
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_IDXGIInfoQueue_SetBreakOnCategory(call_info, object_id, return_value, Producer, Category, bEnable);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_IDXGIInfoQueue_SetBreakOnSeverity(format::HandleId object_id, const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+    Decoded_GUID Producer;
+    GUID value_Producer;
+    Producer.decoded_value = &value_Producer;
+    DXGI_INFO_QUEUE_MESSAGE_SEVERITY Severity;
+    BOOL bEnable;
+    HRESULT return_value;
+
+    bytes_read += DecodeStruct((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Producer);
+    bytes_read += ValueDecoder::DecodeEnumValue((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Severity);
+    bytes_read += ValueDecoder::DecodeInt32Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &bEnable);
+    bytes_read += ValueDecoder::DecodeInt32Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &return_value);
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_IDXGIInfoQueue_SetBreakOnSeverity(call_info, object_id, return_value, Producer, Severity, bEnable);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_IDXGIInfoQueue_SetBreakOnID(format::HandleId object_id, const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+    Decoded_GUID Producer;
+    GUID value_Producer;
+    Producer.decoded_value = &value_Producer;
+    int ID;
+    BOOL bEnable;
+    HRESULT return_value;
+
+    bytes_read += DecodeStruct((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Producer);
+    bytes_read += ValueDecoder::DecodeInt32Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &ID);
+    bytes_read += ValueDecoder::DecodeInt32Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &bEnable);
+    bytes_read += ValueDecoder::DecodeInt32Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &return_value);
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_IDXGIInfoQueue_SetBreakOnID(call_info, object_id, return_value, Producer, ID, bEnable);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_IDXGIInfoQueue_GetBreakOnCategory(format::HandleId object_id, const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+    Decoded_GUID Producer;
+    GUID value_Producer;
+    Producer.decoded_value = &value_Producer;
+    DXGI_INFO_QUEUE_MESSAGE_CATEGORY Category;
+    BOOL return_value;
+
+    bytes_read += DecodeStruct((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Producer);
+    bytes_read += ValueDecoder::DecodeEnumValue((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Category);
+    bytes_read += ValueDecoder::DecodeInt32Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &return_value);
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_IDXGIInfoQueue_GetBreakOnCategory(call_info, object_id, return_value, Producer, Category);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_IDXGIInfoQueue_GetBreakOnSeverity(format::HandleId object_id, const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+    Decoded_GUID Producer;
+    GUID value_Producer;
+    Producer.decoded_value = &value_Producer;
+    DXGI_INFO_QUEUE_MESSAGE_SEVERITY Severity;
+    BOOL return_value;
+
+    bytes_read += DecodeStruct((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Producer);
+    bytes_read += ValueDecoder::DecodeEnumValue((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Severity);
+    bytes_read += ValueDecoder::DecodeInt32Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &return_value);
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_IDXGIInfoQueue_GetBreakOnSeverity(call_info, object_id, return_value, Producer, Severity);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_IDXGIInfoQueue_GetBreakOnID(format::HandleId object_id, const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+    Decoded_GUID Producer;
+    GUID value_Producer;
+    Producer.decoded_value = &value_Producer;
+    int ID;
+    BOOL return_value;
+
+    bytes_read += DecodeStruct((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Producer);
+    bytes_read += ValueDecoder::DecodeInt32Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &ID);
+    bytes_read += ValueDecoder::DecodeInt32Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &return_value);
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_IDXGIInfoQueue_GetBreakOnID(call_info, object_id, return_value, Producer, ID);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_IDXGIInfoQueue_SetMuteDebugOutput(format::HandleId object_id, const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+    Decoded_GUID Producer;
+    GUID value_Producer;
+    Producer.decoded_value = &value_Producer;
+    BOOL bMute;
+
+    bytes_read += DecodeStruct((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Producer);
+    bytes_read += ValueDecoder::DecodeInt32Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &bMute);
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_IDXGIInfoQueue_SetMuteDebugOutput(call_info, object_id, Producer, bMute);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_IDXGIInfoQueue_GetMuteDebugOutput(format::HandleId object_id, const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+    Decoded_GUID Producer;
+    GUID value_Producer;
+    Producer.decoded_value = &value_Producer;
+    BOOL return_value;
+
+    bytes_read += DecodeStruct((parameter_buffer + bytes_read), (buffer_size - bytes_read), &Producer);
+    bytes_read += ValueDecoder::DecodeInt32Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &return_value);
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_IDXGIInfoQueue_GetMuteDebugOutput(call_info, object_id, return_value, Producer);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_IDXGIDebug_ReportLiveObjects(format::HandleId object_id, const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+    Decoded_GUID apiid;
+    GUID value_apiid;
+    apiid.decoded_value = &value_apiid;
+    DXGI_DEBUG_RLO_FLAGS flags;
+    HRESULT return_value;
+
+    bytes_read += DecodeStruct((parameter_buffer + bytes_read), (buffer_size - bytes_read), &apiid);
+    bytes_read += ValueDecoder::DecodeEnumValue((parameter_buffer + bytes_read), (buffer_size - bytes_read), &flags);
+    bytes_read += ValueDecoder::DecodeInt32Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &return_value);
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_IDXGIDebug_ReportLiveObjects(call_info, object_id, return_value, apiid, flags);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_IDXGIDebug1_EnableLeakTrackingForThread(format::HandleId object_id, const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_IDXGIDebug1_EnableLeakTrackingForThread(call_info, object_id);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_IDXGIDebug1_DisableLeakTrackingForThread(format::HandleId object_id, const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_IDXGIDebug1_DisableLeakTrackingForThread(call_info, object_id);
+    }
+
+    return bytes_read;
+}
+
+size_t Dx12Decoder::Decode_IDXGIDebug1_IsLeakTrackingEnabledForThread(format::HandleId object_id, const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size)
+{
+    size_t bytes_read = 0;
+
+    BOOL return_value;
+
+    bytes_read += ValueDecoder::DecodeInt32Value((parameter_buffer + bytes_read), (buffer_size - bytes_read), &return_value);
+
+    for (auto consumer : GetConsumers())
+    {
+        consumer->Process_IDXGIDebug1_IsLeakTrackingEnabledForThread(call_info, object_id, return_value);
     }
 
     return bytes_read;

@@ -70,6 +70,22 @@ class D3D12CaptureManager : public ApiCaptureManager
     void InitDxgiDispatchTable(const DxgiDispatchTable& dispatch_table) { dxgi_dispatch_table_ = dispatch_table; }
 
     //----------------------------------------------------------------------------
+    /// \brief Initializes the DXGIDebug dispatch table.
+    ///
+    /// Initializes the CaptureManager's internal DXGIDebug dispatch table with functions
+    /// loaded from the DXGIDebug system DLL.  This dispatch table will be used by the
+    /// 'wrapper' functions to invoke the 'real' DXGIDebug function prior to processing
+    /// the function parameters for encoding.
+    ///
+    /// \param dispatch_table A DxgiDebugDispatchTable object containing the DXGIDebug
+    ///                       function pointers to be used for initialization.
+    //----------------------------------------------------------------------------
+    void InitDxgiDebugDispatchTable(const DxgiDebugDispatchTable& dispatch_table)
+    {
+        dxgi_debug_dispatch_table_ = dispatch_table;
+    }
+
+    //----------------------------------------------------------------------------
     /// \brief Initializes the D3D12 dispatch table.
     ///
     /// Initializes the CaptureManager's internal D3D12 dispatch table with
@@ -77,7 +93,7 @@ class D3D12CaptureManager : public ApiCaptureManager
     /// used by the 'wrapper' functions to invoke the 'real' D3D12 function prior
     /// to processing the function parameters for encoding.
     ///
-    /// \param dispatch_table A D3D12DispatchTable object containing the DXGI
+    /// \param dispatch_table A D3D12DispatchTable object containing the D3D12
     ///                       function pointers to be used for initialization.
     //----------------------------------------------------------------------------
     void InitD3D12DispatchTable(const D3D12DispatchTable& dispatch_table) { d3d12_dispatch_table_ = dispatch_table; }
@@ -105,6 +121,17 @@ class D3D12CaptureManager : public ApiCaptureManager
     ///         retrieved from the system DLL.
     //----------------------------------------------------------------------------
     const DxgiDispatchTable& GetDxgiDispatchTable() const { return dxgi_dispatch_table_; }
+
+    //----------------------------------------------------------------------------
+    /// \brief Retrieves the DXGIDebug dispatch table.
+    ///
+    /// Retrieves the CaptureManager's internal DXGIDebug dispatch table. Intended to be
+    /// used by the 'wrapper' functions when invoking the 'real' DXGIDebug functions.
+    ///
+    /// \return A DxgiDebugDispatchTable object containing DXGIDebug function pointers
+    ///         retrieved from the system DLL.
+    //----------------------------------------------------------------------------
+    const DxgiDebugDispatchTable& GetDxgiDebugDispatchTable() const { return dxgi_debug_dispatch_table_; }
 
     //----------------------------------------------------------------------------
     /// \brief Retrieves the Amd Ags X64 dispatch table.
@@ -958,6 +985,9 @@ class D3D12CaptureManager : public ApiCaptureManager
 
     EnableDREDInfo track_enable_dred_info_; ///< Track EnableDREDInfo since ID3D12DeviceRemovedExtendedDataSettings1
                                             ///< could be released very soon.
+
+    DxgiDebugDispatchTable dxgi_debug_dispatch_table_; ///< DXGIDebug dispatch table for functions retrieved from the
+                                                       ///< DXGIDebug DLL.
 
     std::unique_ptr<Dx12StateTracker> state_tracker_;
 

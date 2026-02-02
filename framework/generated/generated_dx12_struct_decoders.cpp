@@ -4783,6 +4783,63 @@ size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_DXGI_JPEG
     return bytes_read;
 }
 
+size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_DXGI_INFO_QUEUE_MESSAGE* wrapper)
+{
+    assert((wrapper != nullptr) && (wrapper->decoded_value != nullptr));
+
+    size_t bytes_read = 0;
+    DXGI_INFO_QUEUE_MESSAGE* value = wrapper->decoded_value;
+
+    wrapper->Producer = DecodeAllocator::Allocate<Decoded_GUID>();
+    wrapper->Producer->decoded_value = &(value->Producer);
+    bytes_read += DecodeStruct((buffer + bytes_read), (buffer_size - bytes_read), wrapper->Producer);
+    bytes_read += ValueDecoder::DecodeEnumValue((buffer + bytes_read), (buffer_size - bytes_read), &(value->Category));
+    bytes_read += ValueDecoder::DecodeEnumValue((buffer + bytes_read), (buffer_size - bytes_read), &(value->Severity));
+    bytes_read += ValueDecoder::DecodeInt32Value((buffer + bytes_read), (buffer_size - bytes_read), &(value->ID));
+    bytes_read += wrapper->pDescription.Decode((buffer + bytes_read), (buffer_size - bytes_read));
+    value->pDescription = wrapper->pDescription.GetPointer();
+    bytes_read += ValueDecoder::DecodeSizeTValue((buffer + bytes_read), (buffer_size - bytes_read), &(value->DescriptionByteLength));
+
+    return bytes_read;
+}
+
+size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_DXGI_INFO_QUEUE_FILTER_DESC* wrapper)
+{
+    assert((wrapper != nullptr) && (wrapper->decoded_value != nullptr));
+
+    size_t bytes_read = 0;
+    DXGI_INFO_QUEUE_FILTER_DESC* value = wrapper->decoded_value;
+
+    bytes_read += ValueDecoder::DecodeUInt32Value((buffer + bytes_read), (buffer_size - bytes_read), &(value->NumCategories));
+    bytes_read += wrapper->pCategoryList.DecodeEnum((buffer + bytes_read), (buffer_size - bytes_read));
+    value->pCategoryList = wrapper->pCategoryList.GetPointer();
+    bytes_read += ValueDecoder::DecodeUInt32Value((buffer + bytes_read), (buffer_size - bytes_read), &(value->NumSeverities));
+    bytes_read += wrapper->pSeverityList.DecodeEnum((buffer + bytes_read), (buffer_size - bytes_read));
+    value->pSeverityList = wrapper->pSeverityList.GetPointer();
+    bytes_read += ValueDecoder::DecodeUInt32Value((buffer + bytes_read), (buffer_size - bytes_read), &(value->NumIDs));
+    bytes_read += wrapper->pIDList.DecodeInt32((buffer + bytes_read), (buffer_size - bytes_read));
+    value->pIDList = wrapper->pIDList.GetPointer();
+
+    return bytes_read;
+}
+
+size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_DXGI_INFO_QUEUE_FILTER* wrapper)
+{
+    assert((wrapper != nullptr) && (wrapper->decoded_value != nullptr));
+
+    size_t bytes_read = 0;
+    DXGI_INFO_QUEUE_FILTER* value = wrapper->decoded_value;
+
+    wrapper->AllowList = DecodeAllocator::Allocate<Decoded_DXGI_INFO_QUEUE_FILTER_DESC>();
+    wrapper->AllowList->decoded_value = &(value->AllowList);
+    bytes_read += DecodeStruct((buffer + bytes_read), (buffer_size - bytes_read), wrapper->AllowList);
+    wrapper->DenyList = DecodeAllocator::Allocate<Decoded_DXGI_INFO_QUEUE_FILTER_DESC>();
+    wrapper->DenyList->decoded_value = &(value->DenyList);
+    bytes_read += DecodeStruct((buffer + bytes_read), (buffer_size - bytes_read), wrapper->DenyList);
+
+    return bytes_read;
+}
+
 size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_GUID* wrapper)
 {
     assert((wrapper != nullptr) && (wrapper->decoded_value != nullptr));

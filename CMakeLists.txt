@@ -373,7 +373,8 @@ target_compile_definitions(windows_specific INTERFACE
         $<$<BOOL:${BUILD_LAUNCHER_AND_INTERCEPTOR}>:"GFXR_INTERCEPTOR_PATH=\"$<TARGET_FILE:gfxrecon_interceptor>\"">
         $<$<BOOL:${D3D12_SUPPORT}>:"GFXR_D3D12_CAPTURE_PATH=\"$<TARGET_FILE:d3d12_capture>\"">
         $<$<BOOL:${D3D12_SUPPORT}>:"GFXR_D3D12_PATH=\"$<TARGET_FILE:d3d12>\"">
-        $<$<BOOL:${D3D12_SUPPORT}>:"GFXR_DXGI_PATH=\"$<TARGET_FILE:dxgi>\"">)
+        $<$<BOOL:${D3D12_SUPPORT}>:"GFXR_DXGI_PATH=\"$<TARGET_FILE:dxgi>\"">
+        $<$<BOOL:${D3D12_SUPPORT}>:"GFXR_DXGI_DEBUG_PATH=\"$<TARGET_FILE:DXGIDebug>\"">)
 
 
 add_library(linux_specific INTERFACE)

@@ -30,6 +30,7 @@
 #include <dxgi.h>
 #include <dxgi1_3.h>
 #include <dxgi1_6.h>
+#include <dxgidebug.h>
 #include <windows.h>
 
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
@@ -46,10 +47,20 @@ struct DxgiDispatchTable
     decltype(DXGIGetDebugInterface1)*           DXGIGetDebugInterface1{ nullptr };
 };
 
+struct DxgiDebugDispatchTable
+{
+    // Functions processed for capture.  These are the DXGIDebug functions exported by DXGIDebug.dll.
+    // NOTE: There are no typedefs in the DXGIDebug header files for these functions.
+    decltype(DXGIGetDebugInterface)* DXGIGetDebugInterface{ nullptr };
+};
+
 GFXRECON_END_NAMESPACE(encode)
 GFXRECON_END_NAMESPACE(gfxrecon)
 
 typedef bool (*PFN_InitializeDxgiCapture)(gfxrecon::encode::DxgiDispatchTable*);
 typedef void (*PFN_ReleaseDxgiCapture)(gfxrecon::encode::DxgiDispatchTable*);
+
+typedef bool (*PFN_InitializeDxgiDebugCapture)(gfxrecon::encode::DxgiDebugDispatchTable*);
+typedef void (*PFN_ReleaseDxgiDebugCapture)(gfxrecon::encode::DxgiDebugDispatchTable*);
 
 #endif // GFXRECON_ENCODE_DXGI_DISPATCH_TABLE_H

@@ -539,6 +539,9 @@ class Dx12ReplayConsumerBase : public Dx12Consumer
                                Decoded_GUID                 riid,
                                HandlePointerDecoder<void*>* ppFactory);
 
+    HRESULT
+    OverrideDXGIGetDebugInterface(HRESULT original_result, Decoded_GUID riid, HandlePointerDecoder<void*>* debug);
+
     HRESULT OverrideD3D12CreateDevice(HRESULT                      original_result,
                                       DxObjectInfo*                adapter_info,
                                       D3D_FEATURE_LEVEL            minimum_feature_level,

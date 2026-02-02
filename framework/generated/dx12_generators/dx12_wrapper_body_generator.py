@@ -526,6 +526,8 @@ class Dx12WrapperBodyGenerator(Dx12BaseGenerator):
         name = function['name']
         table = 'manager->GetD3D12DispatchTable()' if 'D3D12' in name\
            else 'manager->GetDxgiDispatchTable()'
+        if 'DXGIGetDebugInterface' == name:
+            table = 'manager->GetDxgiDebugDispatchTable()'
         parameters = function['parameters']
 
         expr = indent + '{} {}('.format(return_type, name)

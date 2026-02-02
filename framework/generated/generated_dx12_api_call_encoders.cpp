@@ -11951,6 +11951,766 @@ void EncodeStruct(ParameterEncoder* encoder, const DXGI_JPEG_QUANTIZATION_TABLE&
 
 
 /*
+** This part is generated from dxgidebug.h in Windows SDK: 10.0.26100.0
+**
+*/
+
+void Encode_DXGIGetDebugInterface(
+    HRESULT return_value,
+    REFIID riid,
+    void** ppDebug)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginTrackedApiCallCapture(format::ApiCallId::ApiCall_DXGIGetDebugInterface);
+    if(encoder)
+    {
+        bool omit_output_data = false;
+        if (return_value != S_OK)
+        {
+            omit_output_data = true;
+        }
+        EncodeStruct(encoder, riid);
+        encoder->EncodeObjectPtr(ppDebug, omit_output_data);
+        encoder->EncodeInt32Value(return_value);
+        D3D12CaptureManager::Get()->EndCreateApiCallCapture(return_value, riid, ppDebug);
+    }
+}
+
+void EncodeStruct(ParameterEncoder* encoder, const DXGI_INFO_QUEUE_MESSAGE& value)
+{
+    EncodeStruct(encoder, value.Producer);
+    encoder->EncodeEnumValue(value.Category);
+    encoder->EncodeEnumValue(value.Severity);
+    encoder->EncodeInt32Value(value.ID);
+    encoder->EncodeString(value.pDescription);
+    encoder->EncodeSizeTValue(value.DescriptionByteLength);
+}
+
+void EncodeStruct(ParameterEncoder* encoder, const DXGI_INFO_QUEUE_FILTER_DESC& value)
+{
+    encoder->EncodeUInt32Value(value.NumCategories);
+    encoder->EncodeEnumArray(value.pCategoryList, value.NumCategories);
+    encoder->EncodeUInt32Value(value.NumSeverities);
+    encoder->EncodeEnumArray(value.pSeverityList, value.NumSeverities);
+    encoder->EncodeUInt32Value(value.NumIDs);
+    encoder->EncodeInt32Array(value.pIDList, value.NumIDs);
+}
+
+void EncodeStruct(ParameterEncoder* encoder, const DXGI_INFO_QUEUE_FILTER& value)
+{
+    EncodeStruct(encoder, value.AllowList);
+    EncodeStruct(encoder, value.DenyList);
+}
+
+void Encode_IDXGIInfoQueue_SetMessageCountLimit(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    HRESULT return_value,
+    DXGI_DEBUG_ID Producer,
+    UINT64 MessageCountLimit)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginMethodCallCapture(format::ApiCallId::ApiCall_IDXGIInfoQueue_SetMessageCountLimit, wrapper->GetCaptureId());
+    if(encoder)
+    {
+        bool omit_output_data = false;
+        if (return_value != S_OK)
+        {
+            omit_output_data = true;
+        }
+        EncodeStruct(encoder, Producer);
+        encoder->EncodeUInt64Value(MessageCountLimit);
+        encoder->EncodeInt32Value(return_value);
+        D3D12CaptureManager::Get()->EndMethodCallCapture();
+    }
+}
+
+void Encode_IDXGIInfoQueue_ClearStoredMessages(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    DXGI_DEBUG_ID Producer)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginMethodCallCapture(format::ApiCallId::ApiCall_IDXGIInfoQueue_ClearStoredMessages, wrapper->GetCaptureId());
+    if(encoder)
+    {
+        EncodeStruct(encoder, Producer);
+        D3D12CaptureManager::Get()->EndMethodCallCapture();
+    }
+}
+
+void Encode_IDXGIInfoQueue_GetMessage(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    HRESULT return_value,
+    DXGI_DEBUG_ID Producer,
+    UINT64 MessageIndex,
+    DXGI_INFO_QUEUE_MESSAGE* pMessage,
+    SIZE_T* pMessageByteLength)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginMethodCallCapture(format::ApiCallId::ApiCall_IDXGIInfoQueue_GetMessage, wrapper->GetCaptureId());
+    if(encoder)
+    {
+        bool omit_output_data = false;
+        if (return_value != S_OK)
+        {
+            omit_output_data = true;
+        }
+        EncodeStruct(encoder, Producer);
+        encoder->EncodeUInt64Value(MessageIndex);
+        EncodeStructPtr(encoder, pMessage, omit_output_data);
+        encoder->EncodeSizeTPtr(pMessageByteLength, omit_output_data);
+        encoder->EncodeInt32Value(return_value);
+        D3D12CaptureManager::Get()->EndMethodCallCapture();
+    }
+}
+
+void Encode_IDXGIInfoQueue_GetNumStoredMessagesAllowedByRetrievalFilters(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    UINT64 return_value,
+    DXGI_DEBUG_ID Producer)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginMethodCallCapture(format::ApiCallId::ApiCall_IDXGIInfoQueue_GetNumStoredMessagesAllowedByRetrievalFilters, wrapper->GetCaptureId());
+    if(encoder)
+    {
+        EncodeStruct(encoder, Producer);
+        encoder->EncodeUInt64Value(return_value);
+        D3D12CaptureManager::Get()->EndMethodCallCapture();
+    }
+}
+
+void Encode_IDXGIInfoQueue_GetNumStoredMessages(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    UINT64 return_value,
+    DXGI_DEBUG_ID Producer)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginMethodCallCapture(format::ApiCallId::ApiCall_IDXGIInfoQueue_GetNumStoredMessages, wrapper->GetCaptureId());
+    if(encoder)
+    {
+        EncodeStruct(encoder, Producer);
+        encoder->EncodeUInt64Value(return_value);
+        D3D12CaptureManager::Get()->EndMethodCallCapture();
+    }
+}
+
+void Encode_IDXGIInfoQueue_GetNumMessagesDiscardedByMessageCountLimit(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    UINT64 return_value,
+    DXGI_DEBUG_ID Producer)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginMethodCallCapture(format::ApiCallId::ApiCall_IDXGIInfoQueue_GetNumMessagesDiscardedByMessageCountLimit, wrapper->GetCaptureId());
+    if(encoder)
+    {
+        EncodeStruct(encoder, Producer);
+        encoder->EncodeUInt64Value(return_value);
+        D3D12CaptureManager::Get()->EndMethodCallCapture();
+    }
+}
+
+void Encode_IDXGIInfoQueue_GetMessageCountLimit(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    UINT64 return_value,
+    DXGI_DEBUG_ID Producer)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginMethodCallCapture(format::ApiCallId::ApiCall_IDXGIInfoQueue_GetMessageCountLimit, wrapper->GetCaptureId());
+    if(encoder)
+    {
+        EncodeStruct(encoder, Producer);
+        encoder->EncodeUInt64Value(return_value);
+        D3D12CaptureManager::Get()->EndMethodCallCapture();
+    }
+}
+
+void Encode_IDXGIInfoQueue_GetNumMessagesAllowedByStorageFilter(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    UINT64 return_value,
+    DXGI_DEBUG_ID Producer)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginMethodCallCapture(format::ApiCallId::ApiCall_IDXGIInfoQueue_GetNumMessagesAllowedByStorageFilter, wrapper->GetCaptureId());
+    if(encoder)
+    {
+        EncodeStruct(encoder, Producer);
+        encoder->EncodeUInt64Value(return_value);
+        D3D12CaptureManager::Get()->EndMethodCallCapture();
+    }
+}
+
+void Encode_IDXGIInfoQueue_GetNumMessagesDeniedByStorageFilter(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    UINT64 return_value,
+    DXGI_DEBUG_ID Producer)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginMethodCallCapture(format::ApiCallId::ApiCall_IDXGIInfoQueue_GetNumMessagesDeniedByStorageFilter, wrapper->GetCaptureId());
+    if(encoder)
+    {
+        EncodeStruct(encoder, Producer);
+        encoder->EncodeUInt64Value(return_value);
+        D3D12CaptureManager::Get()->EndMethodCallCapture();
+    }
+}
+
+void Encode_IDXGIInfoQueue_AddStorageFilterEntries(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    HRESULT return_value,
+    DXGI_DEBUG_ID Producer,
+    DXGI_INFO_QUEUE_FILTER* pFilter)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginMethodCallCapture(format::ApiCallId::ApiCall_IDXGIInfoQueue_AddStorageFilterEntries, wrapper->GetCaptureId());
+    if(encoder)
+    {
+        bool omit_output_data = false;
+        if (return_value != S_OK)
+        {
+            omit_output_data = true;
+        }
+        EncodeStruct(encoder, Producer);
+        EncodeStructPtr(encoder, pFilter);
+        encoder->EncodeInt32Value(return_value);
+        D3D12CaptureManager::Get()->EndMethodCallCapture();
+    }
+}
+
+void Encode_IDXGIInfoQueue_GetStorageFilter(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    HRESULT return_value,
+    DXGI_DEBUG_ID Producer,
+    DXGI_INFO_QUEUE_FILTER* pFilter,
+    SIZE_T* pFilterByteLength)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginMethodCallCapture(format::ApiCallId::ApiCall_IDXGIInfoQueue_GetStorageFilter, wrapper->GetCaptureId());
+    if(encoder)
+    {
+        bool omit_output_data = false;
+        if (return_value != S_OK)
+        {
+            omit_output_data = true;
+        }
+        EncodeStruct(encoder, Producer);
+        EncodeStructPtr(encoder, pFilter, omit_output_data);
+        encoder->EncodeSizeTPtr(pFilterByteLength, omit_output_data);
+        encoder->EncodeInt32Value(return_value);
+        D3D12CaptureManager::Get()->EndMethodCallCapture();
+    }
+}
+
+void Encode_IDXGIInfoQueue_ClearStorageFilter(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    DXGI_DEBUG_ID Producer)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginMethodCallCapture(format::ApiCallId::ApiCall_IDXGIInfoQueue_ClearStorageFilter, wrapper->GetCaptureId());
+    if(encoder)
+    {
+        EncodeStruct(encoder, Producer);
+        D3D12CaptureManager::Get()->EndMethodCallCapture();
+    }
+}
+
+void Encode_IDXGIInfoQueue_PushEmptyStorageFilter(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    HRESULT return_value,
+    DXGI_DEBUG_ID Producer)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginMethodCallCapture(format::ApiCallId::ApiCall_IDXGIInfoQueue_PushEmptyStorageFilter, wrapper->GetCaptureId());
+    if(encoder)
+    {
+        bool omit_output_data = false;
+        if (return_value != S_OK)
+        {
+            omit_output_data = true;
+        }
+        EncodeStruct(encoder, Producer);
+        encoder->EncodeInt32Value(return_value);
+        D3D12CaptureManager::Get()->EndMethodCallCapture();
+    }
+}
+
+void Encode_IDXGIInfoQueue_PushDenyAllStorageFilter(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    HRESULT return_value,
+    DXGI_DEBUG_ID Producer)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginMethodCallCapture(format::ApiCallId::ApiCall_IDXGIInfoQueue_PushDenyAllStorageFilter, wrapper->GetCaptureId());
+    if(encoder)
+    {
+        bool omit_output_data = false;
+        if (return_value != S_OK)
+        {
+            omit_output_data = true;
+        }
+        EncodeStruct(encoder, Producer);
+        encoder->EncodeInt32Value(return_value);
+        D3D12CaptureManager::Get()->EndMethodCallCapture();
+    }
+}
+
+void Encode_IDXGIInfoQueue_PushCopyOfStorageFilter(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    HRESULT return_value,
+    DXGI_DEBUG_ID Producer)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginMethodCallCapture(format::ApiCallId::ApiCall_IDXGIInfoQueue_PushCopyOfStorageFilter, wrapper->GetCaptureId());
+    if(encoder)
+    {
+        bool omit_output_data = false;
+        if (return_value != S_OK)
+        {
+            omit_output_data = true;
+        }
+        EncodeStruct(encoder, Producer);
+        encoder->EncodeInt32Value(return_value);
+        D3D12CaptureManager::Get()->EndMethodCallCapture();
+    }
+}
+
+void Encode_IDXGIInfoQueue_PushStorageFilter(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    HRESULT return_value,
+    DXGI_DEBUG_ID Producer,
+    DXGI_INFO_QUEUE_FILTER* pFilter)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginMethodCallCapture(format::ApiCallId::ApiCall_IDXGIInfoQueue_PushStorageFilter, wrapper->GetCaptureId());
+    if(encoder)
+    {
+        bool omit_output_data = false;
+        if (return_value != S_OK)
+        {
+            omit_output_data = true;
+        }
+        EncodeStruct(encoder, Producer);
+        EncodeStructPtr(encoder, pFilter);
+        encoder->EncodeInt32Value(return_value);
+        D3D12CaptureManager::Get()->EndMethodCallCapture();
+    }
+}
+
+void Encode_IDXGIInfoQueue_PopStorageFilter(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    DXGI_DEBUG_ID Producer)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginMethodCallCapture(format::ApiCallId::ApiCall_IDXGIInfoQueue_PopStorageFilter, wrapper->GetCaptureId());
+    if(encoder)
+    {
+        EncodeStruct(encoder, Producer);
+        D3D12CaptureManager::Get()->EndMethodCallCapture();
+    }
+}
+
+void Encode_IDXGIInfoQueue_GetStorageFilterStackSize(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    UINT return_value,
+    DXGI_DEBUG_ID Producer)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginMethodCallCapture(format::ApiCallId::ApiCall_IDXGIInfoQueue_GetStorageFilterStackSize, wrapper->GetCaptureId());
+    if(encoder)
+    {
+        EncodeStruct(encoder, Producer);
+        encoder->EncodeUInt32Value(return_value);
+        D3D12CaptureManager::Get()->EndMethodCallCapture();
+    }
+}
+
+void Encode_IDXGIInfoQueue_AddRetrievalFilterEntries(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    HRESULT return_value,
+    DXGI_DEBUG_ID Producer,
+    DXGI_INFO_QUEUE_FILTER* pFilter)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginMethodCallCapture(format::ApiCallId::ApiCall_IDXGIInfoQueue_AddRetrievalFilterEntries, wrapper->GetCaptureId());
+    if(encoder)
+    {
+        bool omit_output_data = false;
+        if (return_value != S_OK)
+        {
+            omit_output_data = true;
+        }
+        EncodeStruct(encoder, Producer);
+        EncodeStructPtr(encoder, pFilter);
+        encoder->EncodeInt32Value(return_value);
+        D3D12CaptureManager::Get()->EndMethodCallCapture();
+    }
+}
+
+void Encode_IDXGIInfoQueue_GetRetrievalFilter(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    HRESULT return_value,
+    DXGI_DEBUG_ID Producer,
+    DXGI_INFO_QUEUE_FILTER* pFilter,
+    SIZE_T* pFilterByteLength)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginMethodCallCapture(format::ApiCallId::ApiCall_IDXGIInfoQueue_GetRetrievalFilter, wrapper->GetCaptureId());
+    if(encoder)
+    {
+        bool omit_output_data = false;
+        if (return_value != S_OK)
+        {
+            omit_output_data = true;
+        }
+        EncodeStruct(encoder, Producer);
+        EncodeStructPtr(encoder, pFilter, omit_output_data);
+        encoder->EncodeSizeTPtr(pFilterByteLength, omit_output_data);
+        encoder->EncodeInt32Value(return_value);
+        D3D12CaptureManager::Get()->EndMethodCallCapture();
+    }
+}
+
+void Encode_IDXGIInfoQueue_ClearRetrievalFilter(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    DXGI_DEBUG_ID Producer)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginMethodCallCapture(format::ApiCallId::ApiCall_IDXGIInfoQueue_ClearRetrievalFilter, wrapper->GetCaptureId());
+    if(encoder)
+    {
+        EncodeStruct(encoder, Producer);
+        D3D12CaptureManager::Get()->EndMethodCallCapture();
+    }
+}
+
+void Encode_IDXGIInfoQueue_PushEmptyRetrievalFilter(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    HRESULT return_value,
+    DXGI_DEBUG_ID Producer)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginMethodCallCapture(format::ApiCallId::ApiCall_IDXGIInfoQueue_PushEmptyRetrievalFilter, wrapper->GetCaptureId());
+    if(encoder)
+    {
+        bool omit_output_data = false;
+        if (return_value != S_OK)
+        {
+            omit_output_data = true;
+        }
+        EncodeStruct(encoder, Producer);
+        encoder->EncodeInt32Value(return_value);
+        D3D12CaptureManager::Get()->EndMethodCallCapture();
+    }
+}
+
+void Encode_IDXGIInfoQueue_PushDenyAllRetrievalFilter(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    HRESULT return_value,
+    DXGI_DEBUG_ID Producer)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginMethodCallCapture(format::ApiCallId::ApiCall_IDXGIInfoQueue_PushDenyAllRetrievalFilter, wrapper->GetCaptureId());
+    if(encoder)
+    {
+        bool omit_output_data = false;
+        if (return_value != S_OK)
+        {
+            omit_output_data = true;
+        }
+        EncodeStruct(encoder, Producer);
+        encoder->EncodeInt32Value(return_value);
+        D3D12CaptureManager::Get()->EndMethodCallCapture();
+    }
+}
+
+void Encode_IDXGIInfoQueue_PushCopyOfRetrievalFilter(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    HRESULT return_value,
+    DXGI_DEBUG_ID Producer)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginMethodCallCapture(format::ApiCallId::ApiCall_IDXGIInfoQueue_PushCopyOfRetrievalFilter, wrapper->GetCaptureId());
+    if(encoder)
+    {
+        bool omit_output_data = false;
+        if (return_value != S_OK)
+        {
+            omit_output_data = true;
+        }
+        EncodeStruct(encoder, Producer);
+        encoder->EncodeInt32Value(return_value);
+        D3D12CaptureManager::Get()->EndMethodCallCapture();
+    }
+}
+
+void Encode_IDXGIInfoQueue_PushRetrievalFilter(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    HRESULT return_value,
+    DXGI_DEBUG_ID Producer,
+    DXGI_INFO_QUEUE_FILTER* pFilter)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginMethodCallCapture(format::ApiCallId::ApiCall_IDXGIInfoQueue_PushRetrievalFilter, wrapper->GetCaptureId());
+    if(encoder)
+    {
+        bool omit_output_data = false;
+        if (return_value != S_OK)
+        {
+            omit_output_data = true;
+        }
+        EncodeStruct(encoder, Producer);
+        EncodeStructPtr(encoder, pFilter);
+        encoder->EncodeInt32Value(return_value);
+        D3D12CaptureManager::Get()->EndMethodCallCapture();
+    }
+}
+
+void Encode_IDXGIInfoQueue_PopRetrievalFilter(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    DXGI_DEBUG_ID Producer)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginMethodCallCapture(format::ApiCallId::ApiCall_IDXGIInfoQueue_PopRetrievalFilter, wrapper->GetCaptureId());
+    if(encoder)
+    {
+        EncodeStruct(encoder, Producer);
+        D3D12CaptureManager::Get()->EndMethodCallCapture();
+    }
+}
+
+void Encode_IDXGIInfoQueue_GetRetrievalFilterStackSize(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    UINT return_value,
+    DXGI_DEBUG_ID Producer)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginMethodCallCapture(format::ApiCallId::ApiCall_IDXGIInfoQueue_GetRetrievalFilterStackSize, wrapper->GetCaptureId());
+    if(encoder)
+    {
+        EncodeStruct(encoder, Producer);
+        encoder->EncodeUInt32Value(return_value);
+        D3D12CaptureManager::Get()->EndMethodCallCapture();
+    }
+}
+
+void Encode_IDXGIInfoQueue_AddMessage(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    HRESULT return_value,
+    DXGI_DEBUG_ID Producer,
+    DXGI_INFO_QUEUE_MESSAGE_CATEGORY Category,
+    DXGI_INFO_QUEUE_MESSAGE_SEVERITY Severity,
+    DXGI_INFO_QUEUE_MESSAGE_ID ID,
+    LPCSTR pDescription)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginMethodCallCapture(format::ApiCallId::ApiCall_IDXGIInfoQueue_AddMessage, wrapper->GetCaptureId());
+    if(encoder)
+    {
+        bool omit_output_data = false;
+        if (return_value != S_OK)
+        {
+            omit_output_data = true;
+        }
+        EncodeStruct(encoder, Producer);
+        encoder->EncodeEnumValue(Category);
+        encoder->EncodeEnumValue(Severity);
+        encoder->EncodeInt32Value(ID);
+        encoder->EncodeString(pDescription);
+        encoder->EncodeInt32Value(return_value);
+        D3D12CaptureManager::Get()->EndMethodCallCapture();
+    }
+}
+
+void Encode_IDXGIInfoQueue_AddApplicationMessage(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    HRESULT return_value,
+    DXGI_INFO_QUEUE_MESSAGE_SEVERITY Severity,
+    LPCSTR pDescription)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginMethodCallCapture(format::ApiCallId::ApiCall_IDXGIInfoQueue_AddApplicationMessage, wrapper->GetCaptureId());
+    if(encoder)
+    {
+        bool omit_output_data = false;
+        if (return_value != S_OK)
+        {
+            omit_output_data = true;
+        }
+        encoder->EncodeEnumValue(Severity);
+        encoder->EncodeString(pDescription);
+        encoder->EncodeInt32Value(return_value);
+        D3D12CaptureManager::Get()->EndMethodCallCapture();
+    }
+}
+
+void Encode_IDXGIInfoQueue_SetBreakOnCategory(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    HRESULT return_value,
+    DXGI_DEBUG_ID Producer,
+    DXGI_INFO_QUEUE_MESSAGE_CATEGORY Category,
+    BOOL bEnable)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginMethodCallCapture(format::ApiCallId::ApiCall_IDXGIInfoQueue_SetBreakOnCategory, wrapper->GetCaptureId());
+    if(encoder)
+    {
+        bool omit_output_data = false;
+        if (return_value != S_OK)
+        {
+            omit_output_data = true;
+        }
+        EncodeStruct(encoder, Producer);
+        encoder->EncodeEnumValue(Category);
+        encoder->EncodeInt32Value(bEnable);
+        encoder->EncodeInt32Value(return_value);
+        D3D12CaptureManager::Get()->EndMethodCallCapture();
+    }
+}
+
+void Encode_IDXGIInfoQueue_SetBreakOnSeverity(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    HRESULT return_value,
+    DXGI_DEBUG_ID Producer,
+    DXGI_INFO_QUEUE_MESSAGE_SEVERITY Severity,
+    BOOL bEnable)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginMethodCallCapture(format::ApiCallId::ApiCall_IDXGIInfoQueue_SetBreakOnSeverity, wrapper->GetCaptureId());
+    if(encoder)
+    {
+        bool omit_output_data = false;
+        if (return_value != S_OK)
+        {
+            omit_output_data = true;
+        }
+        EncodeStruct(encoder, Producer);
+        encoder->EncodeEnumValue(Severity);
+        encoder->EncodeInt32Value(bEnable);
+        encoder->EncodeInt32Value(return_value);
+        D3D12CaptureManager::Get()->EndMethodCallCapture();
+    }
+}
+
+void Encode_IDXGIInfoQueue_SetBreakOnID(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    HRESULT return_value,
+    DXGI_DEBUG_ID Producer,
+    DXGI_INFO_QUEUE_MESSAGE_ID ID,
+    BOOL bEnable)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginMethodCallCapture(format::ApiCallId::ApiCall_IDXGIInfoQueue_SetBreakOnID, wrapper->GetCaptureId());
+    if(encoder)
+    {
+        bool omit_output_data = false;
+        if (return_value != S_OK)
+        {
+            omit_output_data = true;
+        }
+        EncodeStruct(encoder, Producer);
+        encoder->EncodeInt32Value(ID);
+        encoder->EncodeInt32Value(bEnable);
+        encoder->EncodeInt32Value(return_value);
+        D3D12CaptureManager::Get()->EndMethodCallCapture();
+    }
+}
+
+void Encode_IDXGIInfoQueue_GetBreakOnCategory(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    BOOL return_value,
+    DXGI_DEBUG_ID Producer,
+    DXGI_INFO_QUEUE_MESSAGE_CATEGORY Category)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginMethodCallCapture(format::ApiCallId::ApiCall_IDXGIInfoQueue_GetBreakOnCategory, wrapper->GetCaptureId());
+    if(encoder)
+    {
+        EncodeStruct(encoder, Producer);
+        encoder->EncodeEnumValue(Category);
+        encoder->EncodeInt32Value(return_value);
+        D3D12CaptureManager::Get()->EndMethodCallCapture();
+    }
+}
+
+void Encode_IDXGIInfoQueue_GetBreakOnSeverity(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    BOOL return_value,
+    DXGI_DEBUG_ID Producer,
+    DXGI_INFO_QUEUE_MESSAGE_SEVERITY Severity)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginMethodCallCapture(format::ApiCallId::ApiCall_IDXGIInfoQueue_GetBreakOnSeverity, wrapper->GetCaptureId());
+    if(encoder)
+    {
+        EncodeStruct(encoder, Producer);
+        encoder->EncodeEnumValue(Severity);
+        encoder->EncodeInt32Value(return_value);
+        D3D12CaptureManager::Get()->EndMethodCallCapture();
+    }
+}
+
+void Encode_IDXGIInfoQueue_GetBreakOnID(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    BOOL return_value,
+    DXGI_DEBUG_ID Producer,
+    DXGI_INFO_QUEUE_MESSAGE_ID ID)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginMethodCallCapture(format::ApiCallId::ApiCall_IDXGIInfoQueue_GetBreakOnID, wrapper->GetCaptureId());
+    if(encoder)
+    {
+        EncodeStruct(encoder, Producer);
+        encoder->EncodeInt32Value(ID);
+        encoder->EncodeInt32Value(return_value);
+        D3D12CaptureManager::Get()->EndMethodCallCapture();
+    }
+}
+
+void Encode_IDXGIInfoQueue_SetMuteDebugOutput(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    DXGI_DEBUG_ID Producer,
+    BOOL bMute)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginMethodCallCapture(format::ApiCallId::ApiCall_IDXGIInfoQueue_SetMuteDebugOutput, wrapper->GetCaptureId());
+    if(encoder)
+    {
+        EncodeStruct(encoder, Producer);
+        encoder->EncodeInt32Value(bMute);
+        D3D12CaptureManager::Get()->EndMethodCallCapture();
+    }
+}
+
+void Encode_IDXGIInfoQueue_GetMuteDebugOutput(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    BOOL return_value,
+    DXGI_DEBUG_ID Producer)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginMethodCallCapture(format::ApiCallId::ApiCall_IDXGIInfoQueue_GetMuteDebugOutput, wrapper->GetCaptureId());
+    if(encoder)
+    {
+        EncodeStruct(encoder, Producer);
+        encoder->EncodeInt32Value(return_value);
+        D3D12CaptureManager::Get()->EndMethodCallCapture();
+    }
+}
+
+void Encode_IDXGIDebug_ReportLiveObjects(
+    IDXGIDebug_Wrapper* wrapper,
+    HRESULT return_value,
+    GUID apiid,
+    DXGI_DEBUG_RLO_FLAGS flags)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginMethodCallCapture(format::ApiCallId::ApiCall_IDXGIDebug_ReportLiveObjects, wrapper->GetCaptureId());
+    if(encoder)
+    {
+        bool omit_output_data = false;
+        if (return_value != S_OK)
+        {
+            omit_output_data = true;
+        }
+        EncodeStruct(encoder, apiid);
+        encoder->EncodeEnumValue(flags);
+        encoder->EncodeInt32Value(return_value);
+        D3D12CaptureManager::Get()->EndMethodCallCapture();
+    }
+}
+
+void Encode_IDXGIDebug1_EnableLeakTrackingForThread(
+    IDXGIDebug1_Wrapper* wrapper)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginMethodCallCapture(format::ApiCallId::ApiCall_IDXGIDebug1_EnableLeakTrackingForThread, wrapper->GetCaptureId());
+    if(encoder)
+    {
+        D3D12CaptureManager::Get()->EndMethodCallCapture();
+    }
+}
+
+void Encode_IDXGIDebug1_DisableLeakTrackingForThread(
+    IDXGIDebug1_Wrapper* wrapper)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginMethodCallCapture(format::ApiCallId::ApiCall_IDXGIDebug1_DisableLeakTrackingForThread, wrapper->GetCaptureId());
+    if(encoder)
+    {
+        D3D12CaptureManager::Get()->EndMethodCallCapture();
+    }
+}
+
+void Encode_IDXGIDebug1_IsLeakTrackingEnabledForThread(
+    IDXGIDebug1_Wrapper* wrapper,
+    BOOL return_value)
+{
+    auto encoder = D3D12CaptureManager::Get()->BeginMethodCallCapture(format::ApiCallId::ApiCall_IDXGIDebug1_IsLeakTrackingEnabledForThread, wrapper->GetCaptureId());
+    if(encoder)
+    {
+        encoder->EncodeInt32Value(return_value);
+        D3D12CaptureManager::Get()->EndMethodCallCapture();
+    }
+}
+
+
+/*
 ** This part is generated from Unknwnbase.h in Windows SDK: 10.0.26100.0
 **
 */

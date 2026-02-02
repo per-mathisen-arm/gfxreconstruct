@@ -3608,6 +3608,279 @@ class Dx12JsonConsumer : public Dx12JsonConsumerBase
         DWORD dwCookie) override;
 
 /*
+** This part is generated from dxgidebug.h in Windows SDK: 10.0.26100.0
+**
+*/
+    virtual void Process_DXGIGetDebugInterface(
+        const ApiCallInfo& call_info,
+        HRESULT return_value,
+        Decoded_GUID riid,
+        HandlePointerDecoder<void*>* ppDebug) override;
+
+    virtual void Process_IDXGIInfoQueue_SetMessageCountLimit(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        HRESULT return_value,
+        Decoded_GUID Producer,
+        UINT64 MessageCountLimit) override;
+
+    virtual void Process_IDXGIInfoQueue_ClearStoredMessages(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        Decoded_GUID Producer) override;
+
+    virtual void Process_IDXGIInfoQueue_GetMessage(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        HRESULT return_value,
+        Decoded_GUID Producer,
+        UINT64 MessageIndex,
+        StructPointerDecoder<Decoded_DXGI_INFO_QUEUE_MESSAGE>* pMessage,
+        PointerDecoder<SIZE_T>* pMessageByteLength) override;
+
+    virtual void Process_IDXGIInfoQueue_GetNumStoredMessagesAllowedByRetrievalFilters(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        UINT64 return_value,
+        Decoded_GUID Producer) override;
+
+    virtual void Process_IDXGIInfoQueue_GetNumStoredMessages(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        UINT64 return_value,
+        Decoded_GUID Producer) override;
+
+    virtual void Process_IDXGIInfoQueue_GetNumMessagesDiscardedByMessageCountLimit(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        UINT64 return_value,
+        Decoded_GUID Producer) override;
+
+    virtual void Process_IDXGIInfoQueue_GetMessageCountLimit(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        UINT64 return_value,
+        Decoded_GUID Producer) override;
+
+    virtual void Process_IDXGIInfoQueue_GetNumMessagesAllowedByStorageFilter(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        UINT64 return_value,
+        Decoded_GUID Producer) override;
+
+    virtual void Process_IDXGIInfoQueue_GetNumMessagesDeniedByStorageFilter(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        UINT64 return_value,
+        Decoded_GUID Producer) override;
+
+    virtual void Process_IDXGIInfoQueue_AddStorageFilterEntries(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        HRESULT return_value,
+        Decoded_GUID Producer,
+        StructPointerDecoder<Decoded_DXGI_INFO_QUEUE_FILTER>* pFilter) override;
+
+    virtual void Process_IDXGIInfoQueue_GetStorageFilter(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        HRESULT return_value,
+        Decoded_GUID Producer,
+        StructPointerDecoder<Decoded_DXGI_INFO_QUEUE_FILTER>* pFilter,
+        PointerDecoder<SIZE_T>* pFilterByteLength) override;
+
+    virtual void Process_IDXGIInfoQueue_ClearStorageFilter(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        Decoded_GUID Producer) override;
+
+    virtual void Process_IDXGIInfoQueue_PushEmptyStorageFilter(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        HRESULT return_value,
+        Decoded_GUID Producer) override;
+
+    virtual void Process_IDXGIInfoQueue_PushDenyAllStorageFilter(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        HRESULT return_value,
+        Decoded_GUID Producer) override;
+
+    virtual void Process_IDXGIInfoQueue_PushCopyOfStorageFilter(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        HRESULT return_value,
+        Decoded_GUID Producer) override;
+
+    virtual void Process_IDXGIInfoQueue_PushStorageFilter(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        HRESULT return_value,
+        Decoded_GUID Producer,
+        StructPointerDecoder<Decoded_DXGI_INFO_QUEUE_FILTER>* pFilter) override;
+
+    virtual void Process_IDXGIInfoQueue_PopStorageFilter(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        Decoded_GUID Producer) override;
+
+    virtual void Process_IDXGIInfoQueue_GetStorageFilterStackSize(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        UINT return_value,
+        Decoded_GUID Producer) override;
+
+    virtual void Process_IDXGIInfoQueue_AddRetrievalFilterEntries(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        HRESULT return_value,
+        Decoded_GUID Producer,
+        StructPointerDecoder<Decoded_DXGI_INFO_QUEUE_FILTER>* pFilter) override;
+
+    virtual void Process_IDXGIInfoQueue_GetRetrievalFilter(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        HRESULT return_value,
+        Decoded_GUID Producer,
+        StructPointerDecoder<Decoded_DXGI_INFO_QUEUE_FILTER>* pFilter,
+        PointerDecoder<SIZE_T>* pFilterByteLength) override;
+
+    virtual void Process_IDXGIInfoQueue_ClearRetrievalFilter(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        Decoded_GUID Producer) override;
+
+    virtual void Process_IDXGIInfoQueue_PushEmptyRetrievalFilter(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        HRESULT return_value,
+        Decoded_GUID Producer) override;
+
+    virtual void Process_IDXGIInfoQueue_PushDenyAllRetrievalFilter(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        HRESULT return_value,
+        Decoded_GUID Producer) override;
+
+    virtual void Process_IDXGIInfoQueue_PushCopyOfRetrievalFilter(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        HRESULT return_value,
+        Decoded_GUID Producer) override;
+
+    virtual void Process_IDXGIInfoQueue_PushRetrievalFilter(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        HRESULT return_value,
+        Decoded_GUID Producer,
+        StructPointerDecoder<Decoded_DXGI_INFO_QUEUE_FILTER>* pFilter) override;
+
+    virtual void Process_IDXGIInfoQueue_PopRetrievalFilter(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        Decoded_GUID Producer) override;
+
+    virtual void Process_IDXGIInfoQueue_GetRetrievalFilterStackSize(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        UINT return_value,
+        Decoded_GUID Producer) override;
+
+    virtual void Process_IDXGIInfoQueue_AddMessage(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        HRESULT return_value,
+        Decoded_GUID Producer,
+        DXGI_INFO_QUEUE_MESSAGE_CATEGORY Category,
+        DXGI_INFO_QUEUE_MESSAGE_SEVERITY Severity,
+        int ID,
+        StringDecoder* pDescription) override;
+
+    virtual void Process_IDXGIInfoQueue_AddApplicationMessage(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        HRESULT return_value,
+        DXGI_INFO_QUEUE_MESSAGE_SEVERITY Severity,
+        StringDecoder* pDescription) override;
+
+    virtual void Process_IDXGIInfoQueue_SetBreakOnCategory(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        HRESULT return_value,
+        Decoded_GUID Producer,
+        DXGI_INFO_QUEUE_MESSAGE_CATEGORY Category,
+        BOOL bEnable) override;
+
+    virtual void Process_IDXGIInfoQueue_SetBreakOnSeverity(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        HRESULT return_value,
+        Decoded_GUID Producer,
+        DXGI_INFO_QUEUE_MESSAGE_SEVERITY Severity,
+        BOOL bEnable) override;
+
+    virtual void Process_IDXGIInfoQueue_SetBreakOnID(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        HRESULT return_value,
+        Decoded_GUID Producer,
+        int ID,
+        BOOL bEnable) override;
+
+    virtual void Process_IDXGIInfoQueue_GetBreakOnCategory(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        BOOL return_value,
+        Decoded_GUID Producer,
+        DXGI_INFO_QUEUE_MESSAGE_CATEGORY Category) override;
+
+    virtual void Process_IDXGIInfoQueue_GetBreakOnSeverity(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        BOOL return_value,
+        Decoded_GUID Producer,
+        DXGI_INFO_QUEUE_MESSAGE_SEVERITY Severity) override;
+
+    virtual void Process_IDXGIInfoQueue_GetBreakOnID(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        BOOL return_value,
+        Decoded_GUID Producer,
+        int ID) override;
+
+    virtual void Process_IDXGIInfoQueue_SetMuteDebugOutput(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        Decoded_GUID Producer,
+        BOOL bMute) override;
+
+    virtual void Process_IDXGIInfoQueue_GetMuteDebugOutput(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        BOOL return_value,
+        Decoded_GUID Producer) override;
+
+    virtual void Process_IDXGIDebug_ReportLiveObjects(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        HRESULT return_value,
+        Decoded_GUID apiid,
+        DXGI_DEBUG_RLO_FLAGS flags) override;
+
+    virtual void Process_IDXGIDebug1_EnableLeakTrackingForThread(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id) override;
+
+    virtual void Process_IDXGIDebug1_DisableLeakTrackingForThread(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id) override;
+
+    virtual void Process_IDXGIDebug1_IsLeakTrackingEnabledForThread(
+        const ApiCallInfo& call_info,
+        format::HandleId object_id,
+        BOOL return_value) override;
+
+/*
 ** This part is generated from Unknwnbase.h in Windows SDK: 10.0.26100.0
 **
 */

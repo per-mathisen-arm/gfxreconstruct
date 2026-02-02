@@ -4863,6 +4863,55 @@ std::string ToString(const DXGI_MODE_ROTATION value)
     return ret;
 }
 
+std::string ToString(const DXGI_DEBUG_RLO_FLAGS value)
+{
+    const char* ret = "Unhandled DXGI_DEBUG_RLO_FLAGS";
+    switch (value) {
+        case DXGI_DEBUG_RLO_SUMMARY: ret = "DXGI_DEBUG_RLO_SUMMARY"; break;
+        case DXGI_DEBUG_RLO_DETAIL: ret = "DXGI_DEBUG_RLO_DETAIL"; break;
+        case DXGI_DEBUG_RLO_IGNORE_INTERNAL: ret = "DXGI_DEBUG_RLO_IGNORE_INTERNAL"; break;
+        case DXGI_DEBUG_RLO_ALL: ret = "DXGI_DEBUG_RLO_ALL"; break;
+    }
+    return ret;
+}
+
+std::string ToString_DXGI_DEBUG_RLO_FLAGS(const uint32_t flags)
+{
+    return BitmaskToString<DXGI_DEBUG_RLO_FLAGS>(flags);
+}
+
+std::string ToString(const DXGI_INFO_QUEUE_MESSAGE_CATEGORY value)
+{
+    const char* ret = "Unhandled DXGI_INFO_QUEUE_MESSAGE_CATEGORY";
+    switch (value) {
+        case DXGI_INFO_QUEUE_MESSAGE_CATEGORY_UNKNOWN: ret = "DXGI_INFO_QUEUE_MESSAGE_CATEGORY_UNKNOWN"; break;
+        case DXGI_INFO_QUEUE_MESSAGE_CATEGORY_MISCELLANEOUS: ret = "DXGI_INFO_QUEUE_MESSAGE_CATEGORY_MISCELLANEOUS"; break;
+        case DXGI_INFO_QUEUE_MESSAGE_CATEGORY_INITIALIZATION: ret = "DXGI_INFO_QUEUE_MESSAGE_CATEGORY_INITIALIZATION"; break;
+        case DXGI_INFO_QUEUE_MESSAGE_CATEGORY_CLEANUP: ret = "DXGI_INFO_QUEUE_MESSAGE_CATEGORY_CLEANUP"; break;
+        case DXGI_INFO_QUEUE_MESSAGE_CATEGORY_COMPILATION: ret = "DXGI_INFO_QUEUE_MESSAGE_CATEGORY_COMPILATION"; break;
+        case DXGI_INFO_QUEUE_MESSAGE_CATEGORY_STATE_CREATION: ret = "DXGI_INFO_QUEUE_MESSAGE_CATEGORY_STATE_CREATION"; break;
+        case DXGI_INFO_QUEUE_MESSAGE_CATEGORY_STATE_SETTING: ret = "DXGI_INFO_QUEUE_MESSAGE_CATEGORY_STATE_SETTING"; break;
+        case DXGI_INFO_QUEUE_MESSAGE_CATEGORY_STATE_GETTING: ret = "DXGI_INFO_QUEUE_MESSAGE_CATEGORY_STATE_GETTING"; break;
+        case DXGI_INFO_QUEUE_MESSAGE_CATEGORY_RESOURCE_MANIPULATION: ret = "DXGI_INFO_QUEUE_MESSAGE_CATEGORY_RESOURCE_MANIPULATION"; break;
+        case DXGI_INFO_QUEUE_MESSAGE_CATEGORY_EXECUTION: ret = "DXGI_INFO_QUEUE_MESSAGE_CATEGORY_EXECUTION"; break;
+        case DXGI_INFO_QUEUE_MESSAGE_CATEGORY_SHADER: ret = "DXGI_INFO_QUEUE_MESSAGE_CATEGORY_SHADER"; break;
+    }
+    return ret;
+}
+
+std::string ToString(const DXGI_INFO_QUEUE_MESSAGE_SEVERITY value)
+{
+    const char* ret = "Unhandled DXGI_INFO_QUEUE_MESSAGE_SEVERITY";
+    switch (value) {
+        case DXGI_INFO_QUEUE_MESSAGE_SEVERITY_CORRUPTION: ret = "DXGI_INFO_QUEUE_MESSAGE_SEVERITY_CORRUPTION"; break;
+        case DXGI_INFO_QUEUE_MESSAGE_SEVERITY_ERROR: ret = "DXGI_INFO_QUEUE_MESSAGE_SEVERITY_ERROR"; break;
+        case DXGI_INFO_QUEUE_MESSAGE_SEVERITY_WARNING: ret = "DXGI_INFO_QUEUE_MESSAGE_SEVERITY_WARNING"; break;
+        case DXGI_INFO_QUEUE_MESSAGE_SEVERITY_INFO: ret = "DXGI_INFO_QUEUE_MESSAGE_SEVERITY_INFO"; break;
+        case DXGI_INFO_QUEUE_MESSAGE_SEVERITY_MESSAGE: ret = "DXGI_INFO_QUEUE_MESSAGE_SEVERITY_MESSAGE"; break;
+    }
+    return ret;
+}
+
 std::string ToString(const IID& iid)
 {
     if (iid == D3D12_PROTECTED_RESOURCES_SESSION_HARDWARE_PROTECTED) return "D3D12_PROTECTED_RESOURCES_SESSION_HARDWARE_PROTECTED";
@@ -5024,6 +5073,13 @@ std::string ToString(const IID& iid)
     if (iid == IID_IDXGIOutput6) return "IID_IDXGIOutput6";
     if (iid == IID_IDXGIFactory6) return "IID_IDXGIFactory6";
     if (iid == IID_IDXGIFactory7) return "IID_IDXGIFactory7";
+    if (iid == DXGI_DEBUG_ALL) return "DXGI_DEBUG_ALL";
+    if (iid == DXGI_DEBUG_DX) return "DXGI_DEBUG_DX";
+    if (iid == DXGI_DEBUG_DXGI) return "DXGI_DEBUG_DXGI";
+    if (iid == DXGI_DEBUG_APP) return "DXGI_DEBUG_APP";
+    if (iid == IID_IDXGIInfoQueue) return "IID_IDXGIInfoQueue";
+    if (iid == IID_IDXGIDebug) return "IID_IDXGIDebug";
+    if (iid == IID_IDXGIDebug1) return "IID_IDXGIDebug1";
     if (iid == IID_IUnknown) return "IID_IUnknown";
     return GUIDToString(iid);
 }

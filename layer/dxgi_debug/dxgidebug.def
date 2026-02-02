@@ -1,0 +1,4 @@
+LIBRARY dxgidebug
+EXPORTS
+DXGI_SDK_MESSAGE=dxgidebug_ms.DXGI_SDK_MESSAGE @1
+DXGIGetDebugInterface=gfxrecon_DXGIGetDebugInterface @2

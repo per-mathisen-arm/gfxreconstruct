@@ -255,6 +255,10 @@ class Dx12BaseGenerator():
         'ID3D12InfoQueue_GetMessage': ['pMessage'],
         'ID3D12InfoQueue_GetStorageFilter': ['pFilter'],
         'ID3D12InfoQueue_GetRetrievalFilter': ['pFilter'],
+        'DXGI_INFO_QUEUE_MESSAGE': ['pDescription'],
+        'IDXGIInfoQueue_GetMessage': ['pMessage'],
+        'IDXGIInfoQueue_GetStorageFilter': ['pFilter'],
+        'IDXGIInfoQueue_GetRetrievalFilter': ['pFilter'],
     }
 
     # convert base type into the encode function name
@@ -307,7 +311,9 @@ class Dx12BaseGenerator():
         'D3D12CreateRootSignatureDeserializer':
         ['ppRootSignatureDeserializer'],
         'D3D12CreateVersionedRootSignatureDeserializer':
-        ['ppRootSignatureDeserializer']
+        ['ppRootSignatureDeserializer'],
+        'DXGIGetDebugInterface':
+        ['ppDebug']
     }
 
     # Those classes inherit from IUnknow
@@ -534,11 +540,12 @@ class Dx12BaseGenerator():
             # On successfully generating output, move the temporary file to the
             # target file.
             if self.genOpts.filename is not None:
+                filename = str(self.genOpts.filename).strip()
                 directory = Path(self.genOpts.directory)
                 if sys.platform == 'win32':
                     if not Path.exists(directory):
                         os.makedirs(directory)
-                shutil.copy(self.outFile.name, directory / self.genOpts.filename)
+                shutil.copy(self.outFile.name, directory / filename)
                 os.remove(self.outFile.name)
         self.genOpts = None
 
@@ -742,7 +749,7 @@ class Dx12BaseGenerator():
 
                     param = full_type[index_parentheses1
                                       + 2:index_parentheses2]
-                    if param[0] != '_':
+                    if param and param[0] != '_':
                         param_list = param.split(', ')
                         array_length = param_list[0]
                         if (
@@ -1629,6 +1636,8 @@ class Dx12BaseGenerator():
     def is_output(self, value):
         if (value.full_type.find('_Out') !=
             -1) or (value.full_type.find('_Inout') != -1):
+            return True
+        if value.name == 'ppDebug':
             return True
         return False
 

@@ -35,7 +35,7 @@ SAL_TOKENS = [
     '_Out_writes_bytes_', '_Out_writes_bytes_opt_', '_Out_writes_bytes_to_',
     '_Out_writes_opt_', '_Out_writes_to_opt_',
     '_Outptr_opt_result_bytebuffer_', '_Field_size_', '_In_opt_count_',
-    '_In_count_'
+    '_In_count_', '__RPC_FAR', '_opt', '_Inexpressible_'
 ]
 
 original_warning_print = CppHeaderParser.warning_print

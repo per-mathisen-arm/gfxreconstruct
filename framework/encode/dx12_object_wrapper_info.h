@@ -269,6 +269,12 @@ struct IDXGIOutputInfo : public DxgiWrapperInfo
 struct IDXGIFactoryInfo : public DxgiWrapperInfo
 {};
 
+struct IDXGIInfoQueueInfo : public DxgiWrapperInfo
+{};
+
+struct IDXGIDebugInfo : public DxgiWrapperInfo
+{};
+
 struct ID3D12RootSignatureInfo : public DxWrapperInfo
 {
     std::vector<uint8_t> blob_value;

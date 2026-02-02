@@ -44,6 +44,7 @@
 #include <dxgi1_6.h>
 #include <dxgicommon.h>
 #include <dxgitype.h>
+#include <dxgidebug.h>
 #include <Unknwnbase.h>
 #include <guiddef.h>
 #include <windef.h>
@@ -4224,6 +4225,215 @@ class IDXGIFactory7_Wrapper : public IDXGIFactory6_Wrapper
 ** This part is generated from dxgitype.h in Windows SDK: 10.0.26100.0
 **
 */
+
+
+/*
+** This part is generated from dxgidebug.h in Windows SDK: 10.0.26100.0
+**
+*/
+
+HRESULT WINAPI DXGIGetDebugInterface(
+    REFIID riid,
+    void** ppDebug);
+
+class IDXGIInfoQueue_Wrapper : public IUnknown_Wrapper
+{
+  public:
+    IDXGIInfoQueue_Wrapper(REFIID riid, IUnknown* object, DxWrapperResources* resources = nullptr, const std::function<void(IUnknown_Wrapper*)>& destructor = [](IUnknown_Wrapper* u){ delete reinterpret_cast<IDXGIInfoQueue_Wrapper*>(u); });
+
+    ~IDXGIInfoQueue_Wrapper();
+
+    static IDXGIInfoQueue_Wrapper* GetExistingWrapper(IUnknown* object);
+
+    std::shared_ptr<const IDXGIInfoQueueInfo> GetObjectInfo() const { return info_; }
+
+    std::shared_ptr<IDXGIInfoQueueInfo> GetObjectInfo() { return info_; }
+
+    virtual HRESULT STDMETHODCALLTYPE SetMessageCountLimit(
+        DXGI_DEBUG_ID Producer,
+        UINT64 MessageCountLimit);
+
+    virtual void STDMETHODCALLTYPE ClearStoredMessages(
+        DXGI_DEBUG_ID Producer);
+
+    virtual HRESULT STDMETHODCALLTYPE GetMessage(
+        DXGI_DEBUG_ID Producer,
+        UINT64 MessageIndex,
+        DXGI_INFO_QUEUE_MESSAGE* pMessage,
+        SIZE_T* pMessageByteLength);
+
+    virtual UINT64 STDMETHODCALLTYPE GetNumStoredMessagesAllowedByRetrievalFilters(
+        DXGI_DEBUG_ID Producer);
+
+    virtual UINT64 STDMETHODCALLTYPE GetNumStoredMessages(
+        DXGI_DEBUG_ID Producer);
+
+    virtual UINT64 STDMETHODCALLTYPE GetNumMessagesDiscardedByMessageCountLimit(
+        DXGI_DEBUG_ID Producer);
+
+    virtual UINT64 STDMETHODCALLTYPE GetMessageCountLimit(
+        DXGI_DEBUG_ID Producer);
+
+    virtual UINT64 STDMETHODCALLTYPE GetNumMessagesAllowedByStorageFilter(
+        DXGI_DEBUG_ID Producer);
+
+    virtual UINT64 STDMETHODCALLTYPE GetNumMessagesDeniedByStorageFilter(
+        DXGI_DEBUG_ID Producer);
+
+    virtual HRESULT STDMETHODCALLTYPE AddStorageFilterEntries(
+        DXGI_DEBUG_ID Producer,
+        DXGI_INFO_QUEUE_FILTER* pFilter);
+
+    virtual HRESULT STDMETHODCALLTYPE GetStorageFilter(
+        DXGI_DEBUG_ID Producer,
+        DXGI_INFO_QUEUE_FILTER* pFilter,
+        SIZE_T* pFilterByteLength);
+
+    virtual void STDMETHODCALLTYPE ClearStorageFilter(
+        DXGI_DEBUG_ID Producer);
+
+    virtual HRESULT STDMETHODCALLTYPE PushEmptyStorageFilter(
+        DXGI_DEBUG_ID Producer);
+
+    virtual HRESULT STDMETHODCALLTYPE PushDenyAllStorageFilter(
+        DXGI_DEBUG_ID Producer);
+
+    virtual HRESULT STDMETHODCALLTYPE PushCopyOfStorageFilter(
+        DXGI_DEBUG_ID Producer);
+
+    virtual HRESULT STDMETHODCALLTYPE PushStorageFilter(
+        DXGI_DEBUG_ID Producer,
+        DXGI_INFO_QUEUE_FILTER* pFilter);
+
+    virtual void STDMETHODCALLTYPE PopStorageFilter(
+        DXGI_DEBUG_ID Producer);
+
+    virtual UINT STDMETHODCALLTYPE GetStorageFilterStackSize(
+        DXGI_DEBUG_ID Producer);
+
+    virtual HRESULT STDMETHODCALLTYPE AddRetrievalFilterEntries(
+        DXGI_DEBUG_ID Producer,
+        DXGI_INFO_QUEUE_FILTER* pFilter);
+
+    virtual HRESULT STDMETHODCALLTYPE GetRetrievalFilter(
+        DXGI_DEBUG_ID Producer,
+        DXGI_INFO_QUEUE_FILTER* pFilter,
+        SIZE_T* pFilterByteLength);
+
+    virtual void STDMETHODCALLTYPE ClearRetrievalFilter(
+        DXGI_DEBUG_ID Producer);
+
+    virtual HRESULT STDMETHODCALLTYPE PushEmptyRetrievalFilter(
+        DXGI_DEBUG_ID Producer);
+
+    virtual HRESULT STDMETHODCALLTYPE PushDenyAllRetrievalFilter(
+        DXGI_DEBUG_ID Producer);
+
+    virtual HRESULT STDMETHODCALLTYPE PushCopyOfRetrievalFilter(
+        DXGI_DEBUG_ID Producer);
+
+    virtual HRESULT STDMETHODCALLTYPE PushRetrievalFilter(
+        DXGI_DEBUG_ID Producer,
+        DXGI_INFO_QUEUE_FILTER* pFilter);
+
+    virtual void STDMETHODCALLTYPE PopRetrievalFilter(
+        DXGI_DEBUG_ID Producer);
+
+    virtual UINT STDMETHODCALLTYPE GetRetrievalFilterStackSize(
+        DXGI_DEBUG_ID Producer);
+
+    virtual HRESULT STDMETHODCALLTYPE AddMessage(
+        DXGI_DEBUG_ID Producer,
+        DXGI_INFO_QUEUE_MESSAGE_CATEGORY Category,
+        DXGI_INFO_QUEUE_MESSAGE_SEVERITY Severity,
+        DXGI_INFO_QUEUE_MESSAGE_ID ID,
+        LPCSTR pDescription);
+
+    virtual HRESULT STDMETHODCALLTYPE AddApplicationMessage(
+        DXGI_INFO_QUEUE_MESSAGE_SEVERITY Severity,
+        LPCSTR pDescription);
+
+    virtual HRESULT STDMETHODCALLTYPE SetBreakOnCategory(
+        DXGI_DEBUG_ID Producer,
+        DXGI_INFO_QUEUE_MESSAGE_CATEGORY Category,
+        BOOL bEnable);
+
+    virtual HRESULT STDMETHODCALLTYPE SetBreakOnSeverity(
+        DXGI_DEBUG_ID Producer,
+        DXGI_INFO_QUEUE_MESSAGE_SEVERITY Severity,
+        BOOL bEnable);
+
+    virtual HRESULT STDMETHODCALLTYPE SetBreakOnID(
+        DXGI_DEBUG_ID Producer,
+        DXGI_INFO_QUEUE_MESSAGE_ID ID,
+        BOOL bEnable);
+
+    virtual BOOL STDMETHODCALLTYPE GetBreakOnCategory(
+        DXGI_DEBUG_ID Producer,
+        DXGI_INFO_QUEUE_MESSAGE_CATEGORY Category);
+
+    virtual BOOL STDMETHODCALLTYPE GetBreakOnSeverity(
+        DXGI_DEBUG_ID Producer,
+        DXGI_INFO_QUEUE_MESSAGE_SEVERITY Severity);
+
+    virtual BOOL STDMETHODCALLTYPE GetBreakOnID(
+        DXGI_DEBUG_ID Producer,
+        DXGI_INFO_QUEUE_MESSAGE_ID ID);
+
+    virtual void STDMETHODCALLTYPE SetMuteDebugOutput(
+        DXGI_DEBUG_ID Producer,
+        BOOL bMute);
+
+    virtual BOOL STDMETHODCALLTYPE GetMuteDebugOutput(
+        DXGI_DEBUG_ID Producer);
+
+  private:
+    // Map to prevent creation of more than one interface wrapper per object.
+    typedef std::unordered_map<IUnknown*, IDXGIInfoQueue_Wrapper*> ObjectMap;
+    static ObjectMap  object_map_;
+    static std::mutex object_map_lock_;
+
+    std::shared_ptr<IDXGIInfoQueueInfo> info_;
+};
+
+class IDXGIDebug_Wrapper : public IUnknown_Wrapper
+{
+  public:
+    IDXGIDebug_Wrapper(REFIID riid, IUnknown* object, DxWrapperResources* resources = nullptr, const std::function<void(IUnknown_Wrapper*)>& destructor = [](IUnknown_Wrapper* u){ delete reinterpret_cast<IDXGIDebug_Wrapper*>(u); });
+
+    ~IDXGIDebug_Wrapper();
+
+    static IDXGIDebug_Wrapper* GetExistingWrapper(IUnknown* object);
+
+    std::shared_ptr<const IDXGIDebugInfo> GetObjectInfo() const { return info_; }
+
+    std::shared_ptr<IDXGIDebugInfo> GetObjectInfo() { return info_; }
+
+    virtual HRESULT STDMETHODCALLTYPE ReportLiveObjects(
+        GUID apiid,
+        DXGI_DEBUG_RLO_FLAGS flags);
+
+  private:
+    // Map to prevent creation of more than one interface wrapper per object.
+    typedef std::unordered_map<IUnknown*, IDXGIDebug_Wrapper*> ObjectMap;
+    static ObjectMap  object_map_;
+    static std::mutex object_map_lock_;
+
+    std::shared_ptr<IDXGIDebugInfo> info_;
+};
+
+class IDXGIDebug1_Wrapper : public IDXGIDebug_Wrapper
+{
+  public:
+    IDXGIDebug1_Wrapper(REFIID riid, IUnknown* object, DxWrapperResources* resources = nullptr, const std::function<void(IUnknown_Wrapper*)>& destructor = [](IUnknown_Wrapper* u){ delete reinterpret_cast<IDXGIDebug1_Wrapper*>(u); });
+
+    virtual void STDMETHODCALLTYPE EnableLeakTrackingForThread();
+
+    virtual void STDMETHODCALLTYPE DisableLeakTrackingForThread();
+
+    virtual BOOL STDMETHODCALLTYPE IsLeakTrackingEnabledForThread();
+
+};
 
 
 /*

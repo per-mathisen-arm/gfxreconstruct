@@ -43,6 +43,7 @@
 #include <dxgi1_6.h>
 #include <dxgicommon.h>
 #include <dxgitype.h>
+#include <dxgidebug.h>
 #include <Unknwnbase.h>
 #include <guiddef.h>
 #include <windef.h>
@@ -355,6 +356,10 @@ std::string ToString(DXGI_COLOR_SPACE_TYPE value);
 std::string ToString(DXGI_MODE_SCANLINE_ORDER value);
 std::string ToString(DXGI_MODE_SCALING value);
 std::string ToString(DXGI_MODE_ROTATION value);
+std::string ToString(DXGI_DEBUG_RLO_FLAGS value);
+std::string ToString_DXGI_DEBUG_RLO_FLAGS(uint32_t flags);
+std::string ToString(DXGI_INFO_QUEUE_MESSAGE_CATEGORY value);
+std::string ToString(DXGI_INFO_QUEUE_MESSAGE_SEVERITY value);
 std::string ToString(const IID& riid);
 inline std::string ToString(const GUID& obj, ToStringFlags toStringFlags, uint32_t tabCount, uint32_t tabSize){ return ToString(obj); }
 

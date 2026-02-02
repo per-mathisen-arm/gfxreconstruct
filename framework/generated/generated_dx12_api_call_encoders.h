@@ -40,6 +40,7 @@
 #include <dxgi1_6.h>
 #include <dxgicommon.h>
 #include <dxgitype.h>
+#include <dxgidebug.h>
 #include <Unknwnbase.h>
 #include <guiddef.h>
 #include <windef.h>
@@ -3724,6 +3725,245 @@ void EncodeStruct(ParameterEncoder* encoder, const DXGI_JPEG_DC_HUFFMAN_TABLE& v
 void EncodeStruct(ParameterEncoder* encoder, const DXGI_JPEG_AC_HUFFMAN_TABLE& value);
 
 void EncodeStruct(ParameterEncoder* encoder, const DXGI_JPEG_QUANTIZATION_TABLE& value);
+
+
+/*
+** This part is generated from dxgidebug.h in Windows SDK: 10.0.26100.0
+**
+*/
+
+void Encode_DXGIGetDebugInterface(
+    HRESULT return_value,
+    REFIID riid,
+    void** ppDebug);
+
+void EncodeStruct(ParameterEncoder* encoder, const DXGI_INFO_QUEUE_MESSAGE& value);
+
+void EncodeStruct(ParameterEncoder* encoder, const DXGI_INFO_QUEUE_FILTER_DESC& value);
+
+void EncodeStruct(ParameterEncoder* encoder, const DXGI_INFO_QUEUE_FILTER& value);
+
+void Encode_IDXGIInfoQueue_SetMessageCountLimit(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    HRESULT return_value,
+    DXGI_DEBUG_ID Producer,
+    UINT64 MessageCountLimit);
+
+void Encode_IDXGIInfoQueue_ClearStoredMessages(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    DXGI_DEBUG_ID Producer);
+
+void Encode_IDXGIInfoQueue_GetMessage(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    HRESULT return_value,
+    DXGI_DEBUG_ID Producer,
+    UINT64 MessageIndex,
+    DXGI_INFO_QUEUE_MESSAGE* pMessage,
+    SIZE_T* pMessageByteLength);
+
+void Encode_IDXGIInfoQueue_GetNumStoredMessagesAllowedByRetrievalFilters(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    UINT64 return_value,
+    DXGI_DEBUG_ID Producer);
+
+void Encode_IDXGIInfoQueue_GetNumStoredMessages(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    UINT64 return_value,
+    DXGI_DEBUG_ID Producer);
+
+void Encode_IDXGIInfoQueue_GetNumMessagesDiscardedByMessageCountLimit(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    UINT64 return_value,
+    DXGI_DEBUG_ID Producer);
+
+void Encode_IDXGIInfoQueue_GetMessageCountLimit(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    UINT64 return_value,
+    DXGI_DEBUG_ID Producer);
+
+void Encode_IDXGIInfoQueue_GetNumMessagesAllowedByStorageFilter(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    UINT64 return_value,
+    DXGI_DEBUG_ID Producer);
+
+void Encode_IDXGIInfoQueue_GetNumMessagesDeniedByStorageFilter(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    UINT64 return_value,
+    DXGI_DEBUG_ID Producer);
+
+void Encode_IDXGIInfoQueue_AddStorageFilterEntries(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    HRESULT return_value,
+    DXGI_DEBUG_ID Producer,
+    DXGI_INFO_QUEUE_FILTER* pFilter);
+
+void Encode_IDXGIInfoQueue_GetStorageFilter(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    HRESULT return_value,
+    DXGI_DEBUG_ID Producer,
+    DXGI_INFO_QUEUE_FILTER* pFilter,
+    SIZE_T* pFilterByteLength);
+
+void Encode_IDXGIInfoQueue_ClearStorageFilter(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    DXGI_DEBUG_ID Producer);
+
+void Encode_IDXGIInfoQueue_PushEmptyStorageFilter(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    HRESULT return_value,
+    DXGI_DEBUG_ID Producer);
+
+void Encode_IDXGIInfoQueue_PushDenyAllStorageFilter(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    HRESULT return_value,
+    DXGI_DEBUG_ID Producer);
+
+void Encode_IDXGIInfoQueue_PushCopyOfStorageFilter(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    HRESULT return_value,
+    DXGI_DEBUG_ID Producer);
+
+void Encode_IDXGIInfoQueue_PushStorageFilter(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    HRESULT return_value,
+    DXGI_DEBUG_ID Producer,
+    DXGI_INFO_QUEUE_FILTER* pFilter);
+
+void Encode_IDXGIInfoQueue_PopStorageFilter(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    DXGI_DEBUG_ID Producer);
+
+void Encode_IDXGIInfoQueue_GetStorageFilterStackSize(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    UINT return_value,
+    DXGI_DEBUG_ID Producer);
+
+void Encode_IDXGIInfoQueue_AddRetrievalFilterEntries(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    HRESULT return_value,
+    DXGI_DEBUG_ID Producer,
+    DXGI_INFO_QUEUE_FILTER* pFilter);
+
+void Encode_IDXGIInfoQueue_GetRetrievalFilter(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    HRESULT return_value,
+    DXGI_DEBUG_ID Producer,
+    DXGI_INFO_QUEUE_FILTER* pFilter,
+    SIZE_T* pFilterByteLength);
+
+void Encode_IDXGIInfoQueue_ClearRetrievalFilter(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    DXGI_DEBUG_ID Producer);
+
+void Encode_IDXGIInfoQueue_PushEmptyRetrievalFilter(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    HRESULT return_value,
+    DXGI_DEBUG_ID Producer);
+
+void Encode_IDXGIInfoQueue_PushDenyAllRetrievalFilter(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    HRESULT return_value,
+    DXGI_DEBUG_ID Producer);
+
+void Encode_IDXGIInfoQueue_PushCopyOfRetrievalFilter(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    HRESULT return_value,
+    DXGI_DEBUG_ID Producer);
+
+void Encode_IDXGIInfoQueue_PushRetrievalFilter(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    HRESULT return_value,
+    DXGI_DEBUG_ID Producer,
+    DXGI_INFO_QUEUE_FILTER* pFilter);
+
+void Encode_IDXGIInfoQueue_PopRetrievalFilter(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    DXGI_DEBUG_ID Producer);
+
+void Encode_IDXGIInfoQueue_GetRetrievalFilterStackSize(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    UINT return_value,
+    DXGI_DEBUG_ID Producer);
+
+void Encode_IDXGIInfoQueue_AddMessage(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    HRESULT return_value,
+    DXGI_DEBUG_ID Producer,
+    DXGI_INFO_QUEUE_MESSAGE_CATEGORY Category,
+    DXGI_INFO_QUEUE_MESSAGE_SEVERITY Severity,
+    DXGI_INFO_QUEUE_MESSAGE_ID ID,
+    LPCSTR pDescription);
+
+void Encode_IDXGIInfoQueue_AddApplicationMessage(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    HRESULT return_value,
+    DXGI_INFO_QUEUE_MESSAGE_SEVERITY Severity,
+    LPCSTR pDescription);
+
+void Encode_IDXGIInfoQueue_SetBreakOnCategory(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    HRESULT return_value,
+    DXGI_DEBUG_ID Producer,
+    DXGI_INFO_QUEUE_MESSAGE_CATEGORY Category,
+    BOOL bEnable);
+
+void Encode_IDXGIInfoQueue_SetBreakOnSeverity(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    HRESULT return_value,
+    DXGI_DEBUG_ID Producer,
+    DXGI_INFO_QUEUE_MESSAGE_SEVERITY Severity,
+    BOOL bEnable);
+
+void Encode_IDXGIInfoQueue_SetBreakOnID(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    HRESULT return_value,
+    DXGI_DEBUG_ID Producer,
+    DXGI_INFO_QUEUE_MESSAGE_ID ID,
+    BOOL bEnable);
+
+void Encode_IDXGIInfoQueue_GetBreakOnCategory(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    BOOL return_value,
+    DXGI_DEBUG_ID Producer,
+    DXGI_INFO_QUEUE_MESSAGE_CATEGORY Category);
+
+void Encode_IDXGIInfoQueue_GetBreakOnSeverity(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    BOOL return_value,
+    DXGI_DEBUG_ID Producer,
+    DXGI_INFO_QUEUE_MESSAGE_SEVERITY Severity);
+
+void Encode_IDXGIInfoQueue_GetBreakOnID(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    BOOL return_value,
+    DXGI_DEBUG_ID Producer,
+    DXGI_INFO_QUEUE_MESSAGE_ID ID);
+
+void Encode_IDXGIInfoQueue_SetMuteDebugOutput(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    DXGI_DEBUG_ID Producer,
+    BOOL bMute);
+
+void Encode_IDXGIInfoQueue_GetMuteDebugOutput(
+    IDXGIInfoQueue_Wrapper* wrapper,
+    BOOL return_value,
+    DXGI_DEBUG_ID Producer);
+
+void Encode_IDXGIDebug_ReportLiveObjects(
+    IDXGIDebug_Wrapper* wrapper,
+    HRESULT return_value,
+    GUID apiid,
+    DXGI_DEBUG_RLO_FLAGS flags);
+
+void Encode_IDXGIDebug1_EnableLeakTrackingForThread(
+    IDXGIDebug1_Wrapper* wrapper);
+
+void Encode_IDXGIDebug1_DisableLeakTrackingForThread(
+    IDXGIDebug1_Wrapper* wrapper);
+
+void Encode_IDXGIDebug1_IsLeakTrackingEnabledForThread(
+    IDXGIDebug1_Wrapper* wrapper,
+    BOOL return_value);
 
 
 /*

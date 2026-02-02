@@ -363,6 +363,9 @@ struct Decoded_DXGI_MODE_DESC;
 struct Decoded_DXGI_JPEG_DC_HUFFMAN_TABLE;
 struct Decoded_DXGI_JPEG_AC_HUFFMAN_TABLE;
 struct Decoded_DXGI_JPEG_QUANTIZATION_TABLE;
+struct Decoded_DXGI_INFO_QUEUE_MESSAGE;
+struct Decoded_DXGI_INFO_QUEUE_FILTER_DESC;
+struct Decoded_DXGI_INFO_QUEUE_FILTER;
 struct Decoded_GUID;
 struct Decoded_tagRECT;
 struct Decoded_tagPOINT;
@@ -994,6 +997,16 @@ size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_DXGI_JPEG
 size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_DXGI_JPEG_AC_HUFFMAN_TABLE* wrapper);
 
 size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_DXGI_JPEG_QUANTIZATION_TABLE* wrapper);
+
+/*
+** This part is generated from dxgidebug.h in Windows SDK: 10.0.26100.0
+**
+*/
+size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_DXGI_INFO_QUEUE_MESSAGE* wrapper);
+
+size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_DXGI_INFO_QUEUE_FILTER_DESC* wrapper);
+
+size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_DXGI_INFO_QUEUE_FILTER* wrapper);
 
 /*
 ** This part is generated from guiddef.h in Windows SDK: 10.0.26100.0

@@ -519,6 +519,40 @@ void Dx12ReplayConsumer::Process_DXGIDeclareAdapterRemovalSupport(
         return_value,
         replay_result);
 }
+
+void Dx12ReplayConsumer::Process_DXGIGetDebugInterface(
+    const ApiCallInfo&                          call_info,
+    HRESULT                                     return_value,
+    Decoded_GUID                                riid,
+    HandlePointerDecoder<void*>*                ppDebug)
+{
+    CustomReplayPreCall<format::ApiCallId::ApiCall_DXGIGetDebugInterface>::Dispatch(
+        this,
+        call_info,
+        riid,
+        ppDebug);
+    DxObjectInfo object_info_ppDebug{};
+    if(!ppDebug->IsNull())
+    {
+        ppDebug->SetHandleLength(1);
+        ppDebug->SetConsumerData(0, &object_info_ppDebug);
+    }
+    auto replay_result = OverrideDXGIGetDebugInterface(return_value,
+                                                       riid,
+                                                       ppDebug);
+    if (SUCCEEDED(replay_result))
+    {
+        AddObject(ppDebug->GetPointer(), ppDebug->GetHandlePointer(), std::move(object_info_ppDebug), format::ApiCall_DXGIGetDebugInterface);
+    }
+    CheckReplayResult("DXGIGetDebugInterface", return_value, replay_result);
+    CustomReplayPostCall<format::ApiCallId::ApiCall_DXGIGetDebugInterface>::Dispatch(
+        this,
+        call_info,
+        return_value,
+        replay_result,
+        riid,
+        ppDebug);
+}
 void Dx12ReplayConsumer::Process_ID3D12Object_GetPrivateData(
     const ApiCallInfo&                          call_info,
     format::HandleId                            object_id,
@@ -17919,6 +17953,1154 @@ void Dx12ReplayConsumer::Process_IDXGIFactory7_UnregisterAdaptersChangedEvent(
             return_value,
             replay_result,
             dwCookie);
+    }
+}
+
+void Dx12ReplayConsumer::Process_IDXGIInfoQueue_SetMessageCountLimit(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            object_id,
+    HRESULT                                     return_value,
+    Decoded_GUID                                Producer,
+    UINT64                                      MessageCountLimit)
+{
+    auto replay_object = GetObjectInfo(object_id);
+    if ((replay_object != nullptr) && (replay_object->object != nullptr))
+    {
+        CustomReplayPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_SetMessageCountLimit>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer,
+            MessageCountLimit);
+        auto replay_result = reinterpret_cast<IDXGIInfoQueue*>(replay_object->object)->SetMessageCountLimit(*Producer.decoded_value,
+                                                                                                            MessageCountLimit);
+        CheckReplayResult("IDXGIInfoQueue_SetMessageCountLimit", return_value, replay_result);
+        CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_SetMessageCountLimit>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            return_value,
+            replay_result,
+            Producer,
+            MessageCountLimit);
+    }
+}
+
+void Dx12ReplayConsumer::Process_IDXGIInfoQueue_ClearStoredMessages(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            object_id,
+    Decoded_GUID                                Producer)
+{
+    auto replay_object = GetObjectInfo(object_id);
+    if ((replay_object != nullptr) && (replay_object->object != nullptr))
+    {
+        CustomReplayPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_ClearStoredMessages>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer);
+        reinterpret_cast<IDXGIInfoQueue*>(replay_object->object)->ClearStoredMessages(*Producer.decoded_value);
+        CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_ClearStoredMessages>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer);
+    }
+}
+
+void Dx12ReplayConsumer::Process_IDXGIInfoQueue_GetMessage(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            object_id,
+    HRESULT                                     return_value,
+    Decoded_GUID                                Producer,
+    UINT64                                      MessageIndex,
+    StructPointerDecoder<Decoded_DXGI_INFO_QUEUE_MESSAGE>* pMessage,
+    PointerDecoder<SIZE_T>*                     pMessageByteLength)
+{
+    auto replay_object = GetObjectInfo(object_id);
+    if ((replay_object != nullptr) && (replay_object->object != nullptr))
+    {
+        CustomReplayPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetMessage>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer,
+            MessageIndex,
+            pMessage,
+            pMessageByteLength);
+        if(!pMessage->IsNull())
+        {
+            pMessage->AllocateOutputData(!pMessageByteLength->IsNull() ? *pMessageByteLength->GetPointer() : 1);
+        }
+        if(!pMessageByteLength->IsNull())
+        {
+            pMessageByteLength->AllocateOutputData(1);
+        }
+        auto replay_result = reinterpret_cast<IDXGIInfoQueue*>(replay_object->object)->GetMessage(*Producer.decoded_value,
+                                                                                                  MessageIndex,
+                                                                                                  pMessage->GetOutputPointer(),
+                                                                                                  pMessageByteLength->GetOutputPointer());
+        CheckReplayResult("IDXGIInfoQueue_GetMessage", return_value, replay_result);
+        CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetMessage>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            return_value,
+            replay_result,
+            Producer,
+            MessageIndex,
+            pMessage,
+            pMessageByteLength);
+    }
+}
+
+void Dx12ReplayConsumer::Process_IDXGIInfoQueue_GetNumStoredMessagesAllowedByRetrievalFilters(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            object_id,
+    UINT64                                      return_value,
+    Decoded_GUID                                Producer)
+{
+    auto replay_object = GetObjectInfo(object_id);
+    if ((replay_object != nullptr) && (replay_object->object != nullptr))
+    {
+        CustomReplayPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetNumStoredMessagesAllowedByRetrievalFilters>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer);
+        auto replay_result = reinterpret_cast<IDXGIInfoQueue*>(replay_object->object)->GetNumStoredMessagesAllowedByRetrievalFilters(*Producer.decoded_value);
+        CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetNumStoredMessagesAllowedByRetrievalFilters>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            return_value,
+            replay_result,
+            Producer);
+    }
+}
+
+void Dx12ReplayConsumer::Process_IDXGIInfoQueue_GetNumStoredMessages(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            object_id,
+    UINT64                                      return_value,
+    Decoded_GUID                                Producer)
+{
+    auto replay_object = GetObjectInfo(object_id);
+    if ((replay_object != nullptr) && (replay_object->object != nullptr))
+    {
+        CustomReplayPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetNumStoredMessages>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer);
+        auto replay_result = reinterpret_cast<IDXGIInfoQueue*>(replay_object->object)->GetNumStoredMessages(*Producer.decoded_value);
+        CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetNumStoredMessages>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            return_value,
+            replay_result,
+            Producer);
+    }
+}
+
+void Dx12ReplayConsumer::Process_IDXGIInfoQueue_GetNumMessagesDiscardedByMessageCountLimit(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            object_id,
+    UINT64                                      return_value,
+    Decoded_GUID                                Producer)
+{
+    auto replay_object = GetObjectInfo(object_id);
+    if ((replay_object != nullptr) && (replay_object->object != nullptr))
+    {
+        CustomReplayPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetNumMessagesDiscardedByMessageCountLimit>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer);
+        auto replay_result = reinterpret_cast<IDXGIInfoQueue*>(replay_object->object)->GetNumMessagesDiscardedByMessageCountLimit(*Producer.decoded_value);
+        CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetNumMessagesDiscardedByMessageCountLimit>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            return_value,
+            replay_result,
+            Producer);
+    }
+}
+
+void Dx12ReplayConsumer::Process_IDXGIInfoQueue_GetMessageCountLimit(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            object_id,
+    UINT64                                      return_value,
+    Decoded_GUID                                Producer)
+{
+    auto replay_object = GetObjectInfo(object_id);
+    if ((replay_object != nullptr) && (replay_object->object != nullptr))
+    {
+        CustomReplayPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetMessageCountLimit>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer);
+        auto replay_result = reinterpret_cast<IDXGIInfoQueue*>(replay_object->object)->GetMessageCountLimit(*Producer.decoded_value);
+        CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetMessageCountLimit>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            return_value,
+            replay_result,
+            Producer);
+    }
+}
+
+void Dx12ReplayConsumer::Process_IDXGIInfoQueue_GetNumMessagesAllowedByStorageFilter(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            object_id,
+    UINT64                                      return_value,
+    Decoded_GUID                                Producer)
+{
+    auto replay_object = GetObjectInfo(object_id);
+    if ((replay_object != nullptr) && (replay_object->object != nullptr))
+    {
+        CustomReplayPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetNumMessagesAllowedByStorageFilter>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer);
+        auto replay_result = reinterpret_cast<IDXGIInfoQueue*>(replay_object->object)->GetNumMessagesAllowedByStorageFilter(*Producer.decoded_value);
+        CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetNumMessagesAllowedByStorageFilter>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            return_value,
+            replay_result,
+            Producer);
+    }
+}
+
+void Dx12ReplayConsumer::Process_IDXGIInfoQueue_GetNumMessagesDeniedByStorageFilter(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            object_id,
+    UINT64                                      return_value,
+    Decoded_GUID                                Producer)
+{
+    auto replay_object = GetObjectInfo(object_id);
+    if ((replay_object != nullptr) && (replay_object->object != nullptr))
+    {
+        CustomReplayPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetNumMessagesDeniedByStorageFilter>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer);
+        auto replay_result = reinterpret_cast<IDXGIInfoQueue*>(replay_object->object)->GetNumMessagesDeniedByStorageFilter(*Producer.decoded_value);
+        CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetNumMessagesDeniedByStorageFilter>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            return_value,
+            replay_result,
+            Producer);
+    }
+}
+
+void Dx12ReplayConsumer::Process_IDXGIInfoQueue_AddStorageFilterEntries(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            object_id,
+    HRESULT                                     return_value,
+    Decoded_GUID                                Producer,
+    StructPointerDecoder<Decoded_DXGI_INFO_QUEUE_FILTER>* pFilter)
+{
+    auto replay_object = GetObjectInfo(object_id);
+    if ((replay_object != nullptr) && (replay_object->object != nullptr))
+    {
+        CustomReplayPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_AddStorageFilterEntries>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer,
+            pFilter);
+        auto replay_result = reinterpret_cast<IDXGIInfoQueue*>(replay_object->object)->AddStorageFilterEntries(*Producer.decoded_value,
+                                                                                                               pFilter->GetPointer());
+        CheckReplayResult("IDXGIInfoQueue_AddStorageFilterEntries", return_value, replay_result);
+        CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_AddStorageFilterEntries>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            return_value,
+            replay_result,
+            Producer,
+            pFilter);
+    }
+}
+
+void Dx12ReplayConsumer::Process_IDXGIInfoQueue_GetStorageFilter(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            object_id,
+    HRESULT                                     return_value,
+    Decoded_GUID                                Producer,
+    StructPointerDecoder<Decoded_DXGI_INFO_QUEUE_FILTER>* pFilter,
+    PointerDecoder<SIZE_T>*                     pFilterByteLength)
+{
+    auto replay_object = GetObjectInfo(object_id);
+    if ((replay_object != nullptr) && (replay_object->object != nullptr))
+    {
+        CustomReplayPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetStorageFilter>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer,
+            pFilter,
+            pFilterByteLength);
+        if(!pFilter->IsNull())
+        {
+            pFilter->AllocateOutputData(!pFilterByteLength->IsNull() ? *pFilterByteLength->GetPointer() : 1);
+        }
+        if(!pFilterByteLength->IsNull())
+        {
+            pFilterByteLength->AllocateOutputData(1);
+        }
+        auto replay_result = reinterpret_cast<IDXGIInfoQueue*>(replay_object->object)->GetStorageFilter(*Producer.decoded_value,
+                                                                                                        pFilter->GetOutputPointer(),
+                                                                                                        pFilterByteLength->GetOutputPointer());
+        CheckReplayResult("IDXGIInfoQueue_GetStorageFilter", return_value, replay_result);
+        CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetStorageFilter>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            return_value,
+            replay_result,
+            Producer,
+            pFilter,
+            pFilterByteLength);
+    }
+}
+
+void Dx12ReplayConsumer::Process_IDXGIInfoQueue_ClearStorageFilter(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            object_id,
+    Decoded_GUID                                Producer)
+{
+    auto replay_object = GetObjectInfo(object_id);
+    if ((replay_object != nullptr) && (replay_object->object != nullptr))
+    {
+        CustomReplayPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_ClearStorageFilter>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer);
+        reinterpret_cast<IDXGIInfoQueue*>(replay_object->object)->ClearStorageFilter(*Producer.decoded_value);
+        CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_ClearStorageFilter>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer);
+    }
+}
+
+void Dx12ReplayConsumer::Process_IDXGIInfoQueue_PushEmptyStorageFilter(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            object_id,
+    HRESULT                                     return_value,
+    Decoded_GUID                                Producer)
+{
+    auto replay_object = GetObjectInfo(object_id);
+    if ((replay_object != nullptr) && (replay_object->object != nullptr))
+    {
+        CustomReplayPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_PushEmptyStorageFilter>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer);
+        auto replay_result = reinterpret_cast<IDXGIInfoQueue*>(replay_object->object)->PushEmptyStorageFilter(*Producer.decoded_value);
+        CheckReplayResult("IDXGIInfoQueue_PushEmptyStorageFilter", return_value, replay_result);
+        CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_PushEmptyStorageFilter>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            return_value,
+            replay_result,
+            Producer);
+    }
+}
+
+void Dx12ReplayConsumer::Process_IDXGIInfoQueue_PushDenyAllStorageFilter(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            object_id,
+    HRESULT                                     return_value,
+    Decoded_GUID                                Producer)
+{
+    auto replay_object = GetObjectInfo(object_id);
+    if ((replay_object != nullptr) && (replay_object->object != nullptr))
+    {
+        CustomReplayPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_PushDenyAllStorageFilter>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer);
+        auto replay_result = reinterpret_cast<IDXGIInfoQueue*>(replay_object->object)->PushDenyAllStorageFilter(*Producer.decoded_value);
+        CheckReplayResult("IDXGIInfoQueue_PushDenyAllStorageFilter", return_value, replay_result);
+        CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_PushDenyAllStorageFilter>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            return_value,
+            replay_result,
+            Producer);
+    }
+}
+
+void Dx12ReplayConsumer::Process_IDXGIInfoQueue_PushCopyOfStorageFilter(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            object_id,
+    HRESULT                                     return_value,
+    Decoded_GUID                                Producer)
+{
+    auto replay_object = GetObjectInfo(object_id);
+    if ((replay_object != nullptr) && (replay_object->object != nullptr))
+    {
+        CustomReplayPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_PushCopyOfStorageFilter>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer);
+        auto replay_result = reinterpret_cast<IDXGIInfoQueue*>(replay_object->object)->PushCopyOfStorageFilter(*Producer.decoded_value);
+        CheckReplayResult("IDXGIInfoQueue_PushCopyOfStorageFilter", return_value, replay_result);
+        CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_PushCopyOfStorageFilter>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            return_value,
+            replay_result,
+            Producer);
+    }
+}
+
+void Dx12ReplayConsumer::Process_IDXGIInfoQueue_PushStorageFilter(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            object_id,
+    HRESULT                                     return_value,
+    Decoded_GUID                                Producer,
+    StructPointerDecoder<Decoded_DXGI_INFO_QUEUE_FILTER>* pFilter)
+{
+    auto replay_object = GetObjectInfo(object_id);
+    if ((replay_object != nullptr) && (replay_object->object != nullptr))
+    {
+        CustomReplayPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_PushStorageFilter>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer,
+            pFilter);
+        auto replay_result = reinterpret_cast<IDXGIInfoQueue*>(replay_object->object)->PushStorageFilter(*Producer.decoded_value,
+                                                                                                         pFilter->GetPointer());
+        CheckReplayResult("IDXGIInfoQueue_PushStorageFilter", return_value, replay_result);
+        CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_PushStorageFilter>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            return_value,
+            replay_result,
+            Producer,
+            pFilter);
+    }
+}
+
+void Dx12ReplayConsumer::Process_IDXGIInfoQueue_PopStorageFilter(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            object_id,
+    Decoded_GUID                                Producer)
+{
+    auto replay_object = GetObjectInfo(object_id);
+    if ((replay_object != nullptr) && (replay_object->object != nullptr))
+    {
+        CustomReplayPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_PopStorageFilter>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer);
+        reinterpret_cast<IDXGIInfoQueue*>(replay_object->object)->PopStorageFilter(*Producer.decoded_value);
+        CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_PopStorageFilter>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer);
+    }
+}
+
+void Dx12ReplayConsumer::Process_IDXGIInfoQueue_GetStorageFilterStackSize(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            object_id,
+    UINT                                        return_value,
+    Decoded_GUID                                Producer)
+{
+    auto replay_object = GetObjectInfo(object_id);
+    if ((replay_object != nullptr) && (replay_object->object != nullptr))
+    {
+        CustomReplayPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetStorageFilterStackSize>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer);
+        auto replay_result = reinterpret_cast<IDXGIInfoQueue*>(replay_object->object)->GetStorageFilterStackSize(*Producer.decoded_value);
+        CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetStorageFilterStackSize>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            return_value,
+            replay_result,
+            Producer);
+    }
+}
+
+void Dx12ReplayConsumer::Process_IDXGIInfoQueue_AddRetrievalFilterEntries(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            object_id,
+    HRESULT                                     return_value,
+    Decoded_GUID                                Producer,
+    StructPointerDecoder<Decoded_DXGI_INFO_QUEUE_FILTER>* pFilter)
+{
+    auto replay_object = GetObjectInfo(object_id);
+    if ((replay_object != nullptr) && (replay_object->object != nullptr))
+    {
+        CustomReplayPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_AddRetrievalFilterEntries>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer,
+            pFilter);
+        auto replay_result = reinterpret_cast<IDXGIInfoQueue*>(replay_object->object)->AddRetrievalFilterEntries(*Producer.decoded_value,
+                                                                                                                 pFilter->GetPointer());
+        CheckReplayResult("IDXGIInfoQueue_AddRetrievalFilterEntries", return_value, replay_result);
+        CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_AddRetrievalFilterEntries>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            return_value,
+            replay_result,
+            Producer,
+            pFilter);
+    }
+}
+
+void Dx12ReplayConsumer::Process_IDXGIInfoQueue_GetRetrievalFilter(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            object_id,
+    HRESULT                                     return_value,
+    Decoded_GUID                                Producer,
+    StructPointerDecoder<Decoded_DXGI_INFO_QUEUE_FILTER>* pFilter,
+    PointerDecoder<SIZE_T>*                     pFilterByteLength)
+{
+    auto replay_object = GetObjectInfo(object_id);
+    if ((replay_object != nullptr) && (replay_object->object != nullptr))
+    {
+        CustomReplayPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetRetrievalFilter>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer,
+            pFilter,
+            pFilterByteLength);
+        if(!pFilter->IsNull())
+        {
+            pFilter->AllocateOutputData(!pFilterByteLength->IsNull() ? *pFilterByteLength->GetPointer() : 1);
+        }
+        if(!pFilterByteLength->IsNull())
+        {
+            pFilterByteLength->AllocateOutputData(1);
+        }
+        auto replay_result = reinterpret_cast<IDXGIInfoQueue*>(replay_object->object)->GetRetrievalFilter(*Producer.decoded_value,
+                                                                                                          pFilter->GetOutputPointer(),
+                                                                                                          pFilterByteLength->GetOutputPointer());
+        CheckReplayResult("IDXGIInfoQueue_GetRetrievalFilter", return_value, replay_result);
+        CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetRetrievalFilter>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            return_value,
+            replay_result,
+            Producer,
+            pFilter,
+            pFilterByteLength);
+    }
+}
+
+void Dx12ReplayConsumer::Process_IDXGIInfoQueue_ClearRetrievalFilter(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            object_id,
+    Decoded_GUID                                Producer)
+{
+    auto replay_object = GetObjectInfo(object_id);
+    if ((replay_object != nullptr) && (replay_object->object != nullptr))
+    {
+        CustomReplayPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_ClearRetrievalFilter>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer);
+        reinterpret_cast<IDXGIInfoQueue*>(replay_object->object)->ClearRetrievalFilter(*Producer.decoded_value);
+        CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_ClearRetrievalFilter>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer);
+    }
+}
+
+void Dx12ReplayConsumer::Process_IDXGIInfoQueue_PushEmptyRetrievalFilter(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            object_id,
+    HRESULT                                     return_value,
+    Decoded_GUID                                Producer)
+{
+    auto replay_object = GetObjectInfo(object_id);
+    if ((replay_object != nullptr) && (replay_object->object != nullptr))
+    {
+        CustomReplayPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_PushEmptyRetrievalFilter>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer);
+        auto replay_result = reinterpret_cast<IDXGIInfoQueue*>(replay_object->object)->PushEmptyRetrievalFilter(*Producer.decoded_value);
+        CheckReplayResult("IDXGIInfoQueue_PushEmptyRetrievalFilter", return_value, replay_result);
+        CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_PushEmptyRetrievalFilter>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            return_value,
+            replay_result,
+            Producer);
+    }
+}
+
+void Dx12ReplayConsumer::Process_IDXGIInfoQueue_PushDenyAllRetrievalFilter(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            object_id,
+    HRESULT                                     return_value,
+    Decoded_GUID                                Producer)
+{
+    auto replay_object = GetObjectInfo(object_id);
+    if ((replay_object != nullptr) && (replay_object->object != nullptr))
+    {
+        CustomReplayPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_PushDenyAllRetrievalFilter>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer);
+        auto replay_result = reinterpret_cast<IDXGIInfoQueue*>(replay_object->object)->PushDenyAllRetrievalFilter(*Producer.decoded_value);
+        CheckReplayResult("IDXGIInfoQueue_PushDenyAllRetrievalFilter", return_value, replay_result);
+        CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_PushDenyAllRetrievalFilter>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            return_value,
+            replay_result,
+            Producer);
+    }
+}
+
+void Dx12ReplayConsumer::Process_IDXGIInfoQueue_PushCopyOfRetrievalFilter(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            object_id,
+    HRESULT                                     return_value,
+    Decoded_GUID                                Producer)
+{
+    auto replay_object = GetObjectInfo(object_id);
+    if ((replay_object != nullptr) && (replay_object->object != nullptr))
+    {
+        CustomReplayPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_PushCopyOfRetrievalFilter>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer);
+        auto replay_result = reinterpret_cast<IDXGIInfoQueue*>(replay_object->object)->PushCopyOfRetrievalFilter(*Producer.decoded_value);
+        CheckReplayResult("IDXGIInfoQueue_PushCopyOfRetrievalFilter", return_value, replay_result);
+        CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_PushCopyOfRetrievalFilter>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            return_value,
+            replay_result,
+            Producer);
+    }
+}
+
+void Dx12ReplayConsumer::Process_IDXGIInfoQueue_PushRetrievalFilter(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            object_id,
+    HRESULT                                     return_value,
+    Decoded_GUID                                Producer,
+    StructPointerDecoder<Decoded_DXGI_INFO_QUEUE_FILTER>* pFilter)
+{
+    auto replay_object = GetObjectInfo(object_id);
+    if ((replay_object != nullptr) && (replay_object->object != nullptr))
+    {
+        CustomReplayPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_PushRetrievalFilter>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer,
+            pFilter);
+        auto replay_result = reinterpret_cast<IDXGIInfoQueue*>(replay_object->object)->PushRetrievalFilter(*Producer.decoded_value,
+                                                                                                           pFilter->GetPointer());
+        CheckReplayResult("IDXGIInfoQueue_PushRetrievalFilter", return_value, replay_result);
+        CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_PushRetrievalFilter>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            return_value,
+            replay_result,
+            Producer,
+            pFilter);
+    }
+}
+
+void Dx12ReplayConsumer::Process_IDXGIInfoQueue_PopRetrievalFilter(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            object_id,
+    Decoded_GUID                                Producer)
+{
+    auto replay_object = GetObjectInfo(object_id);
+    if ((replay_object != nullptr) && (replay_object->object != nullptr))
+    {
+        CustomReplayPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_PopRetrievalFilter>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer);
+        reinterpret_cast<IDXGIInfoQueue*>(replay_object->object)->PopRetrievalFilter(*Producer.decoded_value);
+        CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_PopRetrievalFilter>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer);
+    }
+}
+
+void Dx12ReplayConsumer::Process_IDXGIInfoQueue_GetRetrievalFilterStackSize(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            object_id,
+    UINT                                        return_value,
+    Decoded_GUID                                Producer)
+{
+    auto replay_object = GetObjectInfo(object_id);
+    if ((replay_object != nullptr) && (replay_object->object != nullptr))
+    {
+        CustomReplayPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetRetrievalFilterStackSize>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer);
+        auto replay_result = reinterpret_cast<IDXGIInfoQueue*>(replay_object->object)->GetRetrievalFilterStackSize(*Producer.decoded_value);
+        CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetRetrievalFilterStackSize>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            return_value,
+            replay_result,
+            Producer);
+    }
+}
+
+void Dx12ReplayConsumer::Process_IDXGIInfoQueue_AddMessage(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            object_id,
+    HRESULT                                     return_value,
+    Decoded_GUID                                Producer,
+    DXGI_INFO_QUEUE_MESSAGE_CATEGORY            Category,
+    DXGI_INFO_QUEUE_MESSAGE_SEVERITY            Severity,
+    int                                         ID,
+    StringDecoder*                              pDescription)
+{
+    auto replay_object = GetObjectInfo(object_id);
+    if ((replay_object != nullptr) && (replay_object->object != nullptr))
+    {
+        CustomReplayPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_AddMessage>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer,
+            Category,
+            Severity,
+            ID,
+            pDescription);
+        auto replay_result = reinterpret_cast<IDXGIInfoQueue*>(replay_object->object)->AddMessage(*Producer.decoded_value,
+                                                                                                  Category,
+                                                                                                  Severity,
+                                                                                                  ID,
+                                                                                                  pDescription->GetPointer());
+        CheckReplayResult("IDXGIInfoQueue_AddMessage", return_value, replay_result);
+        CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_AddMessage>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            return_value,
+            replay_result,
+            Producer,
+            Category,
+            Severity,
+            ID,
+            pDescription);
+    }
+}
+
+void Dx12ReplayConsumer::Process_IDXGIInfoQueue_AddApplicationMessage(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            object_id,
+    HRESULT                                     return_value,
+    DXGI_INFO_QUEUE_MESSAGE_SEVERITY            Severity,
+    StringDecoder*                              pDescription)
+{
+    auto replay_object = GetObjectInfo(object_id);
+    if ((replay_object != nullptr) && (replay_object->object != nullptr))
+    {
+        CustomReplayPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_AddApplicationMessage>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Severity,
+            pDescription);
+        auto replay_result = reinterpret_cast<IDXGIInfoQueue*>(replay_object->object)->AddApplicationMessage(Severity,
+                                                                                                             pDescription->GetPointer());
+        CheckReplayResult("IDXGIInfoQueue_AddApplicationMessage", return_value, replay_result);
+        CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_AddApplicationMessage>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            return_value,
+            replay_result,
+            Severity,
+            pDescription);
+    }
+}
+
+void Dx12ReplayConsumer::Process_IDXGIInfoQueue_SetBreakOnCategory(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            object_id,
+    HRESULT                                     return_value,
+    Decoded_GUID                                Producer,
+    DXGI_INFO_QUEUE_MESSAGE_CATEGORY            Category,
+    BOOL                                        bEnable)
+{
+    auto replay_object = GetObjectInfo(object_id);
+    if ((replay_object != nullptr) && (replay_object->object != nullptr))
+    {
+        CustomReplayPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_SetBreakOnCategory>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer,
+            Category,
+            bEnable);
+        auto replay_result = reinterpret_cast<IDXGIInfoQueue*>(replay_object->object)->SetBreakOnCategory(*Producer.decoded_value,
+                                                                                                          Category,
+                                                                                                          bEnable);
+        CheckReplayResult("IDXGIInfoQueue_SetBreakOnCategory", return_value, replay_result);
+        CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_SetBreakOnCategory>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            return_value,
+            replay_result,
+            Producer,
+            Category,
+            bEnable);
+    }
+}
+
+void Dx12ReplayConsumer::Process_IDXGIInfoQueue_SetBreakOnSeverity(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            object_id,
+    HRESULT                                     return_value,
+    Decoded_GUID                                Producer,
+    DXGI_INFO_QUEUE_MESSAGE_SEVERITY            Severity,
+    BOOL                                        bEnable)
+{
+    auto replay_object = GetObjectInfo(object_id);
+    if ((replay_object != nullptr) && (replay_object->object != nullptr))
+    {
+        CustomReplayPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_SetBreakOnSeverity>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer,
+            Severity,
+            bEnable);
+        auto replay_result = reinterpret_cast<IDXGIInfoQueue*>(replay_object->object)->SetBreakOnSeverity(*Producer.decoded_value,
+                                                                                                          Severity,
+                                                                                                          bEnable);
+        CheckReplayResult("IDXGIInfoQueue_SetBreakOnSeverity", return_value, replay_result);
+        CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_SetBreakOnSeverity>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            return_value,
+            replay_result,
+            Producer,
+            Severity,
+            bEnable);
+    }
+}
+
+void Dx12ReplayConsumer::Process_IDXGIInfoQueue_SetBreakOnID(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            object_id,
+    HRESULT                                     return_value,
+    Decoded_GUID                                Producer,
+    int                                         ID,
+    BOOL                                        bEnable)
+{
+    auto replay_object = GetObjectInfo(object_id);
+    if ((replay_object != nullptr) && (replay_object->object != nullptr))
+    {
+        CustomReplayPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_SetBreakOnID>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer,
+            ID,
+            bEnable);
+        auto replay_result = reinterpret_cast<IDXGIInfoQueue*>(replay_object->object)->SetBreakOnID(*Producer.decoded_value,
+                                                                                                    ID,
+                                                                                                    bEnable);
+        CheckReplayResult("IDXGIInfoQueue_SetBreakOnID", return_value, replay_result);
+        CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_SetBreakOnID>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            return_value,
+            replay_result,
+            Producer,
+            ID,
+            bEnable);
+    }
+}
+
+void Dx12ReplayConsumer::Process_IDXGIInfoQueue_GetBreakOnCategory(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            object_id,
+    BOOL                                        return_value,
+    Decoded_GUID                                Producer,
+    DXGI_INFO_QUEUE_MESSAGE_CATEGORY            Category)
+{
+    auto replay_object = GetObjectInfo(object_id);
+    if ((replay_object != nullptr) && (replay_object->object != nullptr))
+    {
+        CustomReplayPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetBreakOnCategory>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer,
+            Category);
+        auto replay_result = reinterpret_cast<IDXGIInfoQueue*>(replay_object->object)->GetBreakOnCategory(*Producer.decoded_value,
+                                                                                                          Category);
+        CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetBreakOnCategory>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            return_value,
+            replay_result,
+            Producer,
+            Category);
+    }
+}
+
+void Dx12ReplayConsumer::Process_IDXGIInfoQueue_GetBreakOnSeverity(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            object_id,
+    BOOL                                        return_value,
+    Decoded_GUID                                Producer,
+    DXGI_INFO_QUEUE_MESSAGE_SEVERITY            Severity)
+{
+    auto replay_object = GetObjectInfo(object_id);
+    if ((replay_object != nullptr) && (replay_object->object != nullptr))
+    {
+        CustomReplayPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetBreakOnSeverity>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer,
+            Severity);
+        auto replay_result = reinterpret_cast<IDXGIInfoQueue*>(replay_object->object)->GetBreakOnSeverity(*Producer.decoded_value,
+                                                                                                          Severity);
+        CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetBreakOnSeverity>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            return_value,
+            replay_result,
+            Producer,
+            Severity);
+    }
+}
+
+void Dx12ReplayConsumer::Process_IDXGIInfoQueue_GetBreakOnID(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            object_id,
+    BOOL                                        return_value,
+    Decoded_GUID                                Producer,
+    int                                         ID)
+{
+    auto replay_object = GetObjectInfo(object_id);
+    if ((replay_object != nullptr) && (replay_object->object != nullptr))
+    {
+        CustomReplayPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetBreakOnID>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer,
+            ID);
+        auto replay_result = reinterpret_cast<IDXGIInfoQueue*>(replay_object->object)->GetBreakOnID(*Producer.decoded_value,
+                                                                                                    ID);
+        CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetBreakOnID>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            return_value,
+            replay_result,
+            Producer,
+            ID);
+    }
+}
+
+void Dx12ReplayConsumer::Process_IDXGIInfoQueue_SetMuteDebugOutput(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            object_id,
+    Decoded_GUID                                Producer,
+    BOOL                                        bMute)
+{
+    auto replay_object = GetObjectInfo(object_id);
+    if ((replay_object != nullptr) && (replay_object->object != nullptr))
+    {
+        CustomReplayPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_SetMuteDebugOutput>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer,
+            bMute);
+        reinterpret_cast<IDXGIInfoQueue*>(replay_object->object)->SetMuteDebugOutput(*Producer.decoded_value,
+                                                                                     bMute);
+        CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_SetMuteDebugOutput>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer,
+            bMute);
+    }
+}
+
+void Dx12ReplayConsumer::Process_IDXGIInfoQueue_GetMuteDebugOutput(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            object_id,
+    BOOL                                        return_value,
+    Decoded_GUID                                Producer)
+{
+    auto replay_object = GetObjectInfo(object_id);
+    if ((replay_object != nullptr) && (replay_object->object != nullptr))
+    {
+        CustomReplayPreCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetMuteDebugOutput>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            Producer);
+        auto replay_result = reinterpret_cast<IDXGIInfoQueue*>(replay_object->object)->GetMuteDebugOutput(*Producer.decoded_value);
+        CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIInfoQueue_GetMuteDebugOutput>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            return_value,
+            replay_result,
+            Producer);
+    }
+}
+
+void Dx12ReplayConsumer::Process_IDXGIDebug_ReportLiveObjects(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            object_id,
+    HRESULT                                     return_value,
+    Decoded_GUID                                apiid,
+    DXGI_DEBUG_RLO_FLAGS                        flags)
+{
+    auto replay_object = GetObjectInfo(object_id);
+    if ((replay_object != nullptr) && (replay_object->object != nullptr))
+    {
+        CustomReplayPreCall<format::ApiCallId::ApiCall_IDXGIDebug_ReportLiveObjects>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            apiid,
+            flags);
+        auto replay_result = reinterpret_cast<IDXGIDebug*>(replay_object->object)->ReportLiveObjects(*apiid.decoded_value,
+                                                                                                     flags);
+        CheckReplayResult("IDXGIDebug_ReportLiveObjects", return_value, replay_result);
+        CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIDebug_ReportLiveObjects>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            return_value,
+            replay_result,
+            apiid,
+            flags);
+    }
+}
+
+void Dx12ReplayConsumer::Process_IDXGIDebug1_EnableLeakTrackingForThread(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            object_id)
+{
+    auto replay_object = GetObjectInfo(object_id);
+    if ((replay_object != nullptr) && (replay_object->object != nullptr))
+    {
+        CustomReplayPreCall<format::ApiCallId::ApiCall_IDXGIDebug1_EnableLeakTrackingForThread>::Dispatch(
+            this,
+            call_info,
+            replay_object);
+        reinterpret_cast<IDXGIDebug1*>(replay_object->object)->EnableLeakTrackingForThread();
+        CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIDebug1_EnableLeakTrackingForThread>::Dispatch(
+            this,
+            call_info,
+            replay_object);
+    }
+}
+
+void Dx12ReplayConsumer::Process_IDXGIDebug1_DisableLeakTrackingForThread(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            object_id)
+{
+    auto replay_object = GetObjectInfo(object_id);
+    if ((replay_object != nullptr) && (replay_object->object != nullptr))
+    {
+        CustomReplayPreCall<format::ApiCallId::ApiCall_IDXGIDebug1_DisableLeakTrackingForThread>::Dispatch(
+            this,
+            call_info,
+            replay_object);
+        reinterpret_cast<IDXGIDebug1*>(replay_object->object)->DisableLeakTrackingForThread();
+        CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIDebug1_DisableLeakTrackingForThread>::Dispatch(
+            this,
+            call_info,
+            replay_object);
+    }
+}
+
+void Dx12ReplayConsumer::Process_IDXGIDebug1_IsLeakTrackingEnabledForThread(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            object_id,
+    BOOL                                        return_value)
+{
+    auto replay_object = GetObjectInfo(object_id);
+    if ((replay_object != nullptr) && (replay_object->object != nullptr))
+    {
+        CustomReplayPreCall<format::ApiCallId::ApiCall_IDXGIDebug1_IsLeakTrackingEnabledForThread>::Dispatch(
+            this,
+            call_info,
+            replay_object);
+        auto replay_result = reinterpret_cast<IDXGIDebug1*>(replay_object->object)->IsLeakTrackingEnabledForThread();
+        CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIDebug1_IsLeakTrackingEnabledForThread>::Dispatch(
+            this,
+            call_info,
+            replay_object,
+            return_value,
+            replay_result);
     }
 }
 

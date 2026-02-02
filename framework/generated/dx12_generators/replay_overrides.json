@@ -2,6 +2,7 @@
   "functions": {
     "CreateDXGIFactory2": "OverrideCreateDXGIFactory2",
     "D3D12CreateDevice": "OverrideD3D12CreateDevice",
+    "DXGIGetDebugInterface": "OverrideDXGIGetDebugInterface",
     "D3D12CreateVersionedRootSignatureDeserializerFromSubobjectInLibrary": "OverrideD3D12CreateVersionedRootSignatureDeserializerFromSubobjectInLibrary"
   },
   "classmethods": {

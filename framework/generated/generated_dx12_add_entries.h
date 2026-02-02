@@ -214,6 +214,9 @@ const std::unordered_map<IID, std::function<void(typename void**, format::ApiCal
     { IID_IDXGIFactory5, AddEntry<IDXGIFactory_Wrapper, ParentWrapper> },
     { IID_IDXGIFactory6, AddEntry<IDXGIFactory_Wrapper, ParentWrapper> },
     { IID_IDXGIFactory7, AddEntry<IDXGIFactory_Wrapper, ParentWrapper> },
+    { IID_IDXGIInfoQueue, AddEntry<IDXGIInfoQueue_Wrapper, ParentWrapper> },
+    { IID_IDXGIDebug, AddEntry<IDXGIDebug_Wrapper, ParentWrapper> },
+    { IID_IDXGIDebug1, AddEntry<IDXGIDebug_Wrapper, ParentWrapper> },
 };
 
 const std::unordered_map<IID, std::function<void(typename void**, format::ApiCallId, void*, const util::MemoryOutputStream*, std::mutex &state_table_mutex, Dx12StateTable &state_table)>,IidHash> kAddEntryVoidFunctionTable
@@ -361,6 +364,9 @@ const std::unordered_map<IID, std::function<void(typename void**, format::ApiCal
     { IID_IDXGIFactory5, AddEntry<IDXGIFactory_Wrapper> },
     { IID_IDXGIFactory6, AddEntry<IDXGIFactory_Wrapper> },
     { IID_IDXGIFactory7, AddEntry<IDXGIFactory_Wrapper> },
+    { IID_IDXGIInfoQueue, AddEntry<IDXGIInfoQueue_Wrapper> },
+    { IID_IDXGIDebug, AddEntry<IDXGIDebug_Wrapper> },
+    { IID_IDXGIDebug1, AddEntry<IDXGIDebug_Wrapper> },
 };
 
 static DxWrapperInfo* GetWrapperInfo(IUnknown_Wrapper* wrapper)
@@ -1080,6 +1086,21 @@ static DxWrapperInfo* GetWrapperInfo(IUnknown_Wrapper* wrapper)
     if(riid == IID_IDXGIFactory7)
     {
         auto* new_wrapper = reinterpret_cast<IDXGIFactory_Wrapper*>(wrapper);
+        return new_wrapper->GetObjectInfo().get();
+    }
+    if(riid == IID_IDXGIInfoQueue)
+    {
+        auto* new_wrapper = reinterpret_cast<IDXGIInfoQueue_Wrapper*>(wrapper);
+        return new_wrapper->GetObjectInfo().get();
+    }
+    if(riid == IID_IDXGIDebug)
+    {
+        auto* new_wrapper = reinterpret_cast<IDXGIDebug_Wrapper*>(wrapper);
+        return new_wrapper->GetObjectInfo().get();
+    }
+    if(riid == IID_IDXGIDebug1)
+    {
+        auto* new_wrapper = reinterpret_cast<IDXGIDebug_Wrapper*>(wrapper);
         return new_wrapper->GetObjectInfo().get();
     }
     return nullptr;

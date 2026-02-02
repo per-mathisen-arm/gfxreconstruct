@@ -100,6 +100,8 @@ class Dx12StateTable : public Dx12StateTableBase
     bool InsertWrapper(format::HandleId id, IDXGIAdapter_Wrapper* wrapper) { return InsertEntry(id, wrapper, IDXGIAdapter_Wrapper_map_); }
     bool InsertWrapper(format::HandleId id, IDXGIOutput_Wrapper* wrapper) { return InsertEntry(id, wrapper, IDXGIOutput_Wrapper_map_); }
     bool InsertWrapper(format::HandleId id, IDXGIFactory_Wrapper* wrapper) { return InsertEntry(id, wrapper, IDXGIFactory_Wrapper_map_); }
+    bool InsertWrapper(format::HandleId id, IDXGIInfoQueue_Wrapper* wrapper) { return InsertEntry(id, wrapper, IDXGIInfoQueue_Wrapper_map_); }
+    bool InsertWrapper(format::HandleId id, IDXGIDebug_Wrapper* wrapper) { return InsertEntry(id, wrapper, IDXGIDebug_Wrapper_map_); }
 
     bool RemoveWrapper(const ID3D12RootSignature_Wrapper* wrapper) { return RemoveEntry(wrapper, ID3D12RootSignature_Wrapper_map_); }
     bool RemoveWrapper(const ID3D12RootSignatureDeserializer_Wrapper* wrapper) { return RemoveEntry(wrapper, ID3D12RootSignatureDeserializer_Wrapper_map_); }
@@ -162,6 +164,8 @@ class Dx12StateTable : public Dx12StateTableBase
     bool RemoveWrapper(const IDXGIAdapter_Wrapper* wrapper) { return RemoveEntry(wrapper, IDXGIAdapter_Wrapper_map_); }
     bool RemoveWrapper(const IDXGIOutput_Wrapper* wrapper) { return RemoveEntry(wrapper, IDXGIOutput_Wrapper_map_); }
     bool RemoveWrapper(const IDXGIFactory_Wrapper* wrapper) { return RemoveEntry(wrapper, IDXGIFactory_Wrapper_map_); }
+    bool RemoveWrapper(const IDXGIInfoQueue_Wrapper* wrapper) { return RemoveEntry(wrapper, IDXGIInfoQueue_Wrapper_map_); }
+    bool RemoveWrapper(const IDXGIDebug_Wrapper* wrapper) { return RemoveEntry(wrapper, IDXGIDebug_Wrapper_map_); }
 
     void VisitWrappers(std::function<void(ID3D12RootSignature_Wrapper*)> visitor) const { for (auto entry : ID3D12RootSignature_Wrapper_map_) { visitor(entry.second); } }
     void VisitWrappers(std::function<void(ID3D12RootSignatureDeserializer_Wrapper*)> visitor) const { for (auto entry : ID3D12RootSignatureDeserializer_Wrapper_map_) { visitor(entry.second); } }
@@ -224,6 +228,8 @@ class Dx12StateTable : public Dx12StateTableBase
     void VisitWrappers(std::function<void(IDXGIAdapter_Wrapper*)> visitor) const { for (auto entry : IDXGIAdapter_Wrapper_map_) { visitor(entry.second); } }
     void VisitWrappers(std::function<void(IDXGIOutput_Wrapper*)> visitor) const { for (auto entry : IDXGIOutput_Wrapper_map_) { visitor(entry.second); } }
     void VisitWrappers(std::function<void(IDXGIFactory_Wrapper*)> visitor) const { for (auto entry : IDXGIFactory_Wrapper_map_) { visitor(entry.second); } }
+    void VisitWrappers(std::function<void(IDXGIInfoQueue_Wrapper*)> visitor) const { for (auto entry : IDXGIInfoQueue_Wrapper_map_) { visitor(entry.second); } }
+    void VisitWrappers(std::function<void(IDXGIDebug_Wrapper*)> visitor) const { for (auto entry : IDXGIDebug_Wrapper_map_) { visitor(entry.second); } }
 
     //
     // Helper functions for state initialization.
@@ -412,6 +418,12 @@ class Dx12StateTable : public Dx12StateTableBase
     IDXGIFactory_Wrapper* GetIDXGIFactory_Wrapper(format::HandleId id) { return GetWrapper<IDXGIFactory_Wrapper>(id, IDXGIFactory_Wrapper_map_); }
     const IDXGIFactory_Wrapper* GetIDXGIFactory_Wrapper(format::HandleId id) const { return GetWrapper<IDXGIFactory_Wrapper>(id, IDXGIFactory_Wrapper_map_); }
 
+    IDXGIInfoQueue_Wrapper* GetIDXGIInfoQueue_Wrapper(format::HandleId id) { return GetWrapper<IDXGIInfoQueue_Wrapper>(id, IDXGIInfoQueue_Wrapper_map_); }
+    const IDXGIInfoQueue_Wrapper* GetIDXGIInfoQueue_Wrapper(format::HandleId id) const { return GetWrapper<IDXGIInfoQueue_Wrapper>(id, IDXGIInfoQueue_Wrapper_map_); }
+
+    IDXGIDebug_Wrapper* GetIDXGIDebug_Wrapper(format::HandleId id) { return GetWrapper<IDXGIDebug_Wrapper>(id, IDXGIDebug_Wrapper_map_); }
+    const IDXGIDebug_Wrapper* GetIDXGIDebug_Wrapper(format::HandleId id) const { return GetWrapper<IDXGIDebug_Wrapper>(id, IDXGIDebug_Wrapper_map_); }
+
 
   private:
     std::map<format::HandleId, ID3D12RootSignature_Wrapper*> ID3D12RootSignature_Wrapper_map_;
@@ -475,6 +487,8 @@ class Dx12StateTable : public Dx12StateTableBase
     std::map<format::HandleId, IDXGIAdapter_Wrapper*> IDXGIAdapter_Wrapper_map_;
     std::map<format::HandleId, IDXGIOutput_Wrapper*> IDXGIOutput_Wrapper_map_;
     std::map<format::HandleId, IDXGIFactory_Wrapper*> IDXGIFactory_Wrapper_map_;
+    std::map<format::HandleId, IDXGIInfoQueue_Wrapper*> IDXGIInfoQueue_Wrapper_map_;
+    std::map<format::HandleId, IDXGIDebug_Wrapper*> IDXGIDebug_Wrapper_map_;
 };
 
 GFXRECON_END_NAMESPACE(encode)

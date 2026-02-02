@@ -21,7 +21,9 @@
       "LPCVOID"   : { "baseType" : "void",     "replaceWith" : "const void*" },
       "LPVOID"    : { "baseType" : "void",     "replaceWith" : "void*" },
       "WCHAR"     : { "baseType" : "wchar_t",  "replaceWith" : "wchar_t" },
-      "LPCSTR"    : { "baseType" : "char",     "replaceWith" : "const char*" }
+      "LPCSTR"    : { "baseType" : "char",     "replaceWith" : "const char*" },
+      "DXGI_DEBUG_ID" : { "baseType" : "GUID",  "replaceWith" : "GUID" },
+      "DXGI_INFO_QUEUE_MESSAGE_ID" : { "baseType" : "int",  "replaceWith" : "enum" }
     },
     "structs" : [
     ]

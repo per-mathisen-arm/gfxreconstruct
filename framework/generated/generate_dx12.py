@@ -74,6 +74,7 @@ WINDOWS_SDK_SOURCE_LIST = [
     'shared\\dxgi1_6.h',
     'shared\\dxgicommon.h',
     'shared\\dxgitype.h',
+    'um\\dxgidebug.h',
 ]
 
 AGILITY_SDK_SOURCE_LIST = [

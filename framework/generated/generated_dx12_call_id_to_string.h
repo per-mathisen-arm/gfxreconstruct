@@ -1589,6 +1589,132 @@ inline std::wstring GetDx12CallIdString(format::ApiCallId call_id)
     case format::ApiCallId::ApiCall_IDXGIFactory7_UnregisterAdaptersChangedEvent:
         out = L"IDXGIFactory7_UnregisterAdaptersChangedEvent";
         break;
+    case format::ApiCallId::ApiCall_DXGIGetDebugInterface:
+        out = L"DXGIGetDebugInterface";
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_SetMessageCountLimit:
+        out = L"IDXGIInfoQueue_SetMessageCountLimit";
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_ClearStoredMessages:
+        out = L"IDXGIInfoQueue_ClearStoredMessages";
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_GetMessage:
+        out = L"IDXGIInfoQueue_GetMessage";
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_GetNumStoredMessagesAllowedByRetrievalFilters:
+        out = L"IDXGIInfoQueue_GetNumStoredMessagesAllowedByRetrievalFilters";
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_GetNumStoredMessages:
+        out = L"IDXGIInfoQueue_GetNumStoredMessages";
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_GetNumMessagesDiscardedByMessageCountLimit:
+        out = L"IDXGIInfoQueue_GetNumMessagesDiscardedByMessageCountLimit";
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_GetMessageCountLimit:
+        out = L"IDXGIInfoQueue_GetMessageCountLimit";
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_GetNumMessagesAllowedByStorageFilter:
+        out = L"IDXGIInfoQueue_GetNumMessagesAllowedByStorageFilter";
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_GetNumMessagesDeniedByStorageFilter:
+        out = L"IDXGIInfoQueue_GetNumMessagesDeniedByStorageFilter";
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_AddStorageFilterEntries:
+        out = L"IDXGIInfoQueue_AddStorageFilterEntries";
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_GetStorageFilter:
+        out = L"IDXGIInfoQueue_GetStorageFilter";
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_ClearStorageFilter:
+        out = L"IDXGIInfoQueue_ClearStorageFilter";
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_PushEmptyStorageFilter:
+        out = L"IDXGIInfoQueue_PushEmptyStorageFilter";
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_PushDenyAllStorageFilter:
+        out = L"IDXGIInfoQueue_PushDenyAllStorageFilter";
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_PushCopyOfStorageFilter:
+        out = L"IDXGIInfoQueue_PushCopyOfStorageFilter";
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_PushStorageFilter:
+        out = L"IDXGIInfoQueue_PushStorageFilter";
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_PopStorageFilter:
+        out = L"IDXGIInfoQueue_PopStorageFilter";
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_GetStorageFilterStackSize:
+        out = L"IDXGIInfoQueue_GetStorageFilterStackSize";
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_AddRetrievalFilterEntries:
+        out = L"IDXGIInfoQueue_AddRetrievalFilterEntries";
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_GetRetrievalFilter:
+        out = L"IDXGIInfoQueue_GetRetrievalFilter";
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_ClearRetrievalFilter:
+        out = L"IDXGIInfoQueue_ClearRetrievalFilter";
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_PushEmptyRetrievalFilter:
+        out = L"IDXGIInfoQueue_PushEmptyRetrievalFilter";
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_PushDenyAllRetrievalFilter:
+        out = L"IDXGIInfoQueue_PushDenyAllRetrievalFilter";
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_PushCopyOfRetrievalFilter:
+        out = L"IDXGIInfoQueue_PushCopyOfRetrievalFilter";
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_PushRetrievalFilter:
+        out = L"IDXGIInfoQueue_PushRetrievalFilter";
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_PopRetrievalFilter:
+        out = L"IDXGIInfoQueue_PopRetrievalFilter";
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_GetRetrievalFilterStackSize:
+        out = L"IDXGIInfoQueue_GetRetrievalFilterStackSize";
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_AddMessage:
+        out = L"IDXGIInfoQueue_AddMessage";
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_AddApplicationMessage:
+        out = L"IDXGIInfoQueue_AddApplicationMessage";
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_SetBreakOnCategory:
+        out = L"IDXGIInfoQueue_SetBreakOnCategory";
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_SetBreakOnSeverity:
+        out = L"IDXGIInfoQueue_SetBreakOnSeverity";
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_SetBreakOnID:
+        out = L"IDXGIInfoQueue_SetBreakOnID";
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_GetBreakOnCategory:
+        out = L"IDXGIInfoQueue_GetBreakOnCategory";
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_GetBreakOnSeverity:
+        out = L"IDXGIInfoQueue_GetBreakOnSeverity";
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_GetBreakOnID:
+        out = L"IDXGIInfoQueue_GetBreakOnID";
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_SetMuteDebugOutput:
+        out = L"IDXGIInfoQueue_SetMuteDebugOutput";
+        break;
+    case format::ApiCallId::ApiCall_IDXGIInfoQueue_GetMuteDebugOutput:
+        out = L"IDXGIInfoQueue_GetMuteDebugOutput";
+        break;
+    case format::ApiCallId::ApiCall_IDXGIDebug_ReportLiveObjects:
+        out = L"IDXGIDebug_ReportLiveObjects";
+        break;
+    case format::ApiCallId::ApiCall_IDXGIDebug1_EnableLeakTrackingForThread:
+        out = L"IDXGIDebug1_EnableLeakTrackingForThread";
+        break;
+    case format::ApiCallId::ApiCall_IDXGIDebug1_DisableLeakTrackingForThread:
+        out = L"IDXGIDebug1_DisableLeakTrackingForThread";
+        break;
+    case format::ApiCallId::ApiCall_IDXGIDebug1_IsLeakTrackingEnabledForThread:
+        out = L"IDXGIDebug1_IsLeakTrackingEnabledForThread";
+        break;
     case format::ApiCallId::ApiCall_IUnknown_QueryInterface:
         out = L"IUnknown_QueryInterface";
         break;

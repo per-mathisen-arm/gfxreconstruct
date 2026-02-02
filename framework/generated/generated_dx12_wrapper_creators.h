@@ -45,6 +45,7 @@
 #include <dxgi1_6.h>
 #include <dxgicommon.h>
 #include <dxgitype.h>
+#include <dxgidebug.h>
 #include <Unknwnbase.h>
 #include <guiddef.h>
 #include <windef.h>
@@ -185,6 +186,10 @@ void WrapIDXGIAdapter(REFIID riid, void** object, DxWrapperResources* resources)
 void WrapIDXGIOutput(REFIID riid, void** object, DxWrapperResources* resources);
 
 void WrapIDXGIFactory(REFIID riid, void** object, DxWrapperResources* resources);
+
+void WrapIDXGIInfoQueue(REFIID riid, void** object, DxWrapperResources* resources);
+
+void WrapIDXGIDebug(REFIID riid, void** object, DxWrapperResources* resources);
 
 const std::unordered_map<IID, std::function<void(REFIID, void**,DxWrapperResources*)>,IidHash> kFunctionTable
 {
@@ -331,6 +336,9 @@ const std::unordered_map<IID, std::function<void(REFIID, void**,DxWrapperResourc
     { IID_IDXGIFactory5, WrapIDXGIFactory },
     { IID_IDXGIFactory6, WrapIDXGIFactory },
     { IID_IDXGIFactory7, WrapIDXGIFactory },
+    { IID_IDXGIInfoQueue, WrapIDXGIInfoQueue },
+    { IID_IDXGIDebug, WrapIDXGIDebug },
+    { IID_IDXGIDebug1, WrapIDXGIDebug },
 };
 
 GFXRECON_END_NAMESPACE(encode)

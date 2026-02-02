@@ -5105,6 +5105,50 @@ void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_DXGI_JPEG_QUANTIZA
     }
 }
 
+void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_DXGI_INFO_QUEUE_MESSAGE* data, const JsonOptions& options)
+{
+    using namespace util;
+    if (data && data->decoded_value)
+    {
+        const DXGI_INFO_QUEUE_MESSAGE& decoded_value = *data->decoded_value;
+        const Decoded_DXGI_INFO_QUEUE_MESSAGE& meta_struct = *data;
+        FieldToJson(jdata["Producer"], meta_struct.Producer, options);
+        FieldToJson(jdata["Category"], decoded_value.Category, options);
+        FieldToJson(jdata["Severity"], decoded_value.Severity, options);
+        FieldToJson(jdata["ID"], decoded_value.ID, options);
+        FieldToJson(jdata["pDescription"], meta_struct.pDescription, options);
+        FieldToJson(jdata["DescriptionByteLength"], decoded_value.DescriptionByteLength, options);
+    }
+}
+
+void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_DXGI_INFO_QUEUE_FILTER_DESC* data, const JsonOptions& options)
+{
+    using namespace util;
+    if (data && data->decoded_value)
+    {
+        const DXGI_INFO_QUEUE_FILTER_DESC& decoded_value = *data->decoded_value;
+        const Decoded_DXGI_INFO_QUEUE_FILTER_DESC& meta_struct = *data;
+        FieldToJson(jdata["NumCategories"], decoded_value.NumCategories, options);
+        FieldToJson(jdata["pCategoryList"], meta_struct.pCategoryList, options);
+        FieldToJson(jdata["NumSeverities"], decoded_value.NumSeverities, options);
+        FieldToJson(jdata["pSeverityList"], meta_struct.pSeverityList, options);
+        FieldToJson(jdata["NumIDs"], decoded_value.NumIDs, options);
+        FieldToJson(jdata["pIDList"], meta_struct.pIDList, options);
+    }
+}
+
+void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_DXGI_INFO_QUEUE_FILTER* data, const JsonOptions& options)
+{
+    using namespace util;
+    if (data && data->decoded_value)
+    {
+        const DXGI_INFO_QUEUE_FILTER& decoded_value = *data->decoded_value;
+        const Decoded_DXGI_INFO_QUEUE_FILTER& meta_struct = *data;
+        FieldToJson(jdata["AllowList"], meta_struct.AllowList, options);
+        FieldToJson(jdata["DenyList"], meta_struct.DenyList, options);
+    }
+}
+
 void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_tagRECT* data, const JsonOptions& options)
 {
     using namespace util;

@@ -54,6 +54,24 @@ EXTERN_C bool InitializeDxgiCapture(gfxrecon::encode::DxgiDispatchTable* table)
     return false;
 }
 
+EXTERN_C bool InitializeDxgiDebugCapture(gfxrecon::encode::DxgiDebugDispatchTable* table)
+{
+    if ((table != nullptr) && gfxrecon::encode::D3D12CaptureManager::CreateInstance())
+    {
+        // Store the real DXGIDebug functions with the capture manager.  The wrapper functions will retrieve the real
+        // functions from the capture manager.
+        auto manager = gfxrecon::encode::D3D12CaptureManager::Get();
+        manager->InitDxgiDebugDispatchTable(*table);
+
+        // Update the dispatch table with the wrapper functions.
+        table->DXGIGetDebugInterface = gfxrecon::encode::DXGIGetDebugInterface;
+
+        return true;
+    }
+
+    return false;
+}
+
 EXTERN_C bool InitializeD3D12Capture(gfxrecon::encode::D3D12DispatchTable* table)
 {
     if (gfxrecon::encode::D3D12CaptureManager::CreateInstance())
@@ -121,6 +139,11 @@ EXTERN_C bool InitializeAgsCapture()
 #endif // GFXRECON_AGS_SUPPORT
 
 EXTERN_C void WINAPI ReleaseDxgiCapture(gfxrecon::encode::DxgiDispatchTable*)
+{
+    gfxrecon::encode::D3D12CaptureManager::DestroyInstance();
+}
+
+EXTERN_C void WINAPI ReleaseDxgiDebugCapture(gfxrecon::encode::DxgiDebugDispatchTable*)
 {
     gfxrecon::encode::D3D12CaptureManager::DestroyInstance();
 }
