@@ -104,6 +104,9 @@ VkResult VulkanVirtualSwapchain::CreateSwapchainKHR(VkResult                    
     modified_create_info.imageUsage =
         modified_create_info.imageUsage | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
+    // Disable lazy swapchain image allocation
+    modified_create_info.flags &= ~VK_SWAPCHAIN_CREATE_DEFERRED_MEMORY_ALLOCATION_BIT_KHR;
+
     util::MarkingLayersUtil::instance().BeginInjected(device_info);
     VkResult result = instance_table_->GetPhysicalDeviceSurfaceCapabilitiesKHR(
         physical_device, create_info->surface, &surfCapabilities);
