@@ -3052,7 +3052,6 @@ void VulkanReplayConsumerBase::WriteScreenshots(const Decoded_VkPresentInfoKHR* 
                 // TODO: This should be stored in the VulkanDeviceInfo structure to avoid the need for frequent
                 // queries.
                 VkPhysicalDeviceMemoryProperties memory_properties;
-                util::MarkingLayersUtil::instance().BeginInjected(device_info);
                 instance_table->GetPhysicalDeviceMemoryProperties(device_info->parent, &memory_properties);
 
                 std::string filename_prefix = screenshot_file_prefix_;
@@ -3088,7 +3087,6 @@ void VulkanReplayConsumerBase::WriteScreenshots(const Decoded_VkPresentInfoKHR* 
                                                 screenshot_width,
                                                 screenshot_height,
                                                 VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
-                util::MarkingLayersUtil::instance().EndInjected(device_info);
             }
         }
     }

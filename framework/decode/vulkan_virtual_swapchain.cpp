@@ -251,11 +251,9 @@ VkResult VulkanVirtualSwapchain::CreateSwapchainResourceData(const VulkanDeviceI
     uint32_t                             property_count     = 0;
     std::vector<VkQueueFamilyProperties> props;
 
-    util::MarkingLayersUtil::instance().BeginInjected(device_info);
     instance_table_->GetPhysicalDeviceQueueFamilyProperties(device_info->parent, &property_count, nullptr);
     props.resize(property_count);
     instance_table_->GetPhysicalDeviceQueueFamilyProperties(device_info->parent, &property_count, props.data());
-    util::MarkingLayersUtil::instance().EndInjected(device_info);
 
     for (uint32_t queue_family_index = 0; queue_family_index < property_count; ++queue_family_index)
     {
@@ -303,9 +301,7 @@ VkResult VulkanVirtualSwapchain::CreateSwapchainResourceData(const VulkanDeviceI
                           swapchain_info->capture_id);
     }
 
-    util::MarkingLayersUtil::instance().BeginInjected(device_info);
     initial_copy_queue = GetDeviceQueue(device_table_, device_info, copy_queue_family_index, 0);
-    util::MarkingLayersUtil::instance().EndInjected(device_info);
 
     if (initial_copy_queue == VK_NULL_HANDLE)
     {
@@ -319,7 +315,6 @@ VkResult VulkanVirtualSwapchain::CreateSwapchainResourceData(const VulkanDeviceI
     auto& swapchain_resources = swapchain_resources_[swapchain];
     if (!offscreen)
     {
-        util::MarkingLayersUtil::instance().BeginInjected(device_info);
         for (uint32_t queue_family_index = 0; queue_family_index < property_count; ++queue_family_index)
         {
             if (swapchain_resources->copy_cmd_data.find(queue_family_index) == swapchain_resources->copy_cmd_data.end())
@@ -455,7 +450,6 @@ VkResult VulkanVirtualSwapchain::CreateSwapchainResourceData(const VulkanDeviceI
                 }
             }
         }
-        util::MarkingLayersUtil::instance().EndInjected(device_info);
     }
 
     uint32_t virtual_swapchain_count = static_cast<uint32_t>(swapchain_resources->virtual_swapchain_images.size());
@@ -517,7 +511,6 @@ VkResult VulkanVirtualSwapchain::CreateSwapchainResourceData(const VulkanDeviceI
 
         if (!offscreen)
         {
-            util::MarkingLayersUtil::instance().BeginInjected(device_info);
             VkCommandBufferBeginInfo begin_info = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
             begin_info.pNext                    = nullptr;
             begin_info.flags                    = 0;
@@ -622,7 +615,6 @@ VkResult VulkanVirtualSwapchain::CreateSwapchainResourceData(const VulkanDeviceI
                     swapchain_info->capture_id);
                 return result;
             }
-            util::MarkingLayersUtil::instance().EndInjected(device_info);
         }
     }
 
