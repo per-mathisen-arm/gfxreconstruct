@@ -49,9 +49,6 @@
 #include "util/logging.h"
 #include "util/date_time.h"
 
-// TODO add vulkan_raytracing_optimizer
-// #include "vulkan_raytracing_optimizer.h"
-
 #include "vulkan/vulkan.h"
 
 #include <filesystem>
