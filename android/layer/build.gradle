@@ -2,7 +2,6 @@ apply plugin: 'com.android.library'
 
 android {
     def propMaxThreadsPerBuildTask = providers.gradleProperty("MaxThreadsPerBuildTask")
-    def propEnableCcache = providers.gradleProperty("EnableCcache")
 
     compileSdkVersion 34
     namespace 'com.lunarg.gfxreconstruct.layer'
@@ -11,13 +10,13 @@ android {
         minSdkVersion 26
         targetSdkVersion 33
         ndk {
-            if (project.hasProperty("armeabi-v7a")) {
+            if (providers.gradleProperty("armeabi-v7a").present) {
                 abiFilters 'armeabi-v7a'
-            } else if (project.hasProperty("arm64-v8a")) {
+            } else if (providers.gradleProperty("arm64-v8a").present) {
                 abiFilters 'arm64-v8a'
-            } else if (project.hasProperty("x86")) {
+            } else if (providers.gradleProperty("x86").present) {
                 abiFilters 'x86'
-            } else if (project.hasProperty("x86_64")) {
+            } else if (providers.gradleProperty("x86_64").present) {
                 abiFilters 'x86_64'
             } else {
                 abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
@@ -34,12 +33,12 @@ android {
                     arguments.add("-DCMAKE_JOB_POOLS:STRING=build=${propMaxThreadsPerBuildTask.get()}")
                 }
 
-                if (propEnableCcache.present) {
+                if (providers.gradleProperty("EnableCcache").present) {
                     arguments.add("-DCMAKE_C_COMPILER_LAUNCHER=ccache")
                     arguments.add("-DCMAKE_CXX_COMPILER_LAUNCHER=ccache")
                 }
 
-                if (project.hasProperty("DisableOpenXR")) {
+                if (providers.gradleProperty("DisableOpenXR").present) {
                     logger.info('GFXReconstruct layer built with NO OpenXr Support! [DisableOpenXR found]')
                     arguments.add("-DGFXRECON_ENABLE_OPENXR=OFF")
                 }
