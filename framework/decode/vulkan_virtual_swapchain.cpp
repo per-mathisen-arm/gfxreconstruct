@@ -1191,7 +1191,6 @@ void VulkanVirtualSwapchain::FrameBoundaryANDROID(PFN_vkFrameBoundaryANDROID    
     if (image_info->extent.width != window_size.width || image_info->extent.height != window_size.height ||
         ofb_data.swapchain == VK_NULL_HANDLE)
     {
-
         // Create a swapchain
 
         VkSwapchainCreateInfoKHR swapchain_create_info;
@@ -1332,7 +1331,6 @@ void VulkanVirtualSwapchain::FrameBoundaryANDROID(PFN_vkFrameBoundaryANDROID    
 
     if (!swapchain_options_.virtual_swapchain_skip_blit)
     {
-
         // Record command buffer for copy
 
         result = device_table->ResetCommandBuffer(image_data.copy_command_buffer, 0);
