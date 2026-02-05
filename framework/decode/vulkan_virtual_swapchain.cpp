@@ -141,7 +141,6 @@ void VulkanVirtualSwapchain::CleanSwapchainResourceData(const VulkanDeviceInfo* 
 
     if ((device_info != nullptr) && (swapchain_info != nullptr))
     {
-        util::MarkingLayersUtil::instance().BeginInjected(device_info);
         device    = device_info->handle;
         swapchain = swapchain_info->handle;
 
@@ -195,7 +194,6 @@ void VulkanVirtualSwapchain::CleanSwapchainResourceData(const VulkanDeviceInfo* 
             allocator->DestroyImageDirect(image_info.handle, nullptr, image_info.allocator_data);
             allocator->FreeMemoryDirect(image_info.memory, nullptr, image_info.memory_allocator_data);
         }
-        util::MarkingLayersUtil::instance().EndInjected(device_info);
     }
 }
 
@@ -1425,7 +1423,7 @@ VkResult VulkanVirtualSwapchain::CreateVirtualSwapchainImage(const VulkanDeviceI
 {
     // TODO: This is the same code used in VulkanReplayConsumerBase::CreateSwapchainImage, which
     // should be moved to a shared graphics utility function.
-    util::MarkingLayersUtil::instance().BeginInjected(device_info);
+
     VulkanResourceAllocator* allocator = device_info->allocator.get();
     assert(allocator != nullptr);
 
@@ -1486,7 +1484,6 @@ VkResult VulkanVirtualSwapchain::CreateVirtualSwapchainImage(const VulkanDeviceI
             image.image = VK_NULL_HANDLE;
         }
     }
-    util::MarkingLayersUtil::instance().EndInjected(device_info);
     return result;
 }
 
