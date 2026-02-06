@@ -6031,7 +6031,7 @@ Dx12ReplayConsumerBase::OverrideCreateStateObject(DxObjectInfo* device5_object_i
 
         if (resource_value_mapper_ != nullptr)
         {
-            resource_value_mapper_->PostProcessCreateStateObject(state_object_decoder, desc_decoder, {});
+            resource_value_mapper_->PostProcessCreateStateObject(state_object_decoder, desc_decoder, nullptr);
         }
     }
 
@@ -6066,7 +6066,7 @@ Dx12ReplayConsumerBase::OverrideAddToStateObject(
             auto state_object_to_grow_from_extra_info =
                 GetExtraInfo<D3D12StateObjectInfo>(state_object_to_grow_from_object_info);
             resource_value_mapper_->PostProcessCreateStateObject(
-                new_state_object_decoder, addition_decoder, state_object_to_grow_from_extra_info->export_name_lrs_map);
+                new_state_object_decoder, addition_decoder, state_object_to_grow_from_extra_info);
         }
     }
 

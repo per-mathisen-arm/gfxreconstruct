@@ -237,6 +237,7 @@ target_sources(gfxrecon_decode
                     ${CMAKE_CURRENT_LIST_DIR}/vulkan_replay_consumer_arm_features.h
                     ${CMAKE_CURRENT_LIST_DIR}/vulkan_replay_consumer_arm_features.cpp
                     ${CMAKE_CURRENT_LIST_DIR}/vulkan_replay_options.h
+                    ${CMAKE_CURRENT_LIST_DIR}/vulkan_replay_options.cpp
                     ${CMAKE_CURRENT_LIST_DIR}/vulkan_pre_process_consumer.h
                     ${CMAKE_CURRENT_LIST_DIR}/vulkan_replay_dump_resources.h
                     ${CMAKE_CURRENT_LIST_DIR}/vulkan_replay_dump_resources.cpp

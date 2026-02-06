@@ -1,6 +1,6 @@
 /*
 ** Copyright (c) 2021-2023 LunarG, Inc.
-** Copyright (c) 2023 Advanced Micro Devices, Inc. All rights reserved.
+** Copyright (c) 2023-2025 Advanced Micro Devices, Inc. All rights reserved.
 **
 ** Permission is hereby granted, free of charge, to any person obtaining a
 ** copy of this software and associated documentation files (the "Software"),
@@ -150,6 +150,8 @@ struct ArgumentBufferExtraInfo
     D3D12CommandSignatureInfo* command_signature_info{ nullptr };
     DxObjectInfo*              argument_buffer{ nullptr };
     uint64_t                   argument_buffer_offset{ 0 };
+
+    bool operator==(const ArgumentBufferExtraInfo& other) const = default;
 };
 
 struct ResourceValueInfo
@@ -177,6 +179,8 @@ struct ResourceValueInfo
     }
 
     bool operator<(const ResourceValueInfo& other) const { return offset < other.offset; }
+
+    bool operator==(const ResourceValueInfo& other) const = default;
 };
 
 typedef std::map<DxObjectInfo*, std::set<ResourceValueInfo>> ResourceValueInfoMap;
