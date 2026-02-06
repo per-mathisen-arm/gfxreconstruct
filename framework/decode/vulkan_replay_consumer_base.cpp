@@ -4732,6 +4732,8 @@ VkResult VulkanReplayConsumerBase::OverrideQueueSubmit(PFN_vkQueueSubmit        
                                                        StructPointerDecoder<Decoded_VkSubmitInfo>* pSubmits,
                                                        const VulkanFenceInfo*                      fence_info)
 {
+    options_.MaybeWaitBeforeFirstSubmit();
+
     assert((queue_info != nullptr) && (pSubmits != nullptr));
 
     VkResult            result       = VK_SUCCESS;
@@ -4995,6 +4997,8 @@ VkResult VulkanReplayConsumerBase::OverrideQueueSubmit2(PFN_vkQueueSubmit2      
                                                         StructPointerDecoder<Decoded_VkSubmitInfo2>* pSubmits,
                                                         const VulkanFenceInfo*                       fence_info)
 {
+    options_.MaybeWaitBeforeFirstSubmit();
+
     assert((queue_info != nullptr) && (pSubmits != nullptr));
 
     VkResult             result       = VK_SUCCESS;
@@ -9070,7 +9074,10 @@ VkResult VulkanReplayConsumerBase::OverrideGetSwapchainImagesKHR(PFN_vkGetSwapch
         result = swapchain_->GetSwapchainImagesKHR(
             original_result, func, device_info, swapchain_info, capture_image_count, replay_image_count, replay_images);
 
-        if ((result == VK_SUCCESS) && (replay_images != nullptr) && (replay_image_count != nullptr))
+        // If replay_image_count isn't full image count, it will return VK_INCOMPLETE.
+        // Their image infos should also be initialized, even if it's VK_INCOMPLETE.
+        if ((result == VK_SUCCESS || result == VK_INCOMPLETE) && (replay_images != nullptr) &&
+            (replay_image_count != nullptr))
         {
             uint32_t count = (*replay_image_count);
 
@@ -11847,18 +11854,37 @@ void VulkanReplayConsumerBase::OverrideFrameBoundaryANDROID(PFN_vkFrameBoundaryA
         util::MarkingLayersUtil::instance().EndInjected(device_info);
     }
 
-    CommonObjectInfoTable& object_info_table = GetObjectInfoTable();
+    // TODO: merged in PR #2623 but causing issues in extended CI -> debug remaining issues and enable this again
+    // related issue: https://github.com/LunarG/gfxreconstruct/issues/2660
+    if constexpr (false)
+    {
+        CommonObjectInfoTable& object_info_table = GetObjectInfoTable();
 
-    VulkanPhysicalDeviceInfo* physical_device_info = object_info_table.GetVkPhysicalDeviceInfo(device_info->parent_id);
-    GFXRECON_ASSERT(physical_device_info != nullptr);
+        VulkanPhysicalDeviceInfo* physical_device_info =
+            object_info_table.GetVkPhysicalDeviceInfo(device_info->parent_id);
+        GFXRECON_ASSERT(physical_device_info != nullptr);
 
-    VulkanInstanceInfo* instance_info = object_info_table.GetVkInstanceInfo(physical_device_info->parent_id);
-    GFXRECON_ASSERT(instance_info != nullptr);
+        VulkanInstanceInfo* instance_info = object_info_table.GetVkInstanceInfo(physical_device_info->parent_id);
+        GFXRECON_ASSERT(instance_info != nullptr);
 
-    const graphics::VulkanInstanceTable* instance_table = GetInstanceTable(instance_info->handle);
+        const graphics::VulkanInstanceTable* instance_table = GetInstanceTable(instance_info->handle);
 
-    swapchain_->FrameBoundaryANDROID(
-        func, device_info, semaphore_info, image_info, instance_info, instance_table, device_table, application_.get());
+        swapchain_->FrameBoundaryANDROID(func,
+                                         device_info,
+                                         semaphore_info,
+                                         image_info,
+                                         instance_info,
+                                         instance_table,
+                                         device_table,
+                                         application_.get());
+    }
+    else
+    {
+        VkDevice    device    = device_info->handle;
+        VkSemaphore semaphore = semaphore_info ? semaphore_info->handle : VK_NULL_HANDLE;
+        VkImage     image     = image_info ? image_info->handle : VK_NULL_HANDLE;
+        func(device, semaphore, image);
+    }
 }
 
 void VulkanReplayConsumerBase::OverrideDestroyAccelerationStructureKHR(

@@ -159,6 +159,7 @@ const char kLoadPipelineCacheArgument[]           = "--load-pipeline-cache";
 const char kCreateNewPipelineCacheOption[]        = "--add-new-pipeline-caches";
 const char kDeduplicateDevice[]                   = "--deduplicate-device";
 const char kStreamlineAnnotateOption[]            = "--streamline-annotate";
+const char kWaitBeforeFirstSubmit[]               = "--wait-before-first-submit";
 
 const char kScreenshotIgnoreFrameBoundaryArgument[] = "--screenshot-ignore-FrameBoundaryANDROID";
 
@@ -914,6 +915,25 @@ static std::vector<int32_t> GetFilteredMsgs(const gfxrecon::util::ArgumentParser
     return msgs;
 }
 
+static void GetWaitBeforeFirstSubmit(const gfxrecon::util::ArgumentParser& arg_parser,
+                                     uint32_t&                             wait_before_first_submit)
+{
+    const auto& value = arg_parser.GetArgumentValue(kWaitBeforeFirstSubmit);
+
+    if (!value.empty())
+    {
+        try
+        {
+            wait_before_first_submit = std::stoul(value);
+        }
+        catch (std::exception&)
+        {
+            GFXRECON_LOG_WARNING(
+                "Ignoring invalid wait before first submit option. Expected format is unsigned integer");
+        }
+    }
+}
+
 static void GetReplayOptions(gfxrecon::decode::ReplayOptions&      options,
                              const gfxrecon::util::ArgumentParser& arg_parser,
                              const std::string&                    filename)
@@ -1318,6 +1338,8 @@ GetVulkanReplayOptions(const gfxrecon::util::ArgumentParser&           arg_parse
     replay_options.load_pipeline_cache_filename = arg_parser.GetArgumentValue(kLoadPipelineCacheArgument);
     replay_options.add_new_pipeline_caches      = arg_parser.IsOptionSet(kCreateNewPipelineCacheOption);
     replay_options.do_device_deduplication      = arg_parser.IsOptionSet(kDeduplicateDevice);
+
+    GetWaitBeforeFirstSubmit(arg_parser, replay_options.wait_before_first_submit);
 
     return replay_options;
 }

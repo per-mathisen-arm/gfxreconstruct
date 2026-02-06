@@ -132,6 +132,7 @@ target_sources(gfxrecon_decode
                    ${GFXRECON_SOURCE_DIR}/framework/decode/vulkan_replay_consumer_arm_features.h
                    ${GFXRECON_SOURCE_DIR}/framework/decode/vulkan_replay_consumer_arm_features.cpp
                    ${GFXRECON_SOURCE_DIR}/framework/decode/vulkan_replay_options.h
+                   ${GFXRECON_SOURCE_DIR}/framework/decode/vulkan_replay_options.cpp
                    ${GFXRECON_SOURCE_DIR}/framework/decode/vulkan_pre_process_consumer.h
                    ${GFXRECON_SOURCE_DIR}/framework/decode/vulkan_replay_dump_resources.h
                    ${GFXRECON_SOURCE_DIR}/framework/decode/vulkan_replay_dump_resources.cpp
