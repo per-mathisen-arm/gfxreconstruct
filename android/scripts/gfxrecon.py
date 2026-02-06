@@ -317,44 +317,9 @@ def MakeExtrasString(args):
         arg_list.append('--dump-resources-dir')
         arg_list.append('{}'.format(args.dump_resources_dir))
 
-    if args.dump_resources_dump_depth_attachment:
-        arg_list.append('--dump-resources-dump-depth-attachment')
-
-    if args.dump_resources_dump_color_attachment_index:
-        arg_list.append('--dump-resources-dump-color-attachment-index')
-        arg_list.append('{}'.format(args.dump_resources_dump_color_attachment_index))
-
-    if args.dump_resources_dump_vertex_index_buffers:
-        arg_list.append('--dump-resources-dump-vertex-index-buffers')
-
-    if args.dump_resources_json_output_per_command:
-        arg_list.append('--dump-resources-json-output-per-command')
-
-    if args.dump_resources_dump_immutable_resources:
-        arg_list.append('--dump-resources-dump-immutable-resources')
-
-    if args.dump_resources_dump_all_image_subresources:
-        arg_list.append('--dump-resources-dump-all-image-subresources')
-
-    if args.dump_resources_dump_raw_images:
-        arg_list.append('--dump-resources-dump-raw-images')
-
     if args.marking_layers:
         arg_list.append('--marking-layers')
         arg_list.append('{}'.format(args.marking_layers))
-
-    if args.dump_resources_dump_separate_alpha:
-        arg_list.append('--dump-resources-dump-separate-alpha')
-
-    if args.dump_resources_dump_unused_vertex_bindings:
-        arg_list.append('--dump-resources-dump-unused-vertex-bindings')
-
-    if args.dump_resources_binary_file_compression_type:
-        arg_list.append('--dump-resources-binary-file-compression-type')
-        arg_list.append('{}'.format(args.dump_resources_binary_file_compression_type))
-
-    if args.dump_resources_dump_build_acceleration_structures_input_buffers:
-        arg_list.append('--dump-resources-dump-build-acceleration-structures-input-buffers')
 
     if args.pbi_all:
         arg_list.append('--pbi-all')
