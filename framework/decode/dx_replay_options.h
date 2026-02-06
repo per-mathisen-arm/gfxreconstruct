@@ -55,6 +55,7 @@ struct DxReplayOptions : public ReplayOptions
     int32_t               memory_usage{ kDefaultBatchingMemoryUsage };
     bool                  headless{ false };
     util::SwapchainOption swapchain_option{ util::SwapchainOption::kCaptured };
+    std::string           replace_shader_dir;
 
     CreateDx12ResourceAllocator create_resource_allocator;
 };
