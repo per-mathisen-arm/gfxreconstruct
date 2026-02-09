@@ -862,21 +862,25 @@ void VulkanRayTracingModifier::Process_vkCreateAccelerationStructureKHR(
             continue;
         }
 
-        if (created_object.device_address != info_donor_candidate.device_address)
+        auto& buffer_entry_current = buffer_entries_.find(created_object.buf_handle)->second;
+        auto& buffer_entry_donor   = buffer_entries_.find(info_donor_candidate.buf_handle)->second;
+
+        if (buffer_entry_current.memory_handle_id != buffer_entry_donor.memory_handle_id)
         {
             continue;
         }
 
-        if ((created_object.device_address == 0) || (info_donor_candidate.device_address == 0))
+        if (created_object.device_address == 0 || info_donor_candidate.device_address == 0)
         {
-            auto& buffer_entry_current = buffer_entries_.find(created_object.buf_handle)->second;
-            auto& buffer_entry_donor   = buffer_entries_.find(info_donor_candidate.buf_handle)->second;
 
-            if (!((buffer_entry_current.memory_handle_id == buffer_entry_donor.memory_handle_id) &&
-                  (buffer_entry_current.memory_offset == buffer_entry_donor.memory_offset)))
+            if (buffer_entry_current.memory_offset != buffer_entry_donor.memory_offset)
             {
                 continue;
             }
+        }
+        else if (created_object.device_address != info_donor_candidate.device_address)
+        {
+            continue;
         }
 
         if (created_object.type != info_donor_candidate.type)
@@ -884,8 +888,7 @@ void VulkanRayTracingModifier::Process_vkCreateAccelerationStructureKHR(
             continue;
         }
 
-        if (buffer_entries_[created_object.buf_handle].creation_index >=
-            buffer_entries_[info_donor_candidate.buf_handle].destruction_index)
+        if (buffer_entry_current.creation_index >= buffer_entry_donor.destruction_index)
         {
             continue;
         }
@@ -1005,6 +1008,9 @@ void VulkanRayTracingModifier::Process_vkCmdBuildAccelerationStructuresKHR(
     StructPointerDecoder<Decoded_VkAccelerationStructureBuildGeometryInfoKHR>* pInfos,
     StructPointerDecoder<Decoded_VkAccelerationStructureBuildRangeInfoKHR*>*   ppBuildRangeInfos)
 {
+    GFXRECON_UNREFERENCED_PARAMETER(call_info);
+    GFXRECON_UNREFERENCED_PARAMETER(commandBuffer);
+
     if (IsModificationPass())
     {
         if (options_.remove_rt)
@@ -1056,7 +1062,8 @@ void VulkanRayTracingModifier::Process_vkCmdBuildAccelerationStructuresKHR(
 
         for (uint32_t g = 0; g < geometry_info.geometryCount; ++g)
         {
-            const auto& geometry_data = const_cast<VkAccelerationStructureGeometryKHR*>(geometry_info.pGeometries)[g];
+            const auto& geometry_data     = geometry_info.pGeometries[g];
+            const auto& geometry_metadata = geometry_meta_info.pGeometries->GetMetaStructPointer()[g];
             if (geometry_data.sType != VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR)
             {
                 continue;
@@ -1065,7 +1072,6 @@ void VulkanRayTracingModifier::Process_vkCmdBuildAccelerationStructuresKHR(
             build_info->second.geometries[g]       = geometry_data;
             build_info->second.primitive_counts[g] = build_range_info[g].primitiveCount;
 
-            const auto& geometry_metadata = pInfos->GetMetaStructPointer()->pGeometries[g].GetMetaStructPointer();
             switch (geometry_data.geometryType)
             {
                 case VK_GEOMETRY_TYPE_TRIANGLES_KHR:
@@ -1082,7 +1088,7 @@ void VulkanRayTracingModifier::Process_vkCmdBuildAccelerationStructuresKHR(
                         }
                         const auto meta_omm_info =
                             reinterpret_cast<const Decoded_VkAccelerationStructureTrianglesOpacityMicromapEXT*>(
-                                geometry_metadata->geometry->triangles->pNext->GetMetaStructPointer());
+                                geometry_metadata.geometry->triangles->pNext->GetMetaStructPointer());
                         build_info->second.omm_infos[g]           = *omm_info;
                         build_info->second.geometry_omm_id_map[g] = meta_omm_info->micromap;
 
@@ -1163,6 +1169,8 @@ void VulkanRayTracingModifier::ProcessVulkanBuildAccelerationStructuresCommand(
     StructPointerDecoder<Decoded_VkAccelerationStructureBuildRangeInfoKHR*>*   range_infos,
     std::vector<std::vector<VkAccelerationStructureInstanceKHR>>&              instance_buffers_data)
 {
+    GFXRECON_UNREFERENCED_PARAMETER(instance_buffers_data);
+
     if (IsModificationPass())
     {
         // Update device addresses and shader group handles before first build_as meta command for fastforward
@@ -1175,97 +1183,7 @@ void VulkanRayTracingModifier::ProcessVulkanBuildAccelerationStructuresCommand(
         return;
     }
 
-    for (uint32_t info_index = 0; info_index < info_count; ++info_index)
-    {
-        const auto& geometry_info      = geometry_infos->GetPointer()[info_index];
-        const auto& build_range_info   = range_infos->GetPointer()[info_index];
-        const auto& geometry_meta_info = geometry_infos->GetMetaStructPointer()[info_index];
-        const auto& mode               = geometry_info.mode;
-        const auto& dst_as_id          = geometry_meta_info.dstAccelerationStructure;
-
-        if (acceleration_structure_build_infos_.find(dst_as_id) != acceleration_structure_build_infos_.end())
-        {
-            bool is_replaced = false;
-            for (uint32_t geometry_index = 0; geometry_index < geometry_info.geometryCount; ++geometry_index)
-            {
-                auto& geometry_data =
-                    const_cast<VkAccelerationStructureGeometryKHR*>(geometry_info.pGeometries)[geometry_index];
-                if (geometry_data.sType != VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR)
-                {
-                    continue;
-                }
-
-                if (geometry_info.geometryCount ==
-                    acceleration_structure_build_infos_[dst_as_id].primitive_counts.size())
-                {
-                    uint32_t primitive_count =
-                        acceleration_structure_build_infos_[dst_as_id].primitive_counts[geometry_index];
-                    if (build_range_info[geometry_index].primitiveCount > primitive_count)
-                    {
-                        is_replaced = true;
-                    }
-                }
-            }
-            if (!is_replaced)
-            {
-                continue;
-            }
-        }
-
-        acceleration_structure_build_infos_[dst_as_id].is_first_built             = true;
-        acceleration_structure_build_infos_[dst_as_id].is_meta_copy               = false;
-        acceleration_structure_build_infos_[dst_as_id].process_compacted_as_index = 0;
-        acceleration_structure_build_infos_[dst_as_id].source_of_compaction       = format::kNullHandleId;
-        acceleration_structure_build_infos_[dst_as_id].info                       = geometry_info;
-        for (uint32_t geometry_index = 0; geometry_index < geometry_info.geometryCount; ++geometry_index)
-        {
-            auto& geometry_data =
-                const_cast<VkAccelerationStructureGeometryKHR*>(geometry_info.pGeometries)[geometry_index];
-            if (geometry_data.sType != VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR)
-            {
-                continue;
-            }
-
-            acceleration_structure_build_infos_[dst_as_id].geometries.push_back(geometry_data);
-            acceleration_structure_build_infos_[dst_as_id].primitive_counts.push_back(
-                build_range_info[geometry_index].primitiveCount);
-            switch (geometry_data.geometryType)
-            {
-                case VK_GEOMETRY_TYPE_TRIANGLES_KHR:
-                {
-                    const auto& triangles = geometry_data.geometry.triangles;
-                    if (triangles.pNext)
-                    {
-                        VkAccelerationStructureTrianglesOpacityMicromapEXT* omm =
-                            (VkAccelerationStructureTrianglesOpacityMicromapEXT*)(triangles.pNext);
-                        if (omm->sType == VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_TRIANGLES_OPACITY_MICROMAP_EXT)
-                        {
-                            acceleration_structure_build_infos_[dst_as_id].omm_infos[geometry_index] = *omm;
-                            for (uint32_t usage_index = 0; usage_index < omm->usageCountsCount; ++usage_index)
-                            {
-                                acceleration_structure_build_infos_[dst_as_id].usage_infos[geometry_index].push_back(
-                                    omm->pUsageCounts[usage_index]);
-                            }
-                        }
-                    }
-                    break;
-                }
-                case VK_GEOMETRY_TYPE_INSTANCES_KHR:
-                {
-                    break;
-                }
-                case VK_GEOMETRY_TYPE_AABBS_KHR:
-                {
-                    break;
-                }
-                default:
-                {
-                    GFXRECON_LOG_ERROR("Unexpected geometry type");
-                    break;
-                }
-            }
-        }
-    }
+    Process_vkCmdBuildAccelerationStructuresKHR({}, format::kNullHandleId, info_count, geometry_infos, range_infos);
 }
 
 void VulkanRayTracingModifier::ProcessVulkanCopyAccelerationStructuresCommand(
