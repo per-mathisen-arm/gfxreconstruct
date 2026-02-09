@@ -846,31 +846,18 @@ void VulkanRayTracingModifier::Process_vkCreateAccelerationStructureKHR(
 
     const AccelerationStructureInfo& created_object = acceleration_structure_entries_[handle];
 
-    uint32_t max_total_prim_count = 0;
-    if (auto build_info = acceleration_structure_build_infos_.find(handle);
-        build_info != acceleration_structure_build_infos_.end())
+    std::unordered_set<uint64_t> prim_counts_quieried;
+    for (const auto& [id, donor_candidate_info] : acceleration_structure_entries_)
     {
-        max_total_prim_count =
-            std::accumulate(build_info->second.primitive_counts.begin(), build_info->second.primitive_counts.end(), 0);
-    }
-
-    format::HandleId maximal_entry = handle;
-    for (const auto& [id, info_donor_candidate] : acceleration_structure_entries_)
-    {
-        if (id == handle)
-        {
-            continue;
-        }
-
-        auto& buffer_entry_current = buffer_entries_.find(created_object.buf_handle)->second;
-        auto& buffer_entry_donor   = buffer_entries_.find(info_donor_candidate.buf_handle)->second;
+        const BufferInfo& buffer_entry_current = buffer_entries_.find(created_object.buf_handle)->second;
+        const BufferInfo& buffer_entry_donor   = buffer_entries_.find(donor_candidate_info.buf_handle)->second;
 
         if (buffer_entry_current.memory_handle_id != buffer_entry_donor.memory_handle_id)
         {
             continue;
         }
 
-        if (created_object.device_address == 0 || info_donor_candidate.device_address == 0)
+        if (created_object.device_address == 0 || donor_candidate_info.device_address == 0)
         {
 
             if (buffer_entry_current.memory_offset != buffer_entry_donor.memory_offset)
@@ -878,12 +865,12 @@ void VulkanRayTracingModifier::Process_vkCreateAccelerationStructureKHR(
                 continue;
             }
         }
-        else if (created_object.device_address != info_donor_candidate.device_address)
+        else if (created_object.device_address != donor_candidate_info.device_address)
         {
             continue;
         }
 
-        if (created_object.type != info_donor_candidate.type)
+        if (created_object.type != donor_candidate_info.type)
         {
             continue;
         }
@@ -901,17 +888,22 @@ void VulkanRayTracingModifier::Process_vkCreateAccelerationStructureKHR(
 
         const std::vector<uint32_t>& prim_counts = build_info_candidate->second.primitive_counts;
         uint32_t                     total       = std::accumulate(prim_counts.begin(), prim_counts.end(), 0);
-        if (max_total_prim_count < total)
+        if (total > 0 && !prim_counts_quieried.contains(total))
         {
-            maximal_entry        = id;
-            max_total_prim_count = total;
+            prim_counts_quieried.insert(total);
+            EncodeVkGetAccelerationStructureBuildSizesKHR(device, build_info_candidate->second);
         }
     }
-    handle = maximal_entry;
 
     auto build_info = acceleration_structure_build_infos_.find(handle);
     if (build_info == acceleration_structure_build_infos_.end())
     {
+        return;
+    }
+
+    if (build_info->second.is_first_built)
+    {
+        EncodeVkGetAccelerationStructureBuildSizesKHR(device, build_info->second);
         return;
     }
 
@@ -939,11 +931,6 @@ void VulkanRayTracingModifier::Process_vkCreateAccelerationStructureKHR(
         return;
     }
 
-    if (build_info->second.is_first_built)
-    {
-        EncodeVkGetAccelerationStructureBuildSizesKHR(device, build_info->second);
-    }
-
     if (build_info->second.source_of_compaction != format::kNullHandleId)
     {
         format::ParentToChildDependencyHeader header;
@@ -962,6 +949,7 @@ void VulkanRayTracingModifier::Process_vkCreateAccelerationStructureKHR(
         new_call->call_id = gfxrecon::format::ApiCallId::ApiCall_Unknown;
         new_call->parameter_buffer.Write(&header, sizeof(header));
         new_call->parameter_buffer.Write(&handle, sizeof(format::HandleId));
+        return;
     }
 }
 

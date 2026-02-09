@@ -206,7 +206,7 @@ class VulkanAccelerationStructureBuilder
     std::unordered_multimap<format::HandleId, std::unique_ptr<VulkanInternalBufferManager::BufferInfoWrapper>>
         replaced_buffers_;
 
-    VkAccelerationStructureBuildSizesInfoKHR last_build_sizes_{};
+    VkAccelerationStructureBuildSizesInfoKHR max_build_sizes_{};
 
     CommandExecuteObjects cmd_execute_obj_;
 

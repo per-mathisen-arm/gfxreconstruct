@@ -68,12 +68,12 @@ VkResult VulkanAccelerationStructureBuilder::OnCreateAccelerationStructure(
     assert(allocator != nullptr);
     assert(buffer_info != nullptr);
 
-    VkAccelerationStructureBuildSizesInfoKHR build_sizes = last_build_sizes_;
-    last_build_sizes_                                    = {};
+    VkAccelerationStructureBuildSizesInfoKHR build_sizes = max_build_sizes_;
+    max_build_sizes_                                     = {};
 
     VkAccelerationStructureCreateInfoKHR modified_create_info = *create_info;
 
-    bool is_recreated = true;
+    bool reallocate = true;
 
     // Points to storage that will be used in the creation call
     auto* target_storage_buffer = const_cast<VulkanBufferInfo*>(buffer_info);
@@ -131,7 +131,7 @@ VkResult VulkanAccelerationStructureBuilder::OnCreateAccelerationStructure(
             build_sizes.accelerationStructureSize = ready_record->second;
         }
 
-        is_recreated                = true;
+        reallocate                  = true;
         modified_create_info.size   = build_sizes.accelerationStructureSize;
         modified_create_info.offset = 0;
     }
@@ -150,7 +150,7 @@ VkResult VulkanAccelerationStructureBuilder::OnCreateAccelerationStructure(
                 {
                     modified_create_info.buffer = it->second->info_.handle;
                     target_storage_buffer       = &it->second->info_;
-                    is_recreated                = false;
+                    reallocate                  = false;
                     break;
                 }
             }
@@ -159,15 +159,15 @@ VkResult VulkanAccelerationStructureBuilder::OnCreateAccelerationStructure(
     else
     {
         // no info, cant make a good decision, reuse
-        is_recreated         = false;
+        reallocate           = false;
         modified_create_info = *create_info;
-        GFXRECON_LOG_WARNING("Fallback path %" PRIu64, acceleration_structure_info->capture_id);
-        GFXRECON_LOG_WARNING(
+        GFXRECON_LOG_DEBUG("Fallback path %" PRIu64, acceleration_structure_info->capture_id);
+        GFXRECON_LOG_DEBUG(
             "\t %s",
             acceleration_structure_info->type == VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR ? "Top" : "Bottom");
     }
 
-    if (is_recreated)
+    if (reallocate)
     {
         auto it = replaced_buffers_.emplace(
             buffer_info->capture_id,
@@ -188,10 +188,8 @@ VkResult VulkanAccelerationStructureBuilder::OnCreateAccelerationStructure(
     // Note: We operate on 2 kinds of sizes - the size provided as an input in Create* calls and the actual size
     // retrieved from allocator/GetASBuildSizes query. Assume all these sizes should satisfy the above condition.
     size_t target_storage_buffer_allocated_size = allocator->GetBufferSize(target_storage_buffer->allocator_data);
-    GFXRECON_ASSERT(target_storage_buffer_allocated_size >=
-                    build_sizes.accelerationStructureSize + modified_create_info.offset);
-    GFXRECON_ASSERT(target_storage_buffer->replay_size >=
-                    build_sizes.accelerationStructureSize + modified_create_info.offset);
+    GFXRECON_ASSERT(target_storage_buffer_allocated_size >= modified_create_info.size + modified_create_info.offset);
+    GFXRECON_ASSERT(target_storage_buffer->replay_size >= modified_create_info.size + modified_create_info.offset);
 
     acceleration_structure_info->size   = modified_create_info.size;
     acceleration_structure_info->offset = modified_create_info.offset;
@@ -199,7 +197,14 @@ VkResult VulkanAccelerationStructureBuilder::OnCreateAccelerationStructure(
 
     VkResult result =
         functions_.create_acceleration_structure(device_info->handle, &modified_create_info, pAllocator, handle);
-    GFXRECON_ASSERT(result == VK_SUCCESS);
+    if (result != VK_SUCCESS)
+    {
+        return result;
+    }
+
+    GFXRECON_LOG_DEBUG("Creating %" PRIu64, acceleration_structure_info->capture_id);
+    GFXRECON_LOG_DEBUG("\t size: %" PRIu64, modified_create_info.size);
+    GFXRECON_LOG_DEBUG("\t is reallocated %s", reallocate ? "true" : "false");
 
     VkAccelerationStructureDeviceAddressInfoKHR address_info{
         VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR, nullptr, *handle
@@ -382,7 +387,10 @@ void VulkanAccelerationStructureBuilder::OnGetAccelerationStructureBuildSizes(
 {
     functions_.get_acceleration_structure_build_sizes(
         device_info->handle, type, build_Info, max_primitive_counts, size_info);
-    last_build_sizes_ = *size_info;
+    if (size_info->accelerationStructureSize > max_build_sizes_.accelerationStructureSize)
+    {
+        max_build_sizes_ = *size_info;
+    }
 }
 
 void VulkanAccelerationStructureBuilder::OnAccelerationStructureCompactionDependencyCommand(
