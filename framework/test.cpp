@@ -17,7 +17,7 @@ TEST_CASE("VkDataGraphPipelineConstantARM can be encoded and decoded", "[enc/dec
 {
     using namespace gfxrecon;
     using namespace gfxrecon::decode;
-    gfxrecon::util::Log::Init(gfxrecon::util::Log::kErrorSeverity);
+    gfxrecon::util::Log::Init(gfxrecon::util::LoggingSeverity::kError);
     auto parameter_buffer_  = std::make_unique<encode::ParameterBuffer>();
     auto parameter_encoder_ = std::make_unique<encode::ParameterEncoder>(parameter_buffer_.get());
 
