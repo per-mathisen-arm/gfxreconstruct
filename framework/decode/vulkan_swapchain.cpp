@@ -46,6 +46,16 @@ void VulkanSwapchain::Clean()
     }
 }
 
+void VulkanSwapchain::CleanDeviceResources(VkDevice device, const graphics::VulkanDeviceTable* device_table)
+{
+    external_sync_type_.erase(device);
+}
+
+void VulkanSwapchain::SetExternalSyncType(VkDevice device, ExternalSyncType external_sync_type)
+{
+    external_sync_type_[device] = external_sync_type;
+}
+
 VkResult VulkanSwapchain::CreateSurface(VkResult                             original_result,
                                         VulkanInstanceInfo*                  instance_info,
                                         const std::string&                   wsi_extension,

@@ -107,12 +107,10 @@ class VulkanOffscreenSwapchain : public VulkanVirtualSwapchain
     const uint32_t default_queue_family_index_{ 0 };
     VkQueue        default_queue_{ VK_NULL_HANDLE }; // default_queue_family_index_,0
 
-    VkResult SignalSemaphoresFence(const VulkanQueueInfo* queue_info,
-                                   uint32_t               wait_semaphore_count,
-                                   const VkSemaphore*     wait_semaphores,
-                                   uint32_t               signal_semaphore_count,
-                                   const VkSemaphore*     signal_semaphores,
-                                   VkFence                fence);
+    void SignalAcquireNextImageSemaphoreFence(const VulkanDeviceInfo* device_info,
+                                              VkSemaphore             semaphore,
+                                              VkFence                 fence,
+                                              ExternalSyncType        external_sync_type);
 
     VkFrameBoundaryEXT frame_boundary_{ VK_STRUCTURE_TYPE_FRAME_BOUNDARY_EXT,
                                         nullptr,

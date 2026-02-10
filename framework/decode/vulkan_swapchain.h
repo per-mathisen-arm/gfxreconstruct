@@ -56,14 +56,22 @@ struct VulkanSwapchainOptions
 class VulkanSwapchain
 {
   public:
+    enum class ExternalSyncType
+    {
+        QueueSubmit,
+        FileDescriptor
+    };
+
     virtual ~VulkanSwapchain() = default;
 
     virtual void Clean();
 
-    virtual void CleanDeviceResources(VkDevice, const graphics::VulkanDeviceTable*) {}
+    virtual void CleanDeviceResources(VkDevice device, const graphics::VulkanDeviceTable* device_table);
 
     VulkanSwapchainOptions GetOptions() { return swapchain_options_; }
-    void SetOptions(const VulkanSwapchainOptions& options) { swapchain_options_ = options; }
+    void                   SetOptions(const VulkanSwapchainOptions& options) { swapchain_options_ = options; }
+
+    void SetExternalSyncType(VkDevice device, ExternalSyncType external_sync_type);
 
     virtual VkResult CreateSurface(VkResult                             original_result,
                                    VulkanInstanceInfo*                  instance_info,
@@ -191,6 +199,8 @@ class VulkanSwapchain
     int32_t                   create_surface_count_{ 0 };
     int32_t                   window_index_{ 0 };
     VulkanSwapchainOptions    swapchain_options_;
+
+    std::unordered_map<VkDevice, ExternalSyncType> external_sync_type_;
 };
 
 GFXRECON_END_NAMESPACE(decode)
