@@ -68,7 +68,7 @@ void VulkanReplayConsumerArmFeatures::ReplaceDeviceAddresses(VulkanCommandBuffer
 
 void VulkanReplayConsumerArmFeatures::LogFrameDebugInfo()
 {
-    if (util::Log::WillOutputMessage(util::Log::kDebugSeverity))
+    if (util::Log::WillOutputMessage(util::LoggingSeverity::kDebug))
     {
 #ifdef __linux__
         const long    pages     = sysconf(_SC_AVPHYS_PAGES);

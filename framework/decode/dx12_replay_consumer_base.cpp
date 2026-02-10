@@ -1079,7 +1079,7 @@ void Dx12ReplayConsumerBase::SetDumpTarget(TrackDumpDrawCall& track_dump_target)
 
 void Dx12ReplayConsumerBase::LogFrameDebugInfo()
 {
-    if (util::Log::WillOutputMessage(util::Log::kDebugSeverity))
+    if (util::Log::WillOutputMessage(util::LoggingSeverity::kDebug))
     {
         Microsoft::WRL::ComPtr<IDXGIAdapter3> adapter3 = nullptr;
         IDXGIAdapter*                         adapter  = GetAdapter();

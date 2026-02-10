@@ -54,7 +54,7 @@ struct TestFixture
 
     TestFixture() : buffer_tracker(object_info_table)
     {
-        util::Log::Init(util::Log::kErrorSeverity);
+        util::Log::Init(util::LoggingSeverity::kError);
         device_info.handle         = device;
         device_info.allocator      = std::make_unique<decode::VulkanResourceAllocatorMock>();
         mock_allocator             = dynamic_cast<decode::VulkanResourceAllocatorMock*>(device_info.allocator.get());
