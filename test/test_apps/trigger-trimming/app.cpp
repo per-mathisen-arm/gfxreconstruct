@@ -22,6 +22,7 @@
 
 #include "test_app_base.h"
 #include "util/logging.h"
+#include "util/callbacks.h"
 #include "util/platform.h"
 
 #include <dlfcn.h>
