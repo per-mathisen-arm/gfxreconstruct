@@ -2617,24 +2617,7 @@ void VulkanRebindAllocator::DestroyDataGraphPipelineSession(VkDataGraphPipelineS
     if (allocator_data != 0)
     {
         auto resource_alloc_info = reinterpret_cast<ResourceAllocInfo*>(allocator_data);
-
-        for (auto& mem_info : resource_alloc_info->bound_memory_infos)
-        {
-            auto mem_alc_info = mem_info->memory_info;
-            if (mem_alc_info != nullptr)
-            {
-                mem_alc_info->original_objects.erase(VK_HANDLE_TO_UINT64(data_graph_pipeline_session));
-            }
-
-            if (mem_info->allocation != VK_NULL_HANDLE)
-            {
-                if (mem_info->mapped_pointer != nullptr)
-                {
-                    vmaUnmapMemory(allocator_, mem_info->allocation);
-                }
-                vmaFreeMemory(allocator_, mem_info->allocation);
-            }
-        }
+        RemoveVmaMemoryInfo(*resource_alloc_info, VK_HANDLE_TO_UINT64(data_graph_pipeline_session));
         delete resource_alloc_info;
     }
 
@@ -2651,24 +2634,7 @@ void VulkanRebindAllocator::DestroyTensor(VkTensorARM                  tensor,
     if (allocator_data != 0)
     {
         auto resource_alloc_info = reinterpret_cast<ResourceAllocInfo*>(allocator_data);
-
-        for (VmaMemoryInfo* mem_info : resource_alloc_info->bound_memory_infos)
-        {
-            auto mem_alc_info = mem_info->memory_info;
-            if (mem_alc_info != nullptr)
-            {
-                mem_alc_info->original_objects.erase(VK_HANDLE_TO_UINT64(tensor));
-            }
-
-            if (mem_info->allocation != VK_NULL_HANDLE)
-            {
-                if (mem_info->mapped_pointer != nullptr)
-                {
-                    vmaUnmapMemory(allocator_, mem_info->allocation);
-                }
-                vmaFreeMemory(allocator_, mem_info->allocation);
-            }
-        }
+        RemoveVmaMemoryInfo(*resource_alloc_info, VK_HANDLE_TO_UINT64(tensor));
         delete resource_alloc_info;
     }
 
@@ -2885,7 +2851,7 @@ VulkanRebindAllocator::BindDataGraphPipelineSessionMemory(uint32_t bind_info_cou
                         VK_HANDLE_TO_UINT64(session),
                         MemoryInfoType::kBasic,
                         *memory_alloc_info,
-                        mem_info,
+                        *memory_alloc_info->vma_mem_infos.back(),
                         bind_memory_properties[i]);
 
         GFXRECON_LOG_DEBUG("BindDataGraphPipelineSessionMemory[%u]: SUCCESS session=0x%llx mem=0x%llx offset=%" PRIu64
