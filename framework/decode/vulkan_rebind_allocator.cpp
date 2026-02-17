@@ -3036,13 +3036,17 @@ VkResult VulkanRebindAllocator::BindTensorMemory(uint32_t                       
                     // 2. Register the tensor in the memory allocation info to track it for future binding.
                     GFXRECON_LOG_DEBUG_ONCE("Tensor was created with image aliasing usage. Memory allocation will be "
                                             "delayed until the aliased image is bound to the same memory.");
-                    VmaMemoryInfo vma_memory_info_placeholder{};
-                    vma_memory_info_placeholder.offset_from_original_device_memory = memory_offset;
+
+                    auto& vma_memory_info_placeholder = memory_alloc_info->vma_mem_infos.emplace_back();
+
+                    vma_memory_info_placeholder->memory_info                        = memory_alloc_info;
+                    vma_memory_info_placeholder->offset_from_original_device_memory = memory_offset;
+
                     UpdateAllocInfo(*resource_alloc_info,
                                     VK_HANDLE_TO_UINT64(tensor),
                                     MemoryInfoType::kBasic,
                                     *memory_alloc_info,
-                                    vma_memory_info_placeholder,
+                                    *vma_memory_info_placeholder,
                                     bind_memory_properties[i]);
                     result = VK_SUCCESS;
                     continue;
