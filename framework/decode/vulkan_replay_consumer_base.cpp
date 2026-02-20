@@ -11867,18 +11867,37 @@ void VulkanReplayConsumerBase::OverrideFrameBoundaryANDROID(PFN_vkFrameBoundaryA
         util::MarkingLayersUtil::instance().EndInjected(device_info);
     }
 
-    CommonObjectInfoTable& object_info_table = GetObjectInfoTable();
+    // TODO: merged in PR #2623 but causing issues in extended CI -> debug remaining issues and enable this again
+    // related issue: https://github.com/LunarG/gfxreconstruct/issues/2660
+    if constexpr (true)
+    {
+        CommonObjectInfoTable& object_info_table = GetObjectInfoTable();
 
-    VulkanPhysicalDeviceInfo* physical_device_info = object_info_table.GetVkPhysicalDeviceInfo(device_info->parent_id);
-    GFXRECON_ASSERT(physical_device_info != nullptr);
+        VulkanPhysicalDeviceInfo* physical_device_info =
+            object_info_table.GetVkPhysicalDeviceInfo(device_info->parent_id);
+        GFXRECON_ASSERT(physical_device_info != nullptr);
 
-    VulkanInstanceInfo* instance_info = object_info_table.GetVkInstanceInfo(physical_device_info->parent_id);
-    GFXRECON_ASSERT(instance_info != nullptr);
+        VulkanInstanceInfo* instance_info = object_info_table.GetVkInstanceInfo(physical_device_info->parent_id);
+        GFXRECON_ASSERT(instance_info != nullptr);
 
-    const graphics::VulkanInstanceTable* instance_table = GetInstanceTable(instance_info->handle);
+        const graphics::VulkanInstanceTable* instance_table = GetInstanceTable(instance_info->handle);
 
-    swapchain_->FrameBoundaryANDROID(
-        func, device_info, semaphore_info, image_info, instance_info, instance_table, device_table, application_.get());
+        swapchain_->FrameBoundaryANDROID(func,
+                                         device_info,
+                                         semaphore_info,
+                                         image_info,
+                                         instance_info,
+                                         instance_table,
+                                         device_table,
+                                         application_.get());
+    }
+    else
+    {
+        VkDevice    device    = device_info->handle;
+        VkSemaphore semaphore = semaphore_info ? semaphore_info->handle : VK_NULL_HANDLE;
+        VkImage     image     = image_info ? image_info->handle : VK_NULL_HANDLE;
+        func(device, semaphore, image);
+    }
 }
 
 void VulkanReplayConsumerBase::OverrideDestroyAccelerationStructureKHR(
