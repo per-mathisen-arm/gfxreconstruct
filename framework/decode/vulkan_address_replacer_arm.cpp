@@ -173,6 +173,10 @@ void VulkanAddressReplacerARM::ProcessGetDescriptorEXT(const VulkanDeviceInfo*  
     {
         case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
         {
+            if (descriptorData.pUniformTexelBuffer == nullptr)
+            {
+                break;
+            }
             addressInfo = const_cast<VkDescriptorAddressInfoEXT*>(descriptorData.pUniformTexelBuffer);
             if (!address_remap(addressInfo->address, address_tracker))
             {
@@ -183,6 +187,10 @@ void VulkanAddressReplacerARM::ProcessGetDescriptorEXT(const VulkanDeviceInfo*  
         }
         case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
         {
+            if (descriptorData.pStorageTexelBuffer == nullptr)
+            {
+                break;
+            }
             addressInfo = const_cast<VkDescriptorAddressInfoEXT*>(descriptorData.pStorageTexelBuffer);
             if (!address_remap(addressInfo->address, address_tracker))
             {
@@ -193,6 +201,10 @@ void VulkanAddressReplacerARM::ProcessGetDescriptorEXT(const VulkanDeviceInfo*  
         }
         case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
         {
+            if (descriptorData.pUniformBuffer == nullptr)
+            {
+                break;
+            }
             addressInfo = const_cast<VkDescriptorAddressInfoEXT*>(descriptorData.pUniformBuffer);
             if (!address_remap(addressInfo->address, address_tracker))
             {
@@ -203,6 +215,10 @@ void VulkanAddressReplacerARM::ProcessGetDescriptorEXT(const VulkanDeviceInfo*  
         }
         case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
         {
+            if (descriptorData.pStorageBuffer == nullptr)
+            {
+                break;
+            }
             addressInfo = const_cast<VkDescriptorAddressInfoEXT*>(descriptorData.pStorageBuffer);
             if (!address_remap(addressInfo->address, address_tracker))
             {
