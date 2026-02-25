@@ -29,6 +29,7 @@
 #include "decode/custom_dx12_struct_object_mappers.h"
 #include "generated/generated_dx12_call_id_to_string.h"
 #include "graphics/dx12_shader_tool.h"
+#include "generated/generated_dx12_enum_to_string.h"
 #include "graphics/dx12_util.h"
 #include "graphics/dx12_image_renderer.h"
 #include "util/gpu_va_range.h"
@@ -510,7 +511,7 @@ void Dx12ReplayConsumerBase::ApplyBatchedResourceInitInfo(
                 {
                     GFXRECON_LOG_WARNING(
                         "Initializing Swapchain Buffers. The before state supposed to be COMMON|PRESENT, but it's %s",
-                        util::ToString(state.states));
+                        util::ToString<D3D12_RESOURCE_STATES>(state.states).c_str());
                 }
             }
 
@@ -1573,7 +1574,7 @@ Dx12ReplayConsumerBase::OverrideCreateSwapChain(DxObjectInfo*                   
     {
         GFXRECON_LOG_WARNING(
             "SwapChain uses uncommon DXGI_FORMAT: %s. This may affect image capture or display fidelity.",
-            gfxrecon::util::ToString(format).c_str());
+            util::ToString<DXGI_FORMAT>(format).c_str());
     }
 
     if (window_factory != nullptr && desc_pointer != nullptr)

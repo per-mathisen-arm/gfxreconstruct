@@ -398,7 +398,7 @@ bool ApplyDx12OptimizationInfo(const std::string&                     input_file
         // Write optimized capture file.
         GFXRECON_WRITE_CONSOLE("Writing optimized file.");
 
-        gfxrecon::Dx12FileOptimizer file_optimizer(info.unreferenced_blocks, options.emoved_threads_ids);
+        gfxrecon::Dx12FileOptimizer file_optimizer(info.unreferenced_blocks, options.removed_threads_ids);
         if (file_optimizer.Initialize(input_filename, output_filename, "optimize"))
         {
             file_optimizer.SetFillCommandResourceValues(&info.fill_command_resource_values,

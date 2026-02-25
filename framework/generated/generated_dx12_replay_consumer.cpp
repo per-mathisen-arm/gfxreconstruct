@@ -582,7 +582,7 @@ void Dx12ReplayConsumer::Process_ID3D12Object_GetPrivateData(
         auto replay_result = reinterpret_cast<ID3D12Object*>(replay_object->object)->GetPrivateData(*guid.decoded_value,
                                                                                                     pDataSize->GetOutputPointer(),
                                                                                                     pData->GetOutputPointer());
-        if (pData->IsNull() && !pDataSize->IsNull()) { SetOutputArrayCount(object_id, VariableLengthArrayIndices::kD3D12ObjectArrayGetPrivateData, *pDataSize->GetOutputPointer()); }
+        if (SUCCEEDED(replay_result) && pData->IsNull() && !pDataSize->IsNull()) { SetOutputArrayCount(object_id, VariableLengthArrayIndices::kD3D12ObjectArrayGetPrivateData, *pDataSize->GetOutputPointer()); }
         CheckReplayResult("ID3D12Object_GetPrivateData", return_value, replay_result);
         CustomReplayPostCall<format::ApiCallId::ApiCall_ID3D12Object_GetPrivateData>::Dispatch(
             this,
@@ -7693,7 +7693,7 @@ void Dx12ReplayConsumer::Process_ID3D12Device5_EnumerateMetaCommands(
         }
         auto replay_result = reinterpret_cast<ID3D12Device5*>(replay_object->object)->EnumerateMetaCommands(pNumMetaCommands->GetOutputPointer(),
                                                                                                             pDescs->GetOutputPointer());
-        if (pDescs->IsNull() && !pNumMetaCommands->IsNull()) { SetOutputArrayCount(object_id, VariableLengthArrayIndices::kD3D12Device5ArrayEnumerateMetaCommands, *pNumMetaCommands->GetOutputPointer()); }
+        if (SUCCEEDED(replay_result) && pDescs->IsNull() && !pNumMetaCommands->IsNull()) { SetOutputArrayCount(object_id, VariableLengthArrayIndices::kD3D12Device5ArrayEnumerateMetaCommands, *pNumMetaCommands->GetOutputPointer()); }
         CheckReplayResult("ID3D12Device5_EnumerateMetaCommands", return_value, replay_result);
         CustomReplayPostCall<format::ApiCallId::ApiCall_ID3D12Device5_EnumerateMetaCommands>::Dispatch(
             this,
@@ -7745,7 +7745,7 @@ void Dx12ReplayConsumer::Process_ID3D12Device5_EnumerateMetaCommandParameters(
                                                                                                                      pTotalStructureSizeInBytes->GetOutputPointer(),
                                                                                                                      pParameterCount->GetOutputPointer(),
                                                                                                                      pParameterDescs->GetOutputPointer());
-        if (pParameterDescs->IsNull() && !pParameterCount->IsNull()) { SetOutputArrayCount(object_id, VariableLengthArrayIndices::kD3D12Device5ArrayEnumerateMetaCommandParameters, *pParameterCount->GetOutputPointer()); }
+        if (SUCCEEDED(replay_result) && pParameterDescs->IsNull() && !pParameterCount->IsNull()) { SetOutputArrayCount(object_id, VariableLengthArrayIndices::kD3D12Device5ArrayEnumerateMetaCommandParameters, *pParameterCount->GetOutputPointer()); }
         CheckReplayResult("ID3D12Device5_EnumerateMetaCommandParameters", return_value, replay_result);
         CustomReplayPostCall<format::ApiCallId::ApiCall_ID3D12Device5_EnumerateMetaCommandParameters>::Dispatch(
             this,
@@ -9185,7 +9185,7 @@ void Dx12ReplayConsumer::Process_ID3D12ShaderCacheSession_FindValue(
                                                                                                            KeySize,
                                                                                                            pValue->GetOutputPointer(),
                                                                                                            pValueSize->GetOutputPointer());
-        if (pValue->IsNull() && !pValueSize->IsNull()) { SetOutputArrayCount(object_id, VariableLengthArrayIndices::kD3D12ShaderCacheSessionArrayFindValue, *pValueSize->GetOutputPointer()); }
+        if (SUCCEEDED(replay_result) && pValue->IsNull() && !pValueSize->IsNull()) { SetOutputArrayCount(object_id, VariableLengthArrayIndices::kD3D12ShaderCacheSessionArrayFindValue, *pValueSize->GetOutputPointer()); }
         CheckReplayResult("ID3D12ShaderCacheSession_FindValue", return_value, replay_result);
         CustomReplayPostCall<format::ApiCallId::ApiCall_ID3D12ShaderCacheSession_FindValue>::Dispatch(
             this,
@@ -13695,7 +13695,7 @@ void Dx12ReplayConsumer::Process_IDXGIObject_GetPrivateData(
         auto replay_result = reinterpret_cast<IDXGIObject*>(replay_object->object)->GetPrivateData(*Name.decoded_value,
                                                                                                    pDataSize->GetOutputPointer(),
                                                                                                    pData->GetOutputPointer());
-        if (pData->IsNull() && !pDataSize->IsNull()) { SetOutputArrayCount(object_id, VariableLengthArrayIndices::kDxgiObjectArrayGetPrivateData, *pDataSize->GetOutputPointer()); }
+        if (SUCCEEDED(replay_result) && pData->IsNull() && !pDataSize->IsNull()) { SetOutputArrayCount(object_id, VariableLengthArrayIndices::kDxgiObjectArrayGetPrivateData, *pDataSize->GetOutputPointer()); }
         CheckReplayResult("IDXGIObject_GetPrivateData", return_value, replay_result);
         CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIObject_GetPrivateData>::Dispatch(
             this,
@@ -14267,7 +14267,7 @@ void Dx12ReplayConsumer::Process_IDXGIOutput_GetDisplayModeList(
                                                                                                        Flags,
                                                                                                        pNumModes->GetOutputPointer(),
                                                                                                        pDesc->GetOutputPointer());
-        if (pDesc->IsNull() && !pNumModes->IsNull()) { SetOutputArrayCount(object_id, VariableLengthArrayIndices::kDxgiOutputArrayGetDisplayModeList, *pNumModes->GetOutputPointer()); }
+        if (SUCCEEDED(replay_result) && pDesc->IsNull() && !pNumModes->IsNull()) { SetOutputArrayCount(object_id, VariableLengthArrayIndices::kDxgiOutputArrayGetDisplayModeList, *pNumModes->GetOutputPointer()); }
         CheckReplayResult("IDXGIOutput_GetDisplayModeList", return_value, replay_result);
         CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIOutput_GetDisplayModeList>::Dispatch(
             this,
@@ -16789,7 +16789,7 @@ void Dx12ReplayConsumer::Process_IDXGIOutput1_GetDisplayModeList1(
                                                                                                          Flags,
                                                                                                          pNumModes->GetOutputPointer(),
                                                                                                          pDesc->GetOutputPointer());
-        if (pDesc->IsNull() && !pNumModes->IsNull()) { SetOutputArrayCount(object_id, VariableLengthArrayIndices::kDxgiOutput1ArrayGetDisplayModeList1, *pNumModes->GetOutputPointer()); }
+        if (SUCCEEDED(replay_result) && pDesc->IsNull() && !pNumModes->IsNull()) { SetOutputArrayCount(object_id, VariableLengthArrayIndices::kDxgiOutput1ArrayGetDisplayModeList1, *pNumModes->GetOutputPointer()); }
         CheckReplayResult("IDXGIOutput1_GetDisplayModeList1", return_value, replay_result);
         CustomReplayPostCall<format::ApiCallId::ApiCall_IDXGIOutput1_GetDisplayModeList1>::Dispatch(
             this,
