@@ -8438,6 +8438,10 @@ uintptr_t VulkanReplayConsumerBase::GetObjectAllocatorData(VkObjectType object_t
             return GetObjectInfoTable().GetVkVideoSessionKHRInfo(handle_id)->allocator_data;
         case VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV:
             return GetObjectInfoTable().GetVkAccelerationStructureNVInfo(handle_id)->allocator_data;
+        case VK_OBJECT_TYPE_TENSOR_ARM:
+            return GetObjectInfoTable().GetVkTensorARMInfo(handle_id)->allocator_data;
+        case VK_OBJECT_TYPE_DATA_GRAPH_PIPELINE_SESSION_ARM:
+            return GetObjectInfoTable().GetVkDataGraphPipelineSessionARMInfo(handle_id)->allocator_data;
         default:
             return 0;
     }

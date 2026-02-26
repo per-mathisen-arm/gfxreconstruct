@@ -114,6 +114,13 @@ uint64_t GetWrappedId(uint64_t object, VkObjectType object_type)
                 format::FromHandleId<VkIndirectCommandsLayoutNV>(object));
         case VK_OBJECT_TYPE_MICROMAP_EXT:
             return GetWrappedId<MicromapEXTWrapper>(format::FromHandleId<VkMicromapEXT>(object));
+        case VK_OBJECT_TYPE_TENSOR_ARM:
+            return GetWrappedId<TensorARMWrapper>(format::FromHandleId<VkTensorARM>(object));
+        case VK_OBJECT_TYPE_TENSOR_VIEW_ARM:
+            return GetWrappedId<TensorViewARMWrapper>(format::FromHandleId<VkTensorViewARM>(object));
+        case VK_OBJECT_TYPE_DATA_GRAPH_PIPELINE_SESSION_ARM:
+            return GetWrappedId<DataGraphPipelineSessionARMWrapper>(
+                format::FromHandleId<VkDataGraphPipelineSessionARM>(object));
         case VK_OBJECT_TYPE_PRIVATE_DATA_SLOT_EXT:
             return GetWrappedId<PrivateDataSlotEXTWrapper>(format::FromHandleId<VkPrivateDataSlotEXT>(object));
         case VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV:
