@@ -58,7 +58,7 @@ GFXRECON_END_NAMESPACE(encode)
 GFXRECON_END_NAMESPACE(gfxrecon)
 
 typedef bool (*PFN_InitializeDxgiCapture)(gfxrecon::encode::DxgiDispatchTable*);
-typedef void (*PFN_ReleaseDxgiCapture)(gfxrecon::encode::DxgiDispatchTable*);
+typedef void(WINAPI* PFN_ReleaseDxgiCapture)(gfxrecon::encode::DxgiDispatchTable*);
 
 typedef bool (*PFN_InitializeDxgiDebugCapture)(gfxrecon::encode::DxgiDebugDispatchTable*);
 typedef void (*PFN_ReleaseDxgiDebugCapture)(gfxrecon::encode::DxgiDebugDispatchTable*);
