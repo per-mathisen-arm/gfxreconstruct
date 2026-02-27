@@ -34,7 +34,7 @@
 #include "util/defines.h"
 #include "encode/parameter_buffer.h"
 #include "util/vulkan_modifier_base.h"
-#include "vulkan_optimize_options.h"
+#include "decode/vulkan_optimize_options.h"
 
 #include <list>
 

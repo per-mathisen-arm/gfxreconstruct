@@ -33,7 +33,9 @@ GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 class Dx12FileOptimizer : public FileOptimizer
 {
   public:
-    Dx12FileOptimizer() :
+    Dx12FileOptimizer(const std::unordered_set<uint64_t>&         unreferenced_blocks,
+                      const std::unordered_set<format::ThreadId>& removed_threads_ids) :
+        FileOptimizer({}, unreferenced_blocks, removed_threads_ids),
         fill_command_resource_values_(nullptr), inject_noop_resource_value_optimization_(false),
         num_optimized_fill_commands_(0)
     {}

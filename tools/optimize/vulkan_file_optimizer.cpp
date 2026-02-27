@@ -34,7 +34,7 @@ bool VulkanFileOptimizer::ProcessFunctionCall(decode::ParsedBlock& parsed_block)
     // Exit early if the call is filtered out by FileOptimizer
     if (FilterFunctionCall(args))
     {
-        return true;
+        return FileOptimizer::ProcessFunctionCall(parsed_block);
     }
 
     if (!parsed_block.Decompress(GetBlockParser()))
@@ -61,7 +61,7 @@ bool VulkanFileOptimizer::ProcessMetaData(decode::ParsedBlock& parsed_block)
     VisitResult result         = std::visit(filter_visitor, parsed_block.GetArgs());
     if (result != kNeedsPassthrough)
     {
-        return result == kSuccess;
+        return FileOptimizer::ProcessMetaData(parsed_block);
     }
 
     if (!parsed_block.Decompress(GetBlockParser()))

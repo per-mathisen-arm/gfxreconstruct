@@ -45,7 +45,11 @@ class Dx12FileOptimizerARM : public FileOptimizer
         std::vector<std::unique_ptr<util::Dx12ModifierBase>> modifiers;
     };
 
-    Dx12FileOptimizerARM(Dx12OptimizationData* optimization_data) : optimization_data_(optimization_data) {}
+    Dx12FileOptimizerARM(Dx12OptimizationData*                       optimization_data,
+                         const std::unordered_set<format::ThreadId>& removed_threads_ids) :
+        FileOptimizer({}, optimization_data->unreferenced_blocks, removed_threads_ids),
+        optimization_data_(optimization_data)
+    {}
 
   private:
     bool ProcessFunctionCall(decode::ParsedBlock& parsed_block) override;

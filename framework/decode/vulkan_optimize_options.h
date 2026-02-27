@@ -1,6 +1,6 @@
 /*
-** Copyright (c) 2019-2021 LunarG, Inc.
-** Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+** Copyright (c) 2025 LunarG, Inc.
+** Copyright (c) 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 **
 ** Permission is hereby granted, free of charge, to any person obtaining a
 ** copy of this software and associated documentation files (the "Software"),
@@ -21,27 +21,20 @@
 ** DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef GFXRECON_DECODE_DX12_OPTIMIZE_OPTIONS_H
-#define GFXRECON_DECODE_DX12_OPTIMIZE_OPTIONS_H
+#ifndef GFXRECON_DECODE_VULKAN_OPTIMIZE_OPTIONS_H
+#define GFXRECON_DECODE_VULKAN_OPTIMIZE_OPTIONS_H
 
 #include "decode/optimize_options.h"
 
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(decode)
 
-struct Dx12OptimizationOptions : public OptimizationOptions
+struct VulkanOptimizationOptions : public OptimizationOptions
 {
-    bool remove_redundant_psos{ false };
-    bool optimize_resource_values{ false };
-    bool optimize_resource_values_experimental{ false };
-    bool optimize_resource_values_offline{ false };
-    bool no_default{ false };
-
-    int32_t override_gpu_index{ -1 };
-    std::unordered_set<uint64_t> remove_device_ids{};
+    bool remove_rt{ false };
 };
 
 GFXRECON_END_NAMESPACE(decode)
 GFXRECON_END_NAMESPACE(gfxrecon)
 
-#endif // GFXRECON_DECODE_DX12_OPTIMIZE_OPTIONS_H
+#endif // GFXRECON_DECODE_VULKAN_OPTIMIZE_OPTIONS_H

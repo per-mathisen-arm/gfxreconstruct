@@ -34,7 +34,7 @@
 #include "format/format.h"
 #include "format/format_arm.h"
 #include "generated/generated_vulkan_struct_decoders.h"
-#include "tools/optimize/vulkan_optimize_options.h"
+#include "decode/vulkan_optimize_options.h"
 #include "util/defines.h"
 #include "util/logging.h"
 #include "util/memory_output_stream.h"
