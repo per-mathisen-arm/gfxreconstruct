@@ -1856,6 +1856,14 @@ void Dx12ReplayConsumerBase::ProcessDxgiAdapterInfo(const format::DxgiAdapterInf
                 // If this adapter was marked as active by CreateDevice (during replay)
                 if (adapter.second.active == true)
                 {
+                    std::string replay_adapter_str =
+                        gfxrecon::util::WCharArrayToString(replay_adapter_desc.Description);
+
+                    GFXRECON_LOG_INFO("Active replay-time adapter: [Adapter %u] [%s] [DeviceID 0x%x] [VendorId 0x%x]",
+                                      adapter.second.adapter_idx,
+                                      replay_adapter_str.c_str(),
+                                      replay_adapter_desc.DeviceId,
+                                      replay_adapter_desc.VendorId);
                     // Check if this adapter was marked active (during capture)
                     if ((adapter_info_header.adapter_desc.VendorId == replay_adapter_desc.VendorId) &&
                         (adapter_info_header.adapter_desc.DeviceId == replay_adapter_desc.DeviceId))
@@ -1903,7 +1911,8 @@ void Dx12ReplayConsumerBase::ProcessDxgiAdapterInfo(const format::DxgiAdapterInf
                         std::string replay_adapter_str =
                             gfxrecon::util::WCharArrayToString(replay_adapter_desc.Description);
 
-                        GFXRECON_LOG_WARNING("[%s] [DeviceID 0x%x] [VendorId 0x%x]",
+                        GFXRECON_LOG_WARNING("[Adapter %u] [%s] [DeviceID 0x%x] [VendorId 0x%x]",
+                                             adapter.second.adapter_idx,
                                              replay_adapter_str.c_str(),
                                              replay_adapter_desc.DeviceId,
                                              replay_adapter_desc.VendorId);
