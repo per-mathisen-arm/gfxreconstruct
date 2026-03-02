@@ -44,9 +44,9 @@ const char kArguments[] =
     "screenshot-dir,--screenshot-prefix,--screenshot-size,--screenshot-scale,--mfr|--measurement-frame-range,--fw|--"
     "force-windowed,--fwo|--force-windowed-origin,--batching-memory-usage,--measurement-file,--swapchain,--sgfs|--skip-"
     "get-fence-status,--sgfr|--skip-get-fence-ranges,--dump-resources,--dump-resources-dir,--dump-resources-image-"
-    "format,pbis,--pcj|--pipeline-creation-jobs,--save-pipeline-cache,--load-pipeline-cache,--quit-after-frame,--"
-    "present-mode,--wait-before-first-submit,--idle-before-submit,--present-override,--serialize-render-passes,--frame-"
-    "warm-up-spirv,--frame-warm-up-load";
+    "format,pbis,--skip-index,--pcj|--pipeline-creation-jobs,--save-pipeline-cache,--load-pipeline-cache,--quit-after-"
+    "frame,--present-mode,--wait-before-first-submit,--idle-before-submit,--present-override,--serialize-render-passes,"
+    "--frame-warm-up-spirv,--frame-warm-up-load";
 
 static void PrintUsage(const char* exe_name)
 {
@@ -193,6 +193,10 @@ static void PrintUsage(const char* exe_name)
     GFXRECON_WRITE_CONSOLE("  --pbi-all\t\tPrint all block information.");
     GFXRECON_WRITE_CONSOLE(
         "  --pbis <index1,index2>\t\tPrint block information between block index1 and block index2.");
+    GFXRECON_WRITE_CONSOLE("  --skip-index <index[,index|start-end]...>");
+    GFXRECON_WRITE_CONSOLE("          \t\tSkip replay for one or more 0-based block index values.");
+    GFXRECON_WRITE_CONSOLE("          \t\tAccepts comma-separated values and inclusive ranges.");
+    GFXRECON_WRITE_CONSOLE("          \t\tExample: --skip-index 0,7,10-20");
     GFXRECON_WRITE_CONSOLE("  --streamline-annotate");
     GFXRECON_WRITE_CONSOLE("          \t\tAdd gator annotation tags to mark replay frames.");
 #if defined(WIN32)

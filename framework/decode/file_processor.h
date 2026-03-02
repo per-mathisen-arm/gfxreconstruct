@@ -36,6 +36,7 @@
 #include "decode/decode_allocator.h"
 #include "util/logging.h"
 #include "util/file_input_stream.h"
+#include "util/options.h"
 #include "graphics/fps_info.h"
 
 #include <algorithm>
@@ -180,6 +181,8 @@ class FileProcessor
     void ProcessStateEndMarker(const StateEndMarkerArgs& state_end);
     void ProcessAnnotation(const AnnotationArgs& annotation);
 
+    void SetSkipBlockIndices(const std::vector<util::UintRange>& ranges);
+
   protected:
     using BlockProcessor = std::function<bool()>;
 
@@ -196,6 +199,9 @@ class FileProcessor
     bool ProcessFrameDelimiter(const FrameEndMarkerArgs& end_frame);
 
     void PrintBlockInfo() const;
+
+    // NOTE: SkipBlockProcessing can't be const as derived class updates state.
+    virtual bool SkipBlockProcessing();
 
     enum class ProcessBlockState : int32_t
     {
@@ -400,9 +406,6 @@ class FileProcessor
 
     bool ProcessFileHeader();
 
-    // NOTE: These two can't be const as derived class updates state.
-    virtual bool SkipBlockProcessing() { return false; } // No block skipping in base class
-
     bool SeekActiveFile(const FileInputStreamPtr& file, int64_t offset, util::platform::FileSeekOrigin origin);
 
     bool SeekActiveFile(int64_t offset, util::platform::FileSeekOrigin origin);
@@ -430,6 +433,7 @@ class FileProcessor
     int64_t                             block_index_to_{ 0 };
     bool                                loading_trimmed_capture_state_;
     graphics::FpsInfo*                  fps_info_{ nullptr };
+    std::vector<util::UintRange>        skip_block_indices_{};
 
     std::string        absolute_path_;
     format::FileHeader file_header_;

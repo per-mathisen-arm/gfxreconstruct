@@ -151,6 +151,7 @@ const char kMarkingLayersArgument[]               = "--marking-layers";
 const char kWaitBeforePresent[]                   = "--wait-before-present";
 const char kPrintBlockInfoAllOption[]             = "--pbi-all";
 const char kPrintBlockInfosArgument[]             = "--pbis";
+const char kSkipIndexArgument[]                   = "--skip-index";
 const char kNumPipelineCreationJobs[]             = "--pipeline-creation-jobs";
 const char kPreloadMeasurementRangeOption[]       = "--preload-measurement-range";
 const char kTriggerScriptNameArgument[]           = "--trigger-script-path";
@@ -1061,6 +1062,21 @@ static void GetReplayOptions(gfxrecon::decode::ReplayOptions&      options,
                 gfxrecon::util::GetUintRanges(value.c_str(), "Print block information", true, false);
             options.block_index_from = block_ranges[0].first;
             options.block_index_to   = block_ranges[1].first;
+        }
+    }
+
+    if (arg_parser.IsArgumentSet(kSkipIndexArgument))
+    {
+        const std::string& skip_index = arg_parser.GetArgumentValue(kSkipIndexArgument);
+
+        if (!skip_index.empty())
+        {
+            options.skip_block_indices =
+                gfxrecon::util::GetUintRanges(skip_index.c_str(), kSkipIndexArgument, false, true);
+        }
+        else
+        {
+            GFXRECON_LOG_WARNING("Ignoring empty \"%s\" option value", kSkipIndexArgument);
         }
     }
 

@@ -800,6 +800,7 @@ usage: gfxrecon.py replay [-h] [-p LOCAL_FILE] [--version] [--log-level LEVEL]
                           [--dump-resources-dir DIR]
                           [--pbi-all]
                           [--pbis RANGES] [--pcj]
+                          [--skip-index <index[,index|start-end]...>]
                           [--save-pipeline-cache DEVICE_FILE]
                           [--load-pipeline-cache DEVICE_FILE]
                           [--add-new-pipeline-caches]
@@ -1005,6 +1006,10 @@ options:
   --streamline-annotate Add gator annotation tags to mark replay frames.
   --pbis RANGES         Print block information between block index1 and block
                         index2
+  --skip-index <index[,index|start-end]...>
+                        Skip one or more 0-based block indices during replay.
+                        Accepts comma-separated indices and inclusive ranges.
+                        Example: --skip-index 0,7,10-20.
   --pcj, --pipeline-creation-jobs
                         Specify the number of pipeline-creation-jobs or
                         background-threads.

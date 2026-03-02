@@ -167,6 +167,7 @@ int main(int argc, const char** argv)
             gfxrecon::decode::VulkanTrackedObjectInfoTable tracked_object_info_table;
             gfxrecon::decode::VulkanReplayOptions          vulkan_replay_options =
                 GetVulkanReplayOptions(arg_parser, filename, &tracked_object_info_table);
+            file_processor->SetSkipBlockIndices(vulkan_replay_options.skip_block_indices);
 
             bool     quit_after_frame = false;
             uint32_t quit_frame       = std::numeric_limits<uint32_t>::max();

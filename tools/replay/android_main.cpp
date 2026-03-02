@@ -165,6 +165,7 @@ void android_main(struct android_app* app)
                 gfxrecon::decode::VulkanTrackedObjectInfoTable tracked_object_info_table;
                 gfxrecon::decode::VulkanReplayOptions          replay_options =
                     GetVulkanReplayOptions(arg_parser, filename, &tracked_object_info_table);
+                file_processor->SetSkipBlockIndices(replay_options.skip_block_indices);
 
                 gfxrecon::decode::VulkanReplayConsumer vulkan_replay_consumer(application, replay_options);
                 gfxrecon::decode::VulkanDecoder        vulkan_decoder;

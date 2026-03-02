@@ -170,6 +170,57 @@ bool FileProcessor::ContinueDecoding(uint64_t block_index, bool check_decoders)
     return !early_exit;
 }
 
+void FileProcessor::SetSkipBlockIndices(const std::vector<util::UintRange>& ranges)
+{
+    skip_block_indices_ = ranges;
+    std::sort(
+        skip_block_indices_.begin(), skip_block_indices_.end(), [](const util::UintRange& a, const util::UintRange& b) {
+            return (a.first < b.first) || ((a.first == b.first) && (a.last < b.last));
+        });
+
+    // Merge overlapping/adjacent ranges
+    std::vector<util::UintRange> merged;
+    merged.reserve(skip_block_indices_.size());
+    for (const auto& range : skip_block_indices_)
+    {
+        if (merged.empty())
+        {
+            merged.push_back(range);
+            continue;
+        }
+
+        auto&      back = merged.back();
+        const bool overlaps_or_adjacent =
+            (range.first <= back.last) || ((back.last != UINT32_MAX) && (range.first == (back.last + 1)));
+        if (overlaps_or_adjacent)
+        {
+            back.last = std::max(back.last, range.last);
+        }
+        else
+        {
+            merged.push_back(range);
+        }
+    }
+
+    skip_block_indices_ = std::move(merged);
+}
+
+bool FileProcessor::SkipBlockProcessing()
+{
+    if (skip_block_indices_.empty())
+    {
+        return false;
+    }
+
+    const auto skip_range = std::lower_bound(
+        skip_block_indices_.begin(),
+        skip_block_indices_.end(),
+        block_index_,
+        [](const util::UintRange& range, uint64_t index) { return static_cast<uint64_t>(range.last) < index; });
+
+    return (skip_range != skip_block_indices_.end()) && (static_cast<uint64_t>(skip_range->first) <= block_index_);
+}
+
 bool FileProcessor::ProcessFileHeader()
 {
     bool success = false;
@@ -309,9 +360,13 @@ FileProcessor::ProcessBlockState FileProcessor::ProcessBlocks(DispatchFunction& 
 
             if (success)
             {
-                if (SkipBlockProcessing())
+                const format::BlockType base_type    = format::RemoveCompressedBlockBit(block_buffer.Header().type);
+                const bool              is_skippable = (base_type == format::BlockType::kFunctionCallBlock) ||
+                                          (base_type == format::BlockType::kMethodCallBlock) ||
+                                          (base_type == format::BlockType::kMetaDataBlock);
+                if (is_skippable && SkipBlockProcessing())
                 {
-                    GFXRECON_CHECK_CONVERSION_DATA_LOSS(size_t, block_buffer.Header().size);
+                    GFXRECON_LOG_INFO("Skipping block index %" PRIu64 " (type=%u)", block_index_, base_type);
                 }
                 else
                 {

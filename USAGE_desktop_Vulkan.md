@@ -640,6 +640,7 @@ gfxrecon-replay         [-h | --help] [--version] [--cpu-mask <binary-mask>] [--
                         [--dump-resources <filename>.json]
                         [--dump-resources-dir <dir>]
                         [--pbi-all] [--pbis <index1,index2>]
+                        [--skip-index <index[,index|start-end]...>]
                         [--pipeline-creation-jobs | --pcj <num_jobs>]
                         [--deduplicate-device]
                         [--wait-before-first-submit MILLISECONDS]
@@ -883,6 +884,10 @@ Optional arguments:
               Add gator annotation tags to mark replay frames.
   --pbis <index1,index2>
               Print block information between block index1 and block index2.
+  --skip-index <index[,index|start-end]...>
+              Skip one or more 0-based block indices during replay.
+              Accepts comma-separated indices and inclusive ranges.
+              Example: --skip-index 0,7,10-20.
   --pipeline-creation-jobs | --pcj <num_jobs>
               Specify the number of asynchronous pipeline-creation jobs as integer.
               If <num_jobs> is negative it will be added to the number of cpu-cores, e.g. -1 -> num_cores - 1.

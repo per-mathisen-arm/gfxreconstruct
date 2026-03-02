@@ -70,6 +70,7 @@ struct ReplayOptions
     bool                         enable_print_block_info{ false };
     int64_t                      block_index_from{ -1 };
     int64_t                      block_index_to{ -1 };
+    std::vector<util::UintRange> skip_block_indices;
     bool                         skip_failed_allocations{ false };
     bool                         remove_unsupported_features{ false };
     util::ScreenshotFormat       screenshot_format{ util::ScreenshotFormat::kBmp };

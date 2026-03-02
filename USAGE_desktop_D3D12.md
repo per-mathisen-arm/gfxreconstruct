@@ -221,6 +221,7 @@ Usage:
                         [--dump-resources-dir <dir>]
                         [--dump-resources-modifiable-state-only ]
                         [--pbi-all] [--pbis <index1,index2>]
+                        [--skip-index <index[,index|start-end]...>]
                         <file>
 
 Required arguments:
@@ -303,7 +304,10 @@ Optional arguments:
   --pbi-all             Print all block information.
   --streamline-annotate Add gator annotation tags to mark replay frames.
   --pbis <index1,index2>Print block information between block index1 and block index2.
-
+  --skip-index <index[,index|start-end]...>
+                        Skip one or more 0-based block indices during replay.
+                        Accepts comma-separated indices and inclusive ranges.
+                        Example: --skip-index 0,7,10-20.
   --fwo <x,y>           Force windowed mode if not already, and allow setting of a custom window location.
                         (Same as --force-windowed-origin)
   --use-cached-psos     Permit using cached PSOs when creating graphics or compute pipelines.
