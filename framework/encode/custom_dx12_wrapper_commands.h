@@ -854,6 +854,36 @@ struct CustomWrapperPostCall<format::ApiCallId::ApiCall_ID3D12Device_CreateRootS
     }
 };
 
+template <>
+struct CustomWrapperPreCall<format::ApiCallId::ApiCall_IDXGIDebug_ReportLiveObjects>
+{
+    template <typename... Args>
+    static void Dispatch(D3D12CaptureManager* manager, Args... args)
+    {
+        manager->PreProcess_IDXGIDebug_ReportLiveObjects(args...);
+    }
+};
+
+template <>
+struct CustomWrapperPreCall<format::ApiCallId::ApiCall_ID3D12DebugDevice1_ReportLiveDeviceObjects>
+{
+    template <typename... Args>
+    static void Dispatch(D3D12CaptureManager* manager, Args... args)
+    {
+        manager->PreProcess_ID3D12DebugDevice1_ReportLiveDeviceObjects(args...);
+    }
+};
+
+template <>
+struct CustomWrapperPreCall<format::ApiCallId::ApiCall_ID3D12DebugDevice_ReportLiveDeviceObjects>
+{
+    template <typename... Args>
+    static void Dispatch(D3D12CaptureManager* manager, Args... args)
+    {
+        manager->PreProcess_ID3D12DebugDevice_ReportLiveDeviceObjects(args...);
+    }
+};
+
 GFXRECON_END_NAMESPACE(encode)
 GFXRECON_END_NAMESPACE(gfxrecon)
 

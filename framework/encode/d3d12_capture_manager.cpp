@@ -3875,5 +3875,27 @@ void D3D12CaptureManager::PostProcess_ID3D12Device_CreateRootSignature(ID3D12Dev
     }
 }
 
+void D3D12CaptureManager::PreProcess_IDXGIDebug_ReportLiveObjects(IDXGIDebug_Wrapper*  wrapper,
+                                                                  GUID                 apiid,
+                                                                  DXGI_DEBUG_RLO_FLAGS flags)
+{
+    // Clear tracked objects before ReportLiveObjects to avoid false leak reports.
+    adapters_.clear();
+}
+
+void D3D12CaptureManager::PreProcess_ID3D12DebugDevice1_ReportLiveDeviceObjects(ID3D12DebugDevice1_Wrapper* wrapper,
+                                                                                D3D12_RLDO_FLAGS            flags)
+{
+    // Clear tracked objects before ReportLiveObjects to avoid false leak reports.
+    adapters_.clear();
+}
+
+void D3D12CaptureManager::PreProcess_ID3D12DebugDevice_ReportLiveDeviceObjects(ID3D12DebugDevice_Wrapper* wrapper,
+                                                                               D3D12_RLDO_FLAGS           flags)
+{
+    // Clear tracked objects before ReportLiveObjects to avoid false leak reports.
+    adapters_.clear();
+}
+
 GFXRECON_END_NAMESPACE(encode)
 GFXRECON_END_NAMESPACE(gfxrecon)

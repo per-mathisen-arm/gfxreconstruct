@@ -896,6 +896,14 @@ class D3D12CaptureManager : public ApiCaptureManager
                                                       REFIID                riid,
                                                       void**                ppvRootSignature);
 
+    void PreProcess_IDXGIDebug_ReportLiveObjects(IDXGIDebug_Wrapper* wrapper, GUID apiid, DXGI_DEBUG_RLO_FLAGS flags);
+
+    void PreProcess_ID3D12DebugDevice1_ReportLiveDeviceObjects(ID3D12DebugDevice1_Wrapper* wrapper,
+                                                               D3D12_RLDO_FLAGS            flags);
+
+    void PreProcess_ID3D12DebugDevice_ReportLiveDeviceObjects(ID3D12DebugDevice_Wrapper* wrapper,
+                                                              D3D12_RLDO_FLAGS           flags);
+
   protected:
     D3D12CaptureManager();
 
