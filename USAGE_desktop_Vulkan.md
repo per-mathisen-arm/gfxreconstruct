@@ -630,7 +630,7 @@ gfxrecon-replay         [-h | --help] [--version] [--cpu-mask <binary-mask>] [--
                         [--present-mode <mode>]
                         [--mfr|--measurement-frame-range <start-frame>-<end-frame>]
                         [--measurement-file <file>] [--quit-after-measurement-range]
-                        [--flush-measurement-range]
+                        [--flush-measurement-range] [--quit-after-frame <frame>]
                         [--log-level <level>] [--log-file <file>] [--log-debugview]
                         [--api <api>]
                         [--preload-measurement-range]
@@ -834,6 +834,8 @@ Optional arguments:
                         If this is specified the replayer will flush and wait
                         for all current GPU work to finish at the end of each
                         frame inside the measurement range.
+  --quit-after-frame <frame>
+                        Stops the replayer after the specified frame.
   --use-colorspace-fallback
                         Swap the swapchain color space if unsupported by replay device.
                         Check if color space is not supported by replay device and

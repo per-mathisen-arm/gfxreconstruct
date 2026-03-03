@@ -82,7 +82,7 @@ static void PrintUsage(const char* exe_name)
     GFXRECON_WRITE_CONSOLE("\t\t\t[--offscreen-swapchain-frame-boundary]");
     GFXRECON_WRITE_CONSOLE("\t\t\t[--mfr|--measurement-frame-range <start-frame>-<end-frame>]");
     GFXRECON_WRITE_CONSOLE("\t\t\t[--measurement-file <file>] [--quit-after-measurement-range]");
-    GFXRECON_WRITE_CONSOLE("\t\t\t[--flush-measurement-range]");
+    GFXRECON_WRITE_CONSOLE("\t\t\t[--flush-measurement-range] [--quit-after-frame <frame>]");
     GFXRECON_WRITE_CONSOLE("\t\t\t[--fw <width,height> | --force-windowed <width,height>]");
     GFXRECON_WRITE_CONSOLE("\t\t\t[--sgfs <status> | --skip-get-fence-status <status>]");
     GFXRECON_WRITE_CONSOLE("\t\t\t[--sgfr <frame-ranges> | --skip-get-fence-ranges <frame-ranges>]");
@@ -311,9 +311,11 @@ static void PrintUsage(const char* exe_name)
     GFXRECON_WRITE_CONSOLE("          \t\tand wait for all current GPU work to finish at the");
     GFXRECON_WRITE_CONSOLE("          \t\tstart and end of the measurement range.");
     GFXRECON_WRITE_CONSOLE("  --flush-inside-measurement-range");
-    GFXRECON_WRITE_CONSOLE("          \t\tIf this is specified the replayer will flush")
+    GFXRECON_WRITE_CONSOLE("          \t\tIf this is specified the replayer will flush");
     GFXRECON_WRITE_CONSOLE("          \t\tand wait for all current GPU work to finish at the");
     GFXRECON_WRITE_CONSOLE("          \t\tend of each frame inside the measurement range.");
+    GFXRECON_WRITE_CONSOLE("  --quit-after-frame <frame>");
+    GFXRECON_WRITE_CONSOLE("          \t\tStops the replayer after the specified frame.");
     GFXRECON_WRITE_CONSOLE("  --gpu-group <index>\tUse the specified device group for replay, where index");
     GFXRECON_WRITE_CONSOLE("          \t\tis the zero-based index to the array of physical device group");
     GFXRECON_WRITE_CONSOLE("          \t\treturned by vkEnumeratePhysicalDeviceGroups.  Replay may fail");
