@@ -2258,18 +2258,18 @@ void Dx12RayTracingModifier::AddFillMemoryResourceAddressCommand(const uint64_t 
 
 void Dx12RayTracingModifier::CreateDeviceAndCheckRayTracingSupport()
 {
-    Microsoft::WRL::ComPtr<IDXGIFactory4> factory = nullptr;
-    HRESULT                               result  = CreateDXGIFactory1(IID_PPV_ARGS(&factory));
+    graphics::dx12::IDXGIFactory4ComPtr factory = nullptr;
+    HRESULT                             result  = CreateDXGIFactory1(IID_PPV_ARGS(&factory));
     if (FAILED(result))
     {
         return;
     }
 
-    const UINT                            kMaxEnumAdapters = 3;
-    Microsoft::WRL::ComPtr<IDXGIAdapter1> adapter          = nullptr;
+    const UINT                          kMaxEnumAdapters = 3;
+    graphics::dx12::IDXGIAdapter1ComPtr adapter          = nullptr;
     for (UINT index = 0; index < kMaxEnumAdapters; ++index)
     {
-        if (factory->EnumAdapters1(index, &adapter) == DXGI_ERROR_NOT_FOUND)
+        if (factory->EnumAdapters1(index, &adapter.GetInterfacePtr()) == DXGI_ERROR_NOT_FOUND)
         {
             continue;
         }
@@ -2282,7 +2282,7 @@ void Dx12RayTracingModifier::CreateDeviceAndCheckRayTracingSupport()
         }
 
         graphics::dx12::ID3D12Device5ComPtr device = nullptr;
-        result = D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_12_1, IID_PPV_ARGS(&device));
+        result = D3D12CreateDevice(adapter.GetInterfacePtr(), D3D_FEATURE_LEVEL_12_1, IID_PPV_ARGS(&device));
         if (SUCCEEDED(result))
         {
             D3D12_FEATURE_DATA_D3D12_OPTIONS5 feature_data = {};

@@ -91,8 +91,8 @@ struct DxWrapperInfo
     format::HandleId                     create_object_id{ format::kNullHandleId };
     std::shared_ptr<const DxWrapperInfo> create_object_info;
 
-    std::unordered_map<const GUID, std::vector<uint8_t>, GUID_Hash, GUID_Equal>             private_datas;
-    std::unordered_map<const GUID, Microsoft::WRL::ComPtr<IUnknown>, GUID_Hash, GUID_Equal> private_data_interface;
+    std::unordered_map<const GUID, std::vector<uint8_t>, GUID_Hash, GUID_Equal>           private_datas;
+    std::unordered_map<const GUID, graphics::dx12::IUnknownComPtr, GUID_Hash, GUID_Equal> private_data_interface;
 
     std::wstring object_name{ L"" };
 

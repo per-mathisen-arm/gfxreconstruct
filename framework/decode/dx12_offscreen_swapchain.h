@@ -34,27 +34,26 @@ class Dx12OffscreenSwapchain : public IDXGISwapChain4
 {
   public:
     // Constructor for Dx12OffscreenSwapchain (used with IDXGIFactory::CreateSwapChain)
-    Dx12OffscreenSwapchain(Microsoft::WRL::ComPtr<ID3D12Device> device, DXGI_SWAP_CHAIN_DESC* desc);
+    Dx12OffscreenSwapchain(ID3D12Device* device, DXGI_SWAP_CHAIN_DESC* desc);
 
     // Constructor for Dx12OffscreenSwapchain (used with IDXGIFactory2::CreateSwapChainForHwnd,
     // IDXGIFactory2::CreateSwapChainForComposition and CreateSwapChainForCoreWindow)
-    Dx12OffscreenSwapchain(Microsoft::WRL::ComPtr<ID3D12Device> device,
-                           uint64_t                             hwnd_id,
-                           DXGI_SWAP_CHAIN_DESC1*               desc,
-                           DXGI_SWAP_CHAIN_FULLSCREEN_DESC*     fullscreen_desc);
+    Dx12OffscreenSwapchain(ID3D12Device*                    device,
+                           uint64_t                         hwnd_id,
+                           DXGI_SWAP_CHAIN_DESC1*           desc,
+                           DXGI_SWAP_CHAIN_FULLSCREEN_DESC* fullscreen_desc);
 
     virtual ~Dx12OffscreenSwapchain(){};
 
     // Create offscreen swapchain for IDXGIFactory::CreateSwapChain
-    static Microsoft::WRL::ComPtr<Dx12OffscreenSwapchain> Create(Microsoft::WRL::ComPtr<ID3D12Device> device,
-                                                                 DXGI_SWAP_CHAIN_DESC*                desc);
+    static Microsoft::WRL::ComPtr<Dx12OffscreenSwapchain> Create(ID3D12Device* device, DXGI_SWAP_CHAIN_DESC* desc);
 
     // Create offscreen swapchain for IDXGIFactory2::CreateSwapChainForHwnd, CreateSwapChainForComposition and
     // IDXGIFactory2::CreateSwapChainForCoreWindow
-    static Microsoft::WRL::ComPtr<Dx12OffscreenSwapchain> Create(Microsoft::WRL::ComPtr<ID3D12Device> device,
-                                                                 uint64_t                             hwnd_id,
-                                                                 DXGI_SWAP_CHAIN_DESC1*               desc,
-                                                                 DXGI_SWAP_CHAIN_FULLSCREEN_DESC*     fullscreen_desc);
+    static Microsoft::WRL::ComPtr<Dx12OffscreenSwapchain> Create(ID3D12Device*                    device,
+                                                                 uint64_t                         hwnd_id,
+                                                                 DXGI_SWAP_CHAIN_DESC1*           desc,
+                                                                 DXGI_SWAP_CHAIN_FULLSCREEN_DESC* fullscreen_desc);
 
     // IUnknown methods
     virtual HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override;
@@ -156,7 +155,7 @@ class Dx12OffscreenSwapchain : public IDXGISwapChain4
     UINT                  m_source_height{ 0 };
     DXGI_COLOR_SPACE_TYPE m_color_space{ DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709 };
 
-    Microsoft::WRL::ComPtr<ID3D12Device>              m_device{ nullptr };
+    graphics::dx12::ID3D12DeviceComPtr                m_device{ nullptr };
     std::vector<graphics::dx12::ID3D12ResourceComPtr> m_back_buffers;
 
     // Private data and interfaces storage
@@ -169,8 +168,8 @@ class Dx12OffscreenSwapchain : public IDXGISwapChain4
             return std::hash<uint64_t>()(data[0]) ^ std::hash<uint64_t>()(data[1]);
         }
     };
-    std::unordered_map<GUID, std::vector<uint8_t>, GuidHasher>             m_private_data;
-    std::unordered_map<GUID, Microsoft::WRL::ComPtr<IUnknown>, GuidHasher> m_private_interfaces;
+    std::unordered_map<GUID, std::vector<uint8_t>, GuidHasher>           m_private_data;
+    std::unordered_map<GUID, graphics::dx12::IUnknownComPtr, GuidHasher> m_private_interfaces;
 
     // Create back buffers
     bool CreateBackBuffers();

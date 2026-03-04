@@ -687,8 +687,8 @@ void Dx12StateTracker::TrackPrivateDataInterface(IUnknown_Wrapper* wrapper, REFG
     auto* info = GetWrapperInfo(wrapper);
     if (info)
     {
-        Microsoft::WRL::ComPtr<IUnknown> private_data = const_cast<IUnknown*>(data);
-        info->private_data_interface[name]            = std::move(private_data);
+        graphics::dx12::IUnknownComPtr private_data = const_cast<IUnknown*>(data);
+        info->private_data_interface[name]          = std::move(private_data);
     }
 }
 

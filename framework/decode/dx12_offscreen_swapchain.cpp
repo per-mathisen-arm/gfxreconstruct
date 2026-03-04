@@ -27,22 +27,21 @@ GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(decode)
 
 // Constructor for Dx12OffscreenSwapchain (used with IDXGIFactory::CreateSwapChain)
-Dx12OffscreenSwapchain::Dx12OffscreenSwapchain(Microsoft::WRL::ComPtr<ID3D12Device> device,
-                                               DXGI_SWAP_CHAIN_DESC*                desc) :
-    m_device(device),
-    m_width(desc->BufferDesc.Width), m_height(desc->BufferDesc.Height), m_format(desc->BufferDesc.Format),
-    m_refresh_rate(desc->BufferDesc.RefreshRate), m_scanline_order(desc->BufferDesc.ScanlineOrdering),
-    m_scaling(desc->BufferDesc.Scaling), m_sample_desc(desc->SampleDesc), m_buffer_usage(desc->BufferUsage),
-    m_back_buffer_count(desc->BufferCount), m_orig_hwnd(desc->OutputWindow), m_orig_windowed(desc->Windowed),
-    m_swap_effect(desc->SwapEffect), m_flags(desc->Flags)
+Dx12OffscreenSwapchain::Dx12OffscreenSwapchain(ID3D12Device* device, DXGI_SWAP_CHAIN_DESC* desc) :
+    m_device(device), m_width(desc->BufferDesc.Width), m_height(desc->BufferDesc.Height),
+    m_format(desc->BufferDesc.Format), m_refresh_rate(desc->BufferDesc.RefreshRate),
+    m_scanline_order(desc->BufferDesc.ScanlineOrdering), m_scaling(desc->BufferDesc.Scaling),
+    m_sample_desc(desc->SampleDesc), m_buffer_usage(desc->BufferUsage), m_back_buffer_count(desc->BufferCount),
+    m_orig_hwnd(desc->OutputWindow), m_orig_windowed(desc->Windowed), m_swap_effect(desc->SwapEffect),
+    m_flags(desc->Flags)
 {}
 
 // Constructor for Dx12OffscreenSwapchain (used with IDXGIFactory2::CreateSwapChainForHwnd,
 // IDXGIFactory2::CreateSwapChainForComposition and IDXGIFactory2::CreateSwapChainForCoreWindow)
-Dx12OffscreenSwapchain::Dx12OffscreenSwapchain(Microsoft::WRL::ComPtr<ID3D12Device> device,
-                                               uint64_t                             hwnd_id,
-                                               DXGI_SWAP_CHAIN_DESC1*               desc,
-                                               DXGI_SWAP_CHAIN_FULLSCREEN_DESC*     fullscreen_desc) :
+Dx12OffscreenSwapchain::Dx12OffscreenSwapchain(ID3D12Device*                    device,
+                                               uint64_t                         hwnd_id,
+                                               DXGI_SWAP_CHAIN_DESC1*           desc,
+                                               DXGI_SWAP_CHAIN_FULLSCREEN_DESC* fullscreen_desc) :
     m_device(device),
     m_width(desc->Width), m_height(desc->Height), m_format(desc->Format),
     m_refresh_rate(fullscreen_desc ? fullscreen_desc->RefreshRate : DXGI_RATIONAL{ 0, 1 }),
@@ -105,12 +104,12 @@ bool Dx12OffscreenSwapchain::CreateBackBuffers()
 }
 
 // Create offscreen swapchain for IDXGIFactory::CreateSwapChain
-Microsoft::WRL::ComPtr<Dx12OffscreenSwapchain>
-Dx12OffscreenSwapchain::Create(Microsoft::WRL::ComPtr<ID3D12Device> device, DXGI_SWAP_CHAIN_DESC* desc)
+Microsoft::WRL::ComPtr<Dx12OffscreenSwapchain> Dx12OffscreenSwapchain::Create(ID3D12Device*         device,
+                                                                              DXGI_SWAP_CHAIN_DESC* desc)
 {
     Microsoft::WRL::ComPtr<Dx12OffscreenSwapchain> swapchain =
         Microsoft::WRL::ComPtr<Dx12OffscreenSwapchain>(new Dx12OffscreenSwapchain(device, desc));
-    if (!swapchain->CreateBackBuffers())
+    if ((swapchain != nullptr) && !swapchain->CreateBackBuffers())
     {
         return nullptr;
     }
@@ -121,14 +120,14 @@ Dx12OffscreenSwapchain::Create(Microsoft::WRL::ComPtr<ID3D12Device> device, DXGI
 // Create offscreen swapchain for IDXGIFactory2::CreateSwapChainForHwnd, IDXGIFactory2::CreateSwapChainForComposition
 // and IDXGIFactory2::CreateSwapChainForCoreWindow
 Microsoft::WRL::ComPtr<Dx12OffscreenSwapchain>
-Dx12OffscreenSwapchain::Create(Microsoft::WRL::ComPtr<ID3D12Device> device,
-                               uint64_t                             hwnd_id,
-                               DXGI_SWAP_CHAIN_DESC1*               desc,
-                               DXGI_SWAP_CHAIN_FULLSCREEN_DESC*     fullscreen_desc)
+Dx12OffscreenSwapchain::Create(ID3D12Device*                    device,
+                               uint64_t                         hwnd_id,
+                               DXGI_SWAP_CHAIN_DESC1*           desc,
+                               DXGI_SWAP_CHAIN_FULLSCREEN_DESC* fullscreen_desc)
 {
     Microsoft::WRL::ComPtr<Dx12OffscreenSwapchain> swapchain = Microsoft::WRL::ComPtr<Dx12OffscreenSwapchain>(
         new Dx12OffscreenSwapchain(device, hwnd_id, desc, fullscreen_desc));
-    if (!swapchain->CreateBackBuffers())
+    if ((swapchain != nullptr) && !swapchain->CreateBackBuffers())
     {
         return nullptr;
     }
@@ -254,7 +253,7 @@ HRESULT Dx12OffscreenSwapchain::SetPrivateDataInterface(REFGUID guid, const IUnk
     }
 
     // store the interface in the map
-    Microsoft::WRL::ComPtr<IUnknown> spInterface;
+    graphics::dx12::IUnknownComPtr spInterface;
     spInterface                = const_cast<IUnknown*>(pUnknown);
     m_private_interfaces[guid] = spInterface;
 

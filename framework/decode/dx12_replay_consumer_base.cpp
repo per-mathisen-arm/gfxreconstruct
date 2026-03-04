@@ -293,17 +293,6 @@ void Dx12ReplayConsumerBase::OverrideEnableDebugLayer(DxObjectInfo* replay_objec
 
 Dx12ReplayConsumerBase::~Dx12ReplayConsumerBase()
 {
-    // Reports info about the lifetime of objects for memory leak analysis
-    if (debug_layer_enabled_)
-    {
-        Microsoft::WRL::ComPtr<IDXGIDebug1> dxgi_debug = nullptr;
-        DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgi_debug));
-        if (dxgi_debug != nullptr)
-        {
-            dxgi_debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_DETAIL);
-        }
-    }
-
     // Wait for pending work to complete before destroying resources.
     const DWORD kWaitMilliseconds = 2000;
     if (WaitIdle(kWaitMilliseconds))
@@ -316,7 +305,6 @@ Dx12ReplayConsumerBase::~Dx12ReplayConsumerBase()
         {
             info_queue_->Release();
         }
-        acceleration_structure_builders_.clear();
     }
     else
     {
@@ -1083,8 +1071,8 @@ void Dx12ReplayConsumerBase::LogFrameDebugInfo()
 {
     if (util::Log::WillOutputMessage(util::LoggingSeverity::kDebug))
     {
-        Microsoft::WRL::ComPtr<IDXGIAdapter3> adapter3 = nullptr;
-        IDXGIAdapter*                         adapter  = GetAdapter();
+        graphics::dx12::IDXGIAdapter3ComPtr adapter3 = nullptr;
+        graphics::dx12::IDXGIAdapterComPtr  adapter  = GetAdapter();
         if (adapter == nullptr)
         {
             GFXRECON_LOG_DEBUG("Completed frame %d", application_->GetCurrentFrameNumber() + 1);
@@ -1143,12 +1131,12 @@ void Dx12ReplayConsumerBase::CheckReplayResult(const char* call_name, HRESULT ca
     {
         if ((replay_result == DXGI_ERROR_DEVICE_REMOVED) || (replay_result == E_OUTOFMEMORY))
         {
-            Microsoft::WRL::ComPtr<IDXGIFactory1> factory  = nullptr;
-            Microsoft::WRL::ComPtr<IDXGIAdapter1> adapter1 = nullptr;
-            Microsoft::WRL::ComPtr<IDXGIAdapter3> adapter3 = nullptr;
+            graphics::dx12::IDXGIFactory1ComPtr factory  = nullptr;
+            graphics::dx12::IDXGIAdapter1ComPtr adapter1 = nullptr;
+            graphics::dx12::IDXGIAdapter3ComPtr adapter3 = nullptr;
 
             CreateDXGIFactory1(IID_PPV_ARGS(&factory));
-            factory->EnumAdapters1(0, &adapter1);
+            factory->EnumAdapters1(0, &adapter1.GetInterfacePtr());
             adapter1->QueryInterface(IID_PPV_ARGS(&adapter3));
             if (adapter3 != nullptr)
             {
@@ -4298,15 +4286,15 @@ HRESULT Dx12ReplayConsumerBase::CreateSwapChainForOffscreen(DxObjectInfo*       
         device = device_info->object;
     }
 
-    Microsoft::WRL::ComPtr<ID3D12CommandQueue> d3d12_command_queue;
-    HRESULT                                    hr = device->QueryInterface(IID_PPV_ARGS(&d3d12_command_queue));
+    graphics::dx12::ID3D12CommandQueueComPtr d3d12_command_queue;
+    HRESULT                                  hr = device->QueryInterface(IID_PPV_ARGS(&d3d12_command_queue));
     if (FAILED(hr))
     {
         GFXRECON_LOG_ERROR("Failed to cast IUnknown to ID3D12CommandQueue while creating offscreen swapchain.");
         return result;
     }
 
-    Microsoft::WRL::ComPtr<ID3D12Device> d3d12_device;
+    graphics::dx12::ID3D12DeviceComPtr d3d12_device;
     hr = d3d12_command_queue->GetDevice(IID_PPV_ARGS(&d3d12_device));
     if (FAILED(hr))
     {
@@ -4315,7 +4303,7 @@ HRESULT Dx12ReplayConsumerBase::CreateSwapChainForOffscreen(DxObjectInfo*       
     }
 
     Microsoft::WRL::ComPtr<Dx12OffscreenSwapchain> offscreen_swapchain =
-        Dx12OffscreenSwapchain::Create(d3d12_device, desc);
+        Dx12OffscreenSwapchain::Create(d3d12_device.GetInterfacePtr(), desc);
     if (offscreen_swapchain == nullptr)
     {
         GFXRECON_LOG_ERROR("Failed to create offscreen swapchain.");
@@ -4353,15 +4341,15 @@ HRESULT Dx12ReplayConsumerBase::CreateSwapChainForOffscreen(DxObjectInfo*       
         device = device_info->object;
     }
 
-    Microsoft::WRL::ComPtr<ID3D12CommandQueue> d3d12_command_queue;
-    HRESULT                                    hr = device->QueryInterface(IID_PPV_ARGS(&d3d12_command_queue));
+    graphics::dx12::ID3D12CommandQueueComPtr d3d12_command_queue;
+    HRESULT                                  hr = device->QueryInterface(IID_PPV_ARGS(&d3d12_command_queue));
     if (FAILED(hr))
     {
         GFXRECON_LOG_ERROR("Failed to cast IUnknown to ID3D12CommandQueue while creating offscreen swapchain.");
         return result;
     }
 
-    Microsoft::WRL::ComPtr<ID3D12Device> d3d12_device;
+    graphics::dx12::ID3D12DeviceComPtr d3d12_device;
     hr = d3d12_command_queue->GetDevice(IID_PPV_ARGS(&d3d12_device));
     if (FAILED(hr))
     {
@@ -4370,7 +4358,7 @@ HRESULT Dx12ReplayConsumerBase::CreateSwapChainForOffscreen(DxObjectInfo*       
     }
 
     Microsoft::WRL::ComPtr<Dx12OffscreenSwapchain> offscreen_swapchain =
-        Dx12OffscreenSwapchain::Create(d3d12_device, hwnd_id, desc, full_screen_desc);
+        Dx12OffscreenSwapchain::Create(d3d12_device.GetInterfacePtr(), hwnd_id, desc, full_screen_desc);
     if (offscreen_swapchain == nullptr)
     {
         GFXRECON_LOG_ERROR("Failed to create offscreen swapchain.");

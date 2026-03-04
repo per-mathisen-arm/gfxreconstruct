@@ -696,7 +696,7 @@ void Dx12StateWriter::WritePrivateDataInterface(format::HandleId handle_id, cons
     for (auto& data : wrapper_info.private_data_interface)
     {
         EncodeStruct(&encoder_, data.first);
-        encoder_.EncodeObjectValue(data.second.Get());
+        encoder_.EncodeObjectValue(data.second.GetInterfacePtr());
         encoder_.EncodeInt32Value(S_OK);
         if (wrapper_info.IsDxgi())
         {
