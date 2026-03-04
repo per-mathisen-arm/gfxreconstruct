@@ -1202,11 +1202,10 @@ VkResult VulkanResourceInitializer::ExecuteCommandBuffer(VkQueue queue, VkComman
     num_queue_submits_++;
 
     // Wait until the previous operation completes
-    // There are slow platforms that require a long timeout
     result = device_table_->WaitForFences(device_, 1, &fence_, VK_TRUE, UINT64_MAX);
     if (result != VK_SUCCESS)
     {
-        GFXRECON_LOG_ERROR("Timeout while initializing resources may result in a crash.")
+        GFXRECON_LOG_ERROR("Error encountered on resource initialization");
     }
 
     // reset to unsignaled state
