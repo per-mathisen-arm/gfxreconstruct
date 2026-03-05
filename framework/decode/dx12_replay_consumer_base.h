@@ -26,6 +26,7 @@
 #ifndef GFXRECON_DECODE_DX12_REPLAY_CONSUMER_BASE_H
 #define GFXRECON_DECODE_DX12_REPLAY_CONSUMER_BASE_H
 
+#include "decode/dx12_replay_consumer_arm_features.h"
 #include "decode/custom_dx12_struct_decoders_forward.h"
 #include "decode/dx_replay_options.h"
 #include "decode/dx12_acceleration_structure_builder.h"
@@ -62,8 +63,12 @@
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(decode)
 
+class Dx12ReplayConsumerArmFeatures;
+
 class Dx12ReplayConsumerBase : public Dx12Consumer
 {
+    friend class Dx12ReplayConsumerArmFeatures;
+
   public:
     Dx12ReplayConsumerBase(std::shared_ptr<application::Application> application, const DxReplayOptions& options);
 
@@ -464,8 +469,6 @@ class Dx12ReplayConsumerBase : public Dx12Consumer
             }
         }
     }
-
-    void LogFrameDebugInfo();
 
     void CheckReplayResult(const char* call_name, HRESULT capture_result, HRESULT replay_result);
 
@@ -1362,42 +1365,6 @@ class Dx12ReplayConsumerBase : public Dx12Consumer
                            DxObjectInfo*                           restrict_to_output_info,
                            HandlePointerDecoder<IDXGISwapChain1*>* swapchain);
 
-    HRESULT
-    CreateSwapChainForComposition(DxObjectInfo*                          replay_object_info,
-                                  HRESULT                                original_result,
-                                  DxObjectInfo*                          device_info,
-                                  DXGI_SWAP_CHAIN_DESC*                  desc,
-                                  HandlePointerDecoder<IDXGISwapChain*>* swapchain);
-
-    HRESULT
-    CreateSwapChainForComposition(DxObjectInfo*                           replay_object_info,
-                                  HRESULT                                 original_result,
-                                  DxObjectInfo*                           device_info,
-                                  uint64_t                                hwnd_id,
-                                  DXGI_SWAP_CHAIN_DESC1*                  desc,
-                                  DXGI_SWAP_CHAIN_FULLSCREEN_DESC*        full_screen_desc,
-                                  DxObjectInfo*                           restrict_to_output_info,
-                                  HandlePointerDecoder<IDXGISwapChain1*>* swapchain);
-
-    // Create offscreen swapchain for IDXGIFactory::CreateSwapChain
-    HRESULT
-    CreateSwapChainForOffscreen(DxObjectInfo*                          replay_object_info,
-                                HRESULT                                original_result,
-                                DxObjectInfo*                          device_info,
-                                DXGI_SWAP_CHAIN_DESC*                  desc,
-                                HandlePointerDecoder<IDXGISwapChain*>* swapchain);
-
-    // Create offscreen swapchain for IDXGIFactory2::CreateSwapChainForHwnd,
-    // IDXGIFactory2::CreateSwapChainForComposition and IDXGIFactory2::CreateSwapChainForCoreWindow
-    HRESULT
-    CreateSwapChainForOffscreen(DxObjectInfo*                           replay_object_info,
-                                HRESULT                                 original_result,
-                                DxObjectInfo*                           device_info,
-                                uint64_t                                hwnd_id,
-                                DXGI_SWAP_CHAIN_DESC1*                  desc,
-                                DXGI_SWAP_CHAIN_FULLSCREEN_DESC*        full_screen_desc,
-                                HandlePointerDecoder<IDXGISwapChain1*>* swapchain);
-
     void SetSwapchainInfo(DxObjectInfo* info,
                           Window*       window,
                           uint64_t      hwnd_id,
@@ -1465,19 +1432,11 @@ class Dx12ReplayConsumerBase : public Dx12Consumer
                                              const uint8_t* data,
                                              uint8_t*       dst_resource_data_ptr);
 
-    void ApplyFillMemoryResourceAddressCommand(uint64_t offset, uint64_t size, const uint8_t* data);
-
     void ApplyBatchedResourceInitInfo(std::unordered_map<ID3D12Resource*, ResourceInitInfo>& resource_infos);
 
     void SetResourceInitInfoState(ResourceInitInfo&                           resource_info,
                                   const format::InitSubresourceCommandHeader& command_header,
                                   const uint8_t*                              data);
-
-    void SetResourceReplayRequiredSize(DxObjectInfo*                                       replay_object_info,
-                                       StructPointerDecoder<Decoded_D3D12_RESOURCE_DESC>*  pDesc,
-                                       StructPointerDecoder<Decoded_D3D12_RESOURCE_DESC1>* pDesc1,
-                                       D3D12_RESOURCE_STATES                               resource_state,
-                                       format::HandleId                                    resource_id);
 
     std::wstring ConstructObjectName(format::HandleId capture_id, format::ApiCallId call_id);
 
@@ -1535,6 +1494,7 @@ class Dx12ReplayConsumerBase : public Dx12Consumer
     std::unordered_map<const ID3D12Device*, std::unique_ptr<Dx12AccelerationStructureBuilder>>
                                                       acceleration_structure_builders_;
     std::unordered_map<format::HandleId, const void*> active_devices_;
+    std::unique_ptr<Dx12ReplayConsumerArmFeatures>    arm_features_;
 };
 
 GFXRECON_END_NAMESPACE(decode)
