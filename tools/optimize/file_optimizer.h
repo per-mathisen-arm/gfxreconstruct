@@ -33,16 +33,11 @@ GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 class FileOptimizer : public decode::FileTransformer
 {
   public:
-    FileOptimizer(){};
+    FileOptimizer(const std::unordered_set<format::HandleId>& unreferenced_ids,
+                  const std::unordered_set<uint64_t>&         unreferenced_blocks,
+                  const std::unordered_set<format::ThreadId>& removed_threads_ids);
 
-    FileOptimizer(const std::unordered_set<format::HandleId>& unreferenced_ids);
-
-    FileOptimizer(std::unordered_set<format::HandleId>&& unreferenced_ids);
-
-    void SetUnreferencedBlocks(const std::unordered_set<uint64_t>& unreferenced_blocks);
-    void SetRemovedThreads(const std::unordered_set<format::ThreadId>& removed_threads_ids);
-
-    uint64_t GetUnreferencedBlocksSize();
+    [[nodiscard]] uint32_t GetNumRemovedBlocks() const { return num_removed_blocks_; }
 
   protected:
     bool ProcessFunctionCall(decode::ParsedBlock& parsed_block) override;
@@ -52,6 +47,7 @@ class FileOptimizer : public decode::FileTransformer
     VisitResult FilterMetaData(const decode::InitBufferArgs& args);
     VisitResult FilterMetaData(const decode::InitImageArgs& args);
     VisitResult FilterMetaData(const decode::InitTensorArgs& args);
+
     template <typename Args>
     VisitResult FilterMetaData(const Args& args)
     {
@@ -59,7 +55,10 @@ class FileOptimizer : public decode::FileTransformer
         {
             if (removed_threads_ids_.contains(args.thread_id))
             {
-                return kSuccess;
+                return WriteAnnotation(format::kAnnotationLabelRemovedFunctionCall,
+                                       "Removed meta-command on thread " + std::to_string(args.thread_id))
+                           ? kSuccess
+                           : kError;
             }
         }
         else if constexpr (decode::DispatchFlagTraits<Args>::kHasCommandHeader)
@@ -68,7 +67,11 @@ class FileOptimizer : public decode::FileTransformer
             {
                 if (removed_threads_ids_.contains(args.command_header.thread_id))
                 {
-                    return kSuccess;
+                    return WriteAnnotation(format::kAnnotationLabelRemovedFunctionCall,
+                                           "Removed meta-command on thread " +
+                                               std::to_string(args.command_header.thread_id))
+                               ? kSuccess
+                               : kError;
                 }
             }
         }
@@ -76,14 +79,15 @@ class FileOptimizer : public decode::FileTransformer
         return kNeedsPassthrough;
     }
 
-    bool FilterFunctionCall(const decode::FunctionCallArgs& args);
-    bool FilterMethodCall(const decode::MethodCallArgs& args);
+    [[nodiscard]] bool FilterFunctionCall(const decode::FunctionCallArgs& args) const;
+    [[nodiscard]] bool FilterMethodCall(const decode::MethodCallArgs& args) const;
 
-  private:
-    std::unordered_set<format::HandleId> unreferenced_ids_;
-    std::unordered_set<uint64_t>         unreferenced_blocks_;
+    bool WriteAnnotation(std::string_view label, std::string_view message);
 
-    std::unordered_set<format::ThreadId> removed_threads_ids_;
+    const std::unordered_set<format::HandleId>& unreferenced_ids_;
+    const std::unordered_set<uint64_t>&         unreferenced_blocks_;
+    const std::unordered_set<format::ThreadId>& removed_threads_ids_;
+    uint32_t                                    num_removed_blocks_ = 0;
 };
 
 GFXRECON_END_NAMESPACE(gfxrecon)

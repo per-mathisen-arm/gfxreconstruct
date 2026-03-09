@@ -21,16 +21,19 @@
 ** DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef GFXRECON_TOOLS_OPTIMIZE_VULKAN_OPTIMIZE_OPTIONS_H
-#define GFXRECON_TOOLS_OPTIMIZE_VULKAN_OPTIMIZE_OPTIONS_H
+#ifndef GFXRECON_DECODE_OPTIMIZE_OPTIONS_H
+#define GFXRECON_DECODE_OPTIMIZE_OPTIONS_H
 
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
+GFXRECON_BEGIN_NAMESPACE(decode)
 
-struct VulkanOptimizationOptions
+struct OptimizationOptions
 {
-    bool remove_rt{ false };
+    std::vector<std::string>                       remove_app_name;
+    std::unordered_set<gfxrecon::format::ThreadId> removed_threads_ids;
 };
 
+GFXRECON_END_NAMESPACE(decode)
 GFXRECON_END_NAMESPACE(gfxrecon)
 
-#endif // GFXRECON_DECODE_DX12_OPTIMIZE_OPTIONS_H
+#endif // GFXRECON_DECODE_OPTIMIZE_OPTIONS_H

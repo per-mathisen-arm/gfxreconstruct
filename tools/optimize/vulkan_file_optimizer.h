@@ -38,11 +38,14 @@ class VulkanFileOptimizer : public FileOptimizer
     struct VulkanOptimizationData
     {
         std::unordered_set<gfxrecon::format::HandleId>         unreferenced_ids;
+        std::unordered_set<uint64_t>                           unreferenced_blocks;
         std::vector<std::unique_ptr<util::VulkanModifierBase>> modifiers;
     };
 
-    VulkanFileOptimizer(VulkanOptimizationData* optimization_data) :
-        FileOptimizer(optimization_data->unreferenced_ids), optimization_data_(optimization_data)
+    VulkanFileOptimizer(VulkanOptimizationData*                     optimization_data,
+                        const std::unordered_set<format::ThreadId>& removed_threads_ids) :
+        FileOptimizer(optimization_data->unreferenced_ids, optimization_data->unreferenced_blocks, removed_threads_ids),
+        optimization_data_(optimization_data)
     {}
 
   private:

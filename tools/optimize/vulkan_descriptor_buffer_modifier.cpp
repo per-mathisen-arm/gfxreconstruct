@@ -29,7 +29,7 @@
 
 #include "format/format.h"
 #include "format/format_arm.h"
-#include "tools/optimize/vulkan_optimize_options.h"
+#include "decode/vulkan_optimize_options.h"
 #include "util/defines.h"
 #include "util/memory_output_stream.h"
 #include "encode/parameter_buffer.h"
