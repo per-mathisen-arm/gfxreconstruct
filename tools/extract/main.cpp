@@ -35,6 +35,7 @@
 #include "util/argument_parser.h"
 #include "util/file_path.h"
 #include "util/logging.h"
+#include "util/options.h"
 
 #include "vulkan/vulkan.h"
 
@@ -45,10 +46,11 @@ const char kHelpShortOption[]   = "-h";
 const char kHelpLongOption[]    = "--help";
 const char kVersionOption[]     = "--version";
 const char kDirectoryArgument[] = "--dir";
+const char kExtractRootSignatureArgument[] = "--extract_root_signature";
 const char kNoDebugPopup[]      = "--no-debug-popup";
 
 const char kOptions[]   = "-h|--help,--version,--no-debug-popup";
-const char kArguments[] = "--dir";
+const char kArguments[] = "--dir,--extract_root_signature";
 
 static void PrintUsage(const char* exe_name)
 {
@@ -60,7 +62,8 @@ static void PrintUsage(const char* exe_name)
     }
     GFXRECON_WRITE_CONSOLE("\n%s - Extract shaders from a GFXReconstruct capture file.\n", app_name.c_str());
     GFXRECON_WRITE_CONSOLE("Usage:");
-    GFXRECON_WRITE_CONSOLE("  %s [-h | --help] [--version] [--dir <dir>] <file>\n", app_name.c_str());
+    GFXRECON_WRITE_CONSOLE("  %s [-h | --help] [--version] [--dir <dir>] [--extract_root_signature <bool>] <file>\n",
+                           app_name.c_str());
     GFXRECON_WRITE_CONSOLE("Required arguments:");
     GFXRECON_WRITE_CONSOLE("  <file>\t\tThe GFXReconstruct capture file to be processed.");
     GFXRECON_WRITE_CONSOLE("Optional arguments:");
@@ -73,6 +76,8 @@ static void PrintUsage(const char* exe_name)
     GFXRECON_WRITE_CONSOLE("             \t\tCreateShaderModule call(Vulkan)");
     GFXRECON_WRITE_CONSOLE("             \t\tand Create*Pipeline/CreateStateObject/AddToStateObject call(DX12).");
     GFXRECON_WRITE_CONSOLE("             \t\tSee gfxrecon-replay --replace-shaders.");
+    GFXRECON_WRITE_CONSOLE("  --extract_root_signature <bool>\tEnable or disable DX12 root signature extraction.");
+    GFXRECON_WRITE_CONSOLE("             \t\tDefault is true.");
 #if defined(WIN32) && defined(_DEBUG)
     GFXRECON_WRITE_CONSOLE("  --no-debug-popup\tDisable the 'Abort, Retry, Ignore' message box");
     GFXRECON_WRITE_CONSOLE("        \t\tdisplayed when abort() is called (Windows debug only).");
@@ -259,7 +264,50 @@ class VulkanExtractConsumer : public gfxrecon::decode::VulkanConsumer
 class Dx12ExtractConsumer : public gfxrecon::decode::Dx12Consumer
 {
   public:
-    Dx12ExtractConsumer(std::string& extract_dir) : extract_dir_(extract_dir) {}
+    Dx12ExtractConsumer(std::string& extract_dir, bool extract_root_signature) :
+        extract_dir_(extract_dir), extract_root_signature_(extract_root_signature)
+    {}
+
+    virtual void
+    Process_ID3D12Device_CreateRootSignature(const gfxrecon::decode::ApiCallInfo&           call_info,
+                                             gfxrecon::format::HandleId                     object_id,
+                                             HRESULT                                        return_value,
+                                             UINT                                           nodeMask,
+                                             gfxrecon::decode::PointerDecoder<uint8_t>*     pBlobWithRootSignature,
+                                             SIZE_T                                         blobLengthInBytes,
+                                             gfxrecon::decode::Decoded_GUID                 riid,
+                                             gfxrecon::decode::HandlePointerDecoder<void*>* ppvRootSignature) override
+    {
+        if (extract_root_signature_ && (return_value == S_OK) && (ppvRootSignature != nullptr) &&
+            !ppvRootSignature->IsNull() && (pBlobWithRootSignature != nullptr) &&
+            (pBlobWithRootSignature->GetPointer() != nullptr) && (blobLengthInBytes > 0))
+        {
+            uint64_t handle_id = *ppvRootSignature->GetPointer();
+            gfxrecon::graphics::Dx12ShaderTool::ExtractRootSignatureToDir(
+                extract_dir_, handle_id, pBlobWithRootSignature->GetPointer(), static_cast<size_t>(blobLengthInBytes));
+        }
+    }
+
+    virtual void Process_ID3D12Device14_CreateRootSignatureFromSubobjectInLibrary(
+        const gfxrecon::decode::ApiCallInfo&           call_info,
+        gfxrecon::format::HandleId                     object_id,
+        HRESULT                                        return_value,
+        UINT                                           nodeMask,
+        gfxrecon::decode::PointerDecoder<uint8_t>*     pLibraryBlob,
+        SIZE_T                                         blobLengthInBytes,
+        gfxrecon::decode::WStringDecoder*              subobjectName,
+        gfxrecon::decode::Decoded_GUID                 riid,
+        gfxrecon::decode::HandlePointerDecoder<void*>* ppvRootSignature) override
+    {
+        if (extract_root_signature_ && (return_value == S_OK) && (ppvRootSignature != nullptr) &&
+            !ppvRootSignature->IsNull() && (pLibraryBlob != nullptr) && (pLibraryBlob->GetPointer() != nullptr) &&
+            (blobLengthInBytes > 0))
+        {
+            uint64_t handle_id = *ppvRootSignature->GetPointer();
+            gfxrecon::graphics::Dx12ShaderTool::ExtractRootSignatureToDir(
+                extract_dir_, handle_id, pLibraryBlob->GetPointer(), static_cast<size_t>(blobLengthInBytes));
+        }
+    }
 
     virtual void Process_ID3D12Device_CreateGraphicsPipelineState(
         const gfxrecon::decode::ApiCallInfo& call_info,
@@ -414,6 +462,7 @@ class Dx12ExtractConsumer : public gfxrecon::decode::Dx12Consumer
 
   private:
     std::string extract_dir_;
+    bool        extract_root_signature_;
 };
 #endif
 
@@ -446,6 +495,8 @@ int main(int argc, const char** argv)
 
     const std::vector<std::string>& positional_arguments = arg_parser.GetPositionalArguments();
     std::string                     input_filename       = positional_arguments[0];
+    bool                            extract_root_signature =
+        gfxrecon::util::ParseBoolString(arg_parser.GetArgumentValue(kExtractRootSignatureArgument), true);
     gfxrecon::decode::FileProcessor file_processor;
 
     if (file_processor.Initialize(input_filename))
@@ -498,7 +549,7 @@ int main(int argc, const char** argv)
         {
 #if defined(D3D12_SUPPORT)
             gfxrecon::decode::Dx12Decoder decoder;
-            Dx12ExtractConsumer           extract_consumer(extract_dir);
+            Dx12ExtractConsumer           extract_consumer(extract_dir, extract_root_signature);
 
             decoder.AddConsumer(&extract_consumer);
 

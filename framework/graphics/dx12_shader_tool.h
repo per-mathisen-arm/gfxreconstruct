@@ -56,8 +56,15 @@ class Dx12ShaderTool
     //   sh<handle_id>.<stage>.cso
     // StateObject DXIL libraries:
     //   sh<handle_id>_<subobject_index>.cso
+    // Root signatures:
+    //   rs<handle_id>.rootsig              (original serialized blob)
+    //   rs<handle_id>_reserialized.rootsig (deserialize + serialize result)
+    //   rs<handle_id>.rootsig.txt          (human-readable description)
     static std::string MakePipelineShaderFileName(uint64_t handle_id, ShaderType type);
     static std::string MakeStateObjectDxilLibraryFileName(uint64_t handle_id, uint32_t subobject_index);
+    static std::string MakeRootSignatureFileName(uint64_t handle_id);
+    static std::string MakeRootSignatureReserializedFileName(uint64_t handle_id);
+    static std::string MakeRootSignatureTextFileName(uint64_t handle_id);
 
     static bool ExtractShaderToDir(const std::string& extract_dir,
                                    const std::string& file_name,
@@ -72,6 +79,9 @@ class Dx12ShaderTool
                                                    uint32_t           subobject_index,
                                                    const void*        code,
                                                    size_t             code_size);
+
+    static bool
+    ExtractRootSignatureToDir(const std::string& extract_dir, uint64_t handle_id, const void* blob, size_t blob_size);
 
     // Replacement helpers (read shader bytecode from replace_shader_dir)
     static bool LoadReplacementShaderFromDir(const std::string&       replace_shader_dir,
