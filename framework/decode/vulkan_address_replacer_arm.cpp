@@ -256,6 +256,30 @@ void VulkanAddressReplacerARM::ProcessCmdBindDescriptorBuffersEXT(const VulkanCo
     }
 }
 
+void VulkanAddressReplacerARM::ProcessGeneratedCommandsInfoEXT(
+    VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo, const decode::VulkanDeviceAddressTracker& address_tracker)
+{
+    GFXRECON_ASSERT(pGeneratedCommandsInfo != nullptr);
+
+    if (!address_remap(pGeneratedCommandsInfo->indirectAddress, address_tracker))
+    {
+        GFXRECON_LOG_WARNING_ONCE(
+            "VulkanAddressReplacer::ProcessGeneratedCommandsInfoEXT: indirectAddress remap failed");
+    }
+
+    if (!address_remap(pGeneratedCommandsInfo->preprocessAddress, address_tracker))
+    {
+        GFXRECON_LOG_WARNING_ONCE(
+            "VulkanAddressReplacer::ProcessGeneratedCommandsInfoEXT: preprocessAddress remap failed");
+    }
+
+    if (!address_remap(pGeneratedCommandsInfo->sequenceCountAddress, address_tracker))
+    {
+        GFXRECON_LOG_WARNING_ONCE(
+            "VulkanAddressReplacer::ProcessGeneratedCommandsInfoEXT: sequenceCountAddress remap failed");
+    }
+}
+
 void swap(VulkanAddressReplacerARM& lhs, VulkanAddressReplacerARM& rhs) noexcept
 {
     std::swap(lhs.device_table_, rhs.device_table_);
