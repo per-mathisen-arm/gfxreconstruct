@@ -1395,6 +1395,9 @@ class VulkanCaptureManager : public ApiCaptureManager
                                  VkMemoryMapFlags flags,
                                  void**           ppData);
 
+    void
+    PostProcess_vkMapMemory2(VkResult result, VkDevice device, const VkMemoryMapInfo* pMemoryMapInfo, void** ppData);
+
     void PostProcess_vkAcquireFullScreenExclusiveModeEXT(VkResult result, VkDevice device, VkSwapchainKHR swapchain);
 
     void PostProcess_vkGetPhysicalDeviceSurfacePresentModes2EXT(VkResult                               result,
@@ -1420,6 +1423,8 @@ class VulkanCaptureManager : public ApiCaptureManager
                                               const VkMappedMemoryRange* pMemoryRanges);
 
     void PreProcess_vkUnmapMemory(VkDevice device, VkDeviceMemory memory);
+
+    void PreProcess_vkUnmapMemory2(VkDevice device, const VkMemoryUnmapInfo* pMemoryUnmapInfo);
 
     void PreProcess_vkFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator);
 
