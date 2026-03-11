@@ -403,6 +403,20 @@ void EncodeStruct(ParameterEncoder* encoder, const VkCopyMemoryToImageInfo& valu
     }
 }
 
+void EncodeStruct(ParameterEncoder* encoder, const VkMemoryToImageCopy& value)
+{
+    GFXRECON_LOG_WARNING(
+        "Encoding stand-alone VkMemoryToImageCopy.  Expected to be part of VkCopyMemoryToImageInfo not standalone.")
+    encoder->EncodeEnumValue(value.sType);
+    EncodePNextStruct(encoder, value.pNext);
+    encoder->EncodeVoidPtr(value.pHostPointer);
+    encoder->EncodeUInt32Value(value.memoryRowLength);
+    encoder->EncodeUInt32Value(value.memoryImageHeight);
+    EncodeStruct(encoder, value.imageSubresource);
+    EncodeStruct(encoder, value.imageOffset);
+    EncodeStruct(encoder, value.imageExtent);
+}
+
 void EncodeStruct(ParameterEncoder* encoder, const VkCopyImageToMemoryInfo& value)
 {
     encoder->EncodeEnumValue(value.sType);
@@ -434,6 +448,20 @@ void EncodeStruct(ParameterEncoder* encoder, const VkCopyImageToMemoryInfo& valu
             EncodeStruct(encoder, region.imageExtent);
         }
     }
+}
+
+void EncodeStruct(ParameterEncoder* encoder, const VkImageToMemoryCopy& value)
+{
+    GFXRECON_LOG_WARNING(
+        "Encoding stand-alone VkImageToMemoryCopy.  Expected to be part of VkCopyImageToMemoryInfo not standalone.")
+    encoder->EncodeEnumValue(value.sType);
+    EncodePNextStruct(encoder, value.pNext);
+    encoder->EncodeVoidPtr(value.pHostPointer);
+    encoder->EncodeUInt32Value(value.memoryRowLength);
+    encoder->EncodeUInt32Value(value.memoryImageHeight);
+    EncodeStruct(encoder, value.imageSubresource);
+    EncodeStruct(encoder, value.imageOffset);
+    EncodeStruct(encoder, value.imageExtent);
 }
 
 void EncodeStruct(ParameterEncoder* encoder, const VkLayerSettingEXT& value)
@@ -533,28 +561,6 @@ void EncodeStruct(ParameterEncoder* encoder, const VkDescriptorGetInfoEXT& value
             encoder->EncodeUInt64Value(value.data.accelerationStructure);
             break;
         default:
-            break;
-    }
-}
-
-void EncodeStruct(ParameterEncoder* encoder, const VkPipelineCreateInfoKHR& value)
-{
-    encoder->EncodeEnumValue(value.sType);
-
-    const VkBaseInStructure* pNextUntyped = (const VkBaseInStructure*)value.pNext;
-    switch (pNextUntyped->sType)
-    {
-        case VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO:
-            EncodeStructPtr(encoder, reinterpret_cast<const VkGraphicsPipelineCreateInfo*>(value.pNext));
-            break;
-        case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR:
-            EncodeStructPtr(encoder, reinterpret_cast<const VkRayTracingPipelineCreateInfoKHR*>(value.pNext));
-            break;
-        case VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO:
-            EncodeStructPtr(encoder, reinterpret_cast<const VkComputePipelineCreateInfo*>(value.pNext));
-            break;
-        default:
-            GFXRECON_LOG_ERROR("Unrecognized VkPipelineCreateInfoKHR::pNext structure type: %d", pNextUntyped->sType);
             break;
     }
 }

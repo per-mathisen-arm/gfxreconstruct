@@ -15036,39 +15036,25 @@ void VulkanReplayConsumerBase::OverrideGetTensorMemoryRequirementsARM(
 VkResult VulkanReplayConsumerBase::OverrideCreatePipelineBinariesKHR(
     PFN_vkCreatePipelineBinariesKHR                               func,
     VkResult                                                      original_result,
-    const VulkanDeviceInfo*                                       device_info,
+    VulkanDeviceInfo*                                             device_info,
     StructPointerDecoder<Decoded_VkPipelineBinaryCreateInfoKHR>*  pCreateInfo,
     StructPointerDecoder<Decoded_VkAllocationCallbacks>*          pAllocator,
     StructPointerDecoder<Decoded_VkPipelineBinaryHandlesInfoKHR>* pBinaries)
 {
-    GFXRECON_ASSERT(func != nullptr && device_info != nullptr && pCreateInfo != nullptr && pBinaries != nullptr);
+    const VkPipelineBinaryCreateInfoKHR* in_pCreateInfo = pCreateInfo->GetPointer();
+    const VkAllocationCallbacks*         in_pAllocator  = GetAllocationCallbacks(pAllocator);
 
-    const VkPipelineBinaryHandlesInfoKHR*  capture_binaries = pBinaries->GetPointer();
-    VkPipelineBinaryHandlesInfoKHR*        replay_binaries  = pBinaries->GetOutputPointer();
-    Decoded_VkPipelineBinaryCreateInfoKHR* create_info      = pCreateInfo->GetMetaStructPointer();
-    GFXRECON_ASSERT(capture_binaries != nullptr && replay_binaries != nullptr && create_info != nullptr &&
-                    create_info->pPipelineCreateInfo != nullptr);
+    VkPipelineBinaryHandlesInfoKHR* out_pBinaries = pBinaries->GetOutputPointer();
+    if (out_pBinaries != nullptr && pBinaries->GetLength() > 0)
+    {
+        out_pBinaries->pipelineBinaryCount = pBinaries->GetLength();
+        out_pBinaries->pPipelineBinaries =
+            DecodeAllocator::Allocate<VkPipelineBinaryKHR>(out_pBinaries->pipelineBinaryCount);
+    }
 
-    MapStructHandles(create_info->pPipelineCreateInfo->GetMetaStructPointer(), GetObjectInfoTable());
+    VkResult replay_result = func(device_info->handle, in_pCreateInfo, in_pAllocator, out_pBinaries);
 
-    *replay_binaries = *capture_binaries;
-
-    return func(device_info->handle, create_info->decoded_value, GetAllocationCallbacks(pAllocator), replay_binaries);
-}
-
-VkResult VulkanReplayConsumerBase::OverrideGetPipelineKeyKHR(
-    PFN_vkGetPipelineKeyKHR                                func,
-    VkResult                                               original_result,
-    const VulkanDeviceInfo*                                device_info,
-    StructPointerDecoder<Decoded_VkPipelineCreateInfoKHR>* pPipelineCreateInfo,
-    StructPointerDecoder<Decoded_VkPipelineBinaryKeyKHR>*  pPipelineKey)
-{
-    GFXRECON_ASSERT(func != nullptr && device_info != nullptr && pPipelineCreateInfo != nullptr &&
-                    pPipelineKey != nullptr);
-
-    MapStructHandles(pPipelineCreateInfo->GetMetaStructPointer(), GetObjectInfoTable());
-
-    return func(device_info->handle, pPipelineCreateInfo->GetPointer(), pPipelineKey->GetOutputPointer());
+    return replay_result;
 }
 
 GFXRECON_END_NAMESPACE(decode)

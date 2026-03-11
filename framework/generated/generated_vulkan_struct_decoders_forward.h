@@ -586,6 +586,7 @@ struct Decoded_VkDevicePipelineBinaryInternalCacheControlKHR;
 struct Decoded_VkPipelineBinaryKeyKHR;
 struct Decoded_VkPipelineBinaryDataKHR;
 struct Decoded_VkPipelineBinaryKeysAndDataKHR;
+struct Decoded_VkPipelineCreateInfoKHR;
 struct Decoded_VkPipelineBinaryCreateInfoKHR;
 struct Decoded_VkPipelineBinaryInfoKHR;
 struct Decoded_VkReleaseCapturedPipelineDataInfoKHR;
@@ -1839,6 +1840,7 @@ size_t DecodeStruct(const uint8_t* parameter_buffer, size_t buffer_size, Decoded
 size_t DecodeStruct(const uint8_t* parameter_buffer, size_t buffer_size, Decoded_VkPipelineBinaryKeyKHR* wrapper);
 size_t DecodeStruct(const uint8_t* parameter_buffer, size_t buffer_size, Decoded_VkPipelineBinaryDataKHR* wrapper);
 size_t DecodeStruct(const uint8_t* parameter_buffer, size_t buffer_size, Decoded_VkPipelineBinaryKeysAndDataKHR* wrapper);
+size_t DecodeStruct(const uint8_t* parameter_buffer, size_t buffer_size, Decoded_VkPipelineCreateInfoKHR* wrapper);
 size_t DecodeStruct(const uint8_t* parameter_buffer, size_t buffer_size, Decoded_VkPipelineBinaryCreateInfoKHR* wrapper);
 size_t DecodeStruct(const uint8_t* parameter_buffer, size_t buffer_size, Decoded_VkPipelineBinaryInfoKHR* wrapper);
 size_t DecodeStruct(const uint8_t* parameter_buffer, size_t buffer_size, Decoded_VkReleaseCapturedPipelineDataInfoKHR* wrapper);

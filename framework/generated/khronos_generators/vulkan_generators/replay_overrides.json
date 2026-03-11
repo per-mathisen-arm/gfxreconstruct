@@ -200,7 +200,6 @@
     "vkGetDescriptorEXT": "OverrideGetDescriptorEXT",
     "vkCmdBindDescriptorBuffersEXT": "OverrideCmdBindDescriptorBuffersEXT",
     "vkCreateSampler": "OverrideCreateSampler",
-    "vkCreatePipelineBinariesKHR": "OverrideCreatePipelineBinariesKHR",
-    "vkGetPipelineKeyKHR": "OverrideGetPipelineKeyKHR"
+    "vkCreatePipelineBinariesKHR": "OverrideCreatePipelineBinariesKHR"
   }
 }
