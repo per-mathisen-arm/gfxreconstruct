@@ -2269,6 +2269,7 @@ void Dx12RayTracingModifier::CreateDeviceAndCheckRayTracingSupport()
     graphics::dx12::IDXGIAdapter1ComPtr adapter          = nullptr;
     for (UINT index = 0; index < kMaxEnumAdapters; ++index)
     {
+        adapter = nullptr;
         if (factory->EnumAdapters1(index, &adapter.GetInterfacePtr()) == DXGI_ERROR_NOT_FOUND)
         {
             continue;
