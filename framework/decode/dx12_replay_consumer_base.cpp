@@ -2041,16 +2041,14 @@ Dx12ReplayConsumerBase::GetAccelerationStructureBuilder(const DxObjectInfo* repl
 
 void Dx12ReplayConsumerBase::DetectAdapters()
 {
-    IDXGIFactory1* factory1 = nullptr;
+    graphics::dx12::IDXGIFactory1ComPtr factory1 = nullptr;
 
-    HRESULT result = CreateDXGIFactory1(IID_IDXGIFactory1, reinterpret_cast<void**>(&factory1));
+    HRESULT result = CreateDXGIFactory1(IID_PPV_ARGS(&factory1));
 
     if (SUCCEEDED(result))
     {
-        graphics::dx12::TrackAdapters(result, reinterpret_cast<void**>(&factory1), adapters_);
+        graphics::dx12::TrackAdapters(result, reinterpret_cast<void**>(&factory1.GetInterfacePtr()), adapters_);
         render_adapter_ = graphics::dx12::GetAdapterbyIndex(adapters_, options_.override_gpu_index);
-
-        factory1->Release();
     }
 }
 
@@ -4841,7 +4839,7 @@ IDXGIAdapter* Dx12ReplayConsumerBase::GetAdapter()
     {
         for (const auto& adapter : adapters_)
         {
-            if (adapter.second.adapter == adapter_found)
+            if (adapter.second.adapter.GetInterfacePtr() == adapter_found)
             {
                 if (graphics::dx12::IsSoftwareAdapter(adapter.second.internal_desc) == true)
                 {
@@ -4858,7 +4856,7 @@ IDXGIAdapter* Dx12ReplayConsumerBase::GetAdapter()
         {
             if (graphics::dx12::IsSoftwareAdapter(adapter.second.internal_desc) == false)
             {
-                adapter_found = adapter.second.adapter;
+                adapter_found = adapter.second.adapter.GetInterfacePtr();
                 break;
             }
         }

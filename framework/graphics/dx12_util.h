@@ -62,6 +62,12 @@ GFXRECON_BEGIN_NAMESPACE(dx12)
 typedef _com_ptr_t<_com_IIID<IUnknown, &__uuidof(IUnknown)>> IUnknownComPtr;
 
 typedef _com_ptr_t<_com_IIID<IDXGISwapChain3, &__uuidof(IDXGISwapChain3)>> IDXGISwapChain3ComPtr;
+typedef _com_ptr_t<_com_IIID<IDXGIAdapter, &__uuidof(IDXGIAdapter)>>       IDXGIAdapterComPtr;
+typedef _com_ptr_t<_com_IIID<IDXGIAdapter1, &__uuidof(IDXGIAdapter1)>>     IDXGIAdapter1ComPtr;
+typedef _com_ptr_t<_com_IIID<IDXGIAdapter2, &__uuidof(IDXGIAdapter2)>>     IDXGIAdapter2ComPtr;
+typedef _com_ptr_t<_com_IIID<IDXGIAdapter3, &__uuidof(IDXGIAdapter3)>>     IDXGIAdapter3ComPtr;
+typedef _com_ptr_t<_com_IIID<IDXGIFactory, &__uuidof(IDXGIFactory)>>       IDXGIFactoryComPtr;
+typedef _com_ptr_t<_com_IIID<IDXGIFactory1, &__uuidof(IDXGIFactory1)>>     IDXGIFactory1ComPtr;
 typedef _com_ptr_t<_com_IIID<IDXGIFactory4, &__uuidof(IDXGIFactory4)>>     IDXGIFactory4ComPtr;
 typedef _com_ptr_t<_com_IIID<IDXGIDebug1, &__uuidof(IDXGIDebug1)>>         IDXGIDebug1ComPtr;
 
@@ -146,7 +152,7 @@ uint32_t Dx12DumpResourcePosToArrayIndex(Dx12DumpResourcePos pos);
 struct ActiveAdapterInfo
 {
     format::DxgiAdapterDesc internal_desc;
-    IDXGIAdapter*           adapter;
+    IDXGIAdapterComPtr      adapter;
     UINT32                  adapter_idx;
     bool                    active;
 };
