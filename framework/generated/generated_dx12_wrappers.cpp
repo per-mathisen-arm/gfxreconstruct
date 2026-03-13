@@ -995,7 +995,7 @@ HRESULT STDMETHODCALLTYPE ID3D12Object_Wrapper::SetPrivateDataInterface(
 
         result = GetWrappedObjectAs<ID3D12Object>()->SetPrivateDataInterface(
             guid,
-            encode::GetWrappedObject<IUnknown>(pData));
+            pData);
 
         Encode_ID3D12Object_SetPrivateDataInterface(
             this,
@@ -25382,7 +25382,7 @@ HRESULT STDMETHODCALLTYPE IDXGIObject_Wrapper::SetPrivateDataInterface(
 
         result = GetWrappedObjectAs<IDXGIObject>()->SetPrivateDataInterface(
             Name,
-            encode::GetWrappedObject<IUnknown>(pUnknown));
+            pUnknown);
 
         Encode_IDXGIObject_SetPrivateDataInterface(
             this,
