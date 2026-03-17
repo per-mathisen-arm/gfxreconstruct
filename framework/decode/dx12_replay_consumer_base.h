@@ -297,6 +297,20 @@ class Dx12ReplayConsumerBase : public Dx12Consumer
         D3D12_GPU_VIRTUAL_ADDRESS                         SourceAccelerationStructureData,
         D3D12_RAYTRACING_ACCELERATION_STRUCTURE_COPY_MODE Mode);
 
+    void PostCall_ID3D12Object_SetPrivateDataInterface(const ApiCallInfo& call_info,
+                                                       DxObjectInfo*      object_info,
+                                                       HRESULT            original_result,
+                                                       HRESULT            replay_result,
+                                                       Decoded_GUID       guid,
+                                                       format::HandleId   data_object_id);
+
+    void PostCall_IDXGIObject_SetPrivateDataInterface(const ApiCallInfo& call_info,
+                                                      DxObjectInfo*      object_info,
+                                                      HRESULT            original_result,
+                                                      HRESULT            replay_result,
+                                                      Decoded_GUID       guid,
+                                                      format::HandleId   unknown_object_id);
+
     HRESULT OverrideSerialize(DxObjectInfo*            replay_object,
                               HRESULT                  return_value,
                               PointerDecoder<uint8_t>* pData,

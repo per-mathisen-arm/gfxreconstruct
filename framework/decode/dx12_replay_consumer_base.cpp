@@ -1243,7 +1243,6 @@ ULONG Dx12ReplayConsumerBase::OverrideRelease(DxObjectInfo* replay_object_info, 
     assert((replay_object_info != nullptr) && (replay_object_info->object != nullptr) &&
            (replay_object_info->ref_count > 0));
 
-    auto ref_count = original_result;
     auto object    = replay_object_info->object;
     auto object_id = replay_object_info->capture_id;
     auto device_id = format::kNullHandleId;
@@ -1255,9 +1254,13 @@ ULONG Dx12ReplayConsumerBase::OverrideRelease(DxObjectInfo* replay_object_info, 
     }
 
     --(replay_object_info->ref_count);
+    if (replay_object_info->ref_count < original_result)
+    {
+        replay_object_info->ref_count = original_result;
+    }
+
     if ((replay_object_info->ref_count == 0) && (replay_object_info->extra_ref == 0))
     {
-        ref_count = 0;
         if ((replay_object_info->extra_info != nullptr) &&
             (replay_object_info->extra_info->extra_info_type == DxObjectInfoType::kID3D12DeviceInfo))
         {
@@ -1285,7 +1288,7 @@ ULONG Dx12ReplayConsumerBase::OverrideRelease(DxObjectInfo* replay_object_info, 
     }
 
     auto replay_result = object->Release();
-    if (ref_count == 0)
+    if (replay_object_info->ref_count == 0)
     {
         // If the object has been released, remove it from the rebind DMA mapping.
         PostRelease(object_id, device_id, info_type);
@@ -1710,16 +1713,20 @@ HRESULT Dx12ReplayConsumerBase::OverrideDXGIGetDebugInterface(HRESULT           
     using PFN_DXGIGetDebugInterface = HRESULT(WINAPI*)(REFIID, void**);
     auto    replay_result           = E_FAIL;
     HMODULE module                  = GetModuleHandleA("dxgidebug.dll");
-    if (!module)
+    if (module)
     {
-        return replay_result;
+        PFN_DXGIGetDebugInterface dxgi_debug_interface =
+            reinterpret_cast<PFN_DXGIGetDebugInterface>(GetProcAddress(module, "DXGIGetDebugInterface"));
+        if (dxgi_debug_interface)
+        {
+            replay_result = dxgi_debug_interface(*riid.decoded_value, debug->GetHandlePointer());
+        }
     }
 
-    PFN_DXGIGetDebugInterface dxgi_debug_interface =
-        reinterpret_cast<PFN_DXGIGetDebugInterface>(GetProcAddress(module, "DXGIGetDebugInterface"));
-    if (dxgi_debug_interface)
+    if (replay_result == E_FAIL)
     {
-        replay_result = dxgi_debug_interface(*riid.decoded_value, debug->GetHandlePointer());
+        // The debug interface DXGIGetDebugInterface is not supported, using DXGIGetDebugInterface1 instead it.
+        replay_result = DXGIGetDebugInterface1(0, *riid.decoded_value, debug->GetHandlePointer());
     }
 
     return replay_result;
@@ -4238,11 +4245,11 @@ void Dx12ReplayConsumerBase::DestroyActiveObject(DxObjectInfo* info)
 {
     DestroyObjectExtraInfo(info, false);
 
-    // Release all of the replay tool's references to the object.
-    for (uint32_t i = 0; i < info->ref_count; ++i)
-    {
-        info->object->Release();
-    }
+    // Some DX objects can be destroyed transitively by their parent objects
+    // before this final cleanup pass, leaving stale pointers in the table.
+    // Avoid calling Release() here to prevent dereferencing freed COM objects
+    // during process shutdown.
+    info->object = nullptr;
 }
 
 /**
@@ -7098,6 +7105,56 @@ void Dx12ReplayConsumerBase::PreCall_ID3D12GraphicsCommandList4_CopyRaytracingAc
         auto command_list_id = command_list4_object_info->capture_id;
         accel_struct_builder->VerifyAccelerationStructureSize(
             DestAccelerationStructureData, SourceAccelerationStructureData, 0);
+    }
+}
+
+void Dx12ReplayConsumerBase::PostCall_ID3D12Object_SetPrivateDataInterface(const ApiCallInfo& call_info,
+                                                                           DxObjectInfo*      object_info,
+                                                                           HRESULT            original_result,
+                                                                           HRESULT            replay_result,
+                                                                           Decoded_GUID       guid,
+                                                                           format::HandleId   data_object_id)
+{
+    GFXRECON_UNREFERENCED_PARAMETER(call_info);
+    GFXRECON_UNREFERENCED_PARAMETER(object_info);
+    GFXRECON_UNREFERENCED_PARAMETER(original_result);
+    GFXRECON_UNREFERENCED_PARAMETER(replay_result);
+    GFXRECON_UNREFERENCED_PARAMETER(guid);
+
+    if (data_object_id == format::kNullHandleId)
+    {
+        return;
+    }
+
+    auto data_object_info = GetObjectInfo(data_object_id);
+    if (data_object_info != nullptr)
+    {
+        ++(data_object_info->ref_count);
+    }
+}
+
+void Dx12ReplayConsumerBase::PostCall_IDXGIObject_SetPrivateDataInterface(const ApiCallInfo& call_info,
+                                                                          DxObjectInfo*      object_info,
+                                                                          HRESULT            original_result,
+                                                                          HRESULT            replay_result,
+                                                                          Decoded_GUID       guid,
+                                                                          format::HandleId   unknown_object_id)
+{
+    GFXRECON_UNREFERENCED_PARAMETER(call_info);
+    GFXRECON_UNREFERENCED_PARAMETER(object_info);
+    GFXRECON_UNREFERENCED_PARAMETER(original_result);
+    GFXRECON_UNREFERENCED_PARAMETER(replay_result);
+    GFXRECON_UNREFERENCED_PARAMETER(guid);
+
+    if (unknown_object_id == format::kNullHandleId)
+    {
+        return;
+    }
+
+    auto unknown_object_info = GetObjectInfo(unknown_object_id);
+    if (unknown_object_info != nullptr)
+    {
+        ++(unknown_object_info->ref_count);
     }
 }
 
