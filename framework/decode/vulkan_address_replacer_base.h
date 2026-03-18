@@ -26,6 +26,7 @@
 #include "util/linear_hashmap.h"
 #include "decode/common_object_info_table.h"
 #include "decode/vulkan_device_address_tracker.h"
+#include "graphics/vulkan_semaphore_util.h"
 #include "graphics/vulkan_shader_group_handle.h"
 #include "util/vulkan_device_table_dispatcher.h"
 
@@ -51,11 +52,11 @@ class VulkanAddressReplacerBase
     virtual void SetRaytracingProperties(const decode::VulkanPhysicalDeviceInfo* physical_device_info) {}
 
     virtual VkSemaphore
-    UpdateBufferAddresses(const VulkanCommandBufferInfo*                                      command_buffer_info,
-                          const VkDeviceAddress*                                              addresses,
-                          uint32_t                                                            num_addresses,
-                          const decode::VulkanDeviceAddressTracker&                           address_tracker,
-                          const std::optional<std::vector<std::pair<VkSemaphore, uint64_t>>>& wait_semaphores = {})
+    UpdateBufferAddresses(const VulkanCommandBufferInfo*                               command_buffer_info,
+                          const VkDeviceAddress*                                       addresses,
+                          uint32_t                                                     num_addresses,
+                          const decode::VulkanDeviceAddressTracker&                    address_tracker,
+                          const std::optional<std::vector<graphics::VulkanSemaphore>>& wait_semaphores = {})
     {
         return VK_NULL_HANDLE;
     }

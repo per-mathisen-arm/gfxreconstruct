@@ -2069,6 +2069,30 @@ class VulkanReplayConsumerBase : public VulkanConsumer
     static void
     RemoveFailOnCompileRequiredFlags(uint32_t create_info_count, CreateInfo* create_infos, const char* pipeline_type);
 
+    /**
+     * @brief   SkipPipelineCreationForCompileRequired will check 'original_result' and return true,
+     *          if it matches VK_PIPELINE_COMPILE_REQUIRED. otherwise returns false and does nothing.
+     *
+     *          in case original_result == VK_PIPELINE_COMPILE_REQUIRED, all VkPipeline-handles contained in
+     *          'pipelines' will be set to VK_NULL_HANDLE and a warning will be logged.
+     *
+     * @param   original_result     original return-value of a VkCreateXXXPipelines call
+     * @param   pipelines           provided decoder containing pipeline-handles
+     * @return  true if original_result == VK_PIPELINE_COMPILE_REQUIRED
+     */
+    static bool SkipPipelineCreationForCompileRequired(VkResult                          original_result,
+                                                       HandlePointerDecoder<VkPipeline>* pipelines);
+
+    /**
+     *
+     * @brief   RemoveFailOnCompileRequiredFlags will check and remove potential
+     *          'VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT' flags from an array of
+     *          VkPipeline create-infos. Will log individual warnings for each removed flag.
+     *
+     */
+    template <typename CreateInfo>
+    static void RemoveFailOnCompileRequiredFlags(CreateInfo* create_infos, uint32_t create_info_count);
+
   private:
     util::platform::LibraryHandle                                            loader_handle_;
     PFN_vkGetInstanceProcAddr                                                get_instance_proc_addr_;
