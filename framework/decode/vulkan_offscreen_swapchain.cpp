@@ -233,7 +233,7 @@ VkResult VulkanOffscreenSwapchain::QueuePresentKHR(VkResult                     
                             ->virtual_swapchain_images[present_info->pImageIndices[i]]
                             .image;
         }
-        frame_boundary_.imageCount = images.size();
+        GFXRECON_NARROWING_ASSIGN(frame_boundary_.imageCount, images.size());
         frame_boundary_.pImages    = images.data();
         ++frame_boundary_.frameID;
 

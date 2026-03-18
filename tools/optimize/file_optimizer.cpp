@@ -44,7 +44,7 @@ bool FileOptimizer::ProcessFunctionCall(decode::ParsedBlock& parsed_block)
     if (FilterFunctionCall(args))
     {
         WriteAnnotation(format::kAnnotationLabelRemovedFunctionCall,
-                        "Removed API call: " + std::to_string(args.call_id));
+                        std::string("Removed API call: ") + std::to_string(static_cast<uint32_t>(args.call_id)));
 
         // block is filtered out
         ++num_removed_blocks_;
@@ -95,8 +95,8 @@ decode::FileTransformer::VisitResult FileOptimizer::FilterMetaData(const decode:
     if (unreferenced_ids_.contains(args.buffer_id) || removed_threads_ids_.contains(args.thread_id))
     {
         return WriteAnnotation(format::kAnnotationLabelRemovedResource,
-                               "Removed buffer " + std::to_string(args.buffer_id) + " on thread " +
-                                   std::to_string(args.thread_id))
+                               std::string("Removed buffer ") + std::to_string(args.buffer_id) +
+                                   std::string(" on thread ") + std::to_string(args.thread_id))
                    ? kSuccess
                    : kError;
     }
@@ -114,8 +114,8 @@ decode::FileTransformer::VisitResult FileOptimizer::FilterMetaData(const decode:
         // replaying an optimized trimmed capture in in alignment with the block index calculated
         // at capture time
         return WriteAnnotation(format::kAnnotationLabelRemovedResource,
-                               "Removed subresource from image " + std::to_string(args.image_id) + " on thread " +
-                                   std::to_string(args.thread_id))
+                               std::string("Removed subresource from image ") + std::to_string(args.image_id) +
+                                   std::string(" on thread ") + std::to_string(args.thread_id))
                    ? kSuccess
                    : kError;
     }

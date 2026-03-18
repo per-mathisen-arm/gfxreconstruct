@@ -1382,7 +1382,7 @@ std::string GenerateStruct_VkMemoryToImageCopy(std::ostream&                out,
         out << "\t\t"
             << "const uint8_t " << phost_pointer_array << "[] = "
             << VulkanCppConsumerBase::BuildValue(reinterpret_cast<const uint8_t*>(structInfo->pHostPointer),
-                                                 metaInfo->pHostPointer.GetLength())
+                                                 GFXRECON_NARROWING_CAST(uint32_t, metaInfo->pHostPointer.GetLength()))
             << ";" << std::endl;
     }
 
@@ -1473,7 +1473,7 @@ std::string GenerateStruct_VkImageToMemoryCopy(std::ostream&                out,
         out << "\t\t"
             << "uint8_t " << phost_pointer_array << "[] = "
             << VulkanCppConsumerBase::BuildValue(reinterpret_cast<const uint8_t*>(structInfo->pHostPointer),
-                                                 metaInfo->pHostPointer.GetLength())
+                                                 GFXRECON_NARROWING_CAST(uint32_t, metaInfo->pHostPointer.GetLength()))
             << ";" << std::endl;
     }
 
