@@ -38,6 +38,7 @@
 #include "encode/vulkan_capture_manager.h"
 #include "graphics/vulkan_feature_util.h"
 #include "decode/vulkan_object_cleanup_util.h"
+#include "decode/vulkan_submit_job.h"
 #include "format/format.h"
 #include "format/format_util.h"
 #include "generated/generated_vulkan_enum_to_string.h"
@@ -4822,9 +4823,6 @@ VkResult VulkanReplayConsumerBase::OverrideQueueSubmit(PFN_vkQueueSubmit        
     auto    submit_info_data = pSubmits->GetMetaStructPointer();
     VkFence fence            = VK_NULL_HANDLE;
 
-    // semaphores potentially used by replacer helper-submission(s), defined here to ensure lifetime
-    std::vector<VkSemaphore> semaphores(submitCount);
-
     if (fence_info != nullptr)
     {
         fence = fence_info->handle;
@@ -4839,71 +4837,33 @@ VkResult VulkanReplayConsumerBase::OverrideQueueSubmit(PFN_vkQueueSubmit        
     GFXRECON_ASSERT(allocator != nullptr);
     allocator->ClearStagingResources();
 
+    VulkanSubmitJobPlan     plan;
+    VulkanSubmitJobExecutor executor;
+
     if (UseAddressReplacement(device_info) && submit_info_data != nullptr)
     {
         const auto& address_tracker  = GetDeviceAddressTracker(device_info);
         auto&       address_replacer = GetDeviceAddressReplacer(device_info);
 
-        for (uint32_t i = 0; i < submitCount; i++)
+        for (uint32_t submit_index = 0; submit_index < submitCount; submit_index++)
         {
-            std::vector<VkDeviceAddress> addresses_to_replace;
+            auto [addresses_to_replace, cmd_buf_info] =
+                address_replacer.ResolveBufferAddresses(submit_info_data[submit_index], address_tracker);
 
-            uint32_t num_command_buffers  = submit_info_data[i].pCommandBuffers.GetLength();
-            auto*    cmd_buf_handles      = submit_info_data[i].pCommandBuffers.GetPointer();
-            bool     sync_wait_semaphores = false;
-
-            // used to track lifetime of VulkanAddressReplacer internal resources
-            const VulkanCommandBufferInfo* cmd_buf_info = nullptr;
-
-            for (uint32_t c = 0; c < num_command_buffers; ++c)
+            if (!addresses_to_replace.empty())
             {
-                auto* command_buffer_info = GetObjectInfoTable().GetVkCommandBufferInfo(cmd_buf_handles[c]);
-                GFXRECON_ASSERT(command_buffer_info != nullptr);
-
-                // resolve pointer-chains, discover additional referenced buffers
-                address_replacer.ResolveBufferAddresses(command_buffer_info, address_tracker);
-
-                // collect buffer-device-address from all command-buffers
-                addresses_to_replace.insert(addresses_to_replace.end(),
-                                            command_buffer_info->addresses_to_replace.begin(),
-                                            command_buffer_info->addresses_to_replace.end());
-                sync_wait_semaphores |= !command_buffer_info->addresses_to_replace.empty();
-                if (cmd_buf_info == nullptr)
-                {
-                    cmd_buf_info = command_buffer_info;
-                }
-            }
-
-            if (sync_wait_semaphores)
-            {
-                VkSubmitInfo& submit_info_mut = pSubmits->GetPointer()[i];
-                auto          wait_semaphores = graphics::StripWaitSemaphores(&submit_info_mut);
-                semaphores[i]                 = address_replacer.UpdateBufferAddresses(cmd_buf_info,
-                                                                       addresses_to_replace.data(),
-                                                                       addresses_to_replace.size(),
-                                                                       GetDeviceAddressTracker(device_info),
-                                                                       wait_semaphores);
-                GFXRECON_ASSERT(semaphores[i] != VK_NULL_HANDLE);
-
-                // inject wait-semaphore into submit-info
-                submit_info_mut.waitSemaphoreCount = 1;
-                submit_info_mut.pWaitSemaphores    = &semaphores[i];
-
-                // If waitSemaphoreCount was 0, pWaitDstStageMask might be nullptr.
-                // Make sure it points to valid data in all cases.
-                static VkPipelineStageFlags wait_stage_mask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-                submit_info_mut.pWaitDstStageMask           = &wait_stage_mask;
-
-                // handle potential timeline-semaphores in pnext-chain
-                if (auto* timeline_info =
-                        graphics::vulkan_struct_get_pnext<VkTimelineSemaphoreSubmitInfo>(&submit_info_mut))
-                {
-                    timeline_info->waitSemaphoreValueCount = 0;
-                    timeline_info->pWaitSemaphoreValues    = nullptr;
-                }
+                plan.Push(submit_index,
+                          [&address_replacer, cmd_buf_info, addresses_to_replace, &address_tracker](
+                              const std::span<graphics::VulkanSemaphore> wait_semaphores) {
+                              std::vector<VkDeviceAddress> addresses = std::move(addresses_to_replace);
+                              return address_replacer.UpdateBufferAddresses(
+                                  cmd_buf_info, addresses, address_tracker, wait_semaphores);
+                          });
             }
         }
     }
+
+    executor.InjectBefore(std::move(plan), pSubmits->GetSpan());
 
     // Only attempt to filter imported semaphores if we know at least one has been imported.
     // If rendering is restricted to a specific surface, shadow semaphore and forward progress state will need to be
@@ -5079,14 +5039,13 @@ VkResult VulkanReplayConsumerBase::OverrideQueueSubmit2(PFN_vkQueueSubmit2      
 {
     options_.MaybeWaitBeforeFirstSubmit();
 
-    assert((queue_info != nullptr) && (pSubmits != nullptr));
+    GFXRECON_ASSERT((queue_info != nullptr) && (pSubmits != nullptr));
 
     VkResult             result       = VK_SUCCESS;
     const VkSubmitInfo2* submit_infos = pSubmits->GetPointer();
     assert(submitCount == 0 || submit_infos != nullptr);
-    auto                               submit_info_data = pSubmits->GetMetaStructPointer();
-    VkFence                            fence            = VK_NULL_HANDLE;
-    std::vector<VkSemaphoreSubmitInfo> semaphore_infos(submitCount);
+    auto    submit_info_data = pSubmits->GetMetaStructPointer();
+    VkFence fence            = VK_NULL_HANDLE;
 
     if (fence_info != nullptr)
     {
@@ -5102,66 +5061,34 @@ VkResult VulkanReplayConsumerBase::OverrideQueueSubmit2(PFN_vkQueueSubmit2      
     GFXRECON_ASSERT(allocator != nullptr);
     allocator->ClearStagingResources();
 
+    VulkanSubmitJobPlan     plan;
+    VulkanSubmitJobExecutor executor;
+
     if (UseAddressReplacement(device_info) && submit_info_data != nullptr)
     {
         const auto& address_tracker  = GetDeviceAddressTracker(device_info);
         auto&       address_replacer = GetDeviceAddressReplacer(device_info);
 
-        for (uint32_t i = 0; i < submitCount; i++)
+        for (uint32_t submit_index = 0; submit_index < submitCount; submit_index++)
         {
-            std::vector<VkDeviceAddress> addresses_to_replace;
+            auto [addresses_to_replace, cmd_buf_info] =
+                address_replacer.ResolveBufferAddresses(submit_info_data[submit_index], address_tracker);
 
-            uint32_t num_command_buffers  = submit_info_data[i].pCommandBufferInfos->GetLength();
-            auto*    cmd_buf_info_metas   = submit_info_data[i].pCommandBufferInfos->GetMetaStructPointer();
-            bool     sync_wait_semaphores = false;
-
-            // used to track lifetime of VulkanAddressReplacer internal resources
-            const VulkanCommandBufferInfo* cmd_buf_info = nullptr;
-
-            for (uint32_t c = 0; c < num_command_buffers; ++c)
+            if (!addresses_to_replace.empty())
             {
-                auto* command_buffer_info =
-                    GetObjectInfoTable().GetVkCommandBufferInfo(cmd_buf_info_metas[c].commandBuffer);
-                GFXRECON_ASSERT(command_buffer_info != nullptr);
-
-                // resolve pointer-chains, discover additional referenced buffers
-                address_replacer.ResolveBufferAddresses(command_buffer_info, address_tracker);
-
-                // collect buffer-device-address from all command-buffers
-                addresses_to_replace.insert(addresses_to_replace.end(),
-                                            command_buffer_info->addresses_to_replace.begin(),
-                                            command_buffer_info->addresses_to_replace.end());
-                sync_wait_semaphores |= !command_buffer_info->addresses_to_replace.empty();
-                if (cmd_buf_info == nullptr)
-                {
-                    cmd_buf_info = command_buffer_info;
-                }
-            }
-
-            if (sync_wait_semaphores)
-            {
-                VkSubmitInfo2& submit_info_mut = pSubmits->GetPointer()[i];
-                auto           wait_semaphores = graphics::StripWaitSemaphores(&submit_info_mut);
-
-                VkSemaphoreSubmitInfo& semaphore_info = semaphore_infos[i];
-                semaphore_info.sType                  = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-                semaphore_info.value                  = 1;
-                semaphore_info.stageMask              = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-
-                // runs replacer, sync via semaphore
-                semaphore_info.semaphore = address_replacer.UpdateBufferAddresses(cmd_buf_info,
-                                                                                  addresses_to_replace.data(),
-                                                                                  addresses_to_replace.size(),
-                                                                                  GetDeviceAddressTracker(device_info),
-                                                                                  wait_semaphores);
-                GFXRECON_ASSERT(semaphore_info.semaphore != VK_NULL_HANDLE);
-
-                // inject wait-semaphores into submit-info
-                submit_info_mut.waitSemaphoreInfoCount = 1;
-                submit_info_mut.pWaitSemaphoreInfos    = &semaphore_info;
+                plan.Push(submit_index,
+                          [&address_replacer, cmd_buf_info, addresses_to_replace, &address_tracker](
+                              const std::span<graphics::VulkanSemaphore> wait_semaphores) {
+                              std::vector<VkDeviceAddress> addresses = std::move(addresses_to_replace);
+                              return address_replacer.UpdateBufferAddresses(
+                                  cmd_buf_info, addresses, address_tracker, wait_semaphores);
+                          });
             }
         }
     }
+
+    executor.InjectBefore(std::move(plan), pSubmits->GetSpan());
+
     // Only attempt to filter imported semaphores if we know at least one has been imported.
     // If rendering is restricted to a specific surface, shadow semaphore and forward progress state will need to be
     // tracked.

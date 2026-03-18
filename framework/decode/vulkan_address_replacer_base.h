@@ -23,6 +23,8 @@
 #ifndef GFXRECON_DECODE_VULKAN_ADDRESS_REPLACER_BASE_H
 #define GFXRECON_DECODE_VULKAN_ADDRESS_REPLACER_BASE_H
 
+#include <span>
+
 #include "util/linear_hashmap.h"
 #include "decode/common_object_info_table.h"
 #include "decode/vulkan_device_address_tracker.h"
@@ -51,19 +53,25 @@ class VulkanAddressReplacerBase
 
     virtual void SetRaytracingProperties(const decode::VulkanPhysicalDeviceInfo* physical_device_info) {}
 
-    virtual VkSemaphore
-    UpdateBufferAddresses(const VulkanCommandBufferInfo*                               command_buffer_info,
-                          const VkDeviceAddress*                                       addresses,
-                          uint32_t                                                     num_addresses,
-                          const decode::VulkanDeviceAddressTracker&                    address_tracker,
-                          const std::optional<std::vector<graphics::VulkanSemaphore>>& wait_semaphores = {})
+    virtual VkSemaphore UpdateBufferAddresses(const VulkanCommandBufferInfo*             command_buffer_info,
+                                              const std::span<VkDeviceAddress>           addresses_to_replace,
+                                              const decode::VulkanDeviceAddressTracker&  address_tracker,
+                                              const std::span<graphics::VulkanSemaphore> wait_semaphores = {})
     {
         return VK_NULL_HANDLE;
     }
 
-    virtual void ResolveBufferAddresses(VulkanCommandBufferInfo*                  command_buffer_info,
-                                        const decode::VulkanDeviceAddressTracker& address_tracker)
-    {}
+    virtual std::pair<std::vector<VkDeviceAddress>, const VulkanCommandBufferInfo*>
+    ResolveBufferAddresses(Decoded_VkSubmitInfo& submit_info, const VulkanDeviceAddressTracker& address_tracker)
+    {
+        return { {}, nullptr };
+    }
+
+    virtual std::pair<std::vector<VkDeviceAddress>, const VulkanCommandBufferInfo*>
+    ResolveBufferAddresses(Decoded_VkSubmitInfo2& submit_info2, const VulkanDeviceAddressTracker& address_tracker)
+    {
+        return { {}, nullptr };
+    }
 
     virtual void ProcessCmdPushConstants(const VulkanCommandBufferInfo*            command_buffer_info,
                                          VkShaderStageFlags                        stage_flags,
