@@ -353,6 +353,46 @@ struct CustomWrapperPostCall<format::ApiCallId::ApiCall_ID3D12Device3_OpenExisti
 };
 
 template <>
+struct CustomWrapperPreCall<format::ApiCallId::ApiCall_ID3D12Device3_OpenExistingHeapFromFileMapping>
+{
+    template <typename... Args>
+    static void Dispatch(D3D12CaptureManager* manager, Args... args)
+    {
+        manager->PreProcess_ID3D12Device3_OpenExistingHeapFromFileMapping(args...);
+    }
+};
+
+template <>
+struct CustomWrapperPostCall<format::ApiCallId::ApiCall_ID3D12Device3_OpenExistingHeapFromFileMapping>
+{
+    template <typename... Args>
+    static void Dispatch(D3D12CaptureManager* manager, Args... args)
+    {
+        manager->PostProcess_ID3D12Device3_OpenExistingHeapFromFileMapping(args...);
+    }
+};
+
+template <>
+struct CustomWrapperPreCall<format::ApiCallId::ApiCall_ID3D12Device13_OpenExistingHeapFromAddress1>
+{
+    template <typename... Args>
+    static void Dispatch(D3D12CaptureManager* manager, Args... args)
+    {
+        manager->PreProcess_ID3D12Device13_OpenExistingHeapFromAddress1(args...);
+    }
+};
+
+template <>
+struct CustomWrapperPostCall<format::ApiCallId::ApiCall_ID3D12Device13_OpenExistingHeapFromAddress1>
+{
+    template <typename... Args>
+    static void Dispatch(D3D12CaptureManager* manager, Args... args)
+    {
+        manager->PostProcess_ID3D12Device13_OpenExistingHeapFromAddress1(args...);
+    }
+};
+
+template <>
 struct CustomWrapperPostCall<format::ApiCallId::ApiCall_ID3D12Resource_Map>
 {
     template <typename... Args>

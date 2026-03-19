@@ -3097,6 +3097,124 @@ Dx12ReplayConsumerBase::Dx12ReplayConsumerBase::OverrideOpenExistingHeapFromAddr
     return result;
 }
 
+HRESULT
+Dx12ReplayConsumerBase::Dx12ReplayConsumerBase::OverrideOpenExistingHeapFromFileMapping(
+    DxObjectInfo*                replay_object_info,
+    HRESULT                      original_result,
+    uint64_t                     allocation_id,
+    Decoded_GUID                 riid,
+    HandlePointerDecoder<void*>* heap)
+{
+    assert((replay_object_info != nullptr) && (replay_object_info->object != nullptr) && (heap != nullptr));
+
+    HRESULT result        = E_FAIL;
+    auto    replay_object = static_cast<ID3D12Device3*>(replay_object_info->object);
+
+    const auto& entry = heap_allocations_.find(allocation_id);
+    if ((entry != heap_allocations_.end()) && (entry->second != nullptr))
+    {
+        MEMORY_BASIC_INFORMATION info{};
+
+        auto query_result = VirtualQuery(entry->second, &info, sizeof(info));
+        if (query_result == 0)
+        {
+            GFXRECON_LOG_ERROR("Failed to retrieve memory information for heap_allocations_ specified to "
+                               "ID3D12Device3::OpenExistingHeapFromFileMapping (error = %d)",
+                               GetLastError());
+            return E_FAIL;
+        }
+
+        HANDLE handle = CreateFileMapping(INVALID_HANDLE_VALUE,
+                                          nullptr,
+                                          PAGE_READWRITE,
+                                          static_cast<DWORD>(info.RegionSize >> 32),
+                                          static_cast<DWORD>(info.RegionSize & 0xFFFFFFFF),
+                                          TEXT("OpenExistingHeapFromFileMapping"));
+        if (handle == nullptr)
+        {
+            GFXRECON_LOG_ERROR("Failed to create file mapping for handle specified to "
+                               "ID3D12Device3::OpenExistingHeapFromFileMapping (error = %d)",
+                               GetLastError());
+            return E_FAIL;
+        }
+
+        result = replay_object->OpenExistingHeapFromFileMapping(handle, *riid.decoded_value, heap->GetHandlePointer());
+
+        if (SUCCEEDED(result))
+        {
+            // Transfer the allocation to the heap info record.
+            auto heap_info                 = std::make_unique<D3D12HeapInfo>();
+            heap_info->external_allocation = entry->second;
+            heap_info->external_handle     = handle;
+
+            SetExtraInfo(heap, std::move(heap_info));
+        }
+        else
+        {
+            // The allocation won't be used.
+            VirtualFree(entry->second, 0, MEM_RELEASE);
+            CloseHandle(handle);
+        }
+
+        heap_allocations_.erase(entry);
+    }
+    else
+    {
+        GFXRECON_LOG_FATAL("No heap allocation has been created for ID3D12Device3::OpenExistingHeapFromFileMapping "
+                           "allocation ID = %" PRIu64,
+                           allocation_id);
+    }
+
+    return result;
+}
+
+HRESULT
+Dx12ReplayConsumerBase::Dx12ReplayConsumerBase::OverrideOpenExistingHeapFromAddress1(DxObjectInfo* replay_object_info,
+                                                                                     HRESULT       original_result,
+                                                                                     uint64_t      allocation_id,
+                                                                                     SIZE_T        size,
+                                                                                     Decoded_GUID  riid,
+                                                                                     HandlePointerDecoder<void*>* heap)
+{
+    assert((replay_object_info != nullptr) && (replay_object_info->object != nullptr) && (heap != nullptr));
+
+    HRESULT result        = E_FAIL;
+    auto    replay_object = static_cast<ID3D12Device13*>(replay_object_info->object);
+
+    const auto& entry = heap_allocations_.find(allocation_id);
+    if (entry != heap_allocations_.end())
+    {
+        assert(entry->second != nullptr);
+
+        result = replay_object->OpenExistingHeapFromAddress1(
+            entry->second, size, *riid.decoded_value, heap->GetHandlePointer());
+
+        if (SUCCEEDED(result))
+        {
+            // Transfer the allocation to the heap info record.
+            auto heap_info                 = std::make_unique<D3D12HeapInfo>();
+            heap_info->external_allocation = entry->second;
+
+            SetExtraInfo(heap, std::move(heap_info));
+        }
+        else
+        {
+            // The allocation won't be used.
+            VirtualFree(entry->second, 0, MEM_RELEASE);
+        }
+
+        heap_allocations_.erase(entry);
+    }
+    else
+    {
+        GFXRECON_LOG_FATAL("No heap allocation has been created for ID3D12Device13::OpenExistingHeapFromAddress1 "
+                           "allocation ID = %" PRIu64,
+                           allocation_id);
+    }
+
+    return result;
+}
+
 HRESULT Dx12ReplayConsumerBase::OverrideResourceMap(DxObjectInfo*                              replay_object_info,
                                                     HRESULT                                    original_result,
                                                     UINT                                       subresource,
@@ -4209,6 +4327,10 @@ void Dx12ReplayConsumerBase::DestroyObjectExtraInfo(DxObjectInfo* info, bool rel
             if (heap_info->external_allocation != nullptr)
             {
                 VirtualFree(heap_info->external_allocation, 0, MEM_RELEASE);
+            }
+            if (heap_info->external_handle != nullptr)
+            {
+                CloseHandle(heap_info->external_handle);
             }
         }
         else if (extra_info->extra_info_type == DxObjectInfoType::kIDxgiSwapchainInfo)

@@ -1074,6 +1074,103 @@ void D3D12CaptureManager::PostProcess_ID3D12Device3_OpenExistingHeapFromAddress(
     }
 }
 
+void D3D12CaptureManager::PreProcess_ID3D12Device3_OpenExistingHeapFromFileMapping(ID3D12Device3_Wrapper* wrapper,
+                                                                                   HANDLE                 file_mapping,
+                                                                                   REFIID                 riid,
+                                                                                   void**                 heap)
+{
+    GFXRECON_UNREFERENCED_PARAMETER(wrapper);
+    GFXRECON_UNREFERENCED_PARAMETER(riid);
+    GFXRECON_UNREFERENCED_PARAMETER(heap);
+
+    if (IsCaptureModeWrite())
+    {
+        void* address = MapViewOfFile(file_mapping, FILE_MAP_READ, 0, 0, 0);
+        if (address != nullptr)
+        {
+            MEMORY_BASIC_INFORMATION info{};
+
+            auto result = VirtualQuery(address, &info, sizeof(info));
+            if (result > 0)
+            {
+                common_manager_->WriteCreateHeapAllocationCmd(
+                    api_family_, reinterpret_cast<uint64_t>(file_mapping), info.RegionSize);
+            }
+            else
+            {
+                GFXRECON_LOG_ERROR("Failed to retrieve memory information for handle specified to "
+                                   "ID3D12Device3::OpenExistingHeapFromFileMapping (error = %d)",
+                                   GetLastError());
+            }
+            UnmapViewOfFile(address);
+        }
+        else
+        {
+            GFXRECON_LOG_ERROR("Failed to map view of file for handle specified to "
+                               "ID3D12Device3::OpenExistingHeapFromFileMapping (error = %d)",
+                               GetLastError());
+        }
+    }
+}
+
+void D3D12CaptureManager::PostProcess_ID3D12Device3_OpenExistingHeapFromFileMapping(
+    ID3D12Device3_Wrapper* wrapper, HRESULT result, HANDLE file_mapping, REFIID riid, void** heap)
+{
+    GFXRECON_UNREFERENCED_PARAMETER(wrapper);
+    GFXRECON_UNREFERENCED_PARAMETER(riid);
+
+    if (IsCaptureModeTrack())
+    {
+        if (SUCCEEDED(result) && (heap != nullptr) && ((*heap) != nullptr))
+        {
+            state_tracker_->TrackOpenExistingHeapFromFileMapping(heap, file_mapping);
+        }
+    }
+}
+
+void D3D12CaptureManager::PreProcess_ID3D12Device13_OpenExistingHeapFromAddress1(
+    ID3D12Device13_Wrapper* wrapper, const void* address, SIZE_T size, REFIID riid, void** heap)
+{
+    GFXRECON_UNREFERENCED_PARAMETER(wrapper);
+    GFXRECON_UNREFERENCED_PARAMETER(riid);
+    GFXRECON_UNREFERENCED_PARAMETER(heap);
+
+    if (IsCaptureModeWrite())
+    {
+        MEMORY_BASIC_INFORMATION info{};
+
+        auto result = VirtualQuery(address, &info, sizeof(info));
+        if (result > 0)
+        {
+            SIZE_T region_size = std::max(info.RegionSize, size);
+            common_manager_->WriteCreateHeapAllocationCmd(
+                api_family_, reinterpret_cast<uint64_t>(address), region_size);
+        }
+        else
+        {
+            GFXRECON_LOG_ERROR("Failed to retrieve memory information for address specified to "
+                               "ID3D12Device13::OpenExistingHeapFromAddress1 (error = %d)",
+                               GetLastError());
+        }
+    }
+}
+
+void D3D12CaptureManager::PostProcess_ID3D12Device13_OpenExistingHeapFromAddress1(
+    ID3D12Device13_Wrapper* wrapper, HRESULT result, const void* address, SIZE_T size, REFIID riid, void** heap)
+{
+    GFXRECON_UNREFERENCED_PARAMETER(wrapper);
+    GFXRECON_UNREFERENCED_PARAMETER(riid);
+    GFXRECON_UNREFERENCED_PARAMETER(size);
+
+    if (IsCaptureModeTrack())
+    {
+        if (SUCCEEDED(result) && (heap != nullptr) && ((*heap) != nullptr))
+        {
+            state_tracker_->TrackOpenExistingHeapFromAddress(heap, address);
+        }
+    }
+}
+
 void D3D12CaptureManager::PostProcess_ID3D12Device4_CreateHeap1(ID3D12Device4_Wrapper*          wrapper,
                                                                 HRESULT                         result,
                                                                 const D3D12_HEAP_DESC*          desc,

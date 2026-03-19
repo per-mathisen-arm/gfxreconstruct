@@ -518,6 +518,18 @@ void Dx12StateWriter::WriteHeapState(const Dx12StateTable& state_table)
                                    GetLastError());
             }
         }
+        if (wrapper_info->open_existing_handle != nullptr)
+        {
+            HANDLE hFileHandle = reinterpret_cast<HANDLE>(const_cast<void*>(wrapper_info->open_existing_handle));
+            void*  pAddress    = MapViewOfFile(hFileHandle, FILE_MAP_READ, 0, 0, 0);
+
+            if ((pAddress == nullptr) || !WriteCreateHeapAllocationCmd(pAddress))
+            {
+                GFXRECON_LOG_ERROR("Failed to retrieve memory information for handle specified to "
+                                   "ID3D12Device3::OpenExistingHeapFromFileMapping (error = %d)",
+                                   GetLastError());
+            }
+        }
 
         StandardCreateWrite(wrapper);
         if (wrapper_info->heap_flags & D3D12_HEAP_FLAG_CREATE_NOT_RESIDENT)

@@ -68,6 +68,16 @@ void Dx12StateTracker::TrackOpenExistingHeapFromAddress(void** heap, const void*
     info->open_existing_address = address;
 }
 
+void Dx12StateTracker::TrackOpenExistingHeapFromFileMapping(void** heap, const void* handle)
+{
+    assert((heap != nullptr) && ((*heap) != nullptr) && (handle != nullptr));
+
+    auto heap_wrapper = reinterpret_cast<ID3D12Heap_Wrapper*>(*heap);
+    auto info         = heap_wrapper->GetObjectInfo();
+    assert(info != nullptr);
+    info->open_existing_handle = handle;
+}
+
 void Dx12StateTracker::TrackFenceSetEventOnCompletion(ID3D12Fence_Wrapper* fence_wrapper, UINT64 value, HANDLE event)
 {
     assert(fence_wrapper != nullptr);

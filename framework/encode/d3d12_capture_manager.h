@@ -399,6 +399,20 @@ class D3D12CaptureManager : public ApiCaptureManager
     void PostProcess_ID3D12Device3_OpenExistingHeapFromAddress(
         ID3D12Device3_Wrapper* wrapper, HRESULT result, const void* address, REFIID riid, void** heap);
 
+    void PreProcess_ID3D12Device3_OpenExistingHeapFromFileMapping(ID3D12Device3_Wrapper* wrapper,
+                                                                  HANDLE                 file_mapping,
+                                                                  REFIID                 riid,
+                                                                  void**                 heap);
+
+    void PostProcess_ID3D12Device3_OpenExistingHeapFromFileMapping(
+        ID3D12Device3_Wrapper* wrapper, HRESULT result, HANDLE file_mapping, REFIID riid, void** heap);
+
+    void PreProcess_ID3D12Device13_OpenExistingHeapFromAddress1(
+        ID3D12Device13_Wrapper* wrapper, const void* address, SIZE_T size, REFIID riid, void** heap);
+
+    void PostProcess_ID3D12Device13_OpenExistingHeapFromAddress1(
+        ID3D12Device13_Wrapper* wrapper, HRESULT result, const void* address, SIZE_T size, REFIID riid, void** heap);
+
     void PostProcess_ID3D12Device4_CreateHeap1(ID3D12Device4_Wrapper*          wrapper,
                                                HRESULT                         result,
                                                const D3D12_HEAP_DESC*          desc,

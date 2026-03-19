@@ -399,6 +399,7 @@ struct D3D12HeapInfo : DxObjectExtraInfo
     D3D12HeapInfo() : DxObjectExtraInfo(kType) {}
 
     void* external_allocation{ nullptr };
+    void* external_handle{ nullptr };
 };
 
 struct D3D12ResourceInfo : DxObjectExtraInfo

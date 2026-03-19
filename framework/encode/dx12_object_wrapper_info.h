@@ -459,6 +459,7 @@ struct ID3D12HeapInfo : public DxWrapperInfo
     D3D12_HEAP_FLAGS          heap_flags{ D3D12_HEAP_FLAG_NONE };
 
     const void* open_existing_address{ nullptr }; ///< Address used to create heap with OpenExistingHeapFromAddress.
+    const void* open_existing_handle{ nullptr };  ///< Handle used to create heap with OpenExistingHeapFromFileMapping.
 };
 
 struct ID3D12MetaCommandInfo : public DxWrapperInfo

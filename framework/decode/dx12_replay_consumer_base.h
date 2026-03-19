@@ -792,6 +792,21 @@ class Dx12ReplayConsumerBase : public Dx12Consumer
                                         Decoded_GUID                 riid,
                                         HandlePointerDecoder<void*>* heap);
 
+    HRESULT
+    OverrideOpenExistingHeapFromFileMapping(DxObjectInfo*                replay_object_info,
+                                            HRESULT                      original_result,
+                                            uint64_t                     allocation_id,
+                                            Decoded_GUID                 riid,
+                                            HandlePointerDecoder<void*>* heap);
+
+    HRESULT
+    OverrideOpenExistingHeapFromAddress1(DxObjectInfo*                replay_object_info,
+                                         HRESULT                      original_result,
+                                         uint64_t                     allocation_id,
+                                         SIZE_T                       size,
+                                         Decoded_GUID                 riid,
+                                         HandlePointerDecoder<void*>* heap);
+
     HRESULT OverrideResourceMap(DxObjectInfo*                              replay_object_info,
                                 HRESULT                                    original_result,
                                 UINT                                       subresource,
