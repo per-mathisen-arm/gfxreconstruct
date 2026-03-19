@@ -323,6 +323,13 @@ HRESULT Dx12RebindAllocator::CreateHeap(format::HandleId            capture_id,
     if (pDesc->Properties.Type == D3D12_HEAP_TYPE_CUSTOM)
     {
         D3D12_HEAP_PROPERTIES heap_props = GetReplayCustomHeapProperties(pDesc->Properties.CPUPageProperty);
+        if (heap_props.CPUPageProperty == D3D12_CPU_PAGE_PROPERTY_NOT_AVAILABLE)
+        {
+            // The capture may use MemoryPoolPreference L0, so set it to L0 for compatibility.
+            heap_props.MemoryPoolPreference = (pDesc->Properties.MemoryPoolPreference == D3D12_MEMORY_POOL_L0)
+                                                  ? D3D12_MEMORY_POOL_L0
+                                                  : heap_props.MemoryPoolPreference;
+        }
         const_cast<D3D12_HEAP_DESC*>(pDesc)->Properties = heap_props;
     }
 
@@ -348,6 +355,13 @@ HRESULT Dx12RebindAllocator::CreateHeap1(format::HandleId                       
     if (pDesc->Properties.Type == D3D12_HEAP_TYPE_CUSTOM)
     {
         D3D12_HEAP_PROPERTIES heap_props = GetReplayCustomHeapProperties(pDesc->Properties.CPUPageProperty);
+        if (heap_props.CPUPageProperty == D3D12_CPU_PAGE_PROPERTY_NOT_AVAILABLE)
+        {
+            // The capture may use MemoryPoolPreference L0, so set it to L0 for compatibility.
+            heap_props.MemoryPoolPreference = (pDesc->Properties.MemoryPoolPreference == D3D12_MEMORY_POOL_L0)
+                                                  ? D3D12_MEMORY_POOL_L0
+                                                  : heap_props.MemoryPoolPreference;
+        }
         const_cast<D3D12_HEAP_DESC*>(pDesc)->Properties = heap_props;
     }
 
