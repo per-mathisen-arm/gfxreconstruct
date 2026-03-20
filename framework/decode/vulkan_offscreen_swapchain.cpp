@@ -96,6 +96,7 @@ VkResult VulkanOffscreenSwapchain::CreateSwapchainKHR(VkResult                  
     {
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
+    swapchain_resources_[*replay_swapchain]->forced_offscreen = true;
 
     util::MarkingLayersUtil::instance().BeginInjected(device_info);
     default_queue_ = GetDeviceQueue(device_table_, device_info, default_queue_family_index_, 0);
@@ -134,7 +135,7 @@ VkResult VulkanOffscreenSwapchain::GetSwapchainImagesKHR(VkResult               
     }
 
     VkResult result =
-        CreateSwapchainResourceData(device_info, swapchain_info, capture_image_count, replay_image_count, images, true);
+        CreateSwapchainResourceData(device_info, swapchain_info, capture_image_count, replay_image_count, images);
     if (result != VK_SUCCESS)
     {
         GFXRECON_LOG_ERROR("Offscreen swapchain failed to CreateSwapchainResourceData for swapchain (ID = %" PRIu64 ")",
