@@ -1285,16 +1285,16 @@ ULONG Dx12ReplayConsumerBase::OverrideRelease(DxObjectInfo* replay_object_info, 
         }
 
         RemoveObject(replay_object_info);
-    }
 
-    auto replay_result = object->Release();
-    if (replay_object_info->ref_count == 0)
-    {
+        auto replay_result = object->Release();
+
         // If the object has been released, remove it from the rebind DMA mapping.
         PostRelease(object_id, device_id, info_type);
+
+        return replay_result;
     }
 
-    return replay_result;
+    return object->Release();
 }
 
 void Dx12ReplayConsumerBase::PrePresent(DxObjectInfo* swapchain_object_info, UINT flags)
