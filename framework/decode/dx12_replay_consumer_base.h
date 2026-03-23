@@ -213,6 +213,11 @@ class Dx12ReplayConsumerBase : public Dx12Consumer
                                                       UINT                                                  NumBarriers,
                                                       StructPointerDecoder<Decoded_D3D12_RESOURCE_BARRIER>* pBarriers);
 
+    void PreCall_ID3D12GraphicsCommandList7_Barrier(const ApiCallInfo&                                 call_info,
+                                                    DxObjectInfo*                                      object_info,
+                                                    UINT32                                             NumBarrierGroups,
+                                                    StructPointerDecoder<Decoded_D3D12_BARRIER_GROUP>* pBarrierGroups);
+
     void
     PreCall_ID3D12Device_CreateConstantBufferView(const ApiCallInfo& call_info,
                                                   DxObjectInfo*      object_info,

@@ -5479,6 +5479,7 @@ HRESULT Dx12ReplayConsumerBase::OverrideCreateCommandList(DxObjectInfo*         
     {
         auto cmd_list_info              = std::make_unique<D3D12CommandListInfo>();
         cmd_list_info->create_list_type = type;
+        cmd_list_info->parent_id        = device_object_info->capture_id;
         SetExtraInfo(command_list_decoder, std::move(cmd_list_info));
     }
     return replay_result;
@@ -5501,6 +5502,7 @@ HRESULT Dx12ReplayConsumerBase::OverrideCreateCommandList1(DxObjectInfo*        
     {
         auto cmd_list_info              = std::make_unique<D3D12CommandListInfo>();
         cmd_list_info->create_list_type = type;
+        cmd_list_info->parent_id        = device4_object_info->capture_id;
         SetExtraInfo(command_list1_decoder, std::move(cmd_list_info));
     }
     return replay_result;
@@ -6806,6 +6808,28 @@ void Dx12ReplayConsumerBase::PreCall_ID3D12GraphicsCommandList_ResourceBarrier(
             if (support_memory_allocator_ && (accel_struct_builder != nullptr))
             {
                 accel_struct_builder->PreCmdResourceBarrier(command_list_ptr, barriers[i].UAV->pResource);
+            }
+        }
+    }
+}
+
+void Dx12ReplayConsumerBase::PreCall_ID3D12GraphicsCommandList7_Barrier(
+    const ApiCallInfo&                                 call_info,
+    DxObjectInfo*                                      object_info,
+    UINT32                                             NumBarrierGroups,
+    StructPointerDecoder<Decoded_D3D12_BARRIER_GROUP>* pBarrierGroups)
+{
+    auto barrier_groups = pBarrierGroups->GetPointer();
+    for (uint32_t i = 0; i < NumBarrierGroups; ++i)
+    {
+        if (barrier_groups[i].Type == D3D12_BARRIER_TYPE_BUFFER)
+        {
+            auto buffer_barriers = const_cast<D3D12_BUFFER_BARRIER*>(barrier_groups[i].pBufferBarriers);
+            for (uint32_t j = 0; j < barrier_groups[i].NumBarriers; ++j)
+            {
+                // The width of the replay resource may be larger than the captured resource, so the size is set to
+                // UINT64_MAX to avoid potential problems with the size being too small for the replay resource.
+                buffer_barriers[j].Size = UINT64_MAX;
             }
         }
     }
