@@ -23,9 +23,12 @@
 
 #include "generated/generated_vulkan_skiavk_modifier.h"
 
+#include "graphics/vulkan_struct_get_pnext.h"
+#include "graphics/vulkan_util.h"
 #include "util/logging.h"
 
 #include <cassert>
+#include <cstring>
 #include <stdexcept>
 
 #include "generated/generated_vulkan_api_call_encoders.h"
@@ -47,16 +50,286 @@ GFXRECON_BEGIN_NAMESPACE(decode)
 
 std::vector<std::string> VulkanSkiaModifier::app_name_array = {};
 
+bool VulkanSkiaModifier::SubmitHasFrameEndMarker(uint32_t                                    submit_count,
+                                                 StructPointerDecoder<Decoded_VkSubmitInfo>* pSubmits) const
+{
+    if ((submit_count == 0) || (pSubmits == nullptr))
+    {
+        return false;
+    }
+
+    const VkSubmitInfo*         submits      = pSubmits->GetPointer();
+    const Decoded_VkSubmitInfo* submit_metas = pSubmits->GetMetaStructPointer();
+    if ((submits == nullptr) || (submit_metas == nullptr))
+    {
+        return false;
+    }
+
+    for (uint32_t i = 0; i < submit_count; ++i)
+    {
+        auto* frame_boundary = graphics::vulkan_struct_get_pnext<VkFrameBoundaryEXT>(
+            reinterpret_cast<const VkBaseInStructure*>(submits + i));
+        if ((frame_boundary != nullptr) && ((frame_boundary->flags & VK_FRAME_BOUNDARY_FRAME_END_BIT_EXT) != 0))
+        {
+            return true;
+        }
+
+        auto* command_buffers = submit_metas[i].pCommandBuffers.GetPointer();
+        for (uint32_t j = 0; j < submits[i].commandBufferCount; ++j)
+        {
+            if ((command_buffers != nullptr) && frame_boundary_command_buffers_.contains(command_buffers[j]))
+            {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+bool VulkanSkiaModifier::Submit2HasFrameEndMarker(uint32_t                                     submit_count,
+                                                  StructPointerDecoder<Decoded_VkSubmitInfo2>* pSubmits) const
+{
+    if ((submit_count == 0) || (pSubmits == nullptr))
+    {
+        return false;
+    }
+
+    const VkSubmitInfo2*         submits      = pSubmits->GetPointer();
+    const Decoded_VkSubmitInfo2* submit_metas = pSubmits->GetMetaStructPointer();
+    if ((submits == nullptr) || (submit_metas == nullptr))
+    {
+        return false;
+    }
+
+    for (uint32_t i = 0; i < submit_count; ++i)
+    {
+        auto* frame_boundary = graphics::vulkan_struct_get_pnext<VkFrameBoundaryEXT>(
+            reinterpret_cast<const VkBaseInStructure*>(submits + i));
+        if ((frame_boundary != nullptr) && ((frame_boundary->flags & VK_FRAME_BOUNDARY_FRAME_END_BIT_EXT) != 0))
+        {
+            return true;
+        }
+
+        if (submit_metas[i].pCommandBufferInfos == nullptr)
+        {
+            continue;
+        }
+
+        auto* command_buffer_infos = submit_metas[i].pCommandBufferInfos->GetMetaStructPointer();
+        for (uint32_t j = 0; j < submits[i].commandBufferInfoCount; ++j)
+        {
+            if ((command_buffer_infos != nullptr) &&
+                frame_boundary_command_buffers_.contains(command_buffer_infos[j].commandBuffer))
+            {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+bool VulkanSkiaModifier::ContainsVrFrameDelimiter(const char* label) const
+{
+    return (label != nullptr) && (std::strstr(label, graphics::kVulkanVrFrameDelimiterString) != nullptr);
+}
+
+void VulkanSkiaModifier::AppendFrameEndMarkerForCurrentBlock()
+{
+    if (!frame_end_marker_blocks_to_insert_.contains(block_index_))
+    {
+        return;
+    }
+
+    auto* frame_marker         = CreatePostCall();
+    frame_marker->type         = util::CallModifierBase::NewCallDataType::FrameMarkerCall;
+    frame_marker->frame_number = next_output_frame_number_++;
+
+    frame_end_marker_blocks_to_insert_.erase(block_index_);
+}
+
 void VulkanSkiaModifier::ProcessFrameEndMarker(uint64_t frame_number)
 {
+    GFXRECON_UNREFERENCED_PARAMETER(frame_number);
+    SetDeleteCurrentCall();
+}
+
+void VulkanSkiaModifier::Process_vkQueuePresentKHR(const ApiCallInfo&                              call_info,
+                                                   VkResult                                        returnValue,
+                                                   format::HandleId                                queue,
+                                                   StructPointerDecoder<Decoded_VkPresentInfoKHR>* pPresentInfo)
+{
     if (IsModificationPass())
+    {
+        AppendFrameEndMarkerForCurrentBlock();
         return;
-    // If the previous call(the one that triggers the frame marker at capture time) has been deleted, then the frame
-    // marker no longer makes sense, therefore needs to be deleted
-    if (skiavkindex2remove.count(block_index_ - 1))
+    }
+
+    frame_end_marker_blocks_to_insert_.insert(block_index_);
+}
+
+void VulkanSkiaModifier::Process_vkQueueSubmit(const ApiCallInfo&                          call_info,
+                                               VkResult                                    returnValue,
+                                               format::HandleId                            queue,
+                                               uint32_t                                    submitCount,
+                                               StructPointerDecoder<Decoded_VkSubmitInfo>* pSubmits,
+                                               format::HandleId                            fence)
+{
+    if (IsModificationPass())
+    {
+        AppendFrameEndMarkerForCurrentBlock();
+        return;
+    }
+
+    const bool delete_call = IsSkiaBlock(queue);
+    const bool has_marker  = SubmitHasFrameEndMarker(submitCount, pSubmits);
+
+    if (delete_call)
     {
         SetDeleteCurrentCall();
-        frames_to_be_removed.push_back(frame_number);
+    }
+    else if (has_marker)
+    {
+        frame_end_marker_blocks_to_insert_.insert(block_index_);
+    }
+}
+
+void VulkanSkiaModifier::Process_vkQueueSubmit2(const ApiCallInfo&                           call_info,
+                                                VkResult                                     returnValue,
+                                                format::HandleId                             queue,
+                                                uint32_t                                     submitCount,
+                                                StructPointerDecoder<Decoded_VkSubmitInfo2>* pSubmits,
+                                                format::HandleId                             fence)
+{
+    if (IsModificationPass())
+    {
+        AppendFrameEndMarkerForCurrentBlock();
+        return;
+    }
+
+    const bool delete_call = IsSkiaBlock(queue);
+    const bool has_marker  = Submit2HasFrameEndMarker(submitCount, pSubmits);
+
+    if (delete_call)
+    {
+        SetDeleteCurrentCall();
+    }
+    else if (has_marker)
+    {
+        frame_end_marker_blocks_to_insert_.insert(block_index_);
+    }
+}
+
+void VulkanSkiaModifier::Process_vkQueueSubmit2KHR(const ApiCallInfo&                           call_info,
+                                                   VkResult                                     returnValue,
+                                                   format::HandleId                             queue,
+                                                   uint32_t                                     submitCount,
+                                                   StructPointerDecoder<Decoded_VkSubmitInfo2>* pSubmits,
+                                                   format::HandleId                             fence)
+{
+    Process_vkQueueSubmit2(call_info, returnValue, queue, submitCount, pSubmits, fence);
+}
+
+void VulkanSkiaModifier::Process_vkFrameBoundaryANDROID(const ApiCallInfo& call_info,
+                                                        format::HandleId   device,
+                                                        format::HandleId   semaphore,
+                                                        format::HandleId   image)
+{
+    if (IsModificationPass())
+    {
+        AppendFrameEndMarkerForCurrentBlock();
+        return;
+    }
+
+    const bool delete_call = IsSkiaBlock(device);
+
+    if (delete_call)
+    {
+        SetDeleteCurrentCall();
+    }
+    else
+    {
+        frame_end_marker_blocks_to_insert_.insert(block_index_);
+    }
+}
+
+void VulkanSkiaModifier::Process_vkBeginCommandBuffer(
+    const ApiCallInfo&                                      call_info,
+    VkResult                                                returnValue,
+    format::HandleId                                        commandBuffer,
+    StructPointerDecoder<Decoded_VkCommandBufferBeginInfo>* pBeginInfo)
+{
+    if (IsModificationPass())
+    {
+        return;
+    }
+
+    frame_boundary_command_buffers_.erase(commandBuffer);
+    if (IsSkiaBlock(commandBuffer))
+    {
+        SetDeleteCurrentCall();
+    }
+}
+
+void VulkanSkiaModifier::Process_vkResetCommandBuffer(const ApiCallInfo&        call_info,
+                                                      VkResult                  returnValue,
+                                                      format::HandleId          commandBuffer,
+                                                      VkCommandBufferResetFlags flags)
+{
+    if (IsModificationPass())
+    {
+        return;
+    }
+
+    frame_boundary_command_buffers_.erase(commandBuffer);
+    if (IsSkiaBlock(commandBuffer))
+    {
+        SetDeleteCurrentCall();
+    }
+}
+
+void VulkanSkiaModifier::Process_vkCmdDebugMarkerInsertEXT(
+    const ApiCallInfo&                                        call_info,
+    format::HandleId                                          commandBuffer,
+    StructPointerDecoder<Decoded_VkDebugMarkerMarkerInfoEXT>* pMarkerInfo)
+{
+    if (IsModificationPass())
+    {
+        return;
+    }
+
+    const VkDebugMarkerMarkerInfoEXT* marker_info = pMarkerInfo->GetPointer();
+    if ((marker_info != nullptr) && ContainsVrFrameDelimiter(marker_info->pMarkerName))
+    {
+        frame_boundary_command_buffers_.insert(commandBuffer);
+    }
+
+    if (IsSkiaBlock(commandBuffer))
+    {
+        SetDeleteCurrentCall();
+    }
+}
+
+void VulkanSkiaModifier::Process_vkCmdInsertDebugUtilsLabelEXT(
+    const ApiCallInfo&                                  call_info,
+    format::HandleId                                    commandBuffer,
+    StructPointerDecoder<Decoded_VkDebugUtilsLabelEXT>* pLabelInfo)
+{
+    if (IsModificationPass())
+    {
+        return;
+    }
+
+    const VkDebugUtilsLabelEXT* label_info = pLabelInfo->GetPointer();
+    if ((label_info != nullptr) && ContainsVrFrameDelimiter(label_info->pLabelName))
+    {
+        frame_boundary_command_buffers_.insert(commandBuffer);
+    }
+
+    if (IsSkiaBlock(commandBuffer))
+    {
+        SetDeleteCurrentCall();
     }
 }
 
@@ -70,17 +343,6 @@ bool VulkanSkiaModifier::CanOptimize()
     GFXRECON_WRITE_CONSOLE("skiavk optimization is %s, remove block count: %u",
                            skivkOptimize ? "true" : "false",
                            skiavkindex2remove.size());
-    if (frames_to_be_removed.size() != 0)
-    {
-        std::string frames{};
-        for (uint64_t i = 0; i < frames_to_be_removed.size(); i++)
-        {
-            frames += std::to_string(frames_to_be_removed[i]) + ',';
-        }
-        frames.pop_back();
-        GFXRECON_WRITE_CONSOLE(
-            "The following %llu frames will be removed %s", frames_to_be_removed.size(), frames.c_str());
-    }
 
     return skivkOptimize;
 }

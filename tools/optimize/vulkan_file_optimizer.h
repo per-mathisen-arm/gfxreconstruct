@@ -95,6 +95,9 @@ class VulkanFileOptimizer : public FileOptimizer
                     case util::CallModifierBase::NewCallDataType::MetaDataCall:
                         WriteMetaCommand(&(new_call->parameter_buffer));
                         break;
+                    case util::CallModifierBase::NewCallDataType::FrameMarkerCall:
+                        WriteFrameEndMarker(new_call->frame_number);
+                        break;
                     default:
                         GFXRECON_LOG_ERROR("Unrecognized PreCall NewCallDataType %d", new_call->type);
                         exit(EXIT_FAILURE);
@@ -138,6 +141,16 @@ class VulkanFileOptimizer : public FileOptimizer
 
             for (auto& new_call : new_post_calls)
             {
+                if (delete_current_call && (new_call->type == util::CallModifierBase::NewCallDataType::FrameMarkerCall))
+                {
+                    continue;
+                }
+
+                if (new_call->type == util::CallModifierBase::NewCallDataType::FrameMarkerCall)
+                {
+                    continue;
+                }
+
                 switch (new_call->type)
                 {
                     case util::CallModifierBase::NewCallDataType::ApiCall:
@@ -146,10 +159,23 @@ class VulkanFileOptimizer : public FileOptimizer
                     case util::CallModifierBase::NewCallDataType::MetaDataCall:
                         WriteMetaCommand(&(new_call->parameter_buffer));
                         break;
+                    case util::CallModifierBase::NewCallDataType::FrameMarkerCall:
+                        WriteFrameEndMarker(new_call->frame_number);
+                        break;
                     default:
                         GFXRECON_LOG_ERROR("Unrecognized PostCall NewCallDataType %d", new_call->type);
                         exit(EXIT_FAILURE);
                 }
+            }
+
+            for (auto& new_call : new_post_calls)
+            {
+                if (delete_current_call || (new_call->type != util::CallModifierBase::NewCallDataType::FrameMarkerCall))
+                {
+                    continue;
+                }
+
+                WriteFrameEndMarker(new_call->frame_number);
             }
         }
 
@@ -166,6 +192,7 @@ class VulkanFileOptimizer : public FileOptimizer
     void WriteFunctionCall(format::ApiCallId               call_id,
                            format::ThreadId                thread_id,
                            const util::MemoryOutputStream* parameter_buffer);
+    bool WriteFrameEndMarker(uint64_t frame_number);
     void WriteMetaCommand(const util::MemoryOutputStream* parameter_buffer);
 
     VulkanOptimizationData* optimization_data_;

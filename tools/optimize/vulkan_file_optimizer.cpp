@@ -205,4 +205,21 @@ void VulkanFileOptimizer::WriteMetaCommand(const util::MemoryOutputStream* param
     WriteBytes(data_pointer, data_size);
 }
 
+bool VulkanFileOptimizer::WriteFrameEndMarker(uint64_t frame_number)
+{
+    format::Marker marker;
+    marker.header.size  = sizeof(format::Marker) - sizeof(format::BlockHeader);
+    marker.header.type  = format::kFrameMarkerBlock;
+    marker.marker_type  = format::kEndMarker;
+    marker.frame_number = frame_number;
+
+    if (!WriteBytes(&marker, sizeof(marker)))
+    {
+        HandleBlockWriteError(decode::kErrorWritingBlockData, "Failed to write frame marker data");
+        return false;
+    }
+
+    return true;
+}
+
 GFXRECON_END_NAMESPACE(gfxrecon)

@@ -247,14 +247,22 @@ class VulkanSkiavkModifierHeaderGenerator(VulkanBaseGenerator):
         write('    virtual void ProcessFrameEndMarker(uint64_t frame_number) override;', file=self.outFile)
         self.newline()
         write('  private:', file=self.outFile)
+        write('    bool SubmitHasFrameEndMarker(', file=self.outFile)
+        write('        uint32_t submit_count, StructPointerDecoder<Decoded_VkSubmitInfo>* pSubmits) const;', file=self.outFile)
+        write('    bool Submit2HasFrameEndMarker(', file=self.outFile)
+        write('        uint32_t submit_count, StructPointerDecoder<Decoded_VkSubmitInfo2>* pSubmits) const;', file=self.outFile)
+        write('    bool ContainsVrFrameDelimiter(const char* label) const;', file=self.outFile)
         write('    bool IsSkiaBlock(format::HandleId handle);', file=self.outFile)
         self.newline()
         write('  private:', file=self.outFile)
+        write('    void AppendFrameEndMarkerForCurrentBlock();', file=self.outFile)
         write('    bool                                                                not_skiavk_instance = false;', file=self.outFile)
         write('    bool                                                                skiavk_instance     = false;', file=self.outFile)
-        write('    std::vector<uint64_t>                                               frames_to_be_removed;', file=self.outFile)
         write('    static std::vector<std::string>                                     app_name_array;', file=self.outFile)
         write('    std::unordered_map<uint64_t, bool>                                  skiavkindex2remove;', file=self.outFile)
+        write('    std::unordered_set<uint64_t>                                         frame_end_marker_blocks_to_insert_;', file=self.outFile)
+        write('    uint64_t                                                            next_output_frame_number_ = 1;', file=self.outFile)
+        write('    std::unordered_set<format::HandleId>                                frame_boundary_command_buffers_;', file=self.outFile)
         write('    std::unordered_map<format::HandleId, std::vector<format::HandleId>> skiavk_instance2physical_device;', file=self.outFile)
         write('    std::unordered_map<format::HandleId, std::vector<format::HandleId>> skia_instance2surface;', file=self.outFile)
         write('    std::unordered_map<format::HandleId, std::vector<format::HandleId>> skiavk_physical_device2device;', file=self.outFile)
@@ -286,13 +294,22 @@ class VulkanSkiavkModifierHeaderGenerator(VulkanBaseGenerator):
                 'vkDestroyDevice',
                 'vkGetDeviceQueue',
                 'vkGetDeviceQueue2',
+                'vkQueueSubmit',
                 'vkCreateCommandPool',
                 'vkDestroyCommandPool',
                 'vkAllocateCommandBuffers',
                 'vkFreeCommandBuffers',
+                'vkBeginCommandBuffer',
+                'vkResetCommandBuffer',
                 'vkAllocateMemory',
                 'vkFreeMemory',
                 'vkCreateAndroidSurfaceKHR',
+                'vkQueuePresentKHR',
+                'vkQueueSubmit2',
+                'vkQueueSubmit2KHR',
+                'vkCmdDebugMarkerInsertEXT',
+                'vkCmdInsertDebugUtilsLabelEXT',
+                'vkFrameBoundaryANDROID',
                 'vkCreateBuffer',
                 'vkDestroyBuffer',
                 'vkEnumeratePhysicalDevices'

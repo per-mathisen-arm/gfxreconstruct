@@ -146,7 +146,7 @@ class VulkanSkiaModifier : public util::VulkanModifierBase
         format::HandleId                            queue,
         uint32_t                                    submitCount,
         StructPointerDecoder<Decoded_VkSubmitInfo>* pSubmits,
-        format::HandleId                            fence){ CheckSkiavk(queue);}
+        format::HandleId                            fence);
 
     virtual void Process_vkQueueWaitIdle(
         const ApiCallInfo&                          call_info,
@@ -425,7 +425,7 @@ class VulkanSkiaModifier : public util::VulkanModifierBase
         const ApiCallInfo&                          call_info,
         VkResult                                    returnValue,
         format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkCommandBufferBeginInfo>* pBeginInfo){ CheckSkiavk(commandBuffer);}
+        StructPointerDecoder<Decoded_VkCommandBufferBeginInfo>* pBeginInfo);
 
     virtual void Process_vkEndCommandBuffer(
         const ApiCallInfo&                          call_info,
@@ -436,7 +436,7 @@ class VulkanSkiaModifier : public util::VulkanModifierBase
         const ApiCallInfo&                          call_info,
         VkResult                                    returnValue,
         format::HandleId                            commandBuffer,
-        VkCommandBufferResetFlags                   flags){ CheckSkiavk(commandBuffer);}
+        VkCommandBufferResetFlags                   flags);
 
     virtual void Process_vkCmdCopyBuffer(
         const ApiCallInfo&                          call_info,
@@ -1324,7 +1324,7 @@ class VulkanSkiaModifier : public util::VulkanModifierBase
         format::HandleId                            queue,
         uint32_t                                    submitCount,
         StructPointerDecoder<Decoded_VkSubmitInfo2>* pSubmits,
-        format::HandleId                            fence){ CheckSkiavk(queue);}
+        format::HandleId                            fence);
 
     virtual void Process_vkCmdCopyBuffer2(
         const ApiCallInfo&                          call_info,
@@ -1664,7 +1664,7 @@ class VulkanSkiaModifier : public util::VulkanModifierBase
         const ApiCallInfo&                          call_info,
         VkResult                                    returnValue,
         format::HandleId                            queue,
-        StructPointerDecoder<Decoded_VkPresentInfoKHR>* pPresentInfo){ CheckSkiavk(queue);}
+        StructPointerDecoder<Decoded_VkPresentInfoKHR>* pPresentInfo);
 
     virtual void Process_vkGetDeviceGroupPresentCapabilitiesKHR(
         const ApiCallInfo&                          call_info,
@@ -2445,7 +2445,7 @@ class VulkanSkiaModifier : public util::VulkanModifierBase
         format::HandleId                            queue,
         uint32_t                                    submitCount,
         StructPointerDecoder<Decoded_VkSubmitInfo2>* pSubmits,
-        format::HandleId                            fence){ CheckSkiavk(queue);}
+        format::HandleId                            fence);
     virtual void Process_vkCmdCopyBuffer2KHR(
         const ApiCallInfo&                          call_info,
         format::HandleId                            commandBuffer,
@@ -2637,7 +2637,7 @@ class VulkanSkiaModifier : public util::VulkanModifierBase
         const ApiCallInfo&                          call_info,
         format::HandleId                            device,
         format::HandleId                            semaphore,
-        format::HandleId                            image){ CheckSkiavk(device);}
+        format::HandleId                            image);
     virtual void Process_vkCreateDebugReportCallbackEXT(
         const ApiCallInfo&                          call_info,
         VkResult                                    returnValue,
@@ -2686,7 +2686,7 @@ class VulkanSkiaModifier : public util::VulkanModifierBase
     virtual void Process_vkCmdDebugMarkerInsertEXT(
         const ApiCallInfo&                          call_info,
         format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkDebugMarkerMarkerInfoEXT>* pMarkerInfo){ CheckSkiavk(commandBuffer);}
+        StructPointerDecoder<Decoded_VkDebugMarkerMarkerInfoEXT>* pMarkerInfo);
     virtual void Process_vkCmdBindTransformFeedbackBuffersEXT(
         const ApiCallInfo&                          call_info,
         format::HandleId                            commandBuffer,
@@ -2979,7 +2979,7 @@ class VulkanSkiaModifier : public util::VulkanModifierBase
     virtual void Process_vkCmdInsertDebugUtilsLabelEXT(
         const ApiCallInfo&                          call_info,
         format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkDebugUtilsLabelEXT>* pLabelInfo){ CheckSkiavk(commandBuffer);}
+        StructPointerDecoder<Decoded_VkDebugUtilsLabelEXT>* pLabelInfo);
 
     virtual void Process_vkCreateDebugUtilsMessengerEXT(
         const ApiCallInfo&                          call_info,
@@ -4799,14 +4799,22 @@ class VulkanSkiaModifier : public util::VulkanModifierBase
     virtual void ProcessFrameEndMarker(uint64_t frame_number) override;
 
   private:
+    bool SubmitHasFrameEndMarker(
+        uint32_t submit_count, StructPointerDecoder<Decoded_VkSubmitInfo>* pSubmits) const;
+    bool Submit2HasFrameEndMarker(
+        uint32_t submit_count, StructPointerDecoder<Decoded_VkSubmitInfo2>* pSubmits) const;
+    bool ContainsVrFrameDelimiter(const char* label) const;
     bool IsSkiaBlock(format::HandleId handle);
 
   private:
+    void AppendFrameEndMarkerForCurrentBlock();
     bool                                                                not_skiavk_instance = false;
     bool                                                                skiavk_instance     = false;
-    std::vector<uint64_t>                                               frames_to_be_removed;
     static std::vector<std::string>                                     app_name_array;
     std::unordered_map<uint64_t, bool>                                  skiavkindex2remove;
+    std::unordered_set<uint64_t>                                         frame_end_marker_blocks_to_insert_;
+    uint64_t                                                            next_output_frame_number_ = 1;
+    std::unordered_set<format::HandleId>                                frame_boundary_command_buffers_;
     std::unordered_map<format::HandleId, std::vector<format::HandleId>> skiavk_instance2physical_device;
     std::unordered_map<format::HandleId, std::vector<format::HandleId>> skia_instance2surface;
     std::unordered_map<format::HandleId, std::vector<format::HandleId>> skiavk_physical_device2device;

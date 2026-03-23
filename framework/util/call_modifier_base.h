@@ -38,9 +38,10 @@ class CallModifierBase
   public:
     enum NewCallDataType
     {
-        UnknownType  = 0,
-        ApiCall      = 1,
-        MetaDataCall = 2
+        UnknownType     = 0,
+        ApiCall         = 1,
+        MetaDataCall    = 2,
+        FrameMarkerCall = 3
     };
 
     struct NewCallData
@@ -49,6 +50,7 @@ class CallModifierBase
         format::ApiCallId        call_id;
         format::HandleId         object_id;
         format::ThreadId         thread_id;
+        uint64_t                 frame_number = 0;
         util::MemoryOutputStream parameter_buffer;
     };
 
