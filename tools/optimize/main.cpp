@@ -234,7 +234,7 @@ void FilterUnreferencedResources(const std::string&                             
             exit(-1);
         }
 
-        GFXRECON_WRITE_CONSOLE("Resource filtering complete - Removed %d / %d blocks",
+        GFXRECON_WRITE_CONSOLE("Resource filtering complete - Removed %zu / %" PRIu64 " blocks",
                                result.unreferenced_blocks.size(),
                                result.num_blocks);
         GFXRECON_WRITE_CONSOLE("\tOriginal file size: %" PRIu64 " bytes", file_optimizer.GetNumBytesRead());

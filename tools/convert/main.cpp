@@ -57,6 +57,10 @@ using Dx12JsonConsumer =
     gfxrecon::decode::MetadataJsonConsumer<gfxrecon::decode::MarkerJsonConsumer<gfxrecon::decode::Dx12JsonConsumer>>;
 #endif
 
+const char kVerboseOption[]         = "--verbose";
+const char kChecksumOption[]        = "--checksum";
+const char kChecksumTriggerOption[] = "--checksum-trigger";
+
 const char kOptions[] = "-h|--help,--version,--no-debug-popup,--file-per-frame,--include-binaries,--expand-flags,--"
                         "verbose,--checksum";
 

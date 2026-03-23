@@ -175,10 +175,6 @@ const char kDumpResourcesBeforeDrawOption[]    = "--dump-resources-before-draw";
 const char kDumpResourcesArgument[]    = "--dump-resources";
 const char kDumpResourcesDirArgument[] = "--dump-resources-dir";
 
-const char kVerboseOption[]         = "--verbose";
-const char kChecksumOption[]        = "--checksum";
-const char kChecksumTriggerOption[] = "--checksum-trigger";
-
 enum class WsiPlatform
 {
     kAuto,
