@@ -48,6 +48,8 @@
 #include <unordered_set>
 #include <vector>
 
+const char kVerboseOption[] = "--verbose";
+
 const char kOptions[]   = "-h|--help,--version,--verbose";
 const char kArguments[] = "--gpu,--set-replay-options,--set-replay-options";
 
