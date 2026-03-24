@@ -3097,13 +3097,11 @@ Dx12ReplayConsumerBase::OverrideOpenExistingHeapFromAddress(DxObjectInfo*       
     return result;
 }
 
-HRESULT
-Dx12ReplayConsumerBase::Dx12ReplayConsumerBase::OverrideOpenExistingHeapFromFileMapping(
-    DxObjectInfo*                replay_object_info,
-    HRESULT                      original_result,
-    uint64_t                     allocation_id,
-    Decoded_GUID                 riid,
-    HandlePointerDecoder<void*>* heap)
+HRESULT Dx12ReplayConsumerBase::OverrideOpenExistingHeapFromFileMapping(DxObjectInfo*                replay_object_info,
+                                                                        HRESULT                      original_result,
+                                                                        uint64_t                     allocation_id,
+                                                                        Decoded_GUID                 riid,
+                                                                        HandlePointerDecoder<void*>* heap)
 {
     assert((replay_object_info != nullptr) && (replay_object_info->object != nullptr) && (heap != nullptr));
 
@@ -3168,13 +3166,12 @@ Dx12ReplayConsumerBase::Dx12ReplayConsumerBase::OverrideOpenExistingHeapFromFile
     return result;
 }
 
-HRESULT
-Dx12ReplayConsumerBase::Dx12ReplayConsumerBase::OverrideOpenExistingHeapFromAddress1(DxObjectInfo* replay_object_info,
-                                                                                     HRESULT       original_result,
-                                                                                     uint64_t      allocation_id,
-                                                                                     SIZE_T        size,
-                                                                                     Decoded_GUID  riid,
-                                                                                     HandlePointerDecoder<void*>* heap)
+HRESULT Dx12ReplayConsumerBase::OverrideOpenExistingHeapFromAddress1(DxObjectInfo*                replay_object_info,
+                                                                     HRESULT                      original_result,
+                                                                     uint64_t                     allocation_id,
+                                                                     SIZE_T                       size,
+                                                                     Decoded_GUID                 riid,
+                                                                     HandlePointerDecoder<void*>* heap)
 {
     assert((replay_object_info != nullptr) && (replay_object_info->object != nullptr) && (heap != nullptr));
 
