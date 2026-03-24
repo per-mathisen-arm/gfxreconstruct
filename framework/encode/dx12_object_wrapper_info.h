@@ -423,6 +423,7 @@ struct ID3D12ResourceInfo : public DxWrapperInfo
     D3D12_HEAP_TYPE                      heap_type{};
     D3D12_CPU_PAGE_PROPERTY              page_property{};
     D3D12_MEMORY_POOL                    memory_pool{};
+    D3D12_HEAP_FLAGS                     heap_flags{ D3D12_HEAP_FLAG_NONE };
     D3D12_RESOURCE_DIMENSION             dimension{ D3D12_RESOURCE_DIMENSION_UNKNOWN };
     D3D12_TEXTURE_LAYOUT                 layout{ D3D12_TEXTURE_LAYOUT_UNKNOWN };
     //// State tracking data:

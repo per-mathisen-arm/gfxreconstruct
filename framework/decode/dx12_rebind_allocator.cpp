@@ -334,7 +334,12 @@ HRESULT Dx12RebindAllocator::CreateHeap(format::HandleId            capture_id,
     }
 
     heap_id_desc_.insert_or_assign(capture_id, *pDesc);
-    const_cast<D3D12_HEAP_DESC*>(pDesc)->SizeInBytes = D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT;
+    // D3D12 spec: If tile mapping of reserved resources is used with a shared heap, the obtained heap reference is
+    // opened via CreateSharedHandle and OpenSharedHandle. This class does not support OpenSharedHandle.
+    if ((pDesc->Flags & D3D12_HEAP_FLAG_SHARED) != D3D12_HEAP_FLAG_SHARED)
+    {
+        const_cast<D3D12_HEAP_DESC*>(pDesc)->SizeInBytes = D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT;
+    }
 
     HRESULT result = device_->CreateHeap(pDesc, riid, ppvHeap);
 
@@ -366,7 +371,12 @@ HRESULT Dx12RebindAllocator::CreateHeap1(format::HandleId                       
     }
 
     heap_id_desc_.insert_or_assign(capture_id, *pDesc);
-    const_cast<D3D12_HEAP_DESC*>(pDesc)->SizeInBytes = D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT;
+    // D3D12 spec: If tile mapping of reserved resources is used with a shared heap, the obtained heap reference is
+    // opened via CreateSharedHandle and OpenSharedHandle. This class does not support OpenSharedHandle.
+    if ((pDesc->Flags & D3D12_HEAP_FLAG_SHARED) != D3D12_HEAP_FLAG_SHARED)
+    {
+        const_cast<D3D12_HEAP_DESC*>(pDesc)->SizeInBytes = D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT;
+    }
 
     graphics::dx12::ID3D12Device4ComPtr device4;
     device_->QueryInterface(IID_PPV_ARGS(&device4));

@@ -962,6 +962,7 @@ class D3D12CaptureManager : public ApiCaptureManager
                                       D3D12_HEAP_TYPE          heap_type,
                                       D3D12_CPU_PAGE_PROPERTY  page_property,
                                       D3D12_MEMORY_POOL        memory_pool,
+                                      D3D12_HEAP_FLAGS         heap_flags,
                                       D3D12_RESOURCE_STATES    initial_state,
                                       bool                     has_write_watch,
                                       ID3D12Heap_Wrapper*      heap_wrapper,
