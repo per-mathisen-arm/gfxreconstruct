@@ -156,9 +156,8 @@ TEST_CASE("BlockParser basic usage", "[wrapper]")
     bool err_triggered = false;
     auto err_handler   = [&err_triggered](gfxrecon::decode::BlockIOError, const char*) { err_triggered = true; };
 
-    auto                          buffer_pool = gfxrecon::util::HeapBufferPool::Create();
     gfxrecon::format::FileHeader  file_header = {};
-    gfxrecon::decode::BlockParser block_parser(err_handler, buffer_pool, nullptr, file_header);
+    gfxrecon::decode::BlockParser block_parser(err_handler, nullptr, file_header);
 
     // this should trigger some error
     block_parser.HandleBlockReadError(gfxrecon::decode::BlockIOError::kErrorReadingBlockData, "fatal fake error");

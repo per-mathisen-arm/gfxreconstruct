@@ -38,7 +38,7 @@ bool Dx12FileOptimizerARM::ProcessFunctionCall(decode::ParsedBlock& parsed_block
         return true;
     }
 
-    if (!parsed_block.Decompress(GetBlockParser()))
+    if (!parsed_block.Decompress(GetBlockParser(), working_uncompressed_store_))
     {
         return false;
     }
@@ -49,7 +49,14 @@ bool Dx12FileOptimizerARM::ProcessFunctionCall(decode::ParsedBlock& parsed_block
 
     // Dispatch call while applying modifiers
     auto modifier_dispatch_visitor = [this, &parsed_block, &buffer](const auto& store) {
-        return ModifierDispatch(*store, parsed_block, buffer);
+        if constexpr (std::is_same_v<std::decay_t<decltype(store)>, std::monostate>)
+        {
+            return true; // Passthrough unknown blocks.
+        }
+        else
+        {
+            return ModifierDispatch(*store, parsed_block, buffer);
+        }
     };
 
     return std::visit(modifier_dispatch_visitor, parsed_block.GetArgs());
@@ -65,7 +72,7 @@ bool Dx12FileOptimizerARM::ProcessMethodCall(decode::ParsedBlock& parsed_block)
         return true;
     }
 
-    if (!parsed_block.Decompress(GetBlockParser()))
+    if (!parsed_block.Decompress(GetBlockParser(), working_uncompressed_store_))
     {
         return false;
     }
@@ -76,7 +83,14 @@ bool Dx12FileOptimizerARM::ProcessMethodCall(decode::ParsedBlock& parsed_block)
 
     // Dispatch call while applying modifiers
     auto modifier_dispatch_visitor = [this, &parsed_block, &buffer](const auto& store) {
-        return ModifierDispatch(*store, parsed_block, buffer);
+        if constexpr (std::is_same_v<std::decay_t<decltype(store)>, std::monostate>)
+        {
+            return true; // Passthrough unknown blocks.
+        }
+        else
+        {
+            return ModifierDispatch(*store, parsed_block, buffer);
+        }
     };
 
     return std::visit(modifier_dispatch_visitor, parsed_block.GetArgs());
@@ -85,14 +99,23 @@ bool Dx12FileOptimizerARM::ProcessMethodCall(decode::ParsedBlock& parsed_block)
 bool Dx12FileOptimizerARM::ProcessMetaData(decode::ParsedBlock& parsed_block)
 {
     // Exit early if the call is filtered out by FileOptimizer
-    auto        filter_visitor = [this](const auto& store) { return FilterMetaData(*store); };
-    VisitResult result         = std::visit(filter_visitor, parsed_block.GetArgs());
+    auto filter_visitor = [this](const auto& store) {
+        if constexpr (std::is_same_v<std::decay_t<decltype(store)>, std::monostate>)
+        {
+            return VisitResult::kNeedsPassthrough; // Passthrough unknown blocks.
+        }
+        else
+        {
+            return FilterMetaData(*store);
+        }
+    };
+    VisitResult result = std::visit(filter_visitor, parsed_block.GetArgs());
     if (result != kNeedsPassthrough)
     {
         return result == kSuccess;
     }
 
-    if (!parsed_block.Decompress(GetBlockParser()))
+    if (!parsed_block.Decompress(GetBlockParser(), working_uncompressed_store_))
     {
         return false;
     }
@@ -102,7 +125,14 @@ bool Dx12FileOptimizerARM::ProcessMetaData(decode::ParsedBlock& parsed_block)
 
     // Dispatch call while applying modifiers
     auto modifier_dispatch_visitor = [this, &parsed_block, &buffer](const auto& store) {
-        return ModifierDispatch(*store, parsed_block, buffer);
+        if constexpr (std::is_same_v<std::decay_t<decltype(store)>, std::monostate>)
+        {
+            return true; // Passthrough unknown blocks.
+        }
+        else
+        {
+            return ModifierDispatch(*store, parsed_block, buffer);
+        }
     };
 
     return std::visit(modifier_dispatch_visitor, parsed_block.GetArgs());
@@ -115,7 +145,14 @@ bool Dx12FileOptimizerARM::ProcessFrameEndMarker(decode::ParsedBlock& parsed_blo
 
     // Dispatch call while applying modifiers
     auto modifier_dispatch_visitor = [this, &parsed_block, &buffer](const auto& store) {
-        return ModifierDispatch(*store, parsed_block, buffer);
+        if constexpr (std::is_same_v<std::decay_t<decltype(store)>, std::monostate>)
+        {
+            return true; // Passthrough unknown blocks.
+        }
+        else
+        {
+            return ModifierDispatch(*store, parsed_block, buffer);
+        }
     };
 
     return std::visit(modifier_dispatch_visitor, parsed_block.GetArgs());
