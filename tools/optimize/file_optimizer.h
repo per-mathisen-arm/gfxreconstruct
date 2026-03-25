@@ -88,6 +88,8 @@ class FileOptimizer : public decode::FileTransformer
     const std::unordered_set<uint64_t>&         unreferenced_blocks_;
     const std::unordered_set<format::ThreadId>& removed_threads_ids_;
     uint32_t                                    num_removed_blocks_ = 0;
+
+    util::HeapBuffer working_uncompressed_store_;
 };
 
 GFXRECON_END_NAMESPACE(gfxrecon)
