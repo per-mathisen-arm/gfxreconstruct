@@ -55,9 +55,6 @@ T* MakeUnwrapStructs(const T* values, size_t len, HandleUnwrapMemory* unwrap_mem
     return reinterpret_cast<T*>(unwrap_memory->GetFilledBuffer(bytes, num_bytes));
 }
 
-VkBufferMemoryBarrier* TrackStruct(const VkBufferMemoryBarrier* value, HandleUnwrapMemory* unwrap_memory);
-VkImageMemoryBarrier* TrackStruct(const VkImageMemoryBarrier* value, HandleUnwrapMemory* unwrap_memory);
-VkMemoryBarrier* TrackStruct(const VkMemoryBarrier* value, HandleUnwrapMemory* unwrap_memory);
 VkApplicationInfo* TrackStruct(const VkApplicationInfo* value, HandleUnwrapMemory* unwrap_memory);
 VkInstanceCreateInfo* TrackStruct(const VkInstanceCreateInfo* value, HandleUnwrapMemory* unwrap_memory);
 VkDeviceQueueCreateInfo* TrackStruct(const VkDeviceQueueCreateInfo* value, HandleUnwrapMemory* unwrap_memory);
@@ -76,6 +73,9 @@ VkCommandPoolCreateInfo* TrackStruct(const VkCommandPoolCreateInfo* value, Handl
 VkCommandBufferAllocateInfo* TrackStruct(const VkCommandBufferAllocateInfo* value, HandleUnwrapMemory* unwrap_memory);
 VkCommandBufferInheritanceInfo* TrackStruct(const VkCommandBufferInheritanceInfo* value, HandleUnwrapMemory* unwrap_memory);
 VkCommandBufferBeginInfo* TrackStruct(const VkCommandBufferBeginInfo* value, HandleUnwrapMemory* unwrap_memory);
+VkBufferMemoryBarrier* TrackStruct(const VkBufferMemoryBarrier* value, HandleUnwrapMemory* unwrap_memory);
+VkImageMemoryBarrier* TrackStruct(const VkImageMemoryBarrier* value, HandleUnwrapMemory* unwrap_memory);
+VkMemoryBarrier* TrackStruct(const VkMemoryBarrier* value, HandleUnwrapMemory* unwrap_memory);
 VkEventCreateInfo* TrackStruct(const VkEventCreateInfo* value, HandleUnwrapMemory* unwrap_memory);
 VkBufferViewCreateInfo* TrackStruct(const VkBufferViewCreateInfo* value, HandleUnwrapMemory* unwrap_memory);
 VkShaderModuleCreateInfo* TrackStruct(const VkShaderModuleCreateInfo* value, HandleUnwrapMemory* unwrap_memory);
@@ -89,15 +89,15 @@ VkDescriptorPoolCreateInfo* TrackStruct(const VkDescriptorPoolCreateInfo* value,
 VkDescriptorSetAllocateInfo* TrackStruct(const VkDescriptorSetAllocateInfo* value, HandleUnwrapMemory* unwrap_memory);
 VkDescriptorSetLayoutCreateInfo* TrackStruct(const VkDescriptorSetLayoutCreateInfo* value, HandleUnwrapMemory* unwrap_memory);
 VkWriteDescriptorSet* TrackStruct(const VkWriteDescriptorSet* value, HandleUnwrapMemory* unwrap_memory);
-VkPipelineVertexInputStateCreateInfo* TrackStruct(const VkPipelineVertexInputStateCreateInfo* value, HandleUnwrapMemory* unwrap_memory);
-VkPipelineInputAssemblyStateCreateInfo* TrackStruct(const VkPipelineInputAssemblyStateCreateInfo* value, HandleUnwrapMemory* unwrap_memory);
-VkPipelineTessellationStateCreateInfo* TrackStruct(const VkPipelineTessellationStateCreateInfo* value, HandleUnwrapMemory* unwrap_memory);
-VkPipelineViewportStateCreateInfo* TrackStruct(const VkPipelineViewportStateCreateInfo* value, HandleUnwrapMemory* unwrap_memory);
-VkPipelineRasterizationStateCreateInfo* TrackStruct(const VkPipelineRasterizationStateCreateInfo* value, HandleUnwrapMemory* unwrap_memory);
-VkPipelineMultisampleStateCreateInfo* TrackStruct(const VkPipelineMultisampleStateCreateInfo* value, HandleUnwrapMemory* unwrap_memory);
-VkPipelineDepthStencilStateCreateInfo* TrackStruct(const VkPipelineDepthStencilStateCreateInfo* value, HandleUnwrapMemory* unwrap_memory);
 VkPipelineColorBlendStateCreateInfo* TrackStruct(const VkPipelineColorBlendStateCreateInfo* value, HandleUnwrapMemory* unwrap_memory);
+VkPipelineDepthStencilStateCreateInfo* TrackStruct(const VkPipelineDepthStencilStateCreateInfo* value, HandleUnwrapMemory* unwrap_memory);
 VkPipelineDynamicStateCreateInfo* TrackStruct(const VkPipelineDynamicStateCreateInfo* value, HandleUnwrapMemory* unwrap_memory);
+VkPipelineInputAssemblyStateCreateInfo* TrackStruct(const VkPipelineInputAssemblyStateCreateInfo* value, HandleUnwrapMemory* unwrap_memory);
+VkPipelineMultisampleStateCreateInfo* TrackStruct(const VkPipelineMultisampleStateCreateInfo* value, HandleUnwrapMemory* unwrap_memory);
+VkPipelineRasterizationStateCreateInfo* TrackStruct(const VkPipelineRasterizationStateCreateInfo* value, HandleUnwrapMemory* unwrap_memory);
+VkPipelineTessellationStateCreateInfo* TrackStruct(const VkPipelineTessellationStateCreateInfo* value, HandleUnwrapMemory* unwrap_memory);
+VkPipelineVertexInputStateCreateInfo* TrackStruct(const VkPipelineVertexInputStateCreateInfo* value, HandleUnwrapMemory* unwrap_memory);
+VkPipelineViewportStateCreateInfo* TrackStruct(const VkPipelineViewportStateCreateInfo* value, HandleUnwrapMemory* unwrap_memory);
 VkGraphicsPipelineCreateInfo* TrackStruct(const VkGraphicsPipelineCreateInfo* value, HandleUnwrapMemory* unwrap_memory);
 VkFramebufferCreateInfo* TrackStruct(const VkFramebufferCreateInfo* value, HandleUnwrapMemory* unwrap_memory);
 VkRenderPassCreateInfo* TrackStruct(const VkRenderPassCreateInfo* value, HandleUnwrapMemory* unwrap_memory);
@@ -167,12 +167,12 @@ VkRenderPassMultiviewCreateInfo* TrackStruct(const VkRenderPassMultiviewCreateIn
 VkPhysicalDeviceMultiviewFeatures* TrackStruct(const VkPhysicalDeviceMultiviewFeatures* value, HandleUnwrapMemory* unwrap_memory);
 VkPhysicalDeviceMultiviewProperties* TrackStruct(const VkPhysicalDeviceMultiviewProperties* value, HandleUnwrapMemory* unwrap_memory);
 VkPhysicalDeviceShaderDrawParametersFeatures* TrackStruct(const VkPhysicalDeviceShaderDrawParametersFeatures* value, HandleUnwrapMemory* unwrap_memory);
+VkPhysicalDeviceDriverProperties* TrackStruct(const VkPhysicalDeviceDriverProperties* value, HandleUnwrapMemory* unwrap_memory);
 VkPhysicalDeviceVulkan11Features* TrackStruct(const VkPhysicalDeviceVulkan11Features* value, HandleUnwrapMemory* unwrap_memory);
 VkPhysicalDeviceVulkan11Properties* TrackStruct(const VkPhysicalDeviceVulkan11Properties* value, HandleUnwrapMemory* unwrap_memory);
 VkPhysicalDeviceVulkan12Features* TrackStruct(const VkPhysicalDeviceVulkan12Features* value, HandleUnwrapMemory* unwrap_memory);
 VkPhysicalDeviceVulkan12Properties* TrackStruct(const VkPhysicalDeviceVulkan12Properties* value, HandleUnwrapMemory* unwrap_memory);
 VkImageFormatListCreateInfo* TrackStruct(const VkImageFormatListCreateInfo* value, HandleUnwrapMemory* unwrap_memory);
-VkPhysicalDeviceDriverProperties* TrackStruct(const VkPhysicalDeviceDriverProperties* value, HandleUnwrapMemory* unwrap_memory);
 VkPhysicalDeviceVulkanMemoryModelFeatures* TrackStruct(const VkPhysicalDeviceVulkanMemoryModelFeatures* value, HandleUnwrapMemory* unwrap_memory);
 VkPhysicalDeviceHostQueryResetFeatures* TrackStruct(const VkPhysicalDeviceHostQueryResetFeatures* value, HandleUnwrapMemory* unwrap_memory);
 VkPhysicalDeviceTimelineSemaphoreFeatures* TrackStruct(const VkPhysicalDeviceTimelineSemaphoreFeatures* value, HandleUnwrapMemory* unwrap_memory);
@@ -204,16 +204,16 @@ VkAttachmentDescription2* TrackStruct(const VkAttachmentDescription2* value, Han
 VkAttachmentReference2* TrackStruct(const VkAttachmentReference2* value, HandleUnwrapMemory* unwrap_memory);
 VkSubpassDescription2* TrackStruct(const VkSubpassDescription2* value, HandleUnwrapMemory* unwrap_memory);
 VkSubpassDependency2* TrackStruct(const VkSubpassDependency2* value, HandleUnwrapMemory* unwrap_memory);
-VkRenderPassCreateInfo2* TrackStruct(const VkRenderPassCreateInfo2* value, HandleUnwrapMemory* unwrap_memory);
 VkSubpassBeginInfo* TrackStruct(const VkSubpassBeginInfo* value, HandleUnwrapMemory* unwrap_memory);
 VkSubpassEndInfo* TrackStruct(const VkSubpassEndInfo* value, HandleUnwrapMemory* unwrap_memory);
+VkRenderPassCreateInfo2* TrackStruct(const VkRenderPassCreateInfo2* value, HandleUnwrapMemory* unwrap_memory);
 VkSubpassDescriptionDepthStencilResolve* TrackStruct(const VkSubpassDescriptionDepthStencilResolve* value, HandleUnwrapMemory* unwrap_memory);
 VkPhysicalDeviceDepthStencilResolveProperties* TrackStruct(const VkPhysicalDeviceDepthStencilResolveProperties* value, HandleUnwrapMemory* unwrap_memory);
 VkImageStencilUsageCreateInfo* TrackStruct(const VkImageStencilUsageCreateInfo* value, HandleUnwrapMemory* unwrap_memory);
 VkPhysicalDeviceImagelessFramebufferFeatures* TrackStruct(const VkPhysicalDeviceImagelessFramebufferFeatures* value, HandleUnwrapMemory* unwrap_memory);
 VkFramebufferAttachmentImageInfo* TrackStruct(const VkFramebufferAttachmentImageInfo* value, HandleUnwrapMemory* unwrap_memory);
-VkFramebufferAttachmentsCreateInfo* TrackStruct(const VkFramebufferAttachmentsCreateInfo* value, HandleUnwrapMemory* unwrap_memory);
 VkRenderPassAttachmentBeginInfo* TrackStruct(const VkRenderPassAttachmentBeginInfo* value, HandleUnwrapMemory* unwrap_memory);
+VkFramebufferAttachmentsCreateInfo* TrackStruct(const VkFramebufferAttachmentsCreateInfo* value, HandleUnwrapMemory* unwrap_memory);
 VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures* TrackStruct(const VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures* value, HandleUnwrapMemory* unwrap_memory);
 VkAttachmentReferenceStencilLayout* TrackStruct(const VkAttachmentReferenceStencilLayout* value, HandleUnwrapMemory* unwrap_memory);
 VkAttachmentDescriptionStencilLayout* TrackStruct(const VkAttachmentDescriptionStencilLayout* value, HandleUnwrapMemory* unwrap_memory);
@@ -279,9 +279,9 @@ VkMemoryMapInfo* TrackStruct(const VkMemoryMapInfo* value, HandleUnwrapMemory* u
 VkMemoryUnmapInfo* TrackStruct(const VkMemoryUnmapInfo* value, HandleUnwrapMemory* unwrap_memory);
 VkPhysicalDeviceMaintenance5Features* TrackStruct(const VkPhysicalDeviceMaintenance5Features* value, HandleUnwrapMemory* unwrap_memory);
 VkPhysicalDeviceMaintenance5Properties* TrackStruct(const VkPhysicalDeviceMaintenance5Properties* value, HandleUnwrapMemory* unwrap_memory);
+VkSubresourceLayout2* TrackStruct(const VkSubresourceLayout2* value, HandleUnwrapMemory* unwrap_memory);
 VkImageSubresource2* TrackStruct(const VkImageSubresource2* value, HandleUnwrapMemory* unwrap_memory);
 VkDeviceImageSubresourceInfo* TrackStruct(const VkDeviceImageSubresourceInfo* value, HandleUnwrapMemory* unwrap_memory);
-VkSubresourceLayout2* TrackStruct(const VkSubresourceLayout2* value, HandleUnwrapMemory* unwrap_memory);
 VkBufferUsageFlags2CreateInfo* TrackStruct(const VkBufferUsageFlags2CreateInfo* value, HandleUnwrapMemory* unwrap_memory);
 VkPhysicalDeviceMaintenance6Features* TrackStruct(const VkPhysicalDeviceMaintenance6Features* value, HandleUnwrapMemory* unwrap_memory);
 VkPhysicalDeviceMaintenance6Properties* TrackStruct(const VkPhysicalDeviceMaintenance6Properties* value, HandleUnwrapMemory* unwrap_memory);
@@ -650,6 +650,7 @@ VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV* TrackStruct(const VkPhysic
 VkPipelineRepresentativeFragmentTestStateCreateInfoNV* TrackStruct(const VkPipelineRepresentativeFragmentTestStateCreateInfoNV* value, HandleUnwrapMemory* unwrap_memory);
 VkPhysicalDeviceImageViewImageFormatInfoEXT* TrackStruct(const VkPhysicalDeviceImageViewImageFormatInfoEXT* value, HandleUnwrapMemory* unwrap_memory);
 VkFilterCubicImageViewImageFormatPropertiesEXT* TrackStruct(const VkFilterCubicImageViewImageFormatPropertiesEXT* value, HandleUnwrapMemory* unwrap_memory);
+VkPhysicalDeviceCooperativeMatrixConversionFeaturesQCOM* TrackStruct(const VkPhysicalDeviceCooperativeMatrixConversionFeaturesQCOM* value, HandleUnwrapMemory* unwrap_memory);
 VkImportMemoryHostPointerInfoEXT* TrackStruct(const VkImportMemoryHostPointerInfoEXT* value, HandleUnwrapMemory* unwrap_memory);
 VkMemoryHostPointerPropertiesEXT* TrackStruct(const VkMemoryHostPointerPropertiesEXT* value, HandleUnwrapMemory* unwrap_memory);
 VkPhysicalDeviceExternalMemoryHostPropertiesEXT* TrackStruct(const VkPhysicalDeviceExternalMemoryHostPropertiesEXT* value, HandleUnwrapMemory* unwrap_memory);
@@ -1087,6 +1088,7 @@ VkPhysicalDeviceShaderUniformBufferUnsizedArrayFeaturesEXT* TrackStruct(const Vk
 VkComputeOccupancyPriorityParametersNV* TrackStruct(const VkComputeOccupancyPriorityParametersNV* value, HandleUnwrapMemory* unwrap_memory);
 VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV* TrackStruct(const VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV* value, HandleUnwrapMemory* unwrap_memory);
 VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT* TrackStruct(const VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT* value, HandleUnwrapMemory* unwrap_memory);
+VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE* TrackStruct(const VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE* value, HandleUnwrapMemory* unwrap_memory);
 VkAccelerationStructureGeometryTrianglesDataKHR* TrackStruct(const VkAccelerationStructureGeometryTrianglesDataKHR* value, HandleUnwrapMemory* unwrap_memory);
 VkAccelerationStructureGeometryAabbsDataKHR* TrackStruct(const VkAccelerationStructureGeometryAabbsDataKHR* value, HandleUnwrapMemory* unwrap_memory);
 VkAccelerationStructureGeometryInstancesDataKHR* TrackStruct(const VkAccelerationStructureGeometryInstancesDataKHR* value, HandleUnwrapMemory* unwrap_memory);
