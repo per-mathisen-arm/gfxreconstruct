@@ -1012,101 +1012,74 @@ bool CullDescriptor(CommandImageSubresourceIterator cmd_subresources_entry,
 
     return false;
 }
-VkResult CreateAndBeginCommandBuffer(graphics::FindQueueFamilyIndex_fp  queue_finder_fp,
-                                     const VulkanDeviceInfo*            device_info,
-                                     const graphics::VulkanDeviceTable& device_table,
-                                     TemporaryCommandBuffer&            cmd_buf_objects)
-{
-    GFXRECON_ASSERT(device_info != nullptr);
 
-    const uint32_t compute_queue_index = queue_finder_fp(device_info->enabled_queue_family_flags);
-    GFXRECON_ASSERT(compute_queue_index != VK_QUEUE_FAMILY_IGNORED);
+VkResult TemporaryCommandBuffer::CreateAndBegin(graphics::FindQueueFamilyIndex_fp queue_finder_fp)
+{
+    const uint32_t queue_index = queue_finder_fp(device_info.enabled_queue_family_flags);
+    GFXRECON_ASSERT(queue_index != VK_QUEUE_FAMILY_IGNORED);
 
     const VkCommandPoolCreateInfo pool_create_info = { VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
                                                        nullptr,
                                                        VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
-                                                       compute_queue_index };
-    VkResult                      res =
-        device_table.CreateCommandPool(device_info->handle, &pool_create_info, nullptr, &cmd_buf_objects.command_pool);
+                                                       queue_index };
+    VkResult res = device_table.CreateCommandPool(device_info.handle, &pool_create_info, nullptr, &command_pool);
     if (res != VK_SUCCESS)
     {
         GFXRECON_LOG_ERROR("%s() CreateCommandPool failed (%s)", __func__, util::ToString(res).c_str());
         return res;
     }
 
-    const VkCommandBufferAllocateInfo alloc_info = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-                                                     nullptr,
-                                                     cmd_buf_objects.command_pool,
-                                                     VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-                                                     1 };
-    res = device_table.AllocateCommandBuffers(device_info->handle, &alloc_info, &cmd_buf_objects.command_buffer);
+    const VkCommandBufferAllocateInfo alloc_info = {
+        VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, nullptr, command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1
+    };
+    res = device_table.AllocateCommandBuffers(device_info.handle, &alloc_info, &command_buffer);
     if (res != VK_SUCCESS)
     {
         GFXRECON_LOG_ERROR("%s() AllocateCommandBuffers failed (%s)", __func__, util::ToString(res).c_str());
         return res;
     }
 
-    device_table.GetDeviceQueue(device_info->handle, compute_queue_index, 0, &cmd_buf_objects.queue);
+    device_table.GetDeviceQueue(device_info.handle, queue_index, 0, &queue);
 
-    device_table.ResetCommandBuffer(cmd_buf_objects.command_buffer, VkCommandBufferResetFlagBits(0));
+    device_table.ResetCommandBuffer(command_buffer, VkCommandBufferResetFlagBits(0));
 
     const VkCommandBufferBeginInfo begin_info = {
         VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr
     };
 
-    res = device_table.BeginCommandBuffer(cmd_buf_objects.command_buffer, &begin_info);
+    res = device_table.BeginCommandBuffer(command_buffer, &begin_info);
     if (res != VK_SUCCESS)
     {
         GFXRECON_LOG_ERROR("%s() BeginCommandBuffer failed (%s)", __func__, util::ToString(res).c_str());
         return res;
     }
 
-    cmd_buf_objects.device_info  = device_info;
-    cmd_buf_objects.device_table = &device_table;
-
     return VK_SUCCESS;
 }
 
-VkResult SubmitAndDestroyCommandBuffer(const TemporaryCommandBuffer& cmd_buf_objects)
+VkResult TemporaryCommandBuffer::SubmitAndDestroy()
 {
-    GFXRECON_ASSERT(cmd_buf_objects.device_table != nullptr);
-    GFXRECON_ASSERT(cmd_buf_objects.device_info != nullptr);
-    GFXRECON_ASSERT(cmd_buf_objects.command_buffer != VK_NULL_HANDLE);
-    GFXRECON_ASSERT(cmd_buf_objects.queue != VK_NULL_HANDLE);
-    GFXRECON_ASSERT(cmd_buf_objects.command_pool != VK_NULL_HANDLE);
+    GFXRECON_ASSERT(command_buffer != VK_NULL_HANDLE);
+    GFXRECON_ASSERT(queue != VK_NULL_HANDLE);
+    GFXRECON_ASSERT(command_pool != VK_NULL_HANDLE);
 
-    const VkFenceCreateInfo fence_info = { VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, nullptr, VkFenceCreateFlags(0) };
-    VkFence                 fence;
-    VkResult                res =
-        cmd_buf_objects.device_table->CreateFence(cmd_buf_objects.device_info->handle, &fence_info, nullptr, &fence);
+    TemporaryFence fence(device_info.handle, device_table);
+
+    device_table.EndCommandBuffer(command_buffer);
+
+    const VkSubmitInfo submit_info = {
+        VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 0, nullptr, nullptr, 1, &command_buffer, 0, nullptr
+    };
+    device_table.QueueSubmit(queue, 1, &submit_info, fence.handle);
+
+    VkResult res = fence.Wait();
     if (res != VK_SUCCESS)
     {
-        GFXRECON_LOG_ERROR("%s() CreateFence failed (%s)", __func__, util::ToString(res).c_str());
         return res;
     }
 
-    cmd_buf_objects.device_table->EndCommandBuffer(cmd_buf_objects.command_buffer);
-
-    cmd_buf_objects.device_table->ResetFences(cmd_buf_objects.device_info->handle, 1, &fence);
-
-    const VkSubmitInfo submit_info = { VK_STRUCTURE_TYPE_SUBMIT_INFO,   nullptr, 0,      nullptr, nullptr, 1,
-                                       &cmd_buf_objects.command_buffer, 0,       nullptr };
-    cmd_buf_objects.device_table->QueueSubmit(cmd_buf_objects.queue, 1, &submit_info, fence);
-
-    // Wait a sensible amount of time (10 seconds) in case we did something that can cause the GPU to hang or
-    // crash.
-    res = cmd_buf_objects.device_table->WaitForFences(
-        cmd_buf_objects.device_info->handle, 1, &fence, VK_TRUE, 10000000000);
-    if (res != VK_SUCCESS)
-    {
-        GFXRECON_LOG_ERROR("%s: WaitForFences failed (%s)", __func__, util::ToString(res).c_str())
-        return res;
-    }
-
-    cmd_buf_objects.device_table->DestroyCommandPool(
-        cmd_buf_objects.device_info->handle, cmd_buf_objects.command_pool, nullptr);
-
-    cmd_buf_objects.device_table->DestroyFence(cmd_buf_objects.device_info->handle, fence, nullptr);
+    device_table.DestroyCommandPool(device_info.handle, command_pool, nullptr);
+    command_pool = VK_NULL_HANDLE;
 
     return VK_SUCCESS;
 }
@@ -1213,30 +1186,6 @@ static VkResult SerializeAccelerationStructure(AccelerationStructureDumpResource
     // VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR
     for (uint32_t i = 0; i < query_count; ++i)
     {
-        GFXRECON_ASSERT(acceleration_structure->as_info != nullptr);
-        const VkBufferMemoryBarrier as_buf_mem_barrier = {
-            VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
-            nullptr,
-            VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_TRANSFER_WRITE_BIT,
-            VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR | VK_ACCESS_TRANSFER_READ_BIT,
-            VK_QUEUE_FAMILY_IGNORED,
-            VK_QUEUE_FAMILY_IGNORED,
-            acceleration_structure->as_info->buffer,
-            0,
-            VK_WHOLE_SIZE
-        };
-        device_table.CmdPipelineBarrier(
-            cmd_buffer,
-            VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR | VK_PIPELINE_STAGE_TRANSFER_BIT,
-            VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR | VK_PIPELINE_STAGE_TRANSFER_BIT,
-            VkDependencyFlagBits(0),
-            0,
-            nullptr,
-            1,
-            &as_buf_mem_barrier,
-            0,
-            nullptr);
-
         device_table.CmdWriteAccelerationStructuresPropertiesKHR(
             cmd_buffer,
             1,
@@ -1256,35 +1205,19 @@ static VkResult SerializeAccelerationStructure(AccelerationStructureDumpResource
         return VK_ERROR_UNKNOWN;
     }
 
-    const VkFenceCreateInfo fci = { VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, nullptr, 0 };
-    VkFence                 fence;
-    res = device_table.CreateFence(device, &fci, nullptr, &fence);
-    if (res != VK_SUCCESS)
-    {
-        GFXRECON_LOG_ERROR("%s: CreateFence failed (%s)", __func__, util::ToString(res).c_str())
-        return res;
-    }
-
-    res = device_table.ResetFences(device, 1, &fence);
-    if (res != VK_SUCCESS)
-    {
-        GFXRECON_LOG_ERROR("%s: ResetFences failed (%s)", __func__, util::ToString(res).c_str())
-        return res;
-    }
+    TemporaryFence fence(device, device_table);
 
     const VkSubmitInfo si = { VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 0, nullptr, nullptr, 1, &cmd_buffer, 0, nullptr };
-    res                   = device_table.QueueSubmit(compute_queue, 1, &si, fence);
+    res                   = device_table.QueueSubmit(compute_queue, 1, &si, fence.handle);
     if (res != VK_SUCCESS)
     {
         GFXRECON_LOG_ERROR("%s: QueueSubmit failed (%s)", __func__, util::ToString(res).c_str())
         return res;
     }
 
-    // Wait a sensible amount of time (10 seconds) in case we did something that can cause the GPU to hang or crash.
-    res = device_table.WaitForFences(device, 1, &fence, VK_TRUE, 10000000000);
+    res = fence.Wait();
     if (res != VK_SUCCESS)
     {
-        GFXRECON_LOG_ERROR("%s: WaitForFences failed (%s)", __func__, util::ToString(res).c_str())
         return res;
     }
 
@@ -1329,9 +1262,7 @@ static VkResult SerializeAccelerationStructure(AccelerationStructureDumpResource
             continue;
         }
 
-        // These should be NULL otherwise we are leaking objects
-        GFXRECON_ASSERT(acceleration_structure->serialized_data.buffer == VK_NULL_HANDLE &&
-                        acceleration_structure->serialized_data.memory == VK_NULL_HANDLE);
+        acceleration_structure->ReleaseSerializedResources();
         res = CreateVkBuffer(serialized_size,
                              device_table,
                              device,
@@ -1390,163 +1321,30 @@ static VkResult SerializeAccelerationStructure(AccelerationStructureDumpResource
 
     device_table.EndCommandBuffer(cmd_buffer);
 
-    res = device_table.ResetFences(device, 1, &fence);
+    res = fence.Reset();
     if (res != VK_SUCCESS)
     {
-        GFXRECON_LOG_ERROR("%s: ResetFences failed (%s)", __func__, util::ToString(res).c_str())
         return res;
     }
 
-    res = device_table.QueueSubmit(compute_queue, 1, &si, fence);
+    res = device_table.QueueSubmit(compute_queue, 1, &si, fence.handle);
     if (res != VK_SUCCESS)
     {
         GFXRECON_LOG_ERROR("%s: QueueSubmit (2) failed (%s)", __func__, util::ToString(res).c_str())
         return res;
     }
 
-    // Wait a sensible amount of time (10 seconds) in case we did something that can cause the GPU to hang or crash.
-    res = device_table.WaitForFences(device, 1, &fence, VK_TRUE, 10000000000);
+    res = fence.Wait();
     if (res != VK_SUCCESS)
     {
-        GFXRECON_LOG_ERROR("%s: WaitForFences (2) failed (%s)", __func__, util::ToString(res).c_str())
         return res;
     }
 
     // Release temporary vulkan objects
     device_table.DestroyCommandPool(device, cmd_pool, nullptr);
     device_table.DestroyQueryPool(device, query_pool, nullptr);
-    device_table.DestroyFence(device, fence, nullptr);
 
     return VK_SUCCESS;
-}
-
-void AccelerationStructureDumpResourcesContext::ReleaseResources()
-{
-    if (as_info == nullptr)
-    {
-        return;
-    }
-
-    const VulkanDeviceInfo* device_info = object_info_table.GetVkDeviceInfo(as_info->parent_id);
-    GFXRECON_ASSERT(device_info != nullptr);
-
-    const VkDevice device = device_info->handle;
-
-    as_info = nullptr;
-
-    if (serialized_data.buffer != VK_NULL_HANDLE)
-    {
-        device_table.DestroyBuffer(device, serialized_data.buffer, nullptr);
-        serialized_data.buffer = VK_NULL_HANDLE;
-    }
-
-    if (serialized_data.memory != VK_NULL_HANDLE)
-    {
-        device_table.FreeMemory(device, serialized_data.memory, nullptr);
-        serialized_data.memory = VK_NULL_HANDLE;
-    }
-
-    serialized_data.size = 0;
-
-    for (auto& as_data : as_build_objects)
-    {
-        if (auto* triangles = std::get_if<AccelerationStructureDumpResourcesContext::Triangles>(&as_data))
-        {
-            triangles->vertex_format      = VK_FORMAT_UNDEFINED;
-            triangles->vertex_buffer_size = 0;
-
-            if (triangles->vertex_buffer != VK_NULL_HANDLE)
-            {
-                device_table.DestroyBuffer(device, triangles->vertex_buffer, nullptr);
-                triangles->vertex_buffer = VK_NULL_HANDLE;
-            }
-
-            if (triangles->vertex_buffer_memory != VK_NULL_HANDLE)
-            {
-                device_table.FreeMemory(device, triangles->vertex_buffer_memory, nullptr);
-                triangles->vertex_buffer_memory = VK_NULL_HANDLE;
-            }
-
-            triangles->index_type        = VK_INDEX_TYPE_NONE_KHR;
-            triangles->index_buffer_size = 0;
-
-            if (triangles->index_buffer != VK_NULL_HANDLE)
-            {
-                device_table.DestroyBuffer(device, triangles->index_buffer, nullptr);
-                triangles->index_buffer = VK_NULL_HANDLE;
-            }
-
-            if (triangles->index_buffer_memory != VK_NULL_HANDLE)
-            {
-                device_table.FreeMemory(device, triangles->index_buffer_memory, nullptr);
-                triangles->index_buffer_memory = VK_NULL_HANDLE;
-            }
-
-            if (triangles->transform_buffer != VK_NULL_HANDLE)
-            {
-                device_table.DestroyBuffer(device, triangles->transform_buffer, nullptr);
-                triangles->transform_buffer = VK_NULL_HANDLE;
-            }
-
-            if (triangles->transform_buffer_memory != VK_NULL_HANDLE)
-            {
-                device_table.FreeMemory(device, triangles->transform_buffer_memory, nullptr);
-                triangles->transform_buffer_memory = VK_NULL_HANDLE;
-            }
-        }
-        else if (auto* instance = std::get_if<AccelerationStructureDumpResourcesContext::Instances>(&as_data))
-        {
-            instance->instance_count       = 0;
-            instance->instance_buffer_size = 0;
-
-            if (instance->instance_buffer != VK_NULL_HANDLE)
-            {
-                device_table.DestroyBuffer(device, instance->instance_buffer, nullptr);
-                instance->instance_buffer = VK_NULL_HANDLE;
-            }
-
-            if (instance->instance_buffer_memory != VK_NULL_HANDLE)
-            {
-                device_table.FreeMemory(device, instance->instance_buffer_memory, nullptr);
-                instance->instance_buffer_memory = VK_NULL_HANDLE;
-            }
-
-            if (instance->compute_ppl != VK_NULL_HANDLE)
-            {
-                device_table.DestroyPipeline(device, instance->compute_ppl, nullptr);
-                instance->compute_ppl = VK_NULL_HANDLE;
-            }
-
-            if (instance->compute_ppl_layout != VK_NULL_HANDLE)
-            {
-                device_table.DestroyPipelineLayout(device, instance->compute_ppl_layout, nullptr);
-                instance->compute_ppl_layout = VK_NULL_HANDLE;
-            }
-        }
-        else if (auto* aabb = std::get_if<AccelerationStructureDumpResourcesContext::AABBS>(&as_data))
-        {
-            aabb->buffer_size = 0;
-
-            if (aabb->buffer != VK_NULL_HANDLE)
-            {
-                device_table.DestroyBuffer(device, aabb->buffer, nullptr);
-                aabb->buffer = VK_NULL_HANDLE;
-            }
-
-            if (aabb->buffer_memory != VK_NULL_HANDLE)
-            {
-                device_table.FreeMemory(device, aabb->buffer_memory, nullptr);
-                aabb->buffer_memory = VK_NULL_HANDLE;
-            }
-        }
-        else
-        {
-            GFXRECON_LOG_ERROR("Unexpected as data entry");
-            GFXRECON_ASSERT(0);
-        }
-    }
-
-    as_build_objects.clear();
 }
 
 static VkResult DumpBLAS(DumpedAccelerationStructure&                      dumped_as,
@@ -1662,7 +1460,7 @@ static VkResult DumpBLAS(DumpedAccelerationStructure&                      dumpe
         return res;
     }
 
-    // Fetch serialized data for TLAS
+    // Fetch serialized data for BLAS
     if (as_context->serialized_data.buffer != VK_NULL_HANDLE)
     {
         dumped_as.serialized_buffer.size               = as_context->serialized_data.size;
@@ -1694,7 +1492,8 @@ static VkResult DumpTLAS(DumpedAccelerationStructure&                      dumpe
                          const graphics::VulkanDeviceTable&                device_table,
                          const CommonObjectInfoTable&                      object_info_table,
                          const graphics::VulkanInstanceTable&              instance_table,
-                         const VulkanPerDeviceAddressTrackers&             address_trackers)
+                         const VulkanPerDeviceAddressTrackers&             address_trackers,
+                         bool                                              use_capture_addresses)
 {
     const VulkanAccelerationStructureKHRInfo* as_info = dumped_as.as_info;
     GFXRECON_ASSERT(as_info != nullptr);
@@ -1748,28 +1547,27 @@ static VkResult DumpTLAS(DumpedAccelerationStructure&                      dumpe
         for (uint32_t i = 0; i < instance_build_data->instance_count; ++i)
         {
             // Get all BLASes associated with the referenced device address
-            const auto blases_infos = device_address_tracker.GetAccelerationStructuresByCaptureDeviceAddress(
-                static_cast<VkDeviceAddress>(instances[i].accelerationStructureReference));
+            const auto blases_infos =
+                use_capture_addresses ? device_address_tracker.GetAccelerationStructuresByCaptureDeviceAddress(
+                                            static_cast<VkDeviceAddress>(instances[i].accelerationStructureReference))
+                                      : device_address_tracker.GetAccelerationStructuresByReplayDeviceAddress(
+                                            static_cast<VkDeviceAddress>(instances[i].accelerationStructureReference));
             if (blases_infos.empty())
             {
                 continue;
             }
 
-            for (auto blas_it = blases_infos.begin(); blas_it != blases_infos.end(); ++blas_it)
+            for (format::HandleId blas_id : blases_infos)
             {
-                if (*blas_it == format::kNullHandleId)
+                auto blas_ptr = object_info_table.GetVkAccelerationStructureKHRInfo(blas_id);
+                auto blas_it  = &blas_ptr;
+
+                if (*blas_it == nullptr)
                 {
                     continue;
                 }
 
-                auto blas = device_address_tracker.GetAccelerationStructureByID(*blas_it);
-
-                if (blas == nullptr)
-                {
-                    continue;
-                }
-
-                const auto blas_context_entry = acceleration_structures_context.find(blas);
+                const auto blas_context_entry = acceleration_structures_context.find(*blas_it);
                 // It is valid for a TLAS to reference BLASes which have not yet been built
                 // (vkCmdBuildAccelerationStructuresIndirectKHR has not been called for the
                 // VkAccelerationStructureKHR). This works as that BLAS can alias the memory of another BLAS which
@@ -1846,7 +1644,8 @@ VkResult DumpAccelerationStructure(DumpedAccelerationStructure&                 
                                    const graphics::VulkanDeviceTable&                device_table,
                                    const CommonObjectInfoTable&                      object_info_table,
                                    const graphics::VulkanInstanceTable&              instance_table,
-                                   const VulkanPerDeviceAddressTrackers&             address_trackers)
+                                   const VulkanPerDeviceAddressTrackers&             address_trackers,
+                                   bool                                              use_capture_addresses)
 {
     const VulkanAccelerationStructureKHRInfo* as_info = dumped_as.as_info;
     GFXRECON_ASSERT(as_info != nullptr);
@@ -1862,7 +1661,8 @@ VkResult DumpAccelerationStructure(DumpedAccelerationStructure&                 
                        device_table,
                        object_info_table,
                        instance_table,
-                       address_trackers);
+                       address_trackers,
+                       use_capture_addresses);
     }
     else
     {

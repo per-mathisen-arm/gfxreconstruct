@@ -24,6 +24,8 @@
 #include "decode/vulkan_device_address_tracker.h"
 #include "decode/vulkan_object_info.h"
 #include "format/format.h"
+#include "util/logging.h"
+#include <vulkan/vulkan_core.h>
 
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(decode)
@@ -141,9 +143,9 @@ decode::VulkanDeviceAddressTracker::GetBufferByCaptureDeviceAddress(VkDeviceAddr
 }
 
 const decode::VulkanBufferInfo*
-decode::VulkanDeviceAddressTracker::GetBufferByReplayDeviceAddress(VkDeviceAddress replay_address) const
+decode::VulkanDeviceAddressTracker::GetBufferByReplayDeviceAddress(VkDeviceAddress replay_address, size_t* offset) const
 {
-    return GetBufferInfo(replay_address, buffer_replay_addresses_);
+    return GetBufferInfo(replay_address, buffer_replay_addresses_, offset);
 }
 
 VulkanBufferInfo* VulkanDeviceAddressTracker::GetBufferByHandle(VkBuffer handle)
@@ -266,6 +268,25 @@ VulkanDeviceAddressTracker::GetShadowBufferInfo(VkDeviceAddress device_address) 
         }
     }
     return nullptr;
+}
+
+const std::unordered_set<format::HandleId>&
+VulkanDeviceAddressTracker::GetAccelerationStructuresByReplayDeviceAddress(VkDeviceAddress replay_address) const
+{
+    // delegate query to buffer
+    const auto* buffer_info = GetBufferByReplayDeviceAddress(replay_address);
+    if (buffer_info != nullptr)
+    {
+        GFXRECON_ASSERT(replay_address >= buffer_info->replay_address);
+        const VkDeviceAddress as_offset = replay_address - buffer_info->replay_address;
+        auto handle_set_it = buffer_info->acceleration_structures.find(buffer_info->capture_address + as_offset);
+        if (handle_set_it != buffer_info->acceleration_structures.end())
+        {
+            return handle_set_it->second;
+        }
+    }
+    static const std::unordered_set<format::HandleId> empty_set;
+    return empty_set;
 }
 
 const std::unordered_set<format::HandleId>&

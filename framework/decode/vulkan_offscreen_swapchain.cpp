@@ -272,54 +272,42 @@ VkResult VulkanOffscreenSwapchain::QueuePresentKHR(VkResult                     
     return original_result;
 }
 
-void VulkanOffscreenSwapchain::FrameBoundaryANDROID(PFN_vkFrameBoundaryANDROID           func,
-                                                    const VulkanDeviceInfo*              device_info,
-                                                    const VulkanSemaphoreInfo*           semaphore_info,
-                                                    const VulkanImageInfo*               image_info,
-                                                    VulkanInstanceInfo*                  instance_info,
-                                                    const graphics::VulkanInstanceTable* instance_table,
-                                                    const graphics::VulkanDeviceTable*   device_table,
-                                                    application::Application*            application)
+void VulkanOffscreenSwapchain::PresentImageAdHoc(const VulkanDeviceInfo*                    device_info,
+                                                 const VulkanSemaphoreInfo*                 semaphore_info,
+                                                 const VulkanImageInfo*                     image_info,
+                                                 VulkanInstanceInfo*                        instance_info,
+                                                 const graphics::VulkanInstanceTable*       instance_table,
+                                                 const graphics::VulkanDeviceTable*         device_table,
+                                                 application::Application*                  application,
+                                                 const std::optional<std::array<float, 2>>& scale)
 {
-    GFXRECON_UNREFERENCED_PARAMETER(instance_info);
-    GFXRECON_UNREFERENCED_PARAMETER(instance_table);
-    GFXRECON_UNREFERENCED_PARAMETER(application);
-
-    GFXRECON_ASSERT(device_info != nullptr);
+    // We shouldn't end up here if --use-ext-frame-boundary isn't used
+    GFXRECON_ASSERT(swapchain_options_.use_ext_frame_boundary);
 
     VkSemaphore semaphore = (semaphore_info == nullptr ? VK_NULL_HANDLE : semaphore_info->handle);
     VkImage     image     = (image_info == nullptr ? VK_NULL_HANDLE : image_info->handle);
 
-    if (swapchain_options_.use_ext_frame_boundary)
-    {
-        frame_boundary_.imageCount = (image == VK_NULL_HANDLE ? 0 : 1);
-        frame_boundary_.pImages    = (image == VK_NULL_HANDLE ? nullptr : &image);
-        ++frame_boundary_.frameID;
+    frame_boundary_.imageCount = (image == VK_NULL_HANDLE ? 0 : 1);
+    frame_boundary_.pImages    = (image == VK_NULL_HANDLE ? nullptr : &image);
+    ++frame_boundary_.frameID;
 
-        VkPipelineStageFlags wait_stage_flags = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    VkPipelineStageFlags wait_stage_flags = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 
-        VkSubmitInfo submitInfo;
-        submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submitInfo.pNext                = &frame_boundary_;
-        submitInfo.waitSemaphoreCount   = (semaphore == VK_NULL_HANDLE ? 0 : 1);
-        submitInfo.pWaitSemaphores      = (semaphore == VK_NULL_HANDLE ? nullptr : &semaphore);
-        submitInfo.pWaitDstStageMask    = (semaphore == VK_NULL_HANDLE ? nullptr : &wait_stage_flags);
-        submitInfo.commandBufferCount   = 0;
-        submitInfo.pCommandBuffers      = nullptr;
-        submitInfo.signalSemaphoreCount = 0;
-        submitInfo.pSignalSemaphores    = nullptr;
+    VkSubmitInfo submitInfo;
+    submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.pNext                = &frame_boundary_;
+    submitInfo.waitSemaphoreCount   = (semaphore == VK_NULL_HANDLE ? 0 : 1);
+    submitInfo.pWaitSemaphores      = (semaphore == VK_NULL_HANDLE ? nullptr : &semaphore);
+    submitInfo.pWaitDstStageMask    = (semaphore == VK_NULL_HANDLE ? nullptr : &wait_stage_flags);
+    submitInfo.commandBufferCount   = 0;
+    submitInfo.pCommandBuffers      = nullptr;
+    submitInfo.signalSemaphoreCount = 0;
+    submitInfo.pSignalSemaphores    = nullptr;
 
-        VkQueue queue;
+    VkQueue queue;
 
-        util::MarkingLayersUtil::instance().BeginInjected(device_info);
-        device_table->GetDeviceQueue(device_info->handle, 0, 0, &queue);
-        device_table->QueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
-        util::MarkingLayersUtil::instance().EndInjected(device_info);
-    }
-    else
-    {
-        func(device_info->handle, semaphore, image);
-    }
+    device_table->GetDeviceQueue(device_info->handle, 0, 0, &queue);
+    device_table->QueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
 }
 
 // queue_info could be nullptr. It means it doesn't specify a VkQueue and use default_queue. Its purpose is to singal

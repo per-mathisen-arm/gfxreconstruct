@@ -139,7 +139,9 @@ class VulkanAddressReplacerBase
                                                        const decode::VulkanDeviceAddressTracker& address_tracker)
     {}
 
-    virtual void DestroyShadowResources(const VulkanBufferInfo* buffer_info) {}
+    virtual void DestroyShadowResources(const VulkanBufferInfo*           buffer_info,
+                                        const VulkanDeviceAddressTracker& address_tracker)
+    {}
 
     virtual void ProcessGeneratedCommandsInfoEXT(VkGeneratedCommandsInfoEXT*               pGeneratedCommandsInfo,
                                                  const decode::VulkanDeviceAddressTracker& address_tracker)
