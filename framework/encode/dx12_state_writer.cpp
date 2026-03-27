@@ -1891,6 +1891,10 @@ void Dx12StateWriter::WriteAccelerationStructuresState(
             {
                 cmd.inputs_num_instance_descs = as_build.inputs.NumDescs;
             }
+            else if (as_build.inputs.Type == D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_OPACITY_MICROMAP_ARRAY)
+            {
+                GFXRECON_LOG_ERROR("OPACITY_MICROMAP_ARRAY acceleration structure type is not supported.");
+            }
             else
             {
                 GFXRECON_ASSERT(false && "Invalid D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE.");
@@ -1950,6 +1954,10 @@ void Dx12StateWriter::WriteAccelerationStructuresState(
                         geom_info.triangles_vertex_count  = geom.Triangles.VertexCount;
                         geom_info.triangles_vertex_stride = geom.Triangles.VertexBuffer.StrideInBytes;
                     }
+                    else if (geom.Type == D3D12_RAYTRACING_GEOMETRY_TYPE_OMM_TRIANGLES)
+                    {
+                        GFXRECON_LOG_ERROR("OMM_TRIANGLES geometry type is not supported.");
+                    }
                     else
                     {
                         GFXRECON_ASSERT(false && "Invalid D3D12_RAYTRACING_GEOMETRY_TYPE.");
@@ -1962,6 +1970,11 @@ void Dx12StateWriter::WriteAccelerationStructuresState(
             // Write inputs data.
             output_stream_->Write(inputs_data_ptr, inputs_data_ptr_file_size);
             accel_struct_file_bytes += inputs_data_ptr_file_size;
+        }
+
+        if (as_build.inputs.Type == D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_OPACITY_MICROMAP_ARRAY)
+        {
+            GFXRECON_LOG_ERROR("OPACITY_MICROMAP_ARRAY acceleration structure type is not supported.");
         }
 
         // Track which accel struct addresses have been written to the trim state block.

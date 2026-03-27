@@ -657,6 +657,75 @@ void GetAccelerationStructureInputsBufferEntries(D3D12_BUILD_RAYTRACING_ACCELERA
                 entries.push_back({ inputs_buffer_size, &aabbs_desc.AABBs.StartAddress, aabbs_size });
                 inputs_buffer_size += aabbs_size;
             }
+            else if (geom_desc->Type == D3D12_RAYTRACING_GEOMETRY_TYPE_OMM_TRIANGLES)
+            {
+                auto triangles_desc =
+                    const_cast<D3D12_RAYTRACING_GEOMETRY_TRIANGLES_DESC*>(geom_desc->OmmTriangles.pTriangles);
+
+                if (triangles_desc->Transform3x4 != 0)
+                {
+                    const uint64_t kTransform3x4Size = 3 * 4 * sizeof(float);
+                    inputs_buffer_size =
+                        util::platform::AlignValue<D3D12_RAYTRACING_TRANSFORM3X4_BYTE_ALIGNMENT>(inputs_buffer_size);
+                    entries.push_back({ inputs_buffer_size, &triangles_desc->Transform3x4, kTransform3x4Size });
+                    inputs_buffer_size += kTransform3x4Size;
+                }
+
+                if (triangles_desc->IndexCount != 0)
+                {
+                    GFXRECON_ASSERT(triangles_desc->IndexBuffer != 0);
+
+                    uint32_t index_size = 0;
+                    switch (triangles_desc->IndexFormat)
+                    {
+                        case DXGI_FORMAT_R32_UINT:
+                            index_size         = 4;
+                            inputs_buffer_size = util::platform::AlignValue<4>(inputs_buffer_size);
+                            break;
+                        case DXGI_FORMAT_R16_UINT:
+                            index_size         = 2;
+                            inputs_buffer_size = util::platform::AlignValue<2>(inputs_buffer_size);
+                            break;
+                        default:
+                            GFXRECON_LOG_ERROR(
+                                "Invalid D3D12_RAYTRACING_GEOMETRY_TRIANGLES_DESC::IndexFormat (IndexFormat=%d).",
+                                triangles_desc->IndexFormat);
+                            break;
+                    }
+                    const uint32_t indices_size = triangles_desc->IndexCount * index_size;
+                    entries.push_back({ inputs_buffer_size, &triangles_desc->IndexBuffer, indices_size });
+                    inputs_buffer_size += indices_size;
+                }
+
+                const uint64_t vertices_size = triangles_desc->VertexCount * triangles_desc->VertexBuffer.StrideInBytes;
+                if (vertices_size > 0)
+                {
+                    GFXRECON_ASSERT(triangles_desc->VertexBuffer.StartAddress != 0);
+
+                    // Vertex alignment must be a power of two and a multiple of the size of a single component of the
+                    // vertex format. Current component sizes are 2 and 4 bytes, pad to 8 to future proof. If an
+                    // alignment larger than 8 is ever needed, those types could be supported here.
+                    const uint64_t kVertexAlignment = 8;
+
+                    inputs_buffer_size = util::platform::AlignValue<kVertexAlignment>(inputs_buffer_size);
+                    entries.push_back(
+                        { inputs_buffer_size, &triangles_desc->VertexBuffer.StartAddress, vertices_size });
+                    inputs_buffer_size += vertices_size;
+                }
+                else
+                {
+                    GFXRECON_LOG_DEBUG("D3D12_RAYTRACING_GEOMETRY_TRIANGLES_DESC's vertex data has 0 byte size. "
+                                       "(vertex count: %u, vertex stride in bytes: %" PRIu64
+                                       "). Skipping acceleration structure input data for this desc.",
+                                       triangles_desc->VertexCount,
+                                       triangles_desc->VertexBuffer.StrideInBytes);
+                }
+
+                auto linkage_desc =
+                    const_cast<D3D12_RAYTRACING_GEOMETRY_OMM_LINKAGE_DESC*>(geom_desc->OmmTriangles.pOmmLinkage);
+
+                GFXRECON_LOG_ERROR("OMM_TRIANGLES geometry type is not supported.");
+            }
             else
             {
                 GFXRECON_LOG_ERROR("Unrecognized raytracing acceleration geomtry type type (Type=%d).",
@@ -677,6 +746,10 @@ void GetAccelerationStructureInputsBufferEntries(D3D12_BUILD_RAYTRACING_ACCELERA
             entry.size        = inputs_buffer_size;
             entries.push_back(entry);
         }
+    }
+    else if (inputs_desc.Type == D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_OPACITY_MICROMAP_ARRAY)
+    {
+        GFXRECON_LOG_ERROR("Raytracing acceleration structure with OMM array type isn't supported yet.");
     }
     else
     {

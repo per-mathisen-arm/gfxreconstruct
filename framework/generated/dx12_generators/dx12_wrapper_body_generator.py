@@ -432,12 +432,14 @@ class Dx12WrapperBodyGenerator(Dx12BaseGenerator):
                         expr += indent + 'std::unique_ptr<' + param_type + '> ' + param_name + '_unannotated = nullptr;\n'
                         if (dependency_type):
                             expr += indent + 'std::unique_ptr<' + dependency_type + '> ' + param_name + '_dependency = nullptr;\n'
+                            expr += indent + 'std::unique_ptr<D3D12_RAYTRACING_OPACITY_MICROMAP_ARRAY_DESC[]> ' + param_name + '_dependency2 = nullptr;\n'
                         expr += indent + 'if((manager->IsAnnotated() == true) && (' + param_name + ' != nullptr))\n'
                         expr += indent + '{\n'
                         indent = self.increment_indent(indent)
                         expr += indent + param_name + '_unannotated = RvAnnotationUtil::RemoveStructRvAnnotations(' + param_name
                         if (dependency_type):
                             expr += ', ' + param_name + '_dependency'
+                            expr += ', ' + param_name + '_dependency2'
                         expr += ');\n'
                         expr += indent + param_name + ' = ' + param_name + '_unannotated.get();\n'
                         indent = self.decrement_indent(indent)
@@ -473,13 +475,15 @@ class Dx12WrapperBodyGenerator(Dx12BaseGenerator):
                             param_type]
                         expr += indent + 'std::unique_ptr<' + param_type + '> ' + param_name + '_annotated = nullptr;\n'
                         if (dependency_type):
-                            expr += indent + 'std::unique_ptr<' + dependency_type + '> ' + param_name + '_dependency2 = nullptr;\n'
+                            expr += indent + 'std::unique_ptr<' + dependency_type + '> ' + param_name + '_dependency3 = nullptr;\n'
+                            expr += indent + 'std::unique_ptr<D3D12_RAYTRACING_OPACITY_MICROMAP_ARRAY_DESC[]> ' + param_name + '_dependency4 = nullptr;\n'
                         expr += indent + 'if((manager->IsAnnotated() == true) && (' + param_name + ' != nullptr))\n'
                         expr += indent + '{\n'
                         indent = self.increment_indent(indent)
                         expr += indent + param_name + '_annotated = RvAnnotationUtil::AddStructRvAnnotations(' + param_name
                         if (dependency_type):
-                            expr += ', ' + param_name + '_dependency2'
+                            expr += ', ' + param_name + '_dependency3'
+                            expr += ', ' + param_name + '_dependency4'
                         expr += ');\n'
                         expr += indent + param_name + ' = ' + param_name + '_annotated.get();\n'
                         indent = self.decrement_indent(indent)

@@ -196,25 +196,42 @@ void RvAnnotationUtil::RemoveStructRvAnnotation(D3D12_RAYTRACING_GEOMETRY_DESC& 
     }
     else if (param.Type == D3D12_RAYTRACING_GEOMETRY_TYPE::D3D12_RAYTRACING_GEOMETRY_TYPE_OMM_TRIANGLES)
     {
-        auto omm_triangles = const_cast<D3D12_RAYTRACING_GEOMETRY_TRIANGLES_DESC*>(param.OmmTriangles.pTriangles);
-        auto omm_linkage   = const_cast<D3D12_RAYTRACING_GEOMETRY_OMM_LINKAGE_DESC*>(param.OmmTriangles.pOmmLinkage);
-        RemoveRvAnnotation(omm_triangles->Transform3x4);
-        RemoveRvAnnotation(omm_triangles->IndexBuffer);
-        RemoveRvAnnotation(omm_triangles->VertexBuffer.StartAddress);
-        RemoveRvAnnotation(omm_linkage->OpacityMicromapIndexBuffer.StartAddress);
-        RemoveRvAnnotation(omm_linkage->OpacityMicromapArray);
+        if (param.OmmTriangles.pTriangles != nullptr)
+        {
+            auto omm_triangles = const_cast<D3D12_RAYTRACING_GEOMETRY_TRIANGLES_DESC*>(param.OmmTriangles.pTriangles);
+            RemoveRvAnnotation(omm_triangles->Transform3x4);
+            RemoveRvAnnotation(omm_triangles->IndexBuffer);
+            RemoveRvAnnotation(omm_triangles->VertexBuffer.StartAddress);
+        }
+
+        if (param.OmmTriangles.pOmmLinkage != nullptr)
+        {
+            auto omm_linkage = const_cast<D3D12_RAYTRACING_GEOMETRY_OMM_LINKAGE_DESC*>(param.OmmTriangles.pOmmLinkage);
+            RemoveRvAnnotation(omm_linkage->OpacityMicromapIndexBuffer.StartAddress);
+            RemoveRvAnnotation(omm_linkage->OpacityMicromapArray);
+        }
     }
 }
 
-void RvAnnotationUtil::RemoveStructRvAnnotation(D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS& param,
-                                                std::unique_ptr<D3D12_RAYTRACING_GEOMETRY_DESC[]>&    geometry_descs)
+void RvAnnotationUtil::RemoveStructRvAnnotation(D3D12_RAYTRACING_OPACITY_MICROMAP_ARRAY_DESC& param)
+{
+    RemoveRvAnnotation(param.InputBuffer);
+    RemoveRvAnnotation(param.PerOmmDescs.StartAddress);
+}
+
+template <>
+void RvAnnotationUtil::RemoveStructRvAnnotation<D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS>(
+    D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS&            param,
+    std::unique_ptr<D3D12_RAYTRACING_GEOMETRY_DESC[]>&               geometry_descs,
+    std::unique_ptr<D3D12_RAYTRACING_OPACITY_MICROMAP_ARRAY_DESC[]>& omm_array_descs)
 {
     if (param.Type ==
         D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL)
     {
         RemoveRvAnnotation(param.InstanceDescs);
     }
-    else
+    else if (param.Type ==
+             D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL)
     {
         if (param.DescsLayout == D3D12_ELEMENTS_LAYOUT::D3D12_ELEMENTS_LAYOUT_ARRAY)
         {
@@ -237,15 +254,24 @@ void RvAnnotationUtil::RemoveStructRvAnnotation(D3D12_BUILD_RAYTRACING_ACCELERAT
             param.pGeometryDescs = geometry_descs.get();
         }
     }
+    else if (param.Type == D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE::
+                               D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_OPACITY_MICROMAP_ARRAY)
+    {
+        omm_array_descs = RemoveStructArrayRvAnnotations(param.pOpacityMicromapArrayDesc, param.NumDescs);
+        param.pOpacityMicromapArrayDesc = omm_array_descs.get();
+    }
 }
 
-void RvAnnotationUtil::RemoveStructRvAnnotation(D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC& param,
-                                                std::unique_ptr<D3D12_RAYTRACING_GEOMETRY_DESC[]>&  geometry_desc)
+template <>
+void RvAnnotationUtil::RemoveStructRvAnnotation<D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC>(
+    D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC&              param,
+    std::unique_ptr<D3D12_RAYTRACING_GEOMETRY_DESC[]>&               geometry_descs,
+    std::unique_ptr<D3D12_RAYTRACING_OPACITY_MICROMAP_ARRAY_DESC[]>& omm_array_descs)
 {
     RemoveRvAnnotation(param.DestAccelerationStructureData);
     RemoveRvAnnotation(param.ScratchAccelerationStructureData);
     RemoveRvAnnotation(param.SourceAccelerationStructureData);
-    RemoveStructRvAnnotation(param.Inputs, geometry_desc);
+    RemoveStructRvAnnotation(param.Inputs, geometry_descs, omm_array_descs);
 }
 
 void RvAnnotationUtil::AddStructRvAnnotation(D3D12_INDEX_BUFFER_VIEW& param)
@@ -306,17 +332,44 @@ void RvAnnotationUtil::AddStructRvAnnotation(D3D12_RAYTRACING_GEOMETRY_DESC& par
     {
         AddRvAnnotation(&param.AABBs.AABBs.StartAddress);
     }
+    else if (param.Type == D3D12_RAYTRACING_GEOMETRY_TYPE::D3D12_RAYTRACING_GEOMETRY_TYPE_OMM_TRIANGLES)
+    {
+        if (param.OmmTriangles.pTriangles != nullptr)
+        {
+            auto omm_triangles = const_cast<D3D12_RAYTRACING_GEOMETRY_TRIANGLES_DESC*>(param.OmmTriangles.pTriangles);
+            AddRvAnnotation(&omm_triangles->Transform3x4);
+            AddRvAnnotation(&omm_triangles->IndexBuffer);
+            AddRvAnnotation(&omm_triangles->VertexBuffer.StartAddress);
+        }
+
+        if (param.OmmTriangles.pOmmLinkage != nullptr)
+        {
+            auto omm_linkage = const_cast<D3D12_RAYTRACING_GEOMETRY_OMM_LINKAGE_DESC*>(param.OmmTriangles.pOmmLinkage);
+            AddRvAnnotation(&omm_linkage->OpacityMicromapIndexBuffer.StartAddress);
+            AddRvAnnotation(&omm_linkage->OpacityMicromapArray);
+        }
+    }
 }
 
-void RvAnnotationUtil::AddStructRvAnnotation(D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS& param,
-                                             std::unique_ptr<D3D12_RAYTRACING_GEOMETRY_DESC[]>&    geometry_descs)
+void RvAnnotationUtil::AddStructRvAnnotation(D3D12_RAYTRACING_OPACITY_MICROMAP_ARRAY_DESC& param)
+{
+    AddRvAnnotation(&param.InputBuffer);
+    AddRvAnnotation(&param.PerOmmDescs.StartAddress);
+}
+
+template <>
+void RvAnnotationUtil::AddStructRvAnnotation<D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS>(
+    D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS&            param,
+    std::unique_ptr<D3D12_RAYTRACING_GEOMETRY_DESC[]>&               geometry_descs,
+    std::unique_ptr<D3D12_RAYTRACING_OPACITY_MICROMAP_ARRAY_DESC[]>& omm_array_descs)
 {
     if (param.Type ==
         D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL)
     {
         AddRvAnnotation(&param.InstanceDescs);
     }
-    else
+    else if (param.Type ==
+             D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL)
     {
         if (param.DescsLayout == D3D12_ELEMENTS_LAYOUT::D3D12_ELEMENTS_LAYOUT_ARRAY)
         {
@@ -339,15 +392,24 @@ void RvAnnotationUtil::AddStructRvAnnotation(D3D12_BUILD_RAYTRACING_ACCELERATION
             param.pGeometryDescs = geometry_descs.get();
         }
     }
+    else if (param.Type == D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE::
+                               D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_OPACITY_MICROMAP_ARRAY)
+    {
+        omm_array_descs                 = AddStructArrayRvAnnotations(param.pOpacityMicromapArrayDesc, param.NumDescs);
+        param.pOpacityMicromapArrayDesc = omm_array_descs.get();
+    }
 }
 
-void RvAnnotationUtil::AddStructRvAnnotation(D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC& param,
-                                             std::unique_ptr<D3D12_RAYTRACING_GEOMETRY_DESC[]>&  geometry_desc)
+template <>
+void RvAnnotationUtil::AddStructRvAnnotation<D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC>(
+    D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC&              param,
+    std::unique_ptr<D3D12_RAYTRACING_GEOMETRY_DESC[]>&               geometry_descs,
+    std::unique_ptr<D3D12_RAYTRACING_OPACITY_MICROMAP_ARRAY_DESC[]>& omm_array_descs)
 {
     AddRvAnnotation(&param.DestAccelerationStructureData);
     AddRvAnnotation(&param.ScratchAccelerationStructureData);
     AddRvAnnotation(&param.SourceAccelerationStructureData);
-    AddStructRvAnnotation(param.Inputs, geometry_desc);
+    AddStructRvAnnotation(param.Inputs, geometry_descs, omm_array_descs);
 }
 
 void RvAnnotationUtil::AddStructRvAnnotation(D3D12_GPU_VIRTUAL_ADDRESS& param)

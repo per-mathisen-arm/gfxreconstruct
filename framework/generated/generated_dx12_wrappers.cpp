@@ -14005,9 +14005,10 @@ void STDMETHODCALLTYPE ID3D12Device5_Wrapper::GetRaytracingAccelerationStructure
 
         std::unique_ptr<D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS> pDesc_unannotated = nullptr;
         std::unique_ptr<D3D12_RAYTRACING_GEOMETRY_DESC[]> pDesc_dependency = nullptr;
+        std::unique_ptr<D3D12_RAYTRACING_OPACITY_MICROMAP_ARRAY_DESC[]> pDesc_dependency2 = nullptr;
         if((manager->IsAnnotated() == true) && (pDesc != nullptr))
         {
-            pDesc_unannotated = RvAnnotationUtil::RemoveStructRvAnnotations(pDesc, pDesc_dependency);
+            pDesc_unannotated = RvAnnotationUtil::RemoveStructRvAnnotations(pDesc, pDesc_dependency, pDesc_dependency2);
             pDesc = pDesc_unannotated.get();
         }
 
@@ -14023,10 +14024,11 @@ void STDMETHODCALLTYPE ID3D12Device5_Wrapper::GetRaytracingAccelerationStructure
             pInfo);
 
         std::unique_ptr<D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS> pDesc_annotated = nullptr;
-        std::unique_ptr<D3D12_RAYTRACING_GEOMETRY_DESC[]> pDesc_dependency2 = nullptr;
+        std::unique_ptr<D3D12_RAYTRACING_GEOMETRY_DESC[]> pDesc_dependency3 = nullptr;
+        std::unique_ptr<D3D12_RAYTRACING_OPACITY_MICROMAP_ARRAY_DESC[]> pDesc_dependency4 = nullptr;
         if((manager->IsAnnotated() == true) && (pDesc != nullptr))
         {
-            pDesc_annotated = RvAnnotationUtil::AddStructRvAnnotations(pDesc, pDesc_dependency2);
+            pDesc_annotated = RvAnnotationUtil::AddStructRvAnnotations(pDesc, pDesc_dependency3, pDesc_dependency4);
             pDesc = pDesc_annotated.get();
         }
 
@@ -16036,9 +16038,10 @@ void STDMETHODCALLTYPE ID3D12GraphicsCommandList4_Wrapper::BuildRaytracingAccele
 
         std::unique_ptr<D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC> pDesc_unannotated = nullptr;
         std::unique_ptr<D3D12_RAYTRACING_GEOMETRY_DESC[]> pDesc_dependency = nullptr;
+        std::unique_ptr<D3D12_RAYTRACING_OPACITY_MICROMAP_ARRAY_DESC[]> pDesc_dependency2 = nullptr;
         if((manager->IsAnnotated() == true) && (pDesc != nullptr))
         {
-            pDesc_unannotated = RvAnnotationUtil::RemoveStructRvAnnotations(pDesc, pDesc_dependency);
+            pDesc_unannotated = RvAnnotationUtil::RemoveStructRvAnnotations(pDesc, pDesc_dependency, pDesc_dependency2);
             pDesc = pDesc_unannotated.get();
         }
 
@@ -16079,10 +16082,11 @@ void STDMETHODCALLTYPE ID3D12GraphicsCommandList4_Wrapper::BuildRaytracingAccele
         }
 
         std::unique_ptr<D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC> pDesc_annotated = nullptr;
-        std::unique_ptr<D3D12_RAYTRACING_GEOMETRY_DESC[]> pDesc_dependency2 = nullptr;
+        std::unique_ptr<D3D12_RAYTRACING_GEOMETRY_DESC[]> pDesc_dependency3 = nullptr;
+        std::unique_ptr<D3D12_RAYTRACING_OPACITY_MICROMAP_ARRAY_DESC[]> pDesc_dependency4 = nullptr;
         if((manager->IsAnnotated() == true) && (pDesc != nullptr))
         {
-            pDesc_annotated = RvAnnotationUtil::AddStructRvAnnotations(pDesc, pDesc_dependency2);
+            pDesc_annotated = RvAnnotationUtil::AddStructRvAnnotations(pDesc, pDesc_dependency3, pDesc_dependency4);
             pDesc = pDesc_annotated.get();
         }
 

@@ -488,15 +488,20 @@ class Dx12RayTracingModifier : public util::Dx12ModifierBase
 
     struct AccelerationStructureBuildDesc
     {
-        format::HandleId                                      handle_id{ format::kNullHandleId };
-        format::HandleId                                      object_id{ format::kNullHandleId };
-        bool                                                  is_first_built{ false };
-        bool                                                  is_meta_copy{ false };
-        D3D12_GPU_VIRTUAL_ADDRESS                             source_of_compaction{ 0 };
-        D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS  build_blas_inputs{};
-        D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS  build_tlas_inputs{};
-        std::vector<D3D12_RAYTRACING_GEOMETRY_DESC>           geometry_descs{};
-        D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO real_prebuild_info{};
+        format::HandleId                                               handle_id{ format::kNullHandleId };
+        format::HandleId                                               object_id{ format::kNullHandleId };
+        bool                                                           is_first_built{ false };
+        bool                                                           is_meta_copy{ false };
+        D3D12_GPU_VIRTUAL_ADDRESS                                      source_of_compaction{ 0 };
+        D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS           build_blas_inputs{};
+        D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS           build_tlas_inputs{};
+        D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS           build_omm_inputs{};
+        std::vector<D3D12_RAYTRACING_GEOMETRY_DESC>                    geometry_descs{};
+        std::map<uint32_t, D3D12_RAYTRACING_GEOMETRY_TRIANGLES_DESC>   omm_triangles_geometry_descs{};
+        std::map<uint32_t, D3D12_RAYTRACING_GEOMETRY_OMM_LINKAGE_DESC> omm_linkage_geometry_descs{};
+        std::vector<D3D12_RAYTRACING_OPACITY_MICROMAP_ARRAY_DESC>      omm_array_descs;
+        std::map<uint32_t, std::vector<D3D12_RAYTRACING_OPACITY_MICROMAP_HISTOGRAM_ENTRY>> omm_array_histograms;
+        D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO                              real_prebuild_info{};
         // Post-build info only recorded POSTBUILD_INFO_COMPACTED_SIZE.
         D3D12_RAYTRACING_ACCELERATION_STRUCTURE_POSTBUILD_INFO_DESC postbuild_info{};
     };

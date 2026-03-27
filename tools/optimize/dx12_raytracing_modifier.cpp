@@ -595,17 +595,15 @@ void Dx12RayTracingModifier::Process_BuildRaytracingAccelerationStructure(
 
     if (dst_id != format::kNullHandleId)
     {
-        AccelerationStructureBuildDesc build_desc;
-        build_desc.handle_id              = dst_id;
-        build_desc.object_id              = resource_entries_[dst_id].object_id;
-        build_desc.is_first_built         = true;
-        build_desc.is_meta_copy           = false;
-        build_desc.source_of_compaction   = 0;
-        build_desc.real_prebuild_info     = {};
-        build_desc.postbuild_info         = {};
-        build_desc.geometry_descs         = {};
-        build_desc.build_blas_inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
-        build_desc.build_tlas_inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
+        AccelerationStructureBuildDesc build_desc = {};
+        build_desc.handle_id                      = dst_id;
+        build_desc.object_id                      = resource_entries_[dst_id].object_id;
+        build_desc.is_first_built                 = true;
+        build_desc.is_meta_copy                   = false;
+        build_desc.source_of_compaction           = 0;
+        build_desc.build_blas_inputs.Type         = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
+        build_desc.build_tlas_inputs.Type         = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
+        build_desc.build_omm_inputs.Type          = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_OPACITY_MICROMAP_ARRAY;
 
         if (real_device5_ != nullptr)
         {
@@ -651,9 +649,34 @@ void Dx12RayTracingModifier::Process_BuildRaytracingAccelerationStructure(
                         geometry_desc.Triangles.IndexBuffer =
                             (geometry_desc.Triangles.IndexCount > 0) ? kDefaultGpuVa : 0;
                     }
-                    else
+                    else if (geometry_desc.Type == D3D12_RAYTRACING_GEOMETRY_TYPE_PROCEDURAL_PRIMITIVE_AABBS)
                     {
                         geometry_desc.AABBs.AABBs.StartAddress = kDefaultGpuVa;
+                    }
+                    else if (geometry_desc.Type == D3D12_RAYTRACING_GEOMETRY_TYPE_OMM_TRIANGLES)
+                    {
+                        if (geometry_desc.OmmTriangles.pTriangles != nullptr)
+                        {
+                            auto triangles_desc                      = *geometry_desc.OmmTriangles.pTriangles;
+                            triangles_desc.VertexBuffer.StartAddress = kDefaultGpuVa;
+                            triangles_desc.Transform3x4              = kDefaultGpuVa;
+                            triangles_desc.IndexBuffer = (triangles_desc.IndexCount > 0) ? kDefaultGpuVa : 0;
+
+                            build_desc.omm_triangles_geometry_descs[i] = triangles_desc;
+                        }
+
+                        if (geometry_desc.OmmTriangles.pOmmLinkage != nullptr)
+                        {
+                            auto linkage_desc = *geometry_desc.OmmTriangles.pOmmLinkage;
+                            linkage_desc.OpacityMicromapIndexBuffer.StartAddress = kDefaultGpuVa;
+                            linkage_desc.OpacityMicromapArray                    = kDefaultGpuVa;
+
+                            build_desc.omm_linkage_geometry_descs[i] = linkage_desc;
+                        }
+                    }
+                    else
+                    {
+                        GFXRECON_ASSERT(false && "Invalid D3D12_RAYTRACING_GEOMETRY_TYPE.");
                     }
 
                     build_desc.geometry_descs[i] = geometry_desc;
@@ -669,16 +692,62 @@ void Dx12RayTracingModifier::Process_BuildRaytracingAccelerationStructure(
                         geometry_desc->Triangles.IndexBuffer =
                             (geometry_desc->Triangles.IndexCount > 0) ? kDefaultGpuVa : 0;
                     }
-                    else
+                    else if (geometry_desc->Type == D3D12_RAYTRACING_GEOMETRY_TYPE_PROCEDURAL_PRIMITIVE_AABBS)
                     {
                         geometry_desc->AABBs.AABBs.StartAddress = kDefaultGpuVa;
+                    }
+                    else if (geometry_desc->Type == D3D12_RAYTRACING_GEOMETRY_TYPE_OMM_TRIANGLES)
+                    {
+                        if (geometry_desc->OmmTriangles.pTriangles != nullptr)
+                        {
+                            auto triangles_desc                      = *geometry_desc->OmmTriangles.pTriangles;
+                            triangles_desc.VertexBuffer.StartAddress = kDefaultGpuVa;
+                            triangles_desc.Transform3x4              = kDefaultGpuVa;
+                            triangles_desc.IndexBuffer = (triangles_desc.IndexCount > 0) ? kDefaultGpuVa : 0;
+
+                            build_desc.omm_triangles_geometry_descs[i] = triangles_desc;
+                        }
+
+                        if (geometry_desc->OmmTriangles.pOmmLinkage != nullptr)
+                        {
+                            auto linkage_desc = *geometry_desc->OmmTriangles.pOmmLinkage;
+                            linkage_desc.OpacityMicromapIndexBuffer.StartAddress = kDefaultGpuVa;
+                            linkage_desc.OpacityMicromapArray                    = kDefaultGpuVa;
+
+                            build_desc.omm_linkage_geometry_descs[i] = linkage_desc;
+                        }
+                    }
+                    else
+                    {
+                        GFXRECON_ASSERT(false && "Invalid D3D12_RAYTRACING_GEOMETRY_TYPE.");
                     }
 
                     build_desc.geometry_descs[i] = *geometry_desc;
                 }
             }
         }
-        else
+        else if (acceleration_structure_inputs.Type ==
+                 D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_OPACITY_MICROMAP_ARRAY)
+        {
+            build_desc.build_omm_inputs = desc->Inputs;
+            build_desc.omm_array_descs.resize(desc->Inputs.NumDescs);
+
+            for (UINT i = 0; i < acceleration_structure_inputs.NumDescs; i++)
+            {
+                auto& omm_array_desc = const_cast<D3D12_RAYTRACING_OPACITY_MICROMAP_ARRAY_DESC&>(
+                    acceleration_structure_inputs.pOpacityMicromapArrayDesc[i]);
+
+                omm_array_desc.InputBuffer              = kDefaultGpuVa;
+                omm_array_desc.PerOmmDescs.StartAddress = kDefaultGpuVa;
+                for (UINT j = 0; j < omm_array_desc.NumOmmHistogramEntries; ++j)
+                {
+                    build_desc.omm_array_histograms[i].push_back(omm_array_desc.pOmmHistogram[j]);
+                }
+
+                build_desc.omm_array_descs[i] = omm_array_desc;
+            }
+        }
+        else if (acceleration_structure_inputs.Type == D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL)
         {
             const_cast<D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS&>(acceleration_structure_inputs)
                 .InstanceDescs                       = (desc->Inputs.NumDescs > 0) ? kDefaultGpuVa : 0;
@@ -702,11 +771,23 @@ void Dx12RayTracingModifier::Process_BuildRaytracingAccelerationStructure(
                 }
                 else
                 {
-                    for (const auto& geom_desc : build_desc_iter->second.geometry_descs)
+                    for (UINT index = 0; index < build_desc_iter->second.geometry_descs.size(); ++index)
                     {
-                        bool found = false;
-                        for (const auto& new_geom_desc : build_desc.geometry_descs)
+                        bool        found     = false;
+                        const auto& geom_desc = build_desc_iter->second.geometry_descs[index];
+                        if (geom_desc.Type == D3D12_RAYTRACING_GEOMETRY_TYPE_OMM_TRIANGLES)
                         {
+                            const_cast<D3D12_RAYTRACING_GEOMETRY_DESC&>(geom_desc).OmmTriangles.pTriangles  = nullptr;
+                            const_cast<D3D12_RAYTRACING_GEOMETRY_DESC&>(geom_desc).OmmTriangles.pOmmLinkage = nullptr;
+                        }
+
+                        for (auto& new_geom_desc : build_desc.geometry_descs)
+                        {
+                            if (new_geom_desc.Type == D3D12_RAYTRACING_GEOMETRY_TYPE_OMM_TRIANGLES)
+                            {
+                                new_geom_desc.OmmTriangles.pTriangles  = nullptr;
+                                new_geom_desc.OmmTriangles.pOmmLinkage = nullptr;
+                            }
                             if (memcmp(&geom_desc, &new_geom_desc, sizeof(D3D12_RAYTRACING_GEOMETRY_DESC)) == 0)
                             {
                                 found = true;
@@ -716,9 +797,41 @@ void Dx12RayTracingModifier::Process_BuildRaytracingAccelerationStructure(
                         if (!found)
                         {
                             build_desc.geometry_descs.push_back(geom_desc);
+                            if (geom_desc.Type == D3D12_RAYTRACING_GEOMETRY_TYPE_OMM_TRIANGLES)
+                            {
+                                UINT current_pos = build_desc.geometry_descs.size() - 1;
+                                if (build_desc_iter->second.omm_triangles_geometry_descs.contains(index))
+                                {
+                                    build_desc.omm_triangles_geometry_descs[current_pos] =
+                                        build_desc_iter->second.omm_triangles_geometry_descs[index];
+                                }
+                                if (build_desc_iter->second.omm_linkage_geometry_descs.contains(index))
+                                {
+                                    build_desc.omm_linkage_geometry_descs[current_pos] =
+                                        build_desc_iter->second.omm_linkage_geometry_descs[index];
+                                }
+                            }
                             build_desc.build_blas_inputs.NumDescs = build_desc.geometry_descs.size();
                             need_insert_prebuild_info             = true;
                         }
+                    }
+                }
+            }
+
+            if (build_desc.build_omm_inputs.Type == D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_OPACITY_MICROMAP_ARRAY)
+            {
+                if (build_desc_iter->second.omm_array_descs.empty())
+                {
+                    need_insert_prebuild_info = true;
+                }
+                else
+                {
+                    if (build_desc.omm_array_descs.size() < build_desc_iter->second.omm_array_descs.size())
+                    {
+                        build_desc.omm_array_descs           = build_desc_iter->second.omm_array_descs;
+                        build_desc.omm_array_histograms      = build_desc_iter->second.omm_array_histograms;
+                        build_desc.build_omm_inputs.NumDescs = build_desc.omm_array_descs.size();
+                        need_insert_prebuild_info            = true;
                     }
                 }
             }
@@ -757,8 +870,49 @@ void Dx12RayTracingModifier::Process_BuildRaytracingAccelerationStructure(
                 prebuild_desc.acceleration_structure_address = 0;
             }
 
-            D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS build_inputs = build_desc.build_blas_inputs;
-            build_inputs.pGeometryDescs                                       = build_desc.geometry_descs.data();
+            D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS build_inputs = {};
+            if (build_desc.build_blas_inputs.NumDescs > 0)
+            {
+                build_inputs                = build_desc.build_blas_inputs;
+                build_inputs.pGeometryDescs = build_desc.geometry_descs.data();
+                for (UINT i = 0; i < build_inputs.NumDescs; ++i)
+                {
+                    auto& geometry_desc = const_cast<D3D12_RAYTRACING_GEOMETRY_DESC&>(build_inputs.pGeometryDescs[i]);
+                    if (geometry_desc.Type == D3D12_RAYTRACING_GEOMETRY_TYPE_OMM_TRIANGLES)
+                    {
+                        if (build_desc.omm_triangles_geometry_descs.contains(i))
+                        {
+                            geometry_desc.OmmTriangles.pTriangles = &build_desc.omm_triangles_geometry_descs[i];
+                        }
+                        else
+                        {
+                            geometry_desc.OmmTriangles.pTriangles = nullptr;
+                        }
+
+                        if (build_desc.omm_linkage_geometry_descs.contains(i))
+                        {
+                            geometry_desc.OmmTriangles.pOmmLinkage = &build_desc.omm_linkage_geometry_descs[i];
+                        }
+                        else
+                        {
+                            geometry_desc.OmmTriangles.pOmmLinkage = nullptr;
+                        }
+                    }
+                }
+            }
+            else if (build_desc.build_omm_inputs.NumDescs > 0)
+            {
+                build_inputs                           = build_desc.build_omm_inputs;
+                build_inputs.pOpacityMicromapArrayDesc = build_desc.omm_array_descs.data();
+                for (UINT i = 0; i < build_inputs.NumDescs; ++i)
+                {
+                    D3D12_RAYTRACING_OPACITY_MICROMAP_ARRAY_DESC* omm_array_desc = &build_desc.omm_array_descs[i];
+                    if (omm_array_desc->NumOmmHistogramEntries > 0)
+                    {
+                        omm_array_desc->pOmmHistogram = build_desc.omm_array_histograms[i].data();
+                    }
+                }
+            }
 
             if (real_device5_ != nullptr)
             {
@@ -858,6 +1012,10 @@ void Dx12RayTracingModifier::ProcessInitDx12AccelerationStructureCommand(
                     geom_desc.AABBs.AABBs.StartAddress  = 0;
                     geom_desc.AABBs.AABBs.StrideInBytes = init_geom_desc.aabbs_stride;
                 }
+                else if (geom_desc.Type == D3D12_RAYTRACING_GEOMETRY_TYPE_OMM_TRIANGLES)
+                {
+                    GFXRECON_LOG_ERROR("OMM_TRIANGLES geometry type is not supported.");
+                }
                 else
                 {
                     GFXRECON_ASSERT(false && "Invalid D3D12_RAYTRACING_GEOMETRY_TYPE.");
@@ -870,6 +1028,10 @@ void Dx12RayTracingModifier::ProcessInitDx12AccelerationStructureCommand(
         {
             build_desc.Inputs.NumDescs      = command_header.inputs_num_instance_descs;
             build_desc.Inputs.InstanceDescs = 0;
+        }
+        else if (build_desc.Inputs.Type == D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_OPACITY_MICROMAP_ARRAY)
+        {
+            GFXRECON_LOG_ERROR("Raytracing acceleration structure with OMM array type isn't supported yet.");
         }
         else
         {
@@ -990,6 +1152,26 @@ void Dx12RayTracingModifier::Process_CopyRaytracingAccelerationStructure(
                 build_desc.build_tlas_inputs.NumDescs =
                     std::max(build_desc.build_tlas_inputs.NumDescs,
                              acceleration_structure_build_desc_[dst_address].build_tlas_inputs.NumDescs);
+
+                UINT current_descs_size = build_desc.geometry_descs.size();
+                for (UINT i = 0; i < acceleration_structure_build_desc_[dst_address].geometry_descs.size(); i++)
+                {
+                    build_desc.geometry_descs.push_back(
+                        acceleration_structure_build_desc_[dst_address].geometry_descs[i]);
+
+                    if (acceleration_structure_build_desc_[dst_address].omm_triangles_geometry_descs.contains(i))
+                    {
+                        build_desc.omm_triangles_geometry_descs[current_descs_size + i] =
+                            acceleration_structure_build_desc_[dst_address].omm_triangles_geometry_descs[i];
+                    }
+
+                    if (acceleration_structure_build_desc_[dst_address].omm_linkage_geometry_descs.contains(i))
+                    {
+                        build_desc.omm_linkage_geometry_descs[current_descs_size + i] =
+                            acceleration_structure_build_desc_[dst_address].omm_linkage_geometry_descs[i];
+                    }
+                }
+
                 build_desc.geometry_descs.insert(build_desc.geometry_descs.end(),
                                                  acceleration_structure_build_desc_[dst_address].geometry_descs.begin(),
                                                  acceleration_structure_build_desc_[dst_address].geometry_descs.end());
@@ -1004,8 +1186,49 @@ void Dx12RayTracingModifier::Process_CopyRaytracingAccelerationStructure(
                 build_desc.source_of_compaction = src_address;
             }
 
-            D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS build_inputs = build_desc.build_blas_inputs;
-            build_inputs.pGeometryDescs                                       = build_desc.geometry_descs.data();
+            D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS build_inputs = {};
+            if (build_desc.build_blas_inputs.NumDescs > 0)
+            {
+                build_inputs                = build_desc.build_blas_inputs;
+                build_inputs.pGeometryDescs = build_desc.geometry_descs.data();
+                for (UINT i = 0; i < build_inputs.NumDescs; ++i)
+                {
+                    auto& geometry_desc = const_cast<D3D12_RAYTRACING_GEOMETRY_DESC&>(build_inputs.pGeometryDescs[i]);
+                    if (geometry_desc.Type == D3D12_RAYTRACING_GEOMETRY_TYPE_OMM_TRIANGLES)
+                    {
+                        if (build_desc.omm_triangles_geometry_descs.contains(i))
+                        {
+                            geometry_desc.OmmTriangles.pTriangles = &build_desc.omm_triangles_geometry_descs[i];
+                        }
+                        else
+                        {
+                            geometry_desc.OmmTriangles.pTriangles = nullptr;
+                        }
+
+                        if (build_desc.omm_linkage_geometry_descs.contains(i))
+                        {
+                            geometry_desc.OmmTriangles.pOmmLinkage = &build_desc.omm_linkage_geometry_descs[i];
+                        }
+                        else
+                        {
+                            geometry_desc.OmmTriangles.pOmmLinkage = nullptr;
+                        }
+                    }
+                }
+            }
+            else if (build_desc.build_omm_inputs.NumDescs > 0)
+            {
+                build_inputs                           = build_desc.build_omm_inputs;
+                build_inputs.pOpacityMicromapArrayDesc = build_desc.omm_array_descs.data();
+                for (UINT i = 0; i < build_inputs.NumDescs; ++i)
+                {
+                    D3D12_RAYTRACING_OPACITY_MICROMAP_ARRAY_DESC* omm_array_desc = &build_desc.omm_array_descs[i];
+                    if (omm_array_desc->NumOmmHistogramEntries > 0)
+                    {
+                        omm_array_desc->pOmmHistogram = build_desc.omm_array_histograms[i].data();
+                    }
+                }
+            }
 
             AccelerationStructurePreBuildDesc prebuild_desc;
             prebuild_desc.handle_id          = dst_id;

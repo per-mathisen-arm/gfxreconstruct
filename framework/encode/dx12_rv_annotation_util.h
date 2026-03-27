@@ -31,7 +31,11 @@
 #include <vector>
 
 #if defined(WIN32)
-#include <D3D12.h>
+#include <d3d12.h>
+#endif
+
+#if !defined(D3D12_RAYTRACING_OPACITY_MICROMAP_ARRAY_DESC)
+struct D3D12_RAYTRACING_OPACITY_MICROMAP_ARRAY_DESC;
 #endif
 
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
@@ -114,13 +118,15 @@ class RvAnnotationUtil
 
     static void RemoveStructRvAnnotation(D3D12_DISPATCH_RAYS_DESC& param);
 
-    static void RemoveStructRvAnnotation(D3D12_RAYTRACING_GEOMETRY_DESC& params);
+    static void RemoveStructRvAnnotation(D3D12_RAYTRACING_GEOMETRY_DESC& param);
 
-    static void RemoveStructRvAnnotation(D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC& param,
-                                         std::unique_ptr<D3D12_RAYTRACING_GEOMETRY_DESC[]>&  geometry_desc);
+    static void RemoveStructRvAnnotation(D3D12_RAYTRACING_OPACITY_MICROMAP_ARRAY_DESC& param);
 
-    static void RemoveStructRvAnnotation(D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS& param,
-                                         std::unique_ptr<D3D12_RAYTRACING_GEOMETRY_DESC[]>&    geometry_descs);
+    template <typename T>
+    static void
+    RemoveStructRvAnnotation(T&                                                               param,
+                             std::unique_ptr<D3D12_RAYTRACING_GEOMETRY_DESC[]>&               geometry_descs,
+                             std::unique_ptr<D3D12_RAYTRACING_OPACITY_MICROMAP_ARRAY_DESC[]>& omm_array_descs);
 
     static void RemoveStructRvAnnotation(D3D12_RAYTRACING_ACCELERATION_STRUCTURE_POSTBUILD_INFO_DESC& param);
 
@@ -140,13 +146,14 @@ class RvAnnotationUtil
 
     static void AddStructRvAnnotation(D3D12_DISPATCH_RAYS_DESC& param);
 
-    static void AddStructRvAnnotation(D3D12_RAYTRACING_GEOMETRY_DESC& params);
+    static void AddStructRvAnnotation(D3D12_RAYTRACING_GEOMETRY_DESC& param);
 
-    static void AddStructRvAnnotation(D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC& param,
-                                      std::unique_ptr<D3D12_RAYTRACING_GEOMETRY_DESC[]>&  geometry_desc);
+    static void AddStructRvAnnotation(D3D12_RAYTRACING_OPACITY_MICROMAP_ARRAY_DESC& param);
 
-    static void AddStructRvAnnotation(D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS& param,
-                                      std::unique_ptr<D3D12_RAYTRACING_GEOMETRY_DESC[]>&    geometry_descs);
+    template <typename T>
+    static void AddStructRvAnnotation(T&                                                               param,
+                                      std::unique_ptr<D3D12_RAYTRACING_GEOMETRY_DESC[]>&               geometry_descs,
+                                      std::unique_ptr<D3D12_RAYTRACING_OPACITY_MICROMAP_ARRAY_DESC[]>& omm_array_descs);
 
     static void AddStructRvAnnotation(D3D12_RAYTRACING_ACCELERATION_STRUCTURE_POSTBUILD_INFO_DESC& param);
 
