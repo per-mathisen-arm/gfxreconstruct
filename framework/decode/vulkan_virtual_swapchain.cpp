@@ -1532,16 +1532,16 @@ void VulkanVirtualSwapchain::PresentImageAdHoc(const VulkanDeviceInfo*          
             memory_barrier.subresourceRange.baseArrayLayer = 0;
             memory_barrier.subresourceRange.layerCount     = VK_REMAINING_ARRAY_LAYERS;
 
-            device_table_->CmdPipelineBarrier(frame_data.command_buffer,
-                                              VK_PIPELINE_STAGE_NONE,
-                                              VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                                              0,
-                                              0,
-                                              nullptr,
-                                              0,
-                                              nullptr,
-                                              1,
-                                              &memory_barrier);
+            device_table->CmdPipelineBarrier(frame_data.command_buffer,
+                                             VK_PIPELINE_STAGE_NONE,
+                                             VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                                             0,
+                                             0,
+                                             nullptr,
+                                             0,
+                                             nullptr,
+                                             1,
+                                             &memory_barrier);
         }
 
         auto src_layout = image_info->current_layout != VK_IMAGE_LAYOUT_UNDEFINED
