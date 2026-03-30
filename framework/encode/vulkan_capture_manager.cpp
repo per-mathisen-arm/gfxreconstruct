@@ -2207,10 +2207,7 @@ void VulkanCaptureManager::DeferredOperationPostProcess(VkDevice               d
                     if (capture_manager_tracking == true)
                     {
                         state_tracker_->TrackRayTracingShaderGroupHandles(
-                            device,
-                            deferred_operation_wrapper->pPipelines[i],
-                            data_size,
-                            data.data());
+                            device, deferred_operation_wrapper->pPipelines[i], data_size, data.data());
                     }
                 }
             }
@@ -5489,6 +5486,20 @@ bool VulkanCaptureManager::IsValidFence(VkFence fence)
 }
 
 #endif
+
+void VulkanCaptureManager::PostProcess_vkTransitionImageLayout(VkResult                               result,
+                                                               VkDevice                               device,
+                                                               uint32_t                               transitionCount,
+                                                               const VkHostImageLayoutTransitionInfo* pTransitions)
+{
+    if (result == VK_SUCCESS)
+    {
+        if (IsCaptureModeTrack())
+        {
+            state_tracker_->TrackTransitionImageLayout(transitionCount, pTransitions);
+        }
+    }
+}
 
 GFXRECON_END_NAMESPACE(encode)
 GFXRECON_END_NAMESPACE(gfxrecon)

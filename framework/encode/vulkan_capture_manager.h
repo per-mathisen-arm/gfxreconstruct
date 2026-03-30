@@ -1937,6 +1937,11 @@ class VulkanCaptureManager : public ApiCaptureManager
         return memories[id];
     }
 
+    void PostProcess_vkTransitionImageLayout(VkResult                               result,
+                                             VkDevice                               device,
+                                             uint32_t                               transitionCount,
+                                             const VkHostImageLayoutTransitionInfo* pTransitions);
+
   protected:
     VulkanCaptureManager() : ApiCaptureManager(format::ApiFamilyId::ApiFamily_Vulkan) {}
 
@@ -1977,7 +1982,7 @@ class VulkanCaptureManager : public ApiCaptureManager
         {
             state_tracker_->TrackDataGraphPipelineSessionMemoryBinding(
                 device, pBindInfos[i].session, pBindInfos[i].memory, pBindInfos[i].memoryOffset);
-            auto wrapper         = GetWrapper<DataGraphPipelineSessionARMWrapper>(pBindInfos[i].session);
+            auto wrapper          = GetWrapper<DataGraphPipelineSessionARMWrapper>(pBindInfos[i].session);
             wrapper->object_index = pBindInfos[i].objectIndex;
             wrapper->bind_point   = pBindInfos[i].bindPoint;
         }
