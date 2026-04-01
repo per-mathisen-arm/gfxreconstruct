@@ -35,8 +35,8 @@
 #include <string>
 #include <map>
 #include <unordered_map>
-#include <optional>
 #include <vector>
+#include <optional>
 #include <vulkan/vulkan_core.h>
 
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
@@ -180,6 +180,9 @@ struct VulkanReplayOptions : public ReplayOptions
 
     /// Wait for the GPU to become idle before each submit.
     bool idle_before_submit{ false };
+
+    /// Serialize render passes by injecting an execution barrier before each render pass begin.
+    bool serialize_render_passes{ false };
 
     void MaybeWaitBeforeFirstSubmit() const;
 };

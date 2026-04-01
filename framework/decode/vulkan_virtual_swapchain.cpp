@@ -1516,7 +1516,7 @@ void VulkanVirtualSwapchain::PresentImageAdHoc(const VulkanDeviceInfo*          
         {
             image_data.image_layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-            VkImageMemoryBarrier memory_barrier;
+            VkImageMemoryBarrier memory_barrier{};
             memory_barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
             memory_barrier.pNext                           = nullptr;
             memory_barrier.srcAccessMask                   = VK_ACCESS_NONE;
@@ -1603,7 +1603,7 @@ void VulkanVirtualSwapchain::PresentImageAdHoc(const VulkanDeviceInfo*          
     }
 
     result = device_table->QueuePresentKHR(ofb_data.queue, &present_info);
-    GFXRECON_ASSERT(result == VK_SUCCESS);
+    GFXRECON_ASSERT(result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR);
 }
 
 VkResult VulkanVirtualSwapchain::CreateVirtualSwapchainImage(const VulkanDeviceInfo*  device_info,

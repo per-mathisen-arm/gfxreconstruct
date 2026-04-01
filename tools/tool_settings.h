@@ -162,6 +162,7 @@ const char kDeduplicateDevice[]                   = "--deduplicate-device";
 const char kStreamlineAnnotateOption[]            = "--streamline-annotate";
 const char kWaitBeforeFirstSubmit[]               = "--wait-before-first-submit";
 const char kIdleBeforeSubmit[]                    = "--idle-before-submit";
+const char kSerializeRenderPasses[]               = "--serialize-render-passes";
 
 const char kScreenshotIgnoreFrameBoundaryArgument[] = "--screenshot-ignore-FrameBoundaryANDROID";
 
@@ -1362,6 +1363,7 @@ GetVulkanReplayOptions(const gfxrecon::util::ArgumentParser&           arg_parse
 
     GetWaitBeforeFirstSubmit(arg_parser, replay_options.wait_before_first_submit);
     replay_options.idle_before_submit = arg_parser.IsOptionSet(kIdleBeforeSubmit);
+    replay_options.serialize_render_passes = arg_parser.IsOptionSet(kSerializeRenderPasses);
 
     return replay_options;
 }
