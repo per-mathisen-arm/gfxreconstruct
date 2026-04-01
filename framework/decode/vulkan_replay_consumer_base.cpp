@@ -10775,7 +10775,7 @@ VkResult VulkanReplayConsumerBase::OverrideCreateRayTracingPipelinesKHR(
         modified_pgroups.resize(createInfoCount);
         for (uint32_t create_info_i = 0; create_info_i < createInfoCount; ++create_info_i)
         {
-            format::HandleId pipeline_capture_id = (*pPipelines[create_info_i].GetPointer());
+            format::HandleId pipeline_capture_id = pPipelines->GetPointer()[create_info_i];
 
             // Enable capture replay flag.
             modified_create_infos.push_back(in_pCreateInfos[create_info_i]);
@@ -10788,9 +10788,9 @@ VkResult VulkanReplayConsumerBase::OverrideCreateRayTracingPipelinesKHR(
 
             if (has_data)
             {
-                assert(device_info->shader_group_handles.at(pipeline_capture_id).size() ==
-                       (device_info->property_feature_info.property_shaderGroupHandleCaptureReplaySize *
-                        group_info_count));
+                GFXRECON_ASSERT(device_info->shader_group_handles.at(pipeline_capture_id).size() ==
+                                (device_info->property_feature_info.property_shaderGroupHandleCaptureReplaySize *
+                                 group_info_count));
             }
             else
             {
@@ -10919,15 +10919,9 @@ VkResult VulkanReplayConsumerBase::OverrideCreateRayTracingPipelinesKHR(
         }
     }
 
-    // If a pipeline cache was created, track it to know when to destroy it/save it to file
-
-    if (in_pipelineCache != overridePipelineCache && result == VK_SUCCESS)
+    if (result >= 0)
     {
-        TrackNewPipelineCache(device_info,
-                              *pPipelines->GetPointer(),
-                              overridePipelineCache,
-                              pPipelines->GetHandlePointer(),
-                              createInfoCount);
+        graphics::populate_shader_stages(pCreateInfos, pPipelines, GetObjectInfoTable());
     }
 
     // If a pipeline cache was created, track it to know when to destroy it/save it to file
