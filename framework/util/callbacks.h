@@ -24,6 +24,8 @@
 #ifndef GFXRECON_UTIL_CALLBACKS_H
 #define GFXRECON_UTIL_CALLBACKS_H
 
+#include <atomic>
+
 #include "util/defines.h"
 #include "util/marking_layers.h"
 
@@ -34,9 +36,23 @@ using PFN_EventBeginCallBack = void (*)(void*);
 using PFN_EventEndCallBack   = void (*)(void*);
 using PFN_SetEventsCallbacks = void (*)(PFN_EventBeginCallBack, PFN_EventEndCallBack, void*);
 
-// void BeginInjectedCommands(); !!!!! DISABLED IN ARM REPOSITORY !!!!!
+/* !!!!! DISABLED IN ARM REPOSITORY !!!!!
 
-// void EndInjectedCommands();  !!!!! DISABLED IN ARM REPOSITORY !!!!!
+void BeginInjectedCommands();
+
+void EndInjectedCommands();
+
+!!!!! DISABLED IN ARM REPOSITORY !!!!! */
+
+//! RAII helper to mark injected commands in scope
+struct MarkInjectedCommandsHelper
+{
+    // allow nested usage without hitting an assertion
+    static thread_local std::atomic<uint32_t> semaphore;
+
+    MarkInjectedCommandsHelper();
+    ~MarkInjectedCommandsHelper();
+};
 
 // Interface for registering callbacks so that GFXReconstruct can notify an external library about
 // generated API calls that are not included in the capture file.

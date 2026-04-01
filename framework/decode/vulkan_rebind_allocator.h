@@ -32,6 +32,7 @@
 
 #include <limits>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -489,6 +490,10 @@ class VulkanRebindAllocator : public VulkanResourceAllocator
     void ClearStagingResources() override;
 
   private:
+    // VMA hook to clean our internal state (mutexes) when VMA clears blocks of memory
+    friend VKAPI_ATTR void VKAPI_CALL
+    OnVmaFreeDeviceMemory(VmaAllocator, uint32_t, VkDeviceMemory, VkDeviceSize, void*);
+
     struct MemoryAllocInfo;
 
     struct SubresourceLayouts
@@ -622,7 +627,6 @@ class VulkanRebindAllocator : public VulkanResourceAllocator
         VkFence            staging_fence;
     };
 
-  private:
     ResourceAllocInfo* HasAliasedObject(const std::unordered_map<uint64_t, ResourceAllocInfo*>& resource_map,
                                         VkDeviceSize                                            memory_offset);
 
@@ -790,12 +794,17 @@ class VulkanRebindAllocator : public VulkanResourceAllocator
                             T&                           modified_memory_bind,
                             ResourceAllocInfo*           res_alloc_info,
                             MemoryAllocInfo*             mem_alloc_info,
-                            S                            vma_mem_blocks,
+                            S&                           vma_mem_blocks,
                             std::vector<VmaMemoryInfo*>& vma_memory_infos,
                             VkBuffer                     buffer,
                             VkImage                      image,
                             const std::string&           type_string,
                             VkDeviceSize                 alloc_size);
+
+    // returns a mutex associated with the given VkDeviceMemory block, creating one if needed.
+    // used to replicate the synchronization previously provided by VmaDeviceMemoryBlock::m_MapAndBindMutex,
+    // which became private in VMA 3.3.0.
+    std::mutex& GetOrCreateBlockMutex(VkDeviceMemory device_memory);
 
     VkDevice                         device_ = VK_NULL_HANDLE;
     VmaAllocator                     allocator_;
@@ -809,6 +818,11 @@ class VulkanRebindAllocator : public VulkanResourceAllocator
     uint32_t                         staging_queue_family_{};
 
     std::vector<StagingResources> staging_resources_{};
+
+    // external per-block mutexes replacing VmaDeviceMemoryBlock::m_MapAndBindMutex (now private in VMA 3.3.0).
+    // use VkDeviceMemory-handles as key to cover all allocations sharing the same block.
+    std::mutex                                                      block_mutexes_guard_;
+    std::unordered_map<VkDeviceMemory, std::unique_ptr<std::mutex>> block_mutexes_;
 };
 
 GFXRECON_END_NAMESPACE(decode)

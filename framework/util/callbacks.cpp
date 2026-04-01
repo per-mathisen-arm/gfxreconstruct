@@ -92,6 +92,26 @@ class MarkInjectedCommands : public CallbackBase
     }
 };
 
+thread_local std::atomic<uint32_t> MarkInjectedCommandsHelper::semaphore = 0;
+
+MarkInjectedCommandsHelper::MarkInjectedCommandsHelper()
+{
+    // mark injected commands
+    if (semaphore++ == 0)
+    {
+        // BeginInjectedCommands(); !!!!! DISABLED IN ARM REPOSITORY !!!!!
+    }
+}
+
+MarkInjectedCommandsHelper::~MarkInjectedCommandsHelper()
+{
+    // mark end of injected commands
+    if (--semaphore == 0)
+    {
+        // EndInjectedCommands(); !!!!! DISABLED IN ARM REPOSITORY !!!!!
+    }
+}
+
 static MarkInjectedCommands injected_commands_marker;
 
 /* !!!!! DISABLED IN ARM REPOSITORY !!!!!

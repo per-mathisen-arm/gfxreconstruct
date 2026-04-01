@@ -182,7 +182,7 @@ VulkanReplayConsumerBase::VulkanReplayConsumerBase(std::shared_ptr<application::
                                                    const VulkanReplayOptions&                options) :
     options_(options),
     loader_handle_(nullptr), get_instance_proc_addr_(nullptr), create_instance_proc_(nullptr),
-    application_(application), loading_trim_state_(false), replaying_trimmed_capture_(false),
+    application_(application), loading_trim_state_(false), replaying_trimmed_capture_(false), fps_info_(nullptr),
     have_imported_semaphores_(false), omitted_pipeline_cache_data_(false), device_fault_supported_(false),
     device_fault_vendor_data_supported_(false), device_fault_vendor_binary_dump_v1_header_size_(56),
     use_acceleration_structure_builder_(false)
@@ -4850,6 +4850,14 @@ VkResult VulkanReplayConsumerBase::OverrideQueueSubmit(PFN_vkQueueSubmit        
     VulkanSubmitJobPlan     plan;
     VulkanSubmitJobExecutor executor;
 
+    if (options_.frame_warm_up_load != 0 && !fps_info_->IsFirstSubmitDone())
+    {
+        auto& frame_warm_up = GetDeviceFrameWarmUp(device_info);
+        plan.Push(0, [&frame_warm_up](const std::span<graphics::VulkanSemaphore> wait_semaphores) {
+            return frame_warm_up.WarmUp(wait_semaphores);
+        });
+    }
+
     if (UseAddressReplacement(device_info) && submit_info_data != nullptr)
     {
         const auto& address_tracker  = GetDeviceAddressTracker(device_info);
@@ -5037,6 +5045,8 @@ VkResult VulkanReplayConsumerBase::OverrideQueueSubmit(PFN_vkQueueSubmit        
         GetAccelerationStructureBuilder(device_info).OnQueueSubmit(submitCount, submit_infos, fence);
     }
 
+    fps_info_->SetFirstSubmitDone(true);
+
     return result;
 }
 
@@ -5078,6 +5088,14 @@ VkResult VulkanReplayConsumerBase::OverrideQueueSubmit2(PFN_vkQueueSubmit2      
 
     VulkanSubmitJobPlan     plan;
     VulkanSubmitJobExecutor executor;
+
+    if (options_.frame_warm_up_load != 0 && !fps_info_->IsFirstSubmitDone())
+    {
+        auto& frame_warm_up = GetDeviceFrameWarmUp(device_info);
+        plan.Push(0, [&frame_warm_up](const std::span<graphics::VulkanSemaphore> wait_semaphores) {
+            return frame_warm_up.WarmUp(wait_semaphores);
+        });
+    }
 
     if (UseAddressReplacement(device_info) && submit_info_data != nullptr)
     {
@@ -5254,6 +5272,8 @@ VkResult VulkanReplayConsumerBase::OverrideQueueSubmit2(PFN_vkQueueSubmit2      
         const VulkanDeviceInfo* device_info = object_info_table_->GetVkDeviceInfo(queue_info->parent_id);
         GetAccelerationStructureBuilder(device_info).OnQueueSubmit2(submitCount, submit_infos, fence);
     }
+
+    fps_info_->SetFirstSubmitDone(true);
 
     return result;
 }
@@ -12843,6 +12863,24 @@ decode::VulkanMicromapBuilder& VulkanReplayConsumerBase::GetMicromapBuilder(cons
                                   device_info->allocator.get(),
                                   *physical_device_info->replay_device_info->memory_properties,
                                   GetDeviceAddressTracker(device_info)));
+        GFXRECON_ASSERT(success);
+        return new_it->second;
+    }
+    return it->second;
+}
+
+VulkanFrameWarmUp& VulkanReplayConsumerBase::GetDeviceFrameWarmUp(const VulkanDeviceInfo* device_info)
+{
+    auto it = device_frame_warmups_.find(device_info);
+    if (it == device_frame_warmups_.end())
+    {
+        auto [new_it, success] = device_frame_warmups_.insert({ device_info,
+                                                                VulkanFrameWarmUp(device_info,
+                                                                                  GetDeviceTable(device_info->handle),
+                                                                                  GetInstanceTable(device_info->parent),
+                                                                                  *object_info_table_,
+                                                                                  options_.frame_warm_up_spirv_path,
+                                                                                  options_.frame_warm_up_load) });
         GFXRECON_ASSERT(success);
         return new_it->second;
     }

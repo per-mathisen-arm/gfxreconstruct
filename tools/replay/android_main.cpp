@@ -225,6 +225,7 @@ void android_main(struct android_app* app)
 
                 vulkan_replay_consumer.SetFatalErrorHandler(
                     [](const char* message) { throw std::runtime_error(message); });
+                vulkan_replay_consumer.SetFpsInfo(&fps_info);
 
                 vulkan_decoder.AddConsumer(&vulkan_replay_consumer);
 
