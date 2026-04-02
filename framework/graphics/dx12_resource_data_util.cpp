@@ -198,6 +198,11 @@ void Dx12ResourceDataUtil::GetResourceCopyInfo(ID3D12Resource*                  
         subresource_sizes.push_back(resource_desc.Width);
         subresource_offsets.push_back(0);
 
+        if ((resource_desc.Flags & D3D12_RESOURCE_FLAG_USE_TIGHT_ALIGNMENT) == D3D12_RESOURCE_FLAG_USE_TIGHT_ALIGNMENT)
+        {
+            resource_desc.Alignment = 0;
+        }
+
         device->GetCopyableFootprints(&resource_desc, 0, 1, 0, layouts.data(), nullptr, nullptr, &total_size);
 
         // Total resource size should be equal to buffer width and should have 0 offset.
