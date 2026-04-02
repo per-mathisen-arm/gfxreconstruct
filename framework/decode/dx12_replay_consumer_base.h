@@ -47,6 +47,7 @@
 #include "decode/screenshot_handler_base.h"
 #include "graphics/dx12_util.h"
 #include "application/application.h"
+#include "graphics/fps_info.h"
 
 #ifdef GFXRECON_AGS_SUPPORT
 #include "graphics/dx12_ags_marker_injector.h"
@@ -1520,6 +1521,7 @@ class Dx12ReplayConsumerBase : public Dx12Consumer
     uint64_t                                              unique_proxy_window_id_counter_;
     std::unordered_map<ID3D12Resource*, ResourceInitInfo> resource_init_infos_;
     uint64_t                                              frame_end_marker_count_;
+    graphics::FpsInfo*                                    fps_info_;
     std::unordered_map<ID3D12MetaCommand*, GUID>          meta_command_guids_;
 
 #ifdef GFXRECON_AGS_SUPPORT
