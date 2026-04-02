@@ -109,7 +109,7 @@ void Dx12RayTracingModifier::Process_ID3D12StateObjectProperties_GetShaderIdenti
     auto [iter, inserted] = shader_id_to_properties_id_.try_emplace(shader_id, object_id);
     if ((!inserted) && (iter->second != object_id))
     {
-        GFXRECON_LOG_ERROR(
+        GFXRECON_LOG_DEBUG(
             "Shader identifier already exists for object ID: %" PRIu64 " and %" PRIu64, object_id, iter->second);
     }
 }
