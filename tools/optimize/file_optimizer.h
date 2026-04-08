@@ -43,6 +43,7 @@ class FileOptimizer : public decode::FileTransformer
     bool ProcessFunctionCall(decode::ParsedBlock& parsed_block) override;
     bool ProcessMethodCall(decode::ParsedBlock& parsed_block) override;
     bool ProcessMetaData(decode::ParsedBlock& parsed_block) override;
+    bool WriteAnnotation(std::string_view label, std::string_view message);
 
     VisitResult FilterMetaData(const decode::InitBufferArgs& args);
     VisitResult FilterMetaData(const decode::InitImageArgs& args);
@@ -82,8 +83,7 @@ class FileOptimizer : public decode::FileTransformer
     [[nodiscard]] bool FilterFunctionCall(const decode::FunctionCallArgs& args) const;
     [[nodiscard]] bool FilterMethodCall(const decode::MethodCallArgs& args) const;
 
-    bool WriteAnnotation(std::string_view label, std::string_view message);
-
+  protected:
     const std::unordered_set<format::HandleId>& unreferenced_ids_;
     const std::unordered_set<uint64_t>&         unreferenced_blocks_;
     const std::unordered_set<format::ThreadId>& removed_threads_ids_;

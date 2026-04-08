@@ -32,6 +32,7 @@ GFXRECON_BEGIN_NAMESPACE(decode)
 struct Dx12OptimizationOptions : public OptimizationOptions
 {
     bool remove_redundant_psos{ false };
+    bool remove_redundant_resources{ false };
     bool optimize_resource_values{ false };
     bool optimize_resource_values_experimental{ false };
     bool optimize_resource_values_offline{ false };

@@ -38,7 +38,7 @@ class Dx12FileOptimizerARM : public FileOptimizer
   public:
     struct Dx12OptimizationData
     {
-        // PSO removal
+        std::unordered_set<format::HandleId> unreferenced_ids;
         std::unordered_set<uint64_t>         unreferenced_blocks;
         decode::UnreferencedPsoCreationCalls calls_info{};
 
@@ -47,7 +47,7 @@ class Dx12FileOptimizerARM : public FileOptimizer
 
     Dx12FileOptimizerARM(Dx12OptimizationData*                       optimization_data,
                          const std::unordered_set<format::ThreadId>& removed_threads_ids) :
-        FileOptimizer({}, optimization_data->unreferenced_blocks, removed_threads_ids),
+        FileOptimizer(optimization_data->unreferenced_ids, optimization_data->unreferenced_blocks, removed_threads_ids),
         optimization_data_(optimization_data)
     {}
 
