@@ -11,6 +11,7 @@
         "vkFreeMemory": "manager->OverrideFreeMemory",
         "vkDestroyDevice": "manager->OverrideDestroyDevice",
         "vkGetPhysicalDeviceToolPropertiesEXT": "manager->OverrideGetPhysicalDeviceToolPropertiesEXT",
+        "vkGetPhysicalDeviceToolProperties": "manager->OverrideGetPhysicalDeviceToolPropertiesEXT",
         "vkCreateAccelerationStructureKHR": "manager->OverrideCreateAccelerationStructureKHR",
         "vkCreateMicromapEXT": "manager->OverrideCreateMicromapEXT",
         "vkCreateRayTracingPipelinesKHR": "manager->OverrideCreateRayTracingPipelinesKHR",
