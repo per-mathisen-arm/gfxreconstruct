@@ -2974,8 +2974,8 @@ void VulkanStateTracker::TrackCmdBindDescriptorSets(VkCommandBuffer        comma
     }
 }
 
-void VulkanStateTracker::TrackCmdBindDescriptorSets2KHR(VkCommandBuffer                    commandBuffer,
-                                                        const VkBindDescriptorSetsInfoKHR* pBindDescriptorSetsInfo)
+void VulkanStateTracker::TrackCmdBindDescriptorSets2(VkCommandBuffer                    commandBuffer,
+                                                     const VkBindDescriptorSetsInfoKHR* pBindDescriptorSetsInfo)
 {
     if (pBindDescriptorSetsInfo != nullptr && pBindDescriptorSetsInfo->pDescriptorSets != nullptr &&
         commandBuffer != VK_NULL_HANDLE)
