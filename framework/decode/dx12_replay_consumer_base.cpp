@@ -3131,11 +3131,13 @@ HRESULT Dx12ReplayConsumerBase::OverrideOpenExistingHeapFromFileMapping(DxObject
             return E_FAIL;
         }
 
-        HANDLE handle = CreateFileMapping(INVALID_HANDLE_VALUE,
+        DWORD  map_size_high = static_cast<DWORD>(static_cast<uint64_t>(info.RegionSize) >> 32);
+        DWORD  map_size_low  = static_cast<DWORD>(static_cast<uint64_t>(info.RegionSize) & 0xFFFFFFFF);
+        HANDLE handle        = CreateFileMapping(INVALID_HANDLE_VALUE,
                                           nullptr,
                                           PAGE_READWRITE,
-                                          static_cast<DWORD>(info.RegionSize >> 32),
-                                          static_cast<DWORD>(info.RegionSize & 0xFFFFFFFF),
+                                          map_size_high,
+                                          map_size_low,
                                           TEXT("OpenExistingHeapFromFileMapping"));
         if (handle == nullptr)
         {

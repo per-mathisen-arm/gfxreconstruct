@@ -1172,9 +1172,6 @@ void Dx12RayTracingModifier::Process_CopyRaytracingAccelerationStructure(
                     }
                 }
 
-                build_desc.geometry_descs.insert(build_desc.geometry_descs.end(),
-                                                 acceleration_structure_build_desc_[dst_address].geometry_descs.begin(),
-                                                 acceleration_structure_build_desc_[dst_address].geometry_descs.end());
                 build_desc.build_blas_inputs.NumDescs = build_desc.geometry_descs.size();
                 acceleration_structure_build_desc_.erase(dst_address);
             }
