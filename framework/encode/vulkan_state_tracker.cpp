@@ -562,7 +562,7 @@ void VulkanStateTracker::TrackAccelerationStructureBuildCommand(
                     buffer.queue_family_index                       = target_buffer_wrapper->queue_family_index;
                     buffer.created_size                             = target_buffer_wrapper->size;
                     buffer.usage                                    = target_buffer_wrapper->usage;
-                    target_buffer_wrapper->as_target_storage_buffer = wrapper->buffer;
+                    target_buffer_wrapper->as_target_storage_buffer_id = wrapper->buffer->handle_id;
                 }
             }
         }
@@ -2275,6 +2275,12 @@ void gfxrecon::encode::VulkanStateTracker::DestroyState(vulkan_wrappers::BufferW
     GFXRECON_ASSERT(wrapper != nullptr && wrapper->device != nullptr);
     wrapper->create_parameters = nullptr;
 
+    vulkan_wrappers::BufferWrapper* target_storage_wrapper = nullptr;
+    if (wrapper->as_target_storage_buffer_id != format::kNullHandleId)
+    {
+        target_storage_wrapper = state_table_.GetVulkanBufferWrapper(wrapper->as_target_storage_buffer_id);
+    }
+
     if (wrapper != nullptr && wrapper->device != nullptr)
     {
         device_address_trackers_[wrapper->device].RemoveBuffer(wrapper);
@@ -2284,9 +2290,9 @@ void gfxrecon::encode::VulkanStateTracker::DestroyState(vulkan_wrappers::BufferW
         state_table_.GetVulkanDeviceMemoryWrapper(wrapper->bind_memory_id);
 
     // If this buffer acts as input to AS build, we need to mark it and pull information
-    if (wrapper->as_target_storage_buffer)
+    if (target_storage_wrapper)
     {
-        for (auto& [as_address, build_state] : wrapper->as_target_storage_buffer->acceleration_structures)
+        for (auto& [as_address, build_state] : target_storage_wrapper->acceleration_structures)
         {
             // If the memory bound to this resource has already been destroyed, skip reading the buffer data.
             if (build_state.latest_build_command && mem_wrapper != nullptr)

@@ -230,7 +230,7 @@ struct BufferWrapper : public HandleWrapper<VkBuffer>, AssetWrapperBase
     VkDeviceSize     created_size{ 0 };
 
     std::unordered_map<VkDeviceAddress, AccelerationStructureBuildState> acceleration_structures;
-    BufferWrapper*                                                       as_target_storage_buffer{ nullptr };
+    format::HandleId as_target_storage_buffer_id{ format::kNullHandleId };
 
     // optional opaque descriptor-data used by VK_EXT_descriptor_buffer
     std::vector<uint8_t> opaque_descriptor_data;
