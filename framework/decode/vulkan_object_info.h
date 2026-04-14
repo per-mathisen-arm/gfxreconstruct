@@ -824,6 +824,7 @@ struct VulkanDataGraphPipelineSessionARMInfo : public VulkanObjectInfo<VkDataGra
 {
     // The following values are only used for memory portability.
     VulkanResourceAllocator::ResourceData    allocator_data{ 0 };
+    VkMemoryPropertyFlags                    memory_property_flags{ 0 };
     VkDataGraphPipelineSessionCreateFlagsARM flags{};
 };
 

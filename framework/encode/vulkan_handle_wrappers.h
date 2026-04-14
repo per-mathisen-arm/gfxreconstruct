@@ -166,8 +166,8 @@ struct DeviceWrapper : public HandleWrapper<VkDevice>
     std::vector<QueueWrapper*>  child_queues;
 
     // Physical device property & feature state at device creation
-    graphics::VulkanDevicePropertyFeatureInfo              property_feature_info;
-    std::vector<uint32_t>                                  queue_family_indices;
+    graphics::VulkanDevicePropertyFeatureInfo property_feature_info;
+    std::vector<uint32_t>                     queue_family_indices;
 };
 
 struct FenceWrapper : public HandleWrapper<VkFence>
@@ -738,8 +738,12 @@ struct PipelineCacheWrapper : public HandleWrapper<VkPipelineCache>
 
 struct DataGraphPipelineSessionARMWrapper : public HandleWrapper<VkDataGraphPipelineSessionARM>, AssetWrapperBase
 {
-    VkDataGraphPipelineSessionBindPointARM bind_point;
-    uint32_t                               object_index;
+    VkDataGraphPipelineSessionBindPointARM                         bind_point;
+    uint32_t                                                       object_index;
+    vulkan_state_info::CreateDependencyInfo                        pipeline_dependency;
+    std::vector<vulkan_state_info::CreateDependencyInfo>           pipeline_shader_module_dependencies;
+    vulkan_state_info::CreateDependencyInfo                        pipeline_layout_dependency;
+    std::shared_ptr<vulkan_state_info::PipelineLayoutDependencies> pipeline_layout_dependencies;
 };
 
 // Handle alias types for extension handle types that have been promoted to core types.

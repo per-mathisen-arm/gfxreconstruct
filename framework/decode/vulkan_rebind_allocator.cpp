@@ -2074,9 +2074,9 @@ void VulkanRebindAllocator::WriteBoundResourceStaging(ResourceAllocInfo* resourc
     if (result == VK_SUCCESS)
     {
         VkSubmitInfo compute_submit_info{};
-        compute_submit_info.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        compute_submit_info.commandBufferCount   = 1;
-        compute_submit_info.pCommandBuffers      = &staging_resources.cmd_buffer;
+        compute_submit_info.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        compute_submit_info.commandBufferCount = 1;
+        compute_submit_info.pCommandBuffers    = &staging_resources.cmd_buffer;
         GFXRECON_NARROWING_ASSIGN(compute_submit_info.waitSemaphoreCount, waiting_semaphores.size());
         compute_submit_info.pWaitSemaphores      = waiting_semaphores.data();
         compute_submit_info.pWaitDstStageMask    = waiting_semaphores_dst_stage_mask.data();
@@ -2985,10 +2985,16 @@ VulkanRebindAllocator::BindDataGraphPipelineSessionMemory(uint32_t bind_info_cou
         mem_info.offset_from_original_device_memory = memory_offset;
 
         result = vmaAllocateMemory(allocator_, &replay_mem_req, &aci, &allocation, &alloc_info);
-
-        if (result == VK_SUCCESS)
+        if (result != VK_SUCCESS)
         {
-            memory_alloc_info->vma_mem_infos.emplace_back(std::make_unique<VmaMemoryInfo>(mem_info));
+            GFXRECON_LOG_ERROR("BindDataGraphPipelineSessionMemory[%u]: vmaAllocateMemory failed: %d "
+                               "(size=%" PRIu64 ", align=%" PRIu64 ", typeBits=0x%08X)",
+                               i,
+                               result,
+                               static_cast<unsigned long long>(replay_mem_req.size),
+                               static_cast<unsigned long long>(replay_mem_req.alignment),
+                               replay_mem_req.memoryTypeBits);
+            return result;
         }
 
         VkBindDataGraphPipelineSessionMemoryInfoARM bind_session_memory_info{
@@ -3016,6 +3022,10 @@ VulkanRebindAllocator::BindDataGraphPipelineSessionMemory(uint32_t bind_info_cou
             }
             return result;
         }
+
+        mem_info.allocation      = allocation;
+        mem_info.allocation_info = alloc_info;
+        memory_alloc_info->vma_mem_infos.emplace_back(std::make_unique<VmaMemoryInfo>(mem_info));
 
         VkMemoryPropertyFlags nonconst_want_props = want_props;
         UpdateAllocInfo(*resource_alloc_info,
@@ -3267,6 +3277,7 @@ VulkanRebindAllocator::AllocateMemoryForAliasedObjects(std::vector<AliasedResour
                            static_cast<unsigned long long>(max_replay_requirements.memoryRequirements.size),
                            static_cast<unsigned long long>(max_replay_requirements.memoryRequirements.alignment),
                            max_replay_requirements.memoryRequirements.memoryTypeBits);
+        return result;
     }
 
     return VK_SUCCESS;
@@ -3916,11 +3927,11 @@ VkResult VulkanRebindAllocator::QueueBindSparse(VkQueue                 queue,
         }
 
         GFXRECON_NARROWING_ASSIGN(modified_bind_info.bufferBindCount, modified_buffer_bind_infos[i].size());
-        modified_bind_info.pBufferBinds         = modified_buffer_bind_infos[i].data();
+        modified_bind_info.pBufferBinds = modified_buffer_bind_infos[i].data();
         GFXRECON_NARROWING_ASSIGN(modified_bind_info.imageOpaqueBindCount, modified_image_opaque_bind_infos[i].size());
-        modified_bind_info.pImageOpaqueBinds    = modified_image_opaque_bind_infos[i].data();
+        modified_bind_info.pImageOpaqueBinds = modified_image_opaque_bind_infos[i].data();
         GFXRECON_NARROWING_ASSIGN(modified_bind_info.imageBindCount, modified_image_bind_infos[i].size());
-        modified_bind_info.pImageBinds          = modified_image_bind_infos[i].data();
+        modified_bind_info.pImageBinds = modified_image_bind_infos[i].data();
     }
 
     std::vector<std::unique_lock<std::mutex>> block_locks;

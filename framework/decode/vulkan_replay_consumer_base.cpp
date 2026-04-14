@@ -1579,7 +1579,6 @@ void VulkanReplayConsumerBase::ProcessInitTensorCommand(format::HandleId device_
 {
     VulkanDeviceInfo*          device_info = object_info_table_->GetVkDeviceInfo(device_id);
     const VulkanTensorARMInfo* tensor_info = object_info_table_->GetVkTensorARMInfo(tensor_id);
-    auto                       allocator   = device_info->allocator.get();
 
     if ((device_info != nullptr) && (tensor_info != nullptr))
     {
@@ -1592,23 +1591,21 @@ void VulkanReplayConsumerBase::ProcessInitTensorCommand(format::HandleId device_
 
         if (initializer != nullptr)
         {
-            if ((tensor_info->memory_property_flags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) ==
-                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)
-            {
-                result = initializer->LoadData(data_size, data, tensor_info->allocator_data);
+            result = initializer->LoadData(data_size, data, tensor_info->allocator_data);
 
-                if (result != VK_SUCCESS)
-                {
-                    GFXRECON_LOG_WARNING("State snapshot mapped memory copy failed for VkTensor object (ID = %" PRIu64
-                                         ", handle = 0x%" PRIx64 ")",
-                                         tensor_id,
-                                         tensor);
-                }
-            }
-            else
+            if (result != VK_SUCCESS)
             {
-                GFXRECON_LOG_WARNING("Tensor staging not supported");
+                GFXRECON_LOG_WARNING("State snapshot tensor upload failed for VkTensor object (ID = %" PRIu64
+                                     ", handle = 0x%" PRIx64 ")",
+                                     tensor_id,
+                                     tensor);
             }
+        }
+        else
+        {
+            GFXRECON_LOG_WARNING("Skipping state snapshot tensor upload for tensor %" PRIu64
+                                 ": resource initializer was not created",
+                                 tensor_id);
         }
     }
     else
@@ -15050,7 +15047,36 @@ VulkanReplayConsumerBase::OverrideCreateTensorARM(PFN_vkCreateTensorARM         
     if ((result == VK_SUCCESS) && (replay_create_info != nullptr) && ((*replay_tensor) != VK_NULL_HANDLE))
     {
         tensor_info->allocator_data = allocator_data;
+        tensor_info->tiling         = replay_create_info->pDescription->tiling;
+        tensor_info->format         = replay_create_info->pDescription->format;
+        tensor_info->dimensionCount = replay_create_info->pDescription->dimensionCount;
         tensor_info->usage          = replay_create_info->pDescription->usage;
+        tensor_info->pDimensions.resize(tensor_info->dimensionCount);
+        tensor_info->pStrides.clear();
+
+        for (uint32_t i = 0; i < tensor_info->dimensionCount; ++i)
+        {
+            tensor_info->pDimensions[i] = replay_create_info->pDescription->pDimensions[i];
+        }
+
+        if (replay_create_info->pDescription->pStrides != nullptr)
+        {
+            tensor_info->pStrides.resize(tensor_info->dimensionCount);
+            for (uint32_t i = 0; i < tensor_info->dimensionCount; ++i)
+            {
+                tensor_info->pStrides[i] = replay_create_info->pDescription->pStrides[i];
+            }
+        }
+
+        VkTensorMemoryRequirementsInfoARM tensor_mem_req{};
+        tensor_mem_req.sType  = VK_STRUCTURE_TYPE_TENSOR_MEMORY_REQUIREMENTS_INFO_ARM;
+        tensor_mem_req.tensor = (*replay_tensor);
+
+        VkMemoryRequirements2 replay_req_2{};
+        replay_req_2.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
+
+        allocator->GetTensorMemoryRequirementsARM(&tensor_mem_req, &replay_req_2, tensor_info->allocator_data);
+        tensor_info->size = replay_req_2.memoryRequirements.size;
 
         if ((replay_create_info->sharingMode == VK_SHARING_MODE_CONCURRENT) &&
             (replay_create_info->queueFamilyIndexCount > 0) && (replay_create_info->pQueueFamilyIndices != nullptr))
@@ -15182,10 +15208,20 @@ VkResult VulkanReplayConsumerBase::OverrideBindDataGraphPipelineSessionMemoryARM
         {
             allocator_session_datas[i] = session_info->allocator_data;
         }
+        else
+        {
+            GFXRECON_LOG_WARNING(
+                "DataGraph bind[%u] references unknown session handle id %" PRIu64, i, bind_meta_info.session);
+        }
 
         if (memory_info != nullptr)
         {
             allocator_memory_datas[i] = memory_info->allocator_data;
+        }
+        else
+        {
+            GFXRECON_LOG_WARNING(
+                "DataGraph bind[%u] references unknown memory handle id %" PRIu64, i, bind_meta_info.memory);
         }
     }
 
@@ -15194,6 +15230,20 @@ VkResult VulkanReplayConsumerBase::OverrideBindDataGraphPipelineSessionMemoryARM
                                                                     allocator_session_datas.data(),
                                                                     allocator_memory_datas.data(),
                                                                     memory_property_flags.data());
+
+    if (result == VK_SUCCESS)
+    {
+        for (uint32_t i = 0; i < bindInfoCount; ++i)
+        {
+            auto& bind_meta_info = pBindInfos->GetMetaStructPointer()[i];
+            auto  session_info   = object_info_table_->GetVkDataGraphPipelineSessionARMInfo(bind_meta_info.session);
+            if (session_info != nullptr)
+            {
+                session_info->memory_property_flags = memory_property_flags[i];
+            }
+        }
+    }
+
     return result;
 }
 
@@ -15224,10 +15274,20 @@ VkResult VulkanReplayConsumerBase::OverrideBindTensorMemoryARM(
         {
             allocator_tensor_datas[i] = tensor_info->allocator_data;
         }
+        else
+        {
+            GFXRECON_LOG_WARNING(
+                "Tensor bind[%u] references unknown tensor handle id %" PRIu64, i, bind_meta_info.tensor);
+        }
 
         if (memory_info != nullptr)
         {
             allocator_memory_datas[i] = memory_info->allocator_data;
+        }
+        else
+        {
+            GFXRECON_LOG_WARNING(
+                "Tensor bind[%u] references unknown memory handle id %" PRIu64, i, bind_meta_info.memory);
         }
     }
 
@@ -15236,6 +15296,20 @@ VkResult VulkanReplayConsumerBase::OverrideBindTensorMemoryARM(
                                          allocator_tensor_datas.data(),
                                          allocator_memory_datas.data(),
                                          memory_property_flags.data());
+
+    if (result == VK_SUCCESS)
+    {
+        for (uint32_t i = 0; i < bind_info_count; ++i)
+        {
+            auto& bind_meta_info = pBindInfos->GetMetaStructPointer()[i];
+            auto  tensor_info    = object_info_table_->GetVkTensorARMInfo(bind_meta_info.tensor);
+            if (tensor_info != nullptr)
+            {
+                tensor_info->memory_property_flags = memory_property_flags[i];
+            }
+        }
+    }
+
     return result;
 }
 

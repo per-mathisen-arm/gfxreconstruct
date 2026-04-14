@@ -108,6 +108,7 @@ class VulkanStateWriter
     {
         std::vector<BufferSnapshotInfo> buffers;
         std::vector<ImageSnapshotInfo>  images;
+        std::vector<TensorSnapshotInfo> tensors;
     };
 
     typedef std::unordered_map<uint32_t, ResourceSnapshotInfo> ResourceSnapshotQueueFamilyTable;
@@ -229,6 +230,11 @@ class VulkanStateWriter
     void ProcessTensorMemory(const vulkan_wrappers::DeviceWrapper*  device_wrapper,
                              const std::vector<TensorSnapshotInfo>& tensor_snapshot_info,
                              graphics::VulkanResourcesUtil&         resource_util);
+
+    void WriteTensorSnapshotState(const VulkanStateTable& state_table,
+                                  DeviceResourceTables*   resources,
+                                  VkDeviceSize*           total_staging_copy_size,
+                                  VkDeviceSize*           max_staging_copy_size);
 
     void WriteBufferMemoryState(const VulkanStateTable& state_table,
                                 DeviceResourceTables*   resources,

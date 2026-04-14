@@ -173,8 +173,9 @@ uint64_t VulkanStateWriter::WriteState(const VulkanStateTable& state_table, uint
     WriteImageState(state_table);
 
     StandardCreateWrite<vulkan_wrappers::TensorARMWrapper>(state_table);
-    StandardCreateWrite<vulkan_wrappers::TensorViewARMWrapper>(state_table);
     WriteDeviceMemoryState(state_table);
+    WriteTensorMemoryState(state_table);
+    StandardCreateWrite<vulkan_wrappers::TensorViewARMWrapper>(state_table);
 
     // Bind memory after buffer/image creation and memory allocation. The buffer/image needs to be created before memory
     // allocation for extensions like dedicated allocation that require a valid buffer/image handle at memory allocation.
@@ -886,6 +887,78 @@ void VulkanStateWriter::WritePipelineState(const VulkanStateTable& state_table)
                     WriteFunctionCall(wrapper->layout_dependency.create_call_id, create_parameters);
                 }
             }
+        }
+    });
+
+    // Ensure pipelines referenced by data graph sessions are recreated even if destroyed before trimming.
+    state_table.VisitWrappers([&](const vulkan_wrappers::DataGraphPipelineSessionARMWrapper* session_wrapper) {
+        if (session_wrapper == nullptr)
+        {
+            return;
+        }
+
+        // Only act if we captured the pipeline dependency and it is missing from the live state table.
+        if ((session_wrapper->pipeline_dependency.create_parameters == nullptr) ||
+            (state_table.GetVulkanPipelineWrapper(session_wrapper->pipeline_dependency.handle_id) != nullptr))
+        {
+            return;
+        }
+
+        // Make sure shader module dependencies exist.
+        for (const auto& dep : session_wrapper->pipeline_shader_module_dependencies)
+        {
+            auto shader_wrapper = state_table.GetVulkanShaderModuleWrapper(dep.handle_id);
+            if (shader_wrapper == nullptr)
+            {
+                auto        create_parameters = dep.create_parameters.get();
+                const auto& inserted          = temp_shaders.insert(std::make_pair(dep.handle_id, create_parameters));
+                if (inserted.second)
+                {
+                    WriteFunctionCall(dep.create_call_id, create_parameters);
+                }
+            }
+        }
+
+        // Ensure pipeline layout and its descriptor set layout dependencies exist.
+        if (session_wrapper->pipeline_layout_dependency.handle_id != format::kNullHandleId)
+        {
+            auto layout_wrapper =
+                state_table.GetVulkanPipelineLayoutWrapper(session_wrapper->pipeline_layout_dependency.handle_id);
+            if (layout_wrapper == nullptr)
+            {
+                auto        create_parameters = session_wrapper->pipeline_layout_dependency.create_parameters.get();
+                const auto& inserted          = temp_layouts.insert(
+                    std::make_pair(session_wrapper->pipeline_layout_dependency.handle_id, create_parameters));
+                if (inserted.second)
+                {
+                    if (session_wrapper->pipeline_layout_dependencies != nullptr)
+                    {
+                        for (const auto& entry : session_wrapper->pipeline_layout_dependencies->layouts)
+                        {
+                            auto ds_layout_wrapper = state_table.GetVulkanDescriptorSetLayoutWrapper(entry.handle_id);
+                            if (ds_layout_wrapper == nullptr)
+                            {
+                                auto        dep_create_parameters = entry.create_parameters.get();
+                                const auto& dep_inserted =
+                                    temp_ds_layouts.insert(std::make_pair(entry.handle_id, dep_create_parameters));
+                                if (dep_inserted.second)
+                                {
+                                    WriteFunctionCall(entry.create_call_id, dep_create_parameters);
+                                }
+                            }
+                        }
+                    }
+
+                    WriteFunctionCall(session_wrapper->pipeline_layout_dependency.create_call_id, create_parameters);
+                }
+            }
+        }
+
+        if (processed_data_graph_pipelines_arm.find(session_wrapper->pipeline_dependency.create_parameters.get()) ==
+            processed_data_graph_pipelines_arm.end())
+        {
+            data_graph_pipelines_arm.push_back(session_wrapper->pipeline_dependency.create_parameters.get());
+            processed_data_graph_pipelines_arm.insert(session_wrapper->pipeline_dependency.create_parameters.get());
         }
     });
 
@@ -2336,8 +2409,18 @@ void VulkanStateWriter::WriteMicromapEXTState(const VulkanStateTable& state_tabl
 
 void VulkanStateWriter::WriteDataGraphPipelineSessionMemoryState(const VulkanStateTable& state_table)
 {
+    std::unordered_map<format::HandleId, const util::MemoryOutputStream*> temp_pipelines;
+
     state_table.VisitWrappers([&](const vulkan_wrappers::DataGraphPipelineSessionARMWrapper* wrapper) {
         assert(wrapper != nullptr);
+
+        if ((wrapper->pipeline_dependency.handle_id != format::kNullHandleId) &&
+            (wrapper->pipeline_dependency.create_parameters != nullptr) &&
+            (state_table.GetVulkanPipelineWrapper(wrapper->pipeline_dependency.handle_id) == nullptr))
+        {
+            temp_pipelines.insert(std::make_pair(wrapper->pipeline_dependency.handle_id,
+                                                 wrapper->pipeline_dependency.create_parameters.get()));
+        }
 
         // Require a valid bound memory.
         const auto* memory_wrapper = state_table.GetVulkanDeviceMemoryWrapper(wrapper->bind_memory_id);
@@ -2362,6 +2445,11 @@ void VulkanStateWriter::WriteDataGraphPipelineSessionMemoryState(const VulkanSta
         WriteFunctionCall(format::ApiCallId::ApiCall_vkBindDataGraphPipelineSessionMemoryARM, &parameter_stream_);
         parameter_stream_.Clear();
     });
+
+    for (const auto& entry : temp_pipelines)
+    {
+        DestroyTemporaryDeviceObject(format::ApiCall_vkDestroyPipeline, entry.first, entry.second);
+    }
 }
 
 void VulkanStateWriter::WriteMicromapEXTBuild(DeviceWrapper*                          device_wrapper,
@@ -2738,6 +2826,14 @@ void VulkanStateWriter::ProcessTensorMemory(const vulkan_wrappers::DeviceWrapper
 
         if (snapshot_entry.need_staging_copy)
         {
+            if (tensor_wrapper->size == 0)
+            {
+                GFXRECON_LOG_WARNING("Skipping tensor trim snapshot for tensor %" PRIu64
+                                     ": size is 0, staging copy cannot be initialized",
+                                     tensor_wrapper->handle_id);
+                continue;
+            }
+
             VkTensorDescriptionARM desc;
             desc.sType          = VK_STRUCTURE_TYPE_TENSOR_DESCRIPTION_ARM;
             desc.pNext          = nullptr;
@@ -2745,7 +2841,7 @@ void VulkanStateWriter::ProcessTensorMemory(const vulkan_wrappers::DeviceWrapper
             desc.format         = tensor_wrapper->format;
             desc.dimensionCount = tensor_wrapper->dimensionCount;
             desc.pDimensions    = tensor_wrapper->pDimensions.data();
-            desc.pStrides       = tensor_wrapper->pStrides.data();
+            desc.pStrides       = tensor_wrapper->pStrides.empty() ? nullptr : tensor_wrapper->pStrides.data();
             desc.usage          = tensor_wrapper->usage;
             VkResult result     = resource_util.ReadFromTensorResource(
                 tensor_wrapper->handle, &desc, tensor_wrapper->queue_family_index, data);
@@ -2763,6 +2859,14 @@ void VulkanStateWriter::ProcessTensorMemory(const vulkan_wrappers::DeviceWrapper
 
             if (memory_wrapper->mapped_data == nullptr)
             {
+                if (tensor_wrapper->size == 0)
+                {
+                    GFXRECON_LOG_WARNING("Skipping tensor trim snapshot for tensor %" PRIu64
+                                         ": size is 0, direct map copy cannot be initialized",
+                                         tensor_wrapper->handle_id);
+                    continue;
+                }
+
                 void* map_ptr = nullptr;
                 result        = device_table->MapMemory(device_wrapper->handle,
                                                  memory_wrapper->handle,
@@ -3922,6 +4026,64 @@ void VulkanStateWriter::WriteImageSubresourceLayouts(const vulkan_wrappers::Imag
     }
 }
 
+void VulkanStateWriter::WriteTensorSnapshotState(const VulkanStateTable& state_table,
+                                                 DeviceResourceTables*   resources,
+                                                 VkDeviceSize*           total_staging_copy_size,
+                                                 VkDeviceSize*           max_staging_copy_size)
+{
+    GFXRECON_ASSERT((resources != nullptr) && (total_staging_copy_size != nullptr) &&
+                    (max_staging_copy_size != nullptr));
+
+    state_table.VisitWrappers([&](vulkan_wrappers::TensorARMWrapper* wrapper) {
+        GFXRECON_ASSERT(wrapper != nullptr);
+
+        const vulkan_wrappers::DeviceWrapper* device_wrapper = wrapper->bind_device;
+        if (device_wrapper == nullptr)
+        {
+            GFXRECON_LOG_WARNING("Skipping tensor trim snapshot for tensor %" PRIu64 ": no bound device is tracked",
+                                 wrapper->handle_id);
+            return;
+        }
+
+        const auto* memory_wrapper = state_table.GetVulkanDeviceMemoryWrapper(wrapper->bind_memory_id);
+        if (memory_wrapper == nullptr)
+        {
+            GFXRECON_LOG_WARNING("Skipping tensor trim snapshot for tensor %" PRIu64
+                                 ": no bound device memory is tracked",
+                                 wrapper->handle_id);
+            return;
+        }
+
+        if (wrapper->size == 0)
+        {
+            GFXRECON_LOG_WARNING("Skipping tensor trim snapshot for tensor %" PRIu64 ": memory requirements size is 0",
+                                 wrapper->handle_id);
+            return;
+        }
+
+        ResourceSnapshotQueueFamilyTable& snapshot_table = (*resources)[device_wrapper];
+        ResourceSnapshotInfo&             snapshot_entry = snapshot_table[wrapper->queue_family_index];
+
+        TensorSnapshotInfo snapshot_info;
+        snapshot_info.tensor_wrapper    = wrapper;
+        snapshot_info.memory_wrapper    = memory_wrapper;
+        snapshot_info.memory_properties = GetMemoryProperties(device_wrapper, memory_wrapper);
+        snapshot_info.need_staging_copy = !IsBufferReadable(snapshot_info.memory_properties, memory_wrapper);
+
+        if (snapshot_info.need_staging_copy)
+        {
+            if (*max_staging_copy_size < wrapper->size)
+            {
+                *max_staging_copy_size = wrapper->size;
+            }
+
+            *total_staging_copy_size += wrapper->size;
+        }
+
+        snapshot_entry.tensors.emplace_back(snapshot_info);
+    });
+}
+
 void VulkanStateWriter::WriteResourceMemoryState(const VulkanStateTable& state_table, bool write_memory_state)
 {
     DeviceResourceTables resources;
@@ -3934,7 +4096,26 @@ void VulkanStateWriter::WriteResourceMemoryState(const VulkanStateTable& state_t
         state_table, &resources, &total_staging_copy_size, &max_staging_copy_size, write_memory_state);
     WriteImageMemoryState(
         state_table, &resources, &total_staging_copy_size, &max_staging_copy_size, write_memory_state);
-    WriteTensorMemoryState(state_table);
+
+    if (asset_file_stream_ == nullptr)
+    {
+        WriteTensorSnapshotState(state_table, &resources, &total_staging_copy_size, &max_staging_copy_size);
+    }
+    else
+    {
+        bool has_tensor_state = false;
+        state_table.VisitWrappers([&](const vulkan_wrappers::TensorARMWrapper* wrapper) {
+            if ((wrapper != nullptr) && (wrapper->bind_memory_id != format::kNullHandleId))
+            {
+                has_tensor_state = true;
+            }
+        });
+
+        if (has_tensor_state)
+        {
+            GFXRECON_LOG_WARNING_ONCE("Tensor trim snapshots are not written when trim assets mode is enabled");
+        }
+    }
 
     // Write resource memory content.
     for (const auto& [device_wrapper, queue_family_table] : resources)
@@ -3984,6 +4165,7 @@ void VulkanStateWriter::WriteResourceMemoryState(const VulkanStateTable& state_t
                 {
                     ProcessBufferMemory(device_wrapper, snapshot_info.buffers, resource_util);
                     ProcessImageMemory(device_wrapper, snapshot_info.images, resource_util);
+                    ProcessTensorMemory(device_wrapper, snapshot_info.tensors, resource_util);
                 }
             }
 
@@ -5600,6 +5782,10 @@ void VulkanStateWriter::WriteTensorMemoryState(const VulkanStateTable& state_tab
         info.tensor = wrapper->handle;
         const vulkan_wrappers::DeviceMemoryWrapper* memory_wrapper =
             state_table.GetVulkanDeviceMemoryWrapper(wrapper->bind_memory_id);
+        if (memory_wrapper == nullptr)
+        {
+            return;
+        }
         info.memory       = memory_wrapper->handle;
         info.memoryOffset = wrapper->bind_offset;
         encoder_.EncodeHandleIdValue(memory_wrapper->parent_device->handle_id);
