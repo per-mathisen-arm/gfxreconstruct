@@ -21999,7 +21999,7 @@ size_t vulkan_struct_deep_copy(const VkTensorDependencyInfoARM* structs, uint32_
             out_structures[i]   = base_struct;
         }
         handle_pnext(base_struct, i, offset, out_data);
-        handle_pointer(base_struct, base_struct.pTensorMemoryBarriers, 1, i, offset, out_data);
+        handle_pointer(base_struct, base_struct.pTensorMemoryBarriers, base_struct.tensorMemoryBarrierCount, i, offset, out_data);
     }
     return offset;
 }

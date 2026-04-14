@@ -13663,6 +13663,10 @@ VkTensorDependencyInfoARM* TrackStruct(const VkTensorDependencyInfoARM* value, H
 
     VkTensorDependencyInfoARM* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
 
+    if (unwrapped_struct->pTensorMemoryBarriers)
+    {
+        unwrapped_struct->pTensorMemoryBarriers = vulkan_wrappers::MakeUnwrapStructs(unwrapped_struct->pTensorMemoryBarriers, unwrapped_struct->tensorMemoryBarrierCount, unwrap_memory);
+    }
 
     unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
 

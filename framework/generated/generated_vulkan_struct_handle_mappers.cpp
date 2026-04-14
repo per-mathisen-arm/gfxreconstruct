@@ -10288,7 +10288,7 @@ void MapStructHandles(Decoded_VkTensorDependencyInfoARM* wrapper, const CommonOb
 {
     if (wrapper != nullptr)
     {
-        MapStructArrayHandles<Decoded_VkTensorMemoryBarrierARM>(wrapper->pTensorMemoryBarriers->GetMetaStructPointer(), 1, object_info_table);
+        MapStructArrayHandles<Decoded_VkTensorMemoryBarrierARM>(wrapper->pTensorMemoryBarriers->GetMetaStructPointer(), wrapper->pTensorMemoryBarriers->GetLength(), object_info_table);
 
         if (wrapper->pNext)
         {

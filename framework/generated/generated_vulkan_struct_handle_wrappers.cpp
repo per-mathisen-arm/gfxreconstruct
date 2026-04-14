@@ -9479,7 +9479,7 @@ void UnwrapStructHandles(VkTensorDependencyInfoARM* value, HandleUnwrapMemory* u
 {
     if (value != nullptr)
     {
-        value->pTensorMemoryBarriers = UnwrapStructPtrHandles(value->pTensorMemoryBarriers, unwrap_memory);
+        value->pTensorMemoryBarriers = UnwrapStructArrayHandles(value->pTensorMemoryBarriers, value->tensorMemoryBarrierCount, unwrap_memory);
         if (value->pNext != nullptr)
         {
             value->pNext = const_cast<void*>(UnwrapPNextStructHandles(value->pNext, unwrap_memory));

@@ -20910,18 +20910,26 @@ std::string GenerateStruct_VkTensorCreateInfoARM(std::ostream &out, const VkTens
 std::string GenerateStruct_VkTensorDependencyInfoARM(std::ostream &out, const VkTensorDependencyInfoARM* structInfo, Decoded_VkTensorDependencyInfoARM* metaInfo, VulkanCppConsumerBase &consumer){
     std::stringstream struct_body;
     std::string pnext_name = GenerateExtension(out, structInfo->pNext, metaInfo->pNext, consumer);
-    std::string ptensor_memory_barriers_struct = "NULL";
+    std::string ptensor_memory_barriers_array = "NULL";
     if (structInfo->pTensorMemoryBarriers != NULL) {
-        ptensor_memory_barriers_struct = GenerateStruct_VkTensorMemoryBarrierARM(out,
-                                                                                 structInfo->pTensorMemoryBarriers,
-                                                                                 metaInfo->pTensorMemoryBarriers->GetMetaStructPointer(),
-                                                                                 consumer);
-        ptensor_memory_barriers_struct.insert(0, "&");
+        ptensor_memory_barriers_array = "pTensorMemoryBarriers_" + std::to_string(consumer.GetNextId());
+        std::string ptensor_memory_barriers_names;
+        for (uint32_t idx = 0; idx < structInfo->tensorMemoryBarrierCount; idx++) {
+            std::string variable_name = "NULL";
+            if (structInfo->pTensorMemoryBarriers + idx != NULL) {
+                variable_name = GenerateStruct_VkTensorMemoryBarrierARM(out,
+                                                                        structInfo->pTensorMemoryBarriers + idx,
+                                                                        metaInfo->pTensorMemoryBarriers->GetMetaStructPointer() + idx,
+                                                                        consumer);
+            }
+            ptensor_memory_barriers_names += variable_name + ", ";
+        }
+        out << "\t\t" << "VkTensorMemoryBarrierARM " << ptensor_memory_barriers_array << "[] = {" << ptensor_memory_barriers_names << "};" << std::endl;
     }
     struct_body << "\t" << "VkStructureType(" << structInfo->sType << ")" << "," << std::endl;
     struct_body << "\t\t\t" << pnext_name << "," << std::endl;
     struct_body << "\t\t\t" << structInfo->tensorMemoryBarrierCount << "," << std::endl;
-    struct_body << "\t\t\t" << ptensor_memory_barriers_struct << ",";
+    struct_body << "\t\t\t" << ptensor_memory_barriers_array << ",";
     std::string variable_name = consumer.AddStruct(struct_body, "tensorDependencyInfoARM");
     out << "\t\t" << "VkTensorDependencyInfoARM " << variable_name << " {" << std::endl;
     out << "\t\t" << struct_body.str() << std::endl;

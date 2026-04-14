@@ -424,7 +424,10 @@ void TrackCmdPipelineBarrier2Handles(vulkan_wrappers::CommandBufferWrapper* wrap
                     auto pnext_value = reinterpret_cast<const VkTensorDependencyInfoARM*>(pnext_header);
                     if (pnext_value->pTensorMemoryBarriers != nullptr)
                     {
-                        if(pnext_value->pTensorMemoryBarriers->tensor != VK_NULL_HANDLE) wrapper->command_handles[vulkan_state_info::CommandHandleType::TensorARMHandle].insert(vulkan_wrappers::GetWrappedId<vulkan_wrappers::TensorARMWrapper>(pnext_value->pTensorMemoryBarriers->tensor));
+                        for (uint32_t pTensorMemoryBarriers_index = 0; pTensorMemoryBarriers_index < pnext_value->tensorMemoryBarrierCount; ++pTensorMemoryBarriers_index)
+                        {
+                            if(pnext_value->pTensorMemoryBarriers[pTensorMemoryBarriers_index].tensor != VK_NULL_HANDLE) wrapper->command_handles[vulkan_state_info::CommandHandleType::TensorARMHandle].insert(vulkan_wrappers::GetWrappedId<vulkan_wrappers::TensorARMWrapper>(pnext_value->pTensorMemoryBarriers[pTensorMemoryBarriers_index].tensor));
+                        }
                     }
                     break;
                 }
@@ -527,7 +530,10 @@ void TrackCmdSetEvent2Handles(vulkan_wrappers::CommandBufferWrapper* wrapper, Vk
                     auto pnext_value = reinterpret_cast<const VkTensorDependencyInfoARM*>(pnext_header);
                     if (pnext_value->pTensorMemoryBarriers != nullptr)
                     {
-                        if(pnext_value->pTensorMemoryBarriers->tensor != VK_NULL_HANDLE) wrapper->command_handles[vulkan_state_info::CommandHandleType::TensorARMHandle].insert(vulkan_wrappers::GetWrappedId<vulkan_wrappers::TensorARMWrapper>(pnext_value->pTensorMemoryBarriers->tensor));
+                        for (uint32_t pTensorMemoryBarriers_index = 0; pTensorMemoryBarriers_index < pnext_value->tensorMemoryBarrierCount; ++pTensorMemoryBarriers_index)
+                        {
+                            if(pnext_value->pTensorMemoryBarriers[pTensorMemoryBarriers_index].tensor != VK_NULL_HANDLE) wrapper->command_handles[vulkan_state_info::CommandHandleType::TensorARMHandle].insert(vulkan_wrappers::GetWrappedId<vulkan_wrappers::TensorARMWrapper>(pnext_value->pTensorMemoryBarriers[pTensorMemoryBarriers_index].tensor));
+                        }
                     }
                     break;
                 }
@@ -594,7 +600,10 @@ void TrackCmdWaitEvents2Handles(vulkan_wrappers::CommandBufferWrapper* wrapper, 
                         auto pnext_value = reinterpret_cast<const VkTensorDependencyInfoARM*>(pnext_header);
                         if (pnext_value->pTensorMemoryBarriers != nullptr)
                         {
-                            if(pnext_value->pTensorMemoryBarriers->tensor != VK_NULL_HANDLE) wrapper->command_handles[vulkan_state_info::CommandHandleType::TensorARMHandle].insert(vulkan_wrappers::GetWrappedId<vulkan_wrappers::TensorARMWrapper>(pnext_value->pTensorMemoryBarriers->tensor));
+                            for (uint32_t pTensorMemoryBarriers_index = 0; pTensorMemoryBarriers_index < pnext_value->tensorMemoryBarrierCount; ++pTensorMemoryBarriers_index)
+                            {
+                                if(pnext_value->pTensorMemoryBarriers[pTensorMemoryBarriers_index].tensor != VK_NULL_HANDLE) wrapper->command_handles[vulkan_state_info::CommandHandleType::TensorARMHandle].insert(vulkan_wrappers::GetWrappedId<vulkan_wrappers::TensorARMWrapper>(pnext_value->pTensorMemoryBarriers[pTensorMemoryBarriers_index].tensor));
+                            }
                         }
                         break;
                     }
@@ -1231,7 +1240,10 @@ void TrackCmdSetEvent2KHRHandles(vulkan_wrappers::CommandBufferWrapper* wrapper,
                     auto pnext_value = reinterpret_cast<const VkTensorDependencyInfoARM*>(pnext_header);
                     if (pnext_value->pTensorMemoryBarriers != nullptr)
                     {
-                        if(pnext_value->pTensorMemoryBarriers->tensor != VK_NULL_HANDLE) wrapper->command_handles[vulkan_state_info::CommandHandleType::TensorARMHandle].insert(vulkan_wrappers::GetWrappedId<vulkan_wrappers::TensorARMWrapper>(pnext_value->pTensorMemoryBarriers->tensor));
+                        for (uint32_t pTensorMemoryBarriers_index = 0; pTensorMemoryBarriers_index < pnext_value->tensorMemoryBarrierCount; ++pTensorMemoryBarriers_index)
+                        {
+                            if(pnext_value->pTensorMemoryBarriers[pTensorMemoryBarriers_index].tensor != VK_NULL_HANDLE) wrapper->command_handles[vulkan_state_info::CommandHandleType::TensorARMHandle].insert(vulkan_wrappers::GetWrappedId<vulkan_wrappers::TensorARMWrapper>(pnext_value->pTensorMemoryBarriers[pTensorMemoryBarriers_index].tensor));
+                        }
                     }
                     break;
                 }
@@ -1298,7 +1310,10 @@ void TrackCmdWaitEvents2KHRHandles(vulkan_wrappers::CommandBufferWrapper* wrappe
                         auto pnext_value = reinterpret_cast<const VkTensorDependencyInfoARM*>(pnext_header);
                         if (pnext_value->pTensorMemoryBarriers != nullptr)
                         {
-                            if(pnext_value->pTensorMemoryBarriers->tensor != VK_NULL_HANDLE) wrapper->command_handles[vulkan_state_info::CommandHandleType::TensorARMHandle].insert(vulkan_wrappers::GetWrappedId<vulkan_wrappers::TensorARMWrapper>(pnext_value->pTensorMemoryBarriers->tensor));
+                            for (uint32_t pTensorMemoryBarriers_index = 0; pTensorMemoryBarriers_index < pnext_value->tensorMemoryBarrierCount; ++pTensorMemoryBarriers_index)
+                            {
+                                if(pnext_value->pTensorMemoryBarriers[pTensorMemoryBarriers_index].tensor != VK_NULL_HANDLE) wrapper->command_handles[vulkan_state_info::CommandHandleType::TensorARMHandle].insert(vulkan_wrappers::GetWrappedId<vulkan_wrappers::TensorARMWrapper>(pnext_value->pTensorMemoryBarriers[pTensorMemoryBarriers_index].tensor));
+                            }
                         }
                         break;
                     }
@@ -1349,7 +1364,10 @@ void TrackCmdPipelineBarrier2KHRHandles(vulkan_wrappers::CommandBufferWrapper* w
                     auto pnext_value = reinterpret_cast<const VkTensorDependencyInfoARM*>(pnext_header);
                     if (pnext_value->pTensorMemoryBarriers != nullptr)
                     {
-                        if(pnext_value->pTensorMemoryBarriers->tensor != VK_NULL_HANDLE) wrapper->command_handles[vulkan_state_info::CommandHandleType::TensorARMHandle].insert(vulkan_wrappers::GetWrappedId<vulkan_wrappers::TensorARMWrapper>(pnext_value->pTensorMemoryBarriers->tensor));
+                        for (uint32_t pTensorMemoryBarriers_index = 0; pTensorMemoryBarriers_index < pnext_value->tensorMemoryBarrierCount; ++pTensorMemoryBarriers_index)
+                        {
+                            if(pnext_value->pTensorMemoryBarriers[pTensorMemoryBarriers_index].tensor != VK_NULL_HANDLE) wrapper->command_handles[vulkan_state_info::CommandHandleType::TensorARMHandle].insert(vulkan_wrappers::GetWrappedId<vulkan_wrappers::TensorARMWrapper>(pnext_value->pTensorMemoryBarriers[pTensorMemoryBarriers_index].tensor));
+                        }
                     }
                     break;
                 }

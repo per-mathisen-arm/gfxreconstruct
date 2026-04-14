@@ -9862,7 +9862,7 @@ void EncodeStruct(ParameterEncoder* encoder, const VkTensorDependencyInfoARM& va
     encoder->EncodeEnumValue(value.sType);
     EncodePNextStruct(encoder, value.pNext);
     encoder->EncodeUInt32Value(value.tensorMemoryBarrierCount);
-    EncodeStructPtr(encoder, value.pTensorMemoryBarriers);
+    EncodeStructArray(encoder, value.pTensorMemoryBarriers, value.tensorMemoryBarrierCount);
 }
 
 void EncodeStruct(ParameterEncoder* encoder, const VkPhysicalDeviceTensorFeaturesARM& value)
