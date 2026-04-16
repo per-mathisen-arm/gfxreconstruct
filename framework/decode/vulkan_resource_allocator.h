@@ -26,6 +26,7 @@
 #include "decode/handle_pointer_decoder.h"
 #include "decode/struct_pointer_decoder.h"
 #include "format/format.h"
+#include "format/format_arm.h"
 #include "util/defines.h"
 
 #include "vulkan/vulkan.h"
@@ -113,6 +114,11 @@ class VulkanResourceAllocator
         PFN_vkCreateTensorARM                              create_tensor{ nullptr };
         PFN_vkDestroyTensorARM                             destroy_tensor{ nullptr };
         PFN_vkGetTensorMemoryRequirementsARM               get_tensor_memory_requirements{ nullptr };
+        PFN_vkGetDeviceBufferMemoryRequirements            get_device_buffer_memory_requirements{ nullptr };
+        PFN_vkGetDeviceImageMemoryRequirements             get_device_image_memory_requirements{ nullptr };
+        PFN_vkGetDeviceTensorMemoryRequirementsARM         get_device_tensor_memory_requirements{ nullptr };
+        PFN_vkGetDeviceBufferMemoryRequirementsKHR         get_device_buffer_memory_requirements_khr{ nullptr };
+        PFN_vkGetDeviceImageMemoryRequirementsKHR          get_device_image_memory_requirements_khr{ nullptr };
         PFN_vkBindTensorMemoryARM                          bind_tensor_memory{ nullptr };
         PFN_vkCmdCopyTensorARM                             cmd_copy_tensor{ nullptr };
         PFN_vkCreateDataGraphPipelineSessionARM            create_data_graph_pipeline_session{ nullptr };
@@ -121,6 +127,8 @@ class VulkanResourceAllocator
         };
         PFN_vkBindDataGraphPipelineSessionMemoryARM bind_data_graph_pipeline_session_memory{ nullptr };
         PFN_vkDestroyDataGraphPipelineSessionARM    destroy_data_graph_pipeline_session{ nullptr };
+        PFN_vkGetDataGraphPipelineSessionBindPointRequirementsARM
+            get_data_graph_pipeline_session_bind_point_requirements{ nullptr };
     };
 
   public:
@@ -483,6 +491,9 @@ class VulkanResourceAllocator
     virtual uint64_t GetDeviceMemoryOpaqueCaptureAddress(const VkDeviceMemoryOpaqueCaptureAddressInfo* info,
                                                          MemoryData allocator_data) = 0;
     virtual void     ClearStagingResources(){};
+
+    virtual void
+    ProcessResourceMemoryRequirements(const std::vector<format::arm::ResourceMemoryRequirementsInfo>& resources){};
 };
 
 GFXRECON_END_NAMESPACE(decode)

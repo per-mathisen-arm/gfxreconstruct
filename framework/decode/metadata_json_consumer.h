@@ -471,6 +471,69 @@ class MetadataJsonConsumer : public Base
         WriteBlockEnd();
     }
 
+    virtual void ProcessResourceMemoryRequirements(
+        const format::arm::ResourceMemoryRequirementsCommandHeader&     command_header,
+        const std::vector<format::arm::ResourceMemoryRequirementsInfo>& resources) override
+    {
+        auto& jdata        = WriteMetaCommandStart("ResourceMemoryRequirements");
+        using Property     = format::arm::ResourceMemoryRequirementsProperties;
+        using ResourceType = format::arm::ResourceMemoryRequirementsPropertiesResourceType;
+        HandleToJson(jdata["device_id"], command_header.device_id);
+        jdata["resources_count"] = command_header.resources_count;
+
+        const size_t resource_count = resources.size();
+        for (size_t i = 0; i < resource_count; ++i)
+        {
+            const auto& resource  = resources[i];
+            auto&       jresource = jdata["resources"][i];
+
+            auto property_iter = resource.find(Property::kResourceType);
+            if (property_iter != resource.end())
+            {
+                if (const auto* value = std::any_cast<ResourceType>(&(property_iter->second)))
+                {
+                    jresource["resource_type"] = static_cast<uint32_t>(*value);
+                }
+            }
+
+            property_iter = resource.find(Property::kResourceHandle);
+            if (property_iter != resource.end())
+            {
+                if (const auto* value = std::any_cast<format::HandleId>(&(property_iter->second)))
+                {
+                    HandleToJson(jresource["resource_handle"], *value);
+                }
+            }
+
+            property_iter = resource.find(Property::kAliasingGroup);
+            if (property_iter != resource.end())
+            {
+                if (const auto* value = std::any_cast<uint8_t>(&(property_iter->second)))
+                {
+                    jresource["aliasing_group"] = *value;
+                }
+            }
+
+            property_iter = resource.find(Property::kCreateInfo);
+            if (property_iter != resource.end())
+            {
+                if (const auto* value = std::any_cast<Decoded_VkBufferCreateInfo>(&(property_iter->second)))
+                {
+                    FieldToJson(jresource["create_info"], value);
+                }
+                else if (const auto* value = std::any_cast<Decoded_VkImageCreateInfo>(&(property_iter->second)))
+                {
+                    FieldToJson(jresource["create_info"], value);
+                }
+                else if (const auto* value = std::any_cast<Decoded_VkTensorCreateInfoARM>(&(property_iter->second)))
+                {
+                    FieldToJson(jresource["create_info"], value);
+                }
+            }
+        }
+        WriteBlockEnd();
+    }
+
     /// @}
 };
 

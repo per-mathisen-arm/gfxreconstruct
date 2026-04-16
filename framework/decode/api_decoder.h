@@ -266,6 +266,10 @@ class ApiDecoder
     virtual void
     DispatchFillMemoryResourceAddressCommand(const format::arm::FillMemoryResourceAddressCommandHeader& command_header,
                                              const uint8_t*                                             data){};
+
+    virtual void
+    DispatchResourceMemoryRequirements(const format::arm::ResourceMemoryRequirementsCommandHeader& command_header,
+                                       const uint8_t*                                              parameter_buffer){};
 };
 
 GFXRECON_END_NAMESPACE(decode)

@@ -113,6 +113,10 @@ class VulkanReplayConsumerBase : public VulkanConsumer
     virtual void
     ProcessFillMemoryCommand(uint64_t memory_id, uint64_t offset, uint64_t size, const uint8_t* data) override;
 
+    virtual void ProcessResourceMemoryRequirements(
+        const format::arm::ResourceMemoryRequirementsCommandHeader&     command_header,
+        const std::vector<format::arm::ResourceMemoryRequirementsInfo>& resources) override;
+
     virtual void ProcessFixDeviceAddressCommand(const format::FixDeviceAddressCommandHeader&    header,
                                                 const std::vector<format::AddressLocationInfo>& infos) override;
 

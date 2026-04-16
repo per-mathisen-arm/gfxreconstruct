@@ -29,6 +29,7 @@
 #include "generated/generated_vulkan_skiavk_modifier.h"
 #include "vulkan_raytracing_modifier.h"
 #include "vulkan_descriptor_buffer_modifier.h"
+#include "resource_memory_requirements_modifier.h"
 
 #include "../tool_settings.h"
 
@@ -297,6 +298,8 @@ GetVulkanOptimizationData(const std::string& input_filename, const gfxrecon::dec
         auto micromap_modifier_consumer    = std::make_unique<gfxrecon::decode::VulkanMicromapModifier>();
         auto vulkan_skia_modifier_consumer = std::make_unique<gfxrecon::decode::VulkanSkiaModifier>();
         auto raytracing_modifier_consumer  = std::make_unique<gfxrecon::decode::VulkanRayTracingModifier>(options);
+        auto resource_memory_requirements_modifier =
+            std::make_unique<gfxrecon::decode::ResourceMemoryRequirementsModifier>();
         auto descriptor_buffer_modifier_consumer =
             std::make_unique<gfxrecon::decode::VulkanDescriptorBufferModifier>(options);
 
@@ -306,6 +309,7 @@ GetVulkanOptimizationData(const std::string& input_filename, const gfxrecon::dec
         decoder.AddConsumer(vulkan_skia_modifier_consumer.get());
         decoder.AddConsumer(descriptor_buffer_modifier_consumer.get());
         decoder.AddConsumer(raytracing_modifier_consumer.get());
+        decoder.AddConsumer(resource_memory_requirements_modifier.get());
 
         vulkan_skia_modifier_consumer.get()->SetAppName(options.remove_app_name);
         vulkan_skia_modifier_consumer.get()->SetKeepDeviceInstanceMode(options.keep_device_instance);
@@ -338,6 +342,10 @@ GetVulkanOptimizationData(const std::string& input_filename, const gfxrecon::dec
         if (raytracing_modifier_consumer->CanOptimize())
         {
             result->modifiers.push_back(std::move(raytracing_modifier_consumer));
+        }
+        if (resource_memory_requirements_modifier->CanOptimize())
+        {
+            result->modifiers.push_back(std::move(resource_memory_requirements_modifier));
         }
     }
 

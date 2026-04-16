@@ -258,6 +258,10 @@ class VulkanDecoderBase : public ApiDecoder
                                                int64_t            offset,
                                                const std::string& filename) override;
 
+    virtual void
+    DispatchResourceMemoryRequirements(const format::arm::ResourceMemoryRequirementsCommandHeader& command_header,
+                                       const uint8_t* parameter_buffer) override;
+
   protected:
     const std::vector<VulkanConsumer*>& GetConsumers() const { return consumers_; }
 

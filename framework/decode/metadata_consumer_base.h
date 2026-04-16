@@ -171,6 +171,11 @@ class MetadataConsumerBase
                                               const uint8_t*                       parameters_data)
     {}
 
+    virtual void
+    ProcessResourceMemoryRequirements(const format::arm::ResourceMemoryRequirementsCommandHeader&     command_header,
+                                      const std::vector<format::arm::ResourceMemoryRequirementsInfo>& resources)
+    {}
+
   protected:
     uint64_t block_index_ = 0;
 };

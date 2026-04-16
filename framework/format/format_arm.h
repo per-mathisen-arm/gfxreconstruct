@@ -29,6 +29,8 @@
 #include "format/format_util.h"
 #include <cstdint>
 #include <type_traits>
+#include <any>
+#include <unordered_map>
 
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(format)
@@ -50,6 +52,7 @@ inline constexpr format::MetaDataType kFixDescriptorDataCommand                =
 inline constexpr format::MetaDataType kFixShadowMemoryCommand                  = CreateMetaDataTypeARM(3);
 inline constexpr format::MetaDataType kFillMemoryResourceAddressCommand        = CreateMetaDataTypeARM(4);
 inline constexpr format::MetaDataType kGetDx12AccelerationStructureSizeCommand = CreateMetaDataTypeARM(5);
+inline constexpr format::MetaDataType kMemoryRequirementsCommand               = CreateMetaDataTypeARM(6);
 
 // Enums used in ARM builds up to r4p1 release that are not reserved upstream
 enum class ConflictingMetaDataTypes : MetaDataTypeUnderlyingType
@@ -142,6 +145,31 @@ struct Dx12FillMemoryResourceAddressInfo
     // Shader identifier found in memory.
     uint8_t shader_id[kMaxShaderGroupHandleSize];
 };
+
+struct ResourceMemoryRequirementsCommandHeader
+{
+    MetaDataHeader   meta_header;
+    format::HandleId device_id;
+    uint32_t         resources_count;
+    uint64_t         reserved[4];
+};
+
+enum class ResourceMemoryRequirementsProperties : uint8_t
+{
+    kResourceType   = 0,
+    kResourceHandle = 1,
+    kAliasingGroup  = 2,
+    kCreateInfo     = 3
+};
+
+enum class ResourceMemoryRequirementsPropertiesResourceType : uint8_t
+{
+    kResourceTypeVkBuffer = 0,
+    kResourceTypeVkImage  = 1,
+    kResourceTypeVkTensor = 2,
+};
+
+using ResourceMemoryRequirementsInfo = std::unordered_map<ResourceMemoryRequirementsProperties, std::any>;
 
 // Restore size_t to normal behavior.
 #undef size_t

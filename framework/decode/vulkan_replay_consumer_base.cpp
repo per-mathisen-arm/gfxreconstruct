@@ -70,6 +70,7 @@
 #include "Vulkan-Utility-Libraries/vk_format_utils.h"
 
 #include <algorithm>
+#include <stdexcept>
 #include <limits>
 #include <numeric>
 #include <unordered_set>
@@ -705,6 +706,30 @@ void VulkanReplayConsumerBase::ProcessFillMemoryCommand(uint64_t       memory_id
         GFXRECON_LOG_WARNING("Skipping memory fill for unrecognized VkDeviceMemory object (ID = %" PRIu64 ")",
                              memory_id);
     }
+}
+
+void VulkanReplayConsumerBase::ProcessResourceMemoryRequirements(
+    const format::arm::ResourceMemoryRequirementsCommandHeader&     command_header,
+    const std::vector<format::arm::ResourceMemoryRequirementsInfo>& resources)
+{
+    const VulkanDeviceInfo* device_info = object_info_table_->GetVkDeviceInfo(command_header.device_id);
+    if (device_info == nullptr)
+    {
+        GFXRECON_LOG_FATAL("Received ResourceMemoryRequirements metadata for unknown device id: %" PRIu64,
+                           command_header.device_id);
+        throw std::runtime_error("Received ResourceMemoryRequirements metadata for unknown device id");
+    }
+
+    VulkanResourceAllocator* allocator = device_info->allocator.get();
+    if (allocator == nullptr)
+    {
+        GFXRECON_LOG_FATAL(
+            "Received ResourceMemoryRequirements metadata before allocator initialization for device id: %" PRIu64,
+            command_header.device_id);
+        throw std::runtime_error("Received ResourceMemoryRequirements metadata before allocator initialization");
+    }
+
+    allocator->ProcessResourceMemoryRequirements(resources);
 }
 
 void VulkanReplayConsumerBase::ProcessFixDeviceAddressCommand(const format::FixDeviceAddressCommandHeader&    header,
@@ -2898,6 +2923,11 @@ void VulkanReplayConsumerBase::InitializeResourceAllocator(const VulkanPhysicalD
     functions.create_tensor                               = device_table->CreateTensorARM;
     functions.destroy_tensor                              = device_table->DestroyTensorARM;
     functions.get_tensor_memory_requirements              = device_table->GetTensorMemoryRequirementsARM;
+    functions.get_device_buffer_memory_requirements       = device_table->GetDeviceBufferMemoryRequirements;
+    functions.get_device_image_memory_requirements        = device_table->GetDeviceImageMemoryRequirements;
+    functions.get_device_tensor_memory_requirements       = device_table->GetDeviceTensorMemoryRequirementsARM;
+    functions.get_device_buffer_memory_requirements_khr   = device_table->GetDeviceBufferMemoryRequirementsKHR;
+    functions.get_device_image_memory_requirements_khr    = device_table->GetDeviceImageMemoryRequirementsKHR;
     functions.bind_tensor_memory                          = device_table->BindTensorMemoryARM;
     functions.cmd_copy_tensor                             = device_table->CmdCopyTensorARM;
     functions.create_data_graph_pipeline_session          = device_table->CreateDataGraphPipelineSessionARM;
@@ -2905,6 +2935,8 @@ void VulkanReplayConsumerBase::InitializeResourceAllocator(const VulkanPhysicalD
         device_table->GetDataGraphPipelineSessionMemoryRequirementsARM;
     functions.bind_data_graph_pipeline_session_memory = device_table->BindDataGraphPipelineSessionMemoryARM;
     functions.destroy_data_graph_pipeline_session     = device_table->DestroyDataGraphPipelineSessionARM;
+    functions.get_data_graph_pipeline_session_bind_point_requirements =
+        device_table->GetDataGraphPipelineSessionBindPointRequirementsARM;
 
     if (physical_device_info->parent_info.api_version >= VK_MAKE_VERSION(1, 1, 0))
     {

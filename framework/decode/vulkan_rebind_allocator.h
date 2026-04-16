@@ -489,6 +489,9 @@ class VulkanRebindAllocator : public VulkanResourceAllocator
 
     void ClearStagingResources() override;
 
+    virtual void ProcessResourceMemoryRequirements(
+        const std::vector<format::arm::ResourceMemoryRequirementsInfo>& resources) override;
+
   private:
     // VMA hook to clean our internal state (mutexes) when VMA clears blocks of memory
     friend VKAPI_ATTR void VKAPI_CALL
@@ -607,6 +610,7 @@ class VulkanRebindAllocator : public VulkanResourceAllocator
         std::unordered_map<uint64_t, ResourceAllocInfo*> original_objects; // Key is object handle.
 
         std::vector<std::unique_ptr<VmaMemoryInfo>> vma_mem_infos;
+        std::unordered_map<uint8_t, VmaMemoryInfo*> aliasing_group_vma_memories;
 
         std::unordered_map<VkImage, VulkanAndroidHardwareBufferInfo*> original_ahardwarebuffers;
 
@@ -626,9 +630,6 @@ class VulkanRebindAllocator : public VulkanResourceAllocator
         size_t             dst_offset;
         VkFence            staging_fence;
     };
-
-    ResourceAllocInfo* HasAliasedObject(const std::unordered_map<uint64_t, ResourceAllocInfo*>& resource_map,
-                                        VkDeviceSize                                            memory_offset);
 
     void WriteBoundResource(ResourceAllocInfo* resource_alloc_info,
                             VmaMemoryInfo*     bound_memory_info,
@@ -721,16 +722,13 @@ class VulkanRebindAllocator : public VulkanResourceAllocator
                                         VkDeviceMemory           device_memory,
                                         uint64_t                 resource_handle);
 
-    struct AliasedResourceInfo
-    {
-        uint64_t           object_handle;
-        format::HandleId   capture_id;
-        ResourceAllocInfo* resource_alloc_info;
-    };
-    VkResult AllocateMemoryForAliasedObjects(std::vector<AliasedResourceInfo>        aliased_resource_alloc_infos,
-                                             const VkPhysicalDeviceMemoryProperties& device_memory_properties,
-                                             MemoryAllocInfo&                        memory_alloc_info,
-                                             VmaMemoryInfo**                         vma_mem_info);
+    bool GetAliasingGroupWithRequirements(format::HandleId resource_capture_id, uint8_t* aliasing_group) const;
+
+    VkResult AllocateMemoryForAliasedObjects(const ResourceAllocInfo& resource_alloc_info,
+                                             VkDeviceSize             original_offset,
+                                             uint8_t                  aliasing_group,
+                                             MemoryAllocInfo&         memory_alloc_info,
+                                             VmaMemoryInfo**          vma_mem_info);
 
     VkResult AllocateMemoryForBuffer(VkBuffer                                buffer,
                                      VkDeviceSize                            memory_offset,
@@ -817,7 +815,10 @@ class VulkanRebindAllocator : public VulkanResourceAllocator
     VkQueue                          staging_queue_ = VK_NULL_HANDLE;
     uint32_t                         staging_queue_family_{};
 
-    std::vector<StagingResources> staging_resources_{};
+    // Maps a captured resource handle id to its aliasing group identifier.
+    std::unordered_map<format::HandleId, uint8_t>     resources_aliasing_group_{};
+    std::unordered_map<uint8_t, VkMemoryRequirements> aliasing_group_max_memory_requirements_{};
+    std::vector<StagingResources>                     staging_resources_{};
 
     // external per-block mutexes replacing VmaDeviceMemoryBlock::m_MapAndBindMutex (now private in VMA 3.3.0).
     // use VkDeviceMemory-handles as key to cover all allocations sharing the same block.

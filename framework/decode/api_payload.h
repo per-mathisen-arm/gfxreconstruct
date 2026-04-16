@@ -646,6 +646,18 @@ struct SetOpaqueDescriptorDataArgs
     auto GetTuple() const { return std::tie(thread_id, device_id, object_id, size, data); }
 };
 
+struct ResourceMemoryRequirementsArgs
+{
+    format::MetaDataId meta_data_id;
+
+    size_t data_size;
+
+    format::arm::ResourceMemoryRequirementsCommandHeader command_header;
+    const uint8_t*                                       data;
+
+    auto GetTuple() const { return std::tie(command_header, data); }
+};
+
 // --- DispatchTraits specializations  ---
 template <typename T>
 struct DispatchTraits;
@@ -937,6 +949,12 @@ struct DispatchTraits<AnnotationArgs> : DispatchFlagTraits<AnnotationArgs>
     // Is not dispatched to decoders, and thus requires a custom DispatchVisitor::VisitCommand overload
 };
 
+template <>
+struct DispatchTraits<ResourceMemoryRequirementsArgs> : DispatchFlagTraits<ResourceMemoryRequirementsArgs>
+{
+    static constexpr auto kDecoderMethod = &ApiDecoder::DispatchResourceMemoryRequirements;
+};
+
 // --- Variant of all payloads by reference, storage in allocator
 using DispatchArgs = std::variant<std::monostate,
                                   FunctionCallArgs*,
@@ -985,7 +1003,8 @@ using DispatchArgs = std::variant<std::monostate,
                                   InitializeMetaArgs*,
                                   FillMemoryResourceAddressArgs*,
                                   AnnotationArgs*,
-                                  SetOpaqueDescriptorDataArgs*>;
+                                  SetOpaqueDescriptorDataArgs*,
+                                  ResourceMemoryRequirementsArgs*>;
 
 template <typename Args>
 inline size_t GetDispatchArgsDataSize(Args& args)

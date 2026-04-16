@@ -24,9 +24,15 @@
 #include "decode/vulkan_decoder_base.h"
 
 #include "decode/descriptor_update_template_decoder.h"
+#include "generated/generated_vulkan_struct_decoders.h"
 #include "decode/pointer_decoder.h"
 #include "decode/value_decoder.h"
 #include "format/format.h"
+#include "format/format_arm.h"
+#include <algorithm>
+#include <cstring>
+#include <cstdint>
+#include <stdexcept>
 
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(decode)
@@ -750,6 +756,253 @@ void VulkanDecoderBase::DispatchExecuteBlocksFromFile(format::ThreadId   thread_
     {
         consumer->ProcessExecuteBlocksFromFile(n_blocks, offset, filename);
     }
+}
+
+void VulkanDecoderBase::DispatchResourceMemoryRequirements(
+    const format::arm::ResourceMemoryRequirementsCommandHeader& command_header, const uint8_t* parameter_buffer)
+{
+    DecodeAllocator::Begin();
+    size_t bytes_read = 0;
+
+    using Property     = format::arm::ResourceMemoryRequirementsProperties;
+    using ResourceType = format::arm::ResourceMemoryRequirementsPropertiesResourceType;
+
+    const size_t block_base_size     = format::GetMetaDataBlockBaseSize(command_header);
+    const size_t parameter_data_size = (command_header.meta_header.block_header.size > block_base_size)
+                                           ? (command_header.meta_header.block_header.size - block_base_size)
+                                           : 0;
+
+    // Expected parameter_buffer payload layout in the trace:
+    // For each resource entry (resources_count):
+    //   1) ResourceType resource_type
+    //   2) uint32_t property_count
+    //   3) Repeated property_count times:
+    //        a) Property property_type
+    //        b) size_t property_value_size
+    //        c) property_value_size bytes of property payload
+    //
+    // Property payload format by property_type:
+    //   - kResourceType   -> ResourceType enum
+    //   - kResourceHandle -> format::HandleId
+    //   - kAliasingGroup  -> uint8_t
+    //   - kCreateInfo     -> decoded struct selected by current resource_type:
+    //                        VkBufferCreateInfo / VkImageCreateInfo / VkTensorCreateInfoARM
+    // Unknown properties are skipped using property_value_size to preserve forward compatibility.
+    std::vector<format::arm::ResourceMemoryRequirementsInfo> resources;
+    resources.resize(command_header.resources_count);
+
+    auto get_remaining_bytes = [&]() { return parameter_data_size - bytes_read; };
+    auto fail_decode         = [&](const char* stage) {
+        GFXRECON_LOG_FATAL("Failed to decode ResourceMemoryRequirements metadata at stage '%s' (bytes_read=%" PRIu64
+                           ", payload_size=%" PRIu64 ", resources_count=%u)",
+                           stage,
+                           static_cast<unsigned long long>(bytes_read),
+                           static_cast<unsigned long long>(parameter_data_size),
+                           command_header.resources_count);
+        throw std::runtime_error("Failed to decode ResourceMemoryRequirements metadata");
+    };
+    auto log_property_decode_skip = [&](Property     property_type,
+                                        uint32_t     resource_index,
+                                        ResourceType resource_type,
+                                        size_t       property_value_size,
+                                        size_t       property_data_window) {
+        GFXRECON_LOG_ERROR("Failed to decode ResourceMemoryRequirements property %u for resource %u "
+                           "(resource_type=%u, property_size=%zu, remaining=%zu). Skipping payload bytes.",
+                           static_cast<uint32_t>(property_type),
+                           resource_index,
+                           static_cast<uint32_t>(resource_type),
+                           property_value_size,
+                           property_data_window);
+    };
+
+    for (uint32_t resource_index = 0;
+         (resource_index < command_header.resources_count) && (bytes_read < parameter_data_size);
+         ++resource_index)
+    {
+        auto&        resource_properties = resources[resource_index];
+        ResourceType resource_type{};
+        uint32_t     property_count = 0;
+
+        size_t read_size =
+            ValueDecoder::DecodeEnumValue(parameter_buffer + bytes_read, get_remaining_bytes(), &resource_type);
+        if (read_size == 0)
+        {
+            fail_decode("resource_type");
+        }
+        bytes_read += read_size;
+
+        read_size =
+            ValueDecoder::DecodeUInt32Value(parameter_buffer + bytes_read, get_remaining_bytes(), &property_count);
+        if (read_size == 0)
+        {
+            fail_decode("property_count");
+        }
+        bytes_read += read_size;
+
+        resource_properties[Property::kResourceType] = resource_type;
+
+        for (uint32_t property_index = 0; (property_index < property_count) && (bytes_read < parameter_data_size);
+             ++property_index)
+        {
+            Property property_type{};
+            read_size =
+                ValueDecoder::DecodeEnumValue(parameter_buffer + bytes_read, get_remaining_bytes(), &property_type);
+            if (read_size == 0)
+            {
+                fail_decode("property_type");
+            }
+            bytes_read += read_size;
+
+            size_t property_value_size = 0;
+            read_size                  = ValueDecoder::DecodeSizeTValue(
+                parameter_buffer + bytes_read, get_remaining_bytes(), &property_value_size);
+            if (read_size == 0)
+            {
+                fail_decode("property_value_size");
+            }
+            bytes_read += read_size;
+
+            const size_t property_data_window = std::min(property_value_size, get_remaining_bytes());
+            size_t       property_bytes_read  = 0;
+
+            switch (property_type)
+            {
+                case Property::kResourceType:
+                {
+                    property_bytes_read = ValueDecoder::DecodeEnumValue(
+                        parameter_buffer + bytes_read, property_data_window, &resource_type);
+                    if (property_bytes_read > 0)
+                    {
+                        resource_properties[property_type] = resource_type;
+                    }
+                    else
+                    {
+                        log_property_decode_skip(
+                            property_type, resource_index, resource_type, property_value_size, property_data_window);
+                    }
+                    break;
+                }
+                case Property::kResourceHandle:
+                {
+                    format::HandleId resource_handle{};
+                    property_bytes_read = ValueDecoder::DecodeHandleIdValue(
+                        parameter_buffer + bytes_read, property_data_window, &resource_handle);
+                    if (property_bytes_read > 0)
+                    {
+                        resource_properties[property_type] = resource_handle;
+                    }
+                    else
+                    {
+                        log_property_decode_skip(
+                            property_type, resource_index, resource_type, property_value_size, property_data_window);
+                    }
+                    break;
+                }
+                case Property::kAliasingGroup:
+                {
+                    uint8_t aliasing_group{};
+                    property_bytes_read = ValueDecoder::DecodeUInt8Value(
+                        parameter_buffer + bytes_read, property_data_window, &aliasing_group);
+                    if (property_bytes_read > 0)
+                    {
+                        resource_properties[property_type] = aliasing_group;
+                    }
+                    else
+                    {
+                        log_property_decode_skip(
+                            property_type, resource_index, resource_type, property_value_size, property_data_window);
+                    }
+                    break;
+                }
+                case Property::kCreateInfo:
+                {
+                    switch (resource_type)
+                    {
+                        case format::arm::ResourceMemoryRequirementsPropertiesResourceType::kResourceTypeVkBuffer:
+                        {
+                            Decoded_VkBufferCreateInfo create_info{};
+                            create_info.decoded_value = DecodeAllocator::Allocate<VkBufferCreateInfo>();
+                            property_bytes_read =
+                                DecodeStruct(parameter_buffer + bytes_read, property_data_window, &create_info);
+                            if (property_bytes_read > 0)
+                            {
+                                resource_properties[property_type] = create_info;
+                            }
+                            else
+                            {
+                                log_property_decode_skip(property_type,
+                                                         resource_index,
+                                                         resource_type,
+                                                         property_value_size,
+                                                         property_data_window);
+                            }
+                            break;
+                        }
+                        case format::arm::ResourceMemoryRequirementsPropertiesResourceType::kResourceTypeVkImage:
+                        {
+                            Decoded_VkImageCreateInfo create_info{};
+                            create_info.decoded_value = DecodeAllocator::Allocate<VkImageCreateInfo>();
+                            property_bytes_read =
+                                DecodeStruct(parameter_buffer + bytes_read, property_data_window, &create_info);
+                            if (property_bytes_read > 0)
+                            {
+                                resource_properties[property_type] = create_info;
+                            }
+                            else
+                            {
+                                log_property_decode_skip(property_type,
+                                                         resource_index,
+                                                         resource_type,
+                                                         property_value_size,
+                                                         property_data_window);
+                            }
+                            break;
+                        }
+                        case format::arm::ResourceMemoryRequirementsPropertiesResourceType::kResourceTypeVkTensor:
+                        {
+                            Decoded_VkTensorCreateInfoARM create_info{};
+                            create_info.decoded_value = DecodeAllocator::Allocate<VkTensorCreateInfoARM>();
+                            property_bytes_read =
+                                DecodeStruct(parameter_buffer + bytes_read, property_data_window, &create_info);
+                            if (property_bytes_read > 0)
+                            {
+                                resource_properties[property_type] = create_info;
+                            }
+                            else
+                            {
+                                log_property_decode_skip(property_type,
+                                                         resource_index,
+                                                         resource_type,
+                                                         property_value_size,
+                                                         property_data_window);
+                            }
+                            break;
+                        }
+                        default:
+                            property_bytes_read = property_data_window;
+                            break;
+                    }
+                    break;
+                }
+                default:
+                    property_bytes_read = property_data_window;
+                    break;
+            }
+
+            bytes_read += property_bytes_read;
+            if (property_bytes_read < property_value_size)
+            {
+                const size_t skip_size = std::min(property_value_size - property_bytes_read, get_remaining_bytes());
+                bytes_read += skip_size;
+            }
+        }
+    }
+
+    for (auto consumer : consumers_)
+    {
+        consumer->ProcessResourceMemoryRequirements(command_header, resources);
+    }
+    DecodeAllocator::End();
 }
 
 GFXRECON_END_NAMESPACE(decode)

@@ -25,6 +25,7 @@
 #include "decode/block_parser.h"
 #include "format/format_util.h"
 
+#include <cstdint>
 #include <cstring>
 #include <numeric>
 #include <sstream>
@@ -1827,6 +1828,43 @@ ParsedBlock& BlockParser::ParseMetaData(BlockBuffer& block_buffer)
         }
 
         HandleBlockReadError(kErrorReadingBlockHeader, "Failed to read set opaque address meta-data block header");
+    }
+    else if (meta_data_type == format::arm::MetaDataType::kMemoryRequirementsCommand)
+    {
+        format::arm::ResourceMemoryRequirementsCommandHeader header{};
+        header.meta_header.block_header = block_header;
+        header.meta_header.meta_data_id = meta_data_id;
+        success                         = success && block_buffer.Read(header.device_id);
+        success                         = success && block_buffer.Read(header.resources_count);
+        success                         = success && block_buffer.Read(header.reserved[0]);
+        success                         = success && block_buffer.Read(header.reserved[1]);
+        success                         = success && block_buffer.Read(header.reserved[2]);
+        success                         = success && block_buffer.Read(header.reserved[3]);
+
+        if (success)
+        {
+            const char*         label       = "get resource memory requirements info";
+            ParameterReadResult read_result = ReadParameterBuffer(label, block_buffer);
+
+            if (read_result.success)
+            {
+                const size_t data_size               = read_result.uncompressed_size;
+                header.meta_header.block_header.size = format::GetMetaDataBlockBaseSize(header) + data_size;
+                auto* payload                        = Emplace<ResourceMemoryRequirementsArgs>(
+                    meta_data_id, data_size, header, reinterpret_cast<const uint8_t*>(read_result.buffer.data()));
+                return MakeCompressibleParsedBlock(block_buffer, read_result, payload);
+            }
+            else
+            {
+                HandleBlockReadError(kErrorReadingBlockData,
+                                     "Failed to read resource memory requirements meta-data block");
+            }
+        }
+        else
+        {
+            HandleBlockReadError(kErrorReadingBlockHeader,
+                                 "Failed to read resource memory requirements meta-data block header");
+        }
     }
     else
     {
