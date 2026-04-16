@@ -80,8 +80,39 @@ class Dx12ShaderTool
                                                    const void*        code,
                                                    size_t             code_size);
 
+    // Writes the human-readable text description (.rootsig.txt). Default extraction output.
+    static bool ExtractRootSignatureTextToDir(const std::string& extract_dir,
+                                              uint64_t           handle_id,
+                                              const void*        blob,
+                                              size_t             blob_size);
+
+    // Writes the serialized binary blobs (.rootsig, _reserialized.rootsig). Opt-in output.
+    static bool ExtractRootSignatureBinaryToDir(const std::string& extract_dir,
+                                                uint64_t           handle_id,
+                                                const void*        blob,
+                                                size_t             blob_size);
+
+    // Writes everything (text + binary). Retained for callers that want the full set.
     static bool
     ExtractRootSignatureToDir(const std::string& extract_dir, uint64_t handle_id, const void* blob, size_t blob_size);
+
+    // Human-readable disassembly output file names:
+    //   sh<handle_id>.<stage>.txt   (pipeline shader disassembly)
+    //   sh<handle_id>_<subobject_index>.txt (state object DXIL library disassembly)
+    static std::string MakeShaderDisassemblyFileName(uint64_t handle_id, ShaderType type);
+    static std::string MakeStateObjectDxilLibraryDisassemblyFileName(uint64_t handle_id, uint32_t subobject_index);
+
+    // Disassemble shader bytecode and write human-readable text alongside the .cso binary.
+    // Uses DXC IDxcCompiler::Disassemble for DXIL (SM6.0+) and D3DDisassemble for DXBC (SM5.x).
+    // Returns true if a .txt file was successfully written.
+    static bool DisassemblePipelineShaderToDir(
+        const std::string& extract_dir, uint64_t handle_id, ShaderType type, const void* code, size_t code_size);
+
+    static bool DisassembleStateObjectDxilLibraryToDir(const std::string& extract_dir,
+                                                       uint64_t           state_object_handle_id,
+                                                       uint32_t           subobject_index,
+                                                       const void*        code,
+                                                       size_t             code_size);
 
     // Replacement helpers (read shader bytecode from replace_shader_dir)
     static bool LoadReplacementShaderFromDir(const std::string&       replace_shader_dir,

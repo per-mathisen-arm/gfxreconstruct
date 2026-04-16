@@ -27,11 +27,21 @@
 #include "util/logging.h"
 #include "util/platform.h"
 
+#include <cinttypes>
 #include <cstring>
 
 #include <d3d12.h>
 #include <d3d12shader.h>
 #include <wrl/client.h>
+
+#if defined(GFXRECON_DXC_SUPPORT)
+#include <dxcapi.h>
+#endif
+
+#if defined(WIN32)
+#include <d3dcompiler.h>
+#pragma comment(lib, "d3dcompiler.lib")
+#endif
 
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(graphics)
@@ -93,6 +103,42 @@ std::string Dx12ShaderTool::MakePipelineShaderFileName(uint64_t handle_id, Shade
 std::string Dx12ShaderTool::MakeStateObjectDxilLibraryFileName(uint64_t handle_id, uint32_t subobject_index)
 {
     return "sh" + std::to_string(handle_id) + "_" + std::to_string(subobject_index) + ".cso";
+}
+
+std::string Dx12ShaderTool::MakeShaderDisassemblyFileName(uint64_t handle_id, ShaderType type)
+{
+    std::string suffix;
+    switch (type)
+    {
+        case ShaderType::kVertex:
+            suffix = ".vs.txt";
+            break;
+        case ShaderType::kPixel:
+            suffix = ".ps.txt";
+            break;
+        case ShaderType::kDomain:
+            suffix = ".ds.txt";
+            break;
+        case ShaderType::kHull:
+            suffix = ".hs.txt";
+            break;
+        case ShaderType::kGeometry:
+            suffix = ".gs.txt";
+            break;
+        case ShaderType::kCompute:
+            suffix = ".cs.txt";
+            break;
+        default:
+            suffix = ".txt";
+            break;
+    }
+
+    return "sh" + std::to_string(handle_id) + suffix;
+}
+
+std::string Dx12ShaderTool::MakeStateObjectDxilLibraryDisassemblyFileName(uint64_t handle_id, uint32_t subobject_index)
+{
+    return "sh" + std::to_string(handle_id) + "_" + std::to_string(subobject_index) + ".txt";
 }
 
 std::string Dx12ShaderTool::MakeRootSignatureFileName(uint64_t handle_id)
@@ -508,6 +554,74 @@ TryReserializeRootSignature(const void* blob, size_t blob_size, std::unique_ptr<
 }
 #endif
 
+// Internal helper: disassemble shader bytecode to human-readable text.
+// Tries DXC first (for DXIL SM6.0+), then falls back to D3DDisassemble (for DXBC SM5.x).
+static bool DisassembleShaderBytecode(const void* code, size_t code_size, std::string& out_text)
+{
+    out_text.clear();
+    if ((code == nullptr) || (code_size == 0))
+    {
+        return false;
+    }
+
+#if defined(GFXRECON_DXC_SUPPORT)
+    {
+        using Microsoft::WRL::ComPtr;
+
+        ComPtr<IDxcUtils> dxc_utils;
+        HRESULT           hr = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&dxc_utils));
+        if (SUCCEEDED(hr) && dxc_utils)
+        {
+            ComPtr<IDxcBlobEncoding> blob_encoding;
+            hr = dxc_utils->CreateBlobFromPinned(code, static_cast<UINT32>(code_size), DXC_CP_ACP, &blob_encoding);
+            if (SUCCEEDED(hr) && blob_encoding)
+            {
+                ComPtr<IDxcCompiler> compiler;
+                hr = DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&compiler));
+                if (SUCCEEDED(hr) && compiler)
+                {
+                    ComPtr<IDxcBlobEncoding> disassembly;
+                    hr = compiler->Disassemble(blob_encoding.Get(), &disassembly);
+                    if (SUCCEEDED(hr) && disassembly && (disassembly->GetBufferSize() > 0))
+                    {
+                        out_text.assign(static_cast<const char*>(disassembly->GetBufferPointer()),
+                                        disassembly->GetBufferSize());
+                        // Trim trailing null if present
+                        while (!out_text.empty() && out_text.back() == '\0')
+                        {
+                            out_text.pop_back();
+                        }
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+#endif
+
+#if defined(WIN32)
+    // Fallback: D3DDisassemble for DXBC (SM5.x and below)
+    {
+        using Microsoft::WRL::ComPtr;
+
+        ComPtr<ID3DBlob> disassembly;
+        HRESULT          hr = D3DDisassemble(code, code_size, 0, nullptr, &disassembly);
+        if (SUCCEEDED(hr) && disassembly && (disassembly->GetBufferSize() > 0))
+        {
+            out_text.assign(static_cast<const char*>(disassembly->GetBufferPointer()), disassembly->GetBufferSize());
+            // Trim trailing null if present
+            while (!out_text.empty() && out_text.back() == '\0')
+            {
+                out_text.pop_back();
+            }
+            return true;
+        }
+    }
+#endif
+
+    return false;
+}
+
 bool Dx12ShaderTool::ExtractShaderToDir(const std::string& extract_dir,
                                         const std::string& file_name,
                                         const void*        code,
@@ -554,12 +668,32 @@ bool Dx12ShaderTool::ExtractStateObjectDxilLibraryToDir(const std::string& extra
         extract_dir, MakeStateObjectDxilLibraryFileName(state_object_handle_id, subobject_index), code, code_size);
 }
 
-bool Dx12ShaderTool::ExtractRootSignatureToDir(const std::string& extract_dir,
-                                               uint64_t           handle_id,
-                                               const void*        blob,
-                                               size_t             blob_size)
+bool Dx12ShaderTool::ExtractRootSignatureTextToDir(const std::string& extract_dir,
+                                                   uint64_t           handle_id,
+                                                   const void*        blob,
+                                                   size_t             blob_size)
 {
-    // Always write the original serialized root signature blob.
+#if defined(WIN32)
+    std::string text;
+    if (BuildRootSignatureText(blob, blob_size, text))
+    {
+        return WriteTextFileToDir(extract_dir, MakeRootSignatureTextFileName(handle_id), text);
+    }
+    return false;
+#else
+    (void)extract_dir;
+    (void)handle_id;
+    (void)blob;
+    (void)blob_size;
+    return false;
+#endif
+}
+
+bool Dx12ShaderTool::ExtractRootSignatureBinaryToDir(const std::string& extract_dir,
+                                                     uint64_t           handle_id,
+                                                     const void*        blob,
+                                                     size_t             blob_size)
+{
     bool wrote_original = ExtractShaderToDir(extract_dir, MakeRootSignatureFileName(handle_id), blob, blob_size);
     if (!wrote_original)
     {
@@ -567,13 +701,6 @@ bool Dx12ShaderTool::ExtractRootSignatureToDir(const std::string& extract_dir,
     }
 
 #if defined(WIN32)
-    // Best-effort: also emit a human-readable description.
-    std::string text;
-    if (BuildRootSignatureText(blob, blob_size, text))
-    {
-        WriteTextFileToDir(extract_dir, MakeRootSignatureTextFileName(handle_id), text);
-    }
-
     // Best-effort: also emit a reserialized blob to make diffs easier.
     std::unique_ptr<char[]> reser;
     size_t                  reser_size = 0;
@@ -584,6 +711,49 @@ bool Dx12ShaderTool::ExtractRootSignatureToDir(const std::string& extract_dir,
 #endif
 
     return true;
+}
+
+bool Dx12ShaderTool::ExtractRootSignatureToDir(const std::string& extract_dir,
+                                               uint64_t           handle_id,
+                                               const void*        blob,
+                                               size_t             blob_size)
+{
+    bool ok = ExtractRootSignatureBinaryToDir(extract_dir, handle_id, blob, blob_size);
+    ExtractRootSignatureTextToDir(extract_dir, handle_id, blob, blob_size);
+    return ok;
+}
+
+bool Dx12ShaderTool::DisassemblePipelineShaderToDir(
+    const std::string& extract_dir, uint64_t handle_id, ShaderType type, const void* code, size_t code_size)
+{
+    std::string disasm_text;
+    if (!DisassembleShaderBytecode(code, code_size, disasm_text))
+    {
+        GFXRECON_LOG_WARNING(
+            "Failed to disassemble pipeline shader sh%" PRIu64 ".%s", handle_id, ShaderTypeToString(type));
+        return false;
+    }
+
+    return WriteTextFileToDir(extract_dir, MakeShaderDisassemblyFileName(handle_id, type), disasm_text);
+}
+
+bool Dx12ShaderTool::DisassembleStateObjectDxilLibraryToDir(const std::string& extract_dir,
+                                                            uint64_t           state_object_handle_id,
+                                                            uint32_t           subobject_index,
+                                                            const void*        code,
+                                                            size_t             code_size)
+{
+    std::string disasm_text;
+    if (!DisassembleShaderBytecode(code, code_size, disasm_text))
+    {
+        GFXRECON_LOG_WARNING(
+            "Failed to disassemble state object sh%" PRIu64 " subobject %u", state_object_handle_id, subobject_index);
+        return false;
+    }
+
+    return WriteTextFileToDir(extract_dir,
+                              MakeStateObjectDxilLibraryDisassemblyFileName(state_object_handle_id, subobject_index),
+                              disasm_text);
 }
 
 bool Dx12ShaderTool::LoadReplacementShaderFromDir(const std::string&       replace_shader_dir,

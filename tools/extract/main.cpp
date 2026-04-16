@@ -42,15 +42,16 @@
 #include <cstdlib>
 #include <string>
 
-const char kHelpShortOption[]   = "-h";
-const char kHelpLongOption[]    = "--help";
-const char kVersionOption[]     = "--version";
-const char kDirectoryArgument[] = "--dir";
+const char kHelpShortOption[]              = "-h";
+const char kHelpLongOption[]               = "--help";
+const char kVersionOption[]                = "--version";
+const char kDirectoryArgument[]            = "--dir";
 const char kExtractRootSignatureArgument[] = "--extract_root_signature";
-const char kNoDebugPopup[]      = "--no-debug-popup";
+const char kDisassembleArgument[]          = "--disassemble";
+const char kNoDebugPopup[]                 = "--no-debug-popup";
 
 const char kOptions[]   = "-h|--help,--version,--no-debug-popup";
-const char kArguments[] = "--dir,--extract_root_signature";
+const char kArguments[] = "--dir,--extract_root_signature,--disassemble";
 
 static void PrintUsage(const char* exe_name)
 {
@@ -62,8 +63,10 @@ static void PrintUsage(const char* exe_name)
     }
     GFXRECON_WRITE_CONSOLE("\n%s - Extract shaders from a GFXReconstruct capture file.\n", app_name.c_str());
     GFXRECON_WRITE_CONSOLE("Usage:");
-    GFXRECON_WRITE_CONSOLE("  %s [-h | --help] [--version] [--dir <dir>] [--extract_root_signature <bool>] <file>\n",
+    GFXRECON_WRITE_CONSOLE("  %s [-h | --help] [--version] [--dir <dir>] [--extract_root_signature <bool>] "
+                           "[--disassemble <bool>] <file>\n",
                            app_name.c_str());
+
     GFXRECON_WRITE_CONSOLE("Required arguments:");
     GFXRECON_WRITE_CONSOLE("  <file>\t\tThe GFXReconstruct capture file to be processed.");
     GFXRECON_WRITE_CONSOLE("Optional arguments:");
@@ -72,12 +75,18 @@ static void PrintUsage(const char* exe_name)
     GFXRECON_WRITE_CONSOLE("  --dir <dir>\t\tPlace extracted shaders into directory <dir>. Otherwise");
     GFXRECON_WRITE_CONSOLE("             \t\tuse <file>.shaders in working directory. Create directory");
     GFXRECON_WRITE_CONSOLE("             \t\tif necessary. Each shader is placed in individual file");
-    GFXRECON_WRITE_CONSOLE("             \t\tnamed sh<handle_id> where handle_id is handle id of the");
-    GFXRECON_WRITE_CONSOLE("             \t\tCreateShaderModule call(Vulkan)");
-    GFXRECON_WRITE_CONSOLE("             \t\tand Create*Pipeline/CreateStateObject/AddToStateObject call(DX12).");
+    GFXRECON_WRITE_CONSOLE("             \t\tnamed sh<handle_id>.<stage>.cso where handle_id is the");
+    GFXRECON_WRITE_CONSOLE("             \t\thandle id of the Create*Pipeline/CreateStateObject call (DX12)");
+    GFXRECON_WRITE_CONSOLE("             \t\tor sh<handle_id> for vkCreateShaderModule (Vulkan).");
     GFXRECON_WRITE_CONSOLE("             \t\tSee gfxrecon-replay --replace-shaders.");
-    GFXRECON_WRITE_CONSOLE("  --extract_root_signature <bool>\tEnable or disable DX12 root signature extraction.");
-    GFXRECON_WRITE_CONSOLE("             \t\tDefault is true.");
+    GFXRECON_WRITE_CONSOLE("  --extract_root_signature <bool>");
+    GFXRECON_WRITE_CONSOLE("             \t\tExtract DX12 root signature binary blobs (.rootsig,");
+    GFXRECON_WRITE_CONSOLE("             \t\t_reserialized.rootsig). Default is true.");
+    GFXRECON_WRITE_CONSOLE("  --disassemble <bool>");
+    GFXRECON_WRITE_CONSOLE("             \t\tAlso write human-readable text alongside each binary:");
+    GFXRECON_WRITE_CONSOLE("             \t\t  shader disassembly (.vs.txt/.ps.txt/... via DXC or D3DDisassemble)");
+    GFXRECON_WRITE_CONSOLE("             \t\t  root signature description (.rootsig.txt).");
+    GFXRECON_WRITE_CONSOLE("             \t\tDefault is false.");
 #if defined(WIN32) && defined(_DEBUG)
     GFXRECON_WRITE_CONSOLE("  --no-debug-popup\tDisable the 'Abort, Retry, Ignore' message box");
     GFXRECON_WRITE_CONSOLE("        \t\tdisplayed when abort() is called (Windows debug only).");
@@ -264,8 +273,8 @@ class VulkanExtractConsumer : public gfxrecon::decode::VulkanConsumer
 class Dx12ExtractConsumer : public gfxrecon::decode::Dx12Consumer
 {
   public:
-    Dx12ExtractConsumer(std::string& extract_dir, bool extract_root_signature) :
-        extract_dir_(extract_dir), extract_root_signature_(extract_root_signature)
+    Dx12ExtractConsumer(std::string& extract_dir, bool extract_root_signature, bool disassemble) :
+        extract_dir_(extract_dir), extract_root_signature_(extract_root_signature), disassemble_(disassemble)
     {}
 
     virtual void
@@ -283,8 +292,16 @@ class Dx12ExtractConsumer : public gfxrecon::decode::Dx12Consumer
             (pBlobWithRootSignature->GetPointer() != nullptr) && (blobLengthInBytes > 0))
         {
             uint64_t handle_id = *ppvRootSignature->GetPointer();
-            gfxrecon::graphics::Dx12ShaderTool::ExtractRootSignatureToDir(
+            gfxrecon::graphics::Dx12ShaderTool::ExtractRootSignatureBinaryToDir(
                 extract_dir_, handle_id, pBlobWithRootSignature->GetPointer(), static_cast<size_t>(blobLengthInBytes));
+            if (disassemble_)
+            {
+                gfxrecon::graphics::Dx12ShaderTool::ExtractRootSignatureTextToDir(
+                    extract_dir_,
+                    handle_id,
+                    pBlobWithRootSignature->GetPointer(),
+                    static_cast<size_t>(blobLengthInBytes));
+            }
         }
     }
 
@@ -304,8 +321,13 @@ class Dx12ExtractConsumer : public gfxrecon::decode::Dx12Consumer
             (blobLengthInBytes > 0))
         {
             uint64_t handle_id = *ppvRootSignature->GetPointer();
-            gfxrecon::graphics::Dx12ShaderTool::ExtractRootSignatureToDir(
+            gfxrecon::graphics::Dx12ShaderTool::ExtractRootSignatureBinaryToDir(
                 extract_dir_, handle_id, pLibraryBlob->GetPointer(), static_cast<size_t>(blobLengthInBytes));
+            if (disassemble_)
+            {
+                gfxrecon::graphics::Dx12ShaderTool::ExtractRootSignatureTextToDir(
+                    extract_dir_, handle_id, pLibraryBlob->GetPointer(), static_cast<size_t>(blobLengthInBytes));
+            }
         }
     }
 
@@ -331,6 +353,15 @@ class Dx12ExtractConsumer : public gfxrecon::decode::Dx12Consumer
                     gfxrecon::graphics::Dx12ShaderTool::ShaderType::kVertex,
                     vertex_shader.pShaderBytecode,
                     vertex_shader.BytecodeLength);
+                if (disassemble_)
+                {
+                    gfxrecon::graphics::Dx12ShaderTool::DisassemblePipelineShaderToDir(
+                        extract_dir_,
+                        handle_id,
+                        gfxrecon::graphics::Dx12ShaderTool::ShaderType::kVertex,
+                        vertex_shader.pShaderBytecode,
+                        vertex_shader.BytecodeLength);
+                }
             }
 
             auto& pixel_shader = pDesc->GetPointer()->PS;
@@ -342,6 +373,15 @@ class Dx12ExtractConsumer : public gfxrecon::decode::Dx12Consumer
                     gfxrecon::graphics::Dx12ShaderTool::ShaderType::kPixel,
                     pixel_shader.pShaderBytecode,
                     pixel_shader.BytecodeLength);
+                if (disassemble_)
+                {
+                    gfxrecon::graphics::Dx12ShaderTool::DisassemblePipelineShaderToDir(
+                        extract_dir_,
+                        handle_id,
+                        gfxrecon::graphics::Dx12ShaderTool::ShaderType::kPixel,
+                        pixel_shader.pShaderBytecode,
+                        pixel_shader.BytecodeLength);
+                }
             }
 
             auto& domain_shader = pDesc->GetPointer()->DS;
@@ -353,6 +393,15 @@ class Dx12ExtractConsumer : public gfxrecon::decode::Dx12Consumer
                     gfxrecon::graphics::Dx12ShaderTool::ShaderType::kDomain,
                     domain_shader.pShaderBytecode,
                     domain_shader.BytecodeLength);
+                if (disassemble_)
+                {
+                    gfxrecon::graphics::Dx12ShaderTool::DisassemblePipelineShaderToDir(
+                        extract_dir_,
+                        handle_id,
+                        gfxrecon::graphics::Dx12ShaderTool::ShaderType::kDomain,
+                        domain_shader.pShaderBytecode,
+                        domain_shader.BytecodeLength);
+                }
             }
 
             auto& hull_shader = pDesc->GetPointer()->HS;
@@ -364,6 +413,15 @@ class Dx12ExtractConsumer : public gfxrecon::decode::Dx12Consumer
                     gfxrecon::graphics::Dx12ShaderTool::ShaderType::kHull,
                     hull_shader.pShaderBytecode,
                     hull_shader.BytecodeLength);
+                if (disassemble_)
+                {
+                    gfxrecon::graphics::Dx12ShaderTool::DisassemblePipelineShaderToDir(
+                        extract_dir_,
+                        handle_id,
+                        gfxrecon::graphics::Dx12ShaderTool::ShaderType::kHull,
+                        hull_shader.pShaderBytecode,
+                        hull_shader.BytecodeLength);
+                }
             }
 
             auto& geometry_shader = pDesc->GetPointer()->GS;
@@ -375,6 +433,15 @@ class Dx12ExtractConsumer : public gfxrecon::decode::Dx12Consumer
                     gfxrecon::graphics::Dx12ShaderTool::ShaderType::kGeometry,
                     geometry_shader.pShaderBytecode,
                     geometry_shader.BytecodeLength);
+                if (disassemble_)
+                {
+                    gfxrecon::graphics::Dx12ShaderTool::DisassemblePipelineShaderToDir(
+                        extract_dir_,
+                        handle_id,
+                        gfxrecon::graphics::Dx12ShaderTool::ShaderType::kGeometry,
+                        geometry_shader.pShaderBytecode,
+                        geometry_shader.BytecodeLength);
+                }
             }
         }
     }
@@ -401,6 +468,15 @@ class Dx12ExtractConsumer : public gfxrecon::decode::Dx12Consumer
                     gfxrecon::graphics::Dx12ShaderTool::ShaderType::kCompute,
                     compute_shader.pShaderBytecode,
                     compute_shader.BytecodeLength);
+                if (disassemble_)
+                {
+                    gfxrecon::graphics::Dx12ShaderTool::DisassemblePipelineShaderToDir(
+                        extract_dir_,
+                        handle_id,
+                        gfxrecon::graphics::Dx12ShaderTool::ShaderType::kCompute,
+                        compute_shader.pShaderBytecode,
+                        compute_shader.BytecodeLength);
+                }
             }
         }
     }
@@ -427,6 +503,11 @@ class Dx12ExtractConsumer : public gfxrecon::decode::Dx12Consumer
 
                     gfxrecon::graphics::Dx12ShaderTool::ExtractStateObjectDxilLibraryToDir(
                         extract_dir_, handle_id, i, dxil_lib.pShaderBytecode, dxil_lib.BytecodeLength);
+                    if (disassemble_)
+                    {
+                        gfxrecon::graphics::Dx12ShaderTool::DisassembleStateObjectDxilLibraryToDir(
+                            extract_dir_, handle_id, i, dxil_lib.pShaderBytecode, dxil_lib.BytecodeLength);
+                    }
                 }
             }
         }
@@ -455,6 +536,11 @@ class Dx12ExtractConsumer : public gfxrecon::decode::Dx12Consumer
 
                     gfxrecon::graphics::Dx12ShaderTool::ExtractStateObjectDxilLibraryToDir(
                         extract_dir_, handle_id, i, dxil_lib.pShaderBytecode, dxil_lib.BytecodeLength);
+                    if (disassemble_)
+                    {
+                        gfxrecon::graphics::Dx12ShaderTool::DisassembleStateObjectDxilLibraryToDir(
+                            extract_dir_, handle_id, i, dxil_lib.pShaderBytecode, dxil_lib.BytecodeLength);
+                    }
                 }
             }
         }
@@ -463,6 +549,7 @@ class Dx12ExtractConsumer : public gfxrecon::decode::Dx12Consumer
   private:
     std::string extract_dir_;
     bool        extract_root_signature_;
+    bool        disassemble_;
 };
 #endif
 
@@ -497,6 +584,7 @@ int main(int argc, const char** argv)
     std::string                     input_filename       = positional_arguments[0];
     bool                            extract_root_signature =
         gfxrecon::util::ParseBoolString(arg_parser.GetArgumentValue(kExtractRootSignatureArgument), true);
+    bool disassemble = gfxrecon::util::ParseBoolString(arg_parser.GetArgumentValue(kDisassembleArgument), false);
     gfxrecon::decode::FileProcessor file_processor;
 
     if (file_processor.Initialize(input_filename))
@@ -549,7 +637,7 @@ int main(int argc, const char** argv)
         {
 #if defined(D3D12_SUPPORT)
             gfxrecon::decode::Dx12Decoder decoder;
-            Dx12ExtractConsumer           extract_consumer(extract_dir, extract_root_signature);
+            Dx12ExtractConsumer           extract_consumer(extract_dir, extract_root_signature, disassemble);
 
             decoder.AddConsumer(&extract_consumer);
 
