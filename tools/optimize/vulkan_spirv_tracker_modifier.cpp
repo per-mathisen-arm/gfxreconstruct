@@ -35,7 +35,13 @@
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(decode)
 
-VulkanSpirvTrackModifier::VulkanSpirvTrackModifier(bool verbose) : m_verbose(verbose) {}
+VulkanSpirvTrackModifier::VulkanSpirvTrackModifier(bool verbose, bool error_on_buffers_incomplete) : m_verbose(verbose)
+{
+    if (error_on_buffers_incomplete)
+    {
+        m_flags |= ERROR_RAISE_ON_BUFFERS_INCOMPLETE;
+    }
+}
 
 bool VulkanSpirvTrackModifier::CanOptimize()
 {
@@ -355,6 +361,14 @@ void VulkanSpirvTrackModifier::Process_vkCreateAccelerationStructureKHR(
     acceleration_structure_entries_[handle].type              = pCreateInfo->GetPointer()->type;
     acceleration_structure_entries_[handle].creation_index    = call_info.index;
     acceleration_structure_entries_[handle].destruction_index = UINT64_MAX;
+
+    VkDeviceAddress back_buffer_address = buffer_entries_[pCreateInfo->GetMetaStructPointer()->buffer].device_address;
+    if (back_buffer_address != 0)
+    {
+        VkDeviceAddress address = back_buffer_address + pCreateInfo->GetPointer()->offset;
+        acceleration_structure_entries_[handle].device_address = address;
+        acceleration_structure_device_addresses_[address].insert(handle);
+    }
 }
 
 void VulkanSpirvTrackModifier::Process_vkDestroyAccelerationStructureKHR(
@@ -414,6 +428,8 @@ void VulkanSpirvTrackModifier::Process_vkCreateDescriptorSetLayout(
 
     const auto* meta_flag_info = GetPNextMetaStruct<Decoded_VkDescriptorSetLayoutBindingFlagsCreateInfo>(
         pCreateInfo->GetMetaStructPointer()->pNext);
+    const auto* meta_mutable_type_info =
+        GetPNextMetaStruct<Decoded_VkMutableDescriptorTypeCreateInfoEXT>(pCreateInfo->GetMetaStructPointer()->pNext);
 
     set_layout_entries_[handle].handle            = handle;
     set_layout_entries_[handle].creation_index    = call_info.index;
@@ -428,6 +444,22 @@ void VulkanSpirvTrackModifier::Process_vkCreateDescriptorSetLayout(
         binding.stageFlags      = info->pBindings[i].stageFlags;
         binding.descriptorCount = info->pBindings[i].descriptorCount;
         binding.binding_flags   = (meta_flag_info == nullptr) ? 0 : meta_flag_info->pBindingFlags.GetPointer()[i];
+
+        if ((binding.type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) && (meta_mutable_type_info != nullptr) &&
+            (meta_mutable_type_info->decoded_value != nullptr) &&
+            (meta_mutable_type_info->pMutableDescriptorTypeLists != nullptr) &&
+            (i < meta_mutable_type_info->decoded_value->mutableDescriptorTypeListCount))
+        {
+            const auto& mutable_type_list = meta_mutable_type_info->pMutableDescriptorTypeLists->GetPointer()[i];
+            const auto& meta_mutable_type_list =
+                meta_mutable_type_info->pMutableDescriptorTypeLists->GetMetaStructPointer()[i];
+
+            for (uint32_t type_index = 0; type_index < mutable_type_list.descriptorTypeCount; ++type_index)
+            {
+                binding.mutable_descriptor_types.push_back(
+                    meta_mutable_type_list.pDescriptorTypes.GetPointer()[type_index]);
+            }
+        }
 
         set_layout_entries_[handle].bindings[binding.binding] = binding;
     }
@@ -563,10 +595,14 @@ void VulkanSpirvTrackModifier::Process_vkAllocateDescriptorSets(
 
             descriptor_set_entries_[descriptorSet].binding_descriptor_array[binding.binding].binding = binding.binding;
             descriptor_set_entries_[descriptorSet].binding_descriptor_array[binding.binding].type    = binding.type;
+            descriptor_set_entries_[descriptorSet].binding_descriptor_array[binding.binding].mutable_descriptor_types =
+                binding.mutable_descriptor_types;
             descriptor_set_entries_[descriptorSet].binding_descriptor_array[binding.binding].descriptorCount =
                 binding.descriptorCount;
             descriptor_set_entries_[descriptorSet].binding_descriptor_array[binding.binding].stageFlags =
                 binding.stageFlags;
+            descriptor_set_entries_[descriptorSet].binding_descriptor_array[binding.binding].binding_flags =
+                binding.binding_flags;
 
             if ((meta_count_info != nullptr) &&
                 (binding.binding_flags & VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT) ==
@@ -574,6 +610,15 @@ void VulkanSpirvTrackModifier::Process_vkAllocateDescriptorSets(
             {
                 descriptor_set_entries_[descriptorSet].binding_descriptor_array[binding.binding].descriptorCount =
                     meta_count_info->pDescriptorCounts.GetPointer()[i];
+            }
+            if (binding.type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK)
+            {
+                descriptor_set_entries_[descriptorSet]
+                    .binding_descriptor_array[binding.binding]
+                    .inline_uniform_block_data.resize(binding.descriptorCount, 0);
+                descriptor_set_entries_[descriptorSet]
+                    .binding_descriptor_array[binding.binding]
+                    .inline_uniform_block_written.resize(binding.descriptorCount, 0);
             }
         }
     }
@@ -592,37 +637,37 @@ void VulkanSpirvTrackModifier::Process_vkUpdateDescriptorSets(
         return;
     }
 
+    auto binding_accepts_descriptor_type = [](const DescriptorArray& binding_array, VkDescriptorType descriptor_type) {
+        if (binding_array.type == descriptor_type)
+        {
+            return true;
+        }
+        if (binding_array.type != VK_DESCRIPTOR_TYPE_MUTABLE_EXT)
+        {
+            return false;
+        }
+        for (VkDescriptorType mutable_type : binding_array.mutable_descriptor_types)
+        {
+            if (mutable_type == descriptor_type)
+            {
+                return true;
+            }
+        }
+        return false;
+    };
+
     for (uint32_t i = 0; i < descriptorWriteCount; i++)
     {
         const auto& write      = pDescriptorWrites->GetPointer()[i];
         const auto& meta_write = pDescriptorWrites->GetMetaStructPointer()[i];
 
         auto descriptor_set_iter = descriptor_set_entries_.find(meta_write.dstSet);
-        if (descriptor_set_iter == descriptor_set_entries_.end())
-        {
-            GFXRECON_LOG_INFO("call %llu vkUpdateDescriptorSets: update an non-existing descriptorSet %llu.",
-                              call_info.index,
-                              meta_write.dstSet);
-            continue;
-        }
+        GFXRECON_ASSERT(descriptor_set_iter != descriptor_set_entries_.end());
 
         auto binding_array_iter = descriptor_set_iter->second.binding_descriptor_array.find(write.dstBinding);
-        if (binding_array_iter == descriptor_set_iter->second.binding_descriptor_array.end())
-        {
-            GFXRECON_LOG_INFO(
-                "call %llu vkUpdateDescriptorSets: update an non-existing binding %u in descriptorSet %llu.",
-                call_info.index,
-                write.dstBinding,
-                meta_write.dstSet);
-            continue;
-        }
-        if (binding_array_iter->second.type != write.descriptorType)
-        {
-            GFXRECON_LOG_INFO("call %llu vkUpdateDescriptorSets: descriptor type does not match in binding %u.",
-                              call_info.index,
-                              write.dstBinding);
-            continue;
-        }
+        GFXRECON_ASSERT(binding_array_iter != descriptor_set_iter->second.binding_descriptor_array.end());
+
+        GFXRECON_ASSERT(binding_accepts_descriptor_type(binding_array_iter->second, write.descriptorType));
 
         uint32_t alloc_descriptor_count = binding_array_iter->second.descriptorCount;
         if ((write.descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER ||
@@ -636,6 +681,11 @@ void VulkanSpirvTrackModifier::Process_vkUpdateDescriptorSets(
                 uint32_t array_index = write.dstArrayElement + s;
 
                 const auto& meta_buffer_info = meta_write.pBufferInfo->GetMetaStructPointer()[s];
+                if (meta_buffer_info.buffer == format::kNullHandleId)
+                {
+                    GFXRECON_ASSERT(meta_buffer_info.decoded_value->range == VK_WHOLE_SIZE);
+                    GFXRECON_ASSERT(meta_buffer_info.decoded_value->offset == 0);
+                }
                 binding_array_iter->second.descriptor_entries[array_index] = {
                     .type   = write.descriptorType,
                     .buffer = { meta_buffer_info.buffer,
@@ -644,24 +694,57 @@ void VulkanSpirvTrackModifier::Process_vkUpdateDescriptorSets(
                 };
             }
         }
-        else if (write.descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR && write.pNext)
+        else if (write.descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK)
         {
+            const auto* meta_inline_uniform_block =
+                GetPNextMetaStruct<Decoded_VkWriteDescriptorSetInlineUniformBlock>(meta_write.pNext);
+            if ((meta_inline_uniform_block == nullptr) || (meta_inline_uniform_block->decoded_value == nullptr))
+            {
+                GFXRECON_LOG_INFO("call %llu vkUpdateDescriptorSets: missing VkWriteDescriptorSetInlineUniformBlock in "
+                                  "pNext for binding %u.",
+                                  call_info.index,
+                                  write.dstBinding);
+                continue;
+            }
+
+            const auto* inline_uniform_block = meta_inline_uniform_block->decoded_value;
+            GFXRECON_ASSERT(inline_uniform_block->sType == VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_INLINE_UNIFORM_BLOCK);
+
+            uint32_t size        = write.descriptorCount;
+            uint32_t offset      = write.dstArrayElement;
+            auto&    inline_data = binding_array_iter->second.inline_uniform_block_data;
+            GFXRECON_ASSERT(size == inline_uniform_block->dataSize);
+            GFXRECON_ASSERT(size + offset <= inline_data.size());
+
+            const uint8_t* src_data = meta_inline_uniform_block->pData.GetPointer();
+            GFXRECON_ASSERT((size == 0) || (src_data != nullptr));
+
+            util::platform::MemoryCopy(inline_data.data() + offset, size, src_data, size);
+        }
+        else if (write.descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR)
+        {
+            const auto* meta_structure =
+                GetPNextMetaStruct<Decoded_VkWriteDescriptorSetAccelerationStructureKHR>(meta_write.pNext);
+            if ((meta_structure == nullptr) || (meta_structure->decoded_value == nullptr))
+            {
+                GFXRECON_LOG_INFO(
+                    "call %llu vkUpdateDescriptorSets: missing VkWriteDescriptorSetAccelerationStructureKHR in "
+                    "pNext for binding %u.",
+                    call_info.index,
+                    write.dstBinding);
+                continue;
+            }
+
+            const auto* structure = meta_structure->decoded_value;
+            GFXRECON_ASSERT(structure->sType == VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR);
+            GFXRECON_ASSERT(write.descriptorCount == structure->accelerationStructureCount);
+
+            const auto* handles = meta_structure->pAccelerationStructures.GetPointer();
             for (uint32_t s = 0; s < write.descriptorCount; s++)
             {
                 uint32_t array_index = write.dstArrayElement + s;
+                auto     handle      = handles[s];
 
-                const auto* meta_structure =
-                    GetPNextMetaStruct<Decoded_VkWriteDescriptorSetAccelerationStructureKHR>(meta_write.pNext);
-                VkWriteDescriptorSetAccelerationStructureKHR* structure =
-                    (VkWriteDescriptorSetAccelerationStructureKHR*)(write.pNext);
-
-                if (structure->sType != VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR)
-                {
-                    continue;
-                }
-                GFXRECON_ASSERT(write.descriptorCount == structure->accelerationStructureCount);
-
-                auto handle = meta_structure->pAccelerationStructures.GetPointer()[s];
                 binding_array_iter->second.descriptor_entries[array_index] = { .type         = write.descriptorType,
                                                                                .acceleration = { handle } };
             }
@@ -696,6 +779,7 @@ void VulkanSpirvTrackModifier::Process_vkCreatePipelineLayout(
     pipeline_layout_entries_[handle].handle            = handle;
     pipeline_layout_entries_[handle].creation_index    = call_info.index;
     pipeline_layout_entries_[handle].destruction_index = UINT64_MAX;
+    pipeline_layout_entries_[handle].flags             = create_info->decoded_value->flags;
 
     uint32_t dynamic_start_index = 0;
     for (uint32_t i = 0; i < create_info->decoded_value->setLayoutCount; i++)
@@ -1043,8 +1127,9 @@ void VulkanSpirvTrackModifier::Process_vkGetBufferDeviceAddress(
     {
         return;
     }
-    const auto& buffer_id                 = pInfo->GetMetaStructPointer()->buffer;
-    buffer_device_addresses_[returnValue] = buffer_id;
+    const auto& buffer_id                     = pInfo->GetMetaStructPointer()->buffer;
+    buffer_device_addresses_[returnValue]     = buffer_id;
+    buffer_entries_[buffer_id].device_address = returnValue;
 }
 
 void VulkanSpirvTrackModifier::Process_vkGetBufferDeviceAddressKHR(
@@ -1057,8 +1142,9 @@ void VulkanSpirvTrackModifier::Process_vkGetBufferDeviceAddressKHR(
     {
         return;
     }
-    const auto& buffer_id                 = pInfo->GetMetaStructPointer()->buffer;
-    buffer_device_addresses_[returnValue] = buffer_id;
+    const auto& buffer_id                     = pInfo->GetMetaStructPointer()->buffer;
+    buffer_device_addresses_[returnValue]     = buffer_id;
+    buffer_entries_[buffer_id].device_address = returnValue;
 }
 
 void VulkanSpirvTrackModifier::Process_vkGetBufferDeviceAddressEXT(
@@ -1071,8 +1157,9 @@ void VulkanSpirvTrackModifier::Process_vkGetBufferDeviceAddressEXT(
     {
         return;
     }
-    const auto& buffer_id                 = pInfo->GetMetaStructPointer()->buffer;
-    buffer_device_addresses_[returnValue] = buffer_id;
+    const auto& buffer_id                     = pInfo->GetMetaStructPointer()->buffer;
+    buffer_device_addresses_[returnValue]     = buffer_id;
+    buffer_entries_[buffer_id].device_address = returnValue;
 }
 
 void VulkanSpirvTrackModifier::Process_vkGetAccelerationStructureDeviceAddressKHR(
@@ -1086,8 +1173,8 @@ void VulkanSpirvTrackModifier::Process_vkGetAccelerationStructureDeviceAddressKH
         return;
     }
 
-    const auto& as_id                                     = pInfo->GetMetaStructPointer()->accelerationStructure;
-    acceleration_structure_device_addresses_[returnValue] = as_id;
+    const auto& as_id = pInfo->GetMetaStructPointer()->accelerationStructure;
+    acceleration_structure_device_addresses_[returnValue].insert(as_id);
     if (acceleration_structure_entries_.find(as_id) != acceleration_structure_entries_.end())
     {
         acceleration_structure_entries_[as_id].device_address = returnValue;
@@ -1139,11 +1226,14 @@ void VulkanSpirvTrackModifier::Process_vkCmdBindDescriptorSets(const ApiCallInfo
         return;
     }
 
+    DescriptorStateCommand command;
+    command.type       = DescriptorStateCommand::Type::BindDescriptorSets;
+    command.bind_point = pipelineBindPoint;
+
     for (uint32_t i = 0; i < descriptorSetCount; i++)
     {
         format::HandleId descriptor_set = pDescriptorSets->GetPointer()[i];
-        command_buffer_recording[commandBuffer].descriptor_sets[pipelineBindPoint].push_back(
-            { firstSet + i, descriptor_set, layout });
+        command.descriptor_sets.push_back({ firstSet + i, descriptor_set, layout });
     }
 
     if (dynamicOffsetCount > 0 && pDynamicOffsets != nullptr)
@@ -1166,8 +1256,7 @@ void VulkanSpirvTrackModifier::Process_vkCmdBindDescriptorSets(const ApiCallInfo
                 }
 
                 DynamicBindingOffsetMap elem;
-                elem.set    = firstSet + i;
-                elem.layout = layout;
+                elem.set = firstSet + i;
                 for (const DynamicBindingRef& ref : ref_iter->second)
                 {
                     if (remained_count >= ref.elementCount)
@@ -1199,9 +1288,14 @@ void VulkanSpirvTrackModifier::Process_vkCmdBindDescriptorSets(const ApiCallInfo
                                                               consumed_count };
                     consumed_index += consumed_count;
                 }
-                command_buffer_recording[commandBuffer].dynamic_offsets[pipelineBindPoint].push_back(elem);
+                command.dynamic_offsets[elem.set] = std::move(elem);
             }
         }
+    }
+
+    if (!command.descriptor_sets.empty())
+    {
+        command_buffer_recording[commandBuffer].descriptor_state_commands.push_back(std::move(command));
     }
 }
 
@@ -1222,17 +1316,47 @@ void VulkanSpirvTrackModifier::Process_vkCmdBindDescriptorBuffersEXT(
         return;
     }
 
-    // unbound the previous bound buffers at binding points great than or equal to bufferCount
-    command_buffer_recording[commandBuffer].descriptor_buffers.clear();
+    DescriptorStateCommand command;
+    command.type = DescriptorStateCommand::Type::BindDescriptorBuffers;
 
-    const auto* binding_info = pBindingInfos->GetPointer();
+    const auto* binding_info      = pBindingInfos->GetPointer();
+    const auto* meta_binding_info = pBindingInfos->GetMetaStructPointer();
     for (uint32_t i = 0; i < bufferCount; i++)
     {
-        format::HandleId handle = 0;
-        const auto       iter   = buffer_device_addresses_.find(binding_info[i].address);
+        format::HandleId    handle       = 0;
+        VkDeviceAddress     base_address = 0;
+        VkBufferUsageFlags2 usage2       = binding_info[i].usage;
+        bool                resolved     = false;
+        auto                iter         = findEntryFromBufferDeviceAddress(binding_info[i].address);
+
+        const auto* usage2_struct_info =
+            GetPNextMetaStruct<Decoded_VkBufferUsageFlags2CreateInfo>(meta_binding_info[i].pNext);
+        if (usage2_struct_info != nullptr && usage2_struct_info->decoded_value != nullptr)
+        {
+            usage2 = usage2_struct_info->decoded_value->usage;
+        }
+
         if (iter != buffer_device_addresses_.end())
         {
-            handle = iter->second;
+            base_address = iter->first;
+            handle       = iter->second;
+
+            const auto* ext_struct_info =
+                GetPNextMetaStruct<Decoded_VkDescriptorBufferBindingPushDescriptorBufferHandleEXT>(
+                    meta_binding_info[i].pNext);
+            if (ext_struct_info == nullptr || ext_struct_info->buffer == handle)
+            {
+                resolved = true;
+            }
+            else
+            {
+                GFXRECON_LOG_INFO(
+                    "call %llu vkCmdBindDescriptorBuffersEXT: bound descriptor buffer handle %llu does not match "
+                    "VkDescriptorBufferBindingPushDescriptorBufferHandleEXT buffer %llu.",
+                    call_info.index,
+                    handle,
+                    ext_struct_info->buffer);
+            }
         }
         else
         {
@@ -1241,13 +1365,11 @@ void VulkanSpirvTrackModifier::Process_vkCmdBindDescriptorBuffersEXT(
                               call_info.index,
                               binding_info[i].address);
         }
-
-        // invalidate the offsets previously set within binding [0,bufferCount-1]
-        command_buffer_recording[commandBuffer].descriptor_offset_valid[i] = false;
-
-        command_buffer_recording[commandBuffer].descriptor_buffers.emplace_back(
-            handle, binding_info[i].address, binding_info[i].usage);
+        command.descriptor_buffers.push_back(
+            { handle, base_address, binding_info[i].address, binding_info[i].usage, usage2, resolved });
     }
+
+    command_buffer_recording[commandBuffer].descriptor_state_commands.push_back(std::move(command));
 }
 
 void VulkanSpirvTrackModifier::Process_vkCmdSetDescriptorBufferOffsetsEXT(const ApiCallInfo&        call_info,
@@ -1270,11 +1392,21 @@ void VulkanSpirvTrackModifier::Process_vkCmdSetDescriptorBufferOffsetsEXT(const 
         return;
     }
 
+    DescriptorStateCommand command;
+    command.type       = DescriptorStateCommand::Type::SetDescriptorBufferOffsets;
+    command.bind_point = pipelineBindPoint;
+
     for (uint32_t i = 0; i < setCount; i++)
     {
-        uint32_t buffer_index = pBufferIndices->GetPointer()[i];
+        uint32_t     buffer_index = pBufferIndices->GetPointer()[i];
+        VkDeviceSize offset       = pOffsets->GetPointer()[i];
 
-        command_buffer_recording[commandBuffer].descriptor_offset_valid[buffer_index] = true;
+        command.descriptor_buffer_offsets.emplace_back(firstSet + i, buffer_index, offset, layout);
+    }
+
+    if (!command.descriptor_buffer_offsets.empty())
+    {
+        command_buffer_recording[commandBuffer].descriptor_state_commands.push_back(std::move(command));
     }
 }
 
@@ -1914,11 +2046,350 @@ void VulkanSpirvTrackModifier::resetRecording(format::HandleId commandBuffer)
     command_buffer_recording[commandBuffer].in_operation = false;
     command_buffer_recording[commandBuffer].push_constants.clear();
     command_buffer_recording[commandBuffer].pipelines.clear();
-    command_buffer_recording[commandBuffer].descriptor_sets.clear();
-    command_buffer_recording[commandBuffer].dynamic_offsets.clear();
-    command_buffer_recording[commandBuffer].descriptor_buffers.clear();
-    command_buffer_recording[commandBuffer].descriptor_offset_valid.clear();
+    command_buffer_recording[commandBuffer].descriptor_state_commands.clear();
     command_buffer_recording[commandBuffer].buffer_write_list.clear();
+}
+
+void VulkanSpirvTrackModifier::ApplyActionCommands(const CommandBufferRecording& recording)
+{
+    // execute command: update/copy buffer, build
+    for (const BufferWriteEvent& event : recording.buffer_write_list)
+    {
+        BufferInfo& dst_info = buffer_entries_.at(event.buffer);
+        switch (event.sourceType)
+        {
+            case SourceType::CopyBuffer:
+            {
+                const BufferInfo& src_info = buffer_entries_.at(event.srcBuffer);
+                for (const auto& region : event.regions)
+                {
+                    GFXRECON_ASSERT(dst_info.size >= region.dstOffset + region.size);
+                    GFXRECON_ASSERT(src_info.size >= region.srcOffset + region.size);
+                    std::memcpy(
+                        dst_info.data.data() + region.dstOffset, src_info.data.data() + region.srcOffset, region.size);
+                }
+                break;
+            }
+            case SourceType::Update:
+            {
+                VkDeviceSize offset = event.regions[0].dstOffset;
+                VkDeviceSize size   = event.regions[0].size;
+                GFXRECON_ASSERT(dst_info.size >= offset + size);
+                std::memcpy(dst_info.data.data() + offset, event.srcPointer.data() + event.regions[0].srcOffset, size);
+                break;
+            }
+            case SourceType::Fill:
+            {
+                VkDeviceSize offset  = event.regions[0].dstOffset;
+                VkDeviceSize size    = event.regions[0].size;
+                uint8_t*     dst_ptr = dst_info.data.data() + offset;
+                if (size == VK_WHOLE_SIZE)
+                {
+                    size = dst_info.size - offset;
+                }
+                for (uint32_t i = 0; i < size / 4; i++)
+                {
+                    std::memcpy(dst_ptr + i * 4, event.srcPointer.data(), sizeof(uint32_t));
+                }
+                break;
+            }
+            default:
+                break;
+        }
+    }
+}
+
+bool VulkanSpirvTrackModifier::IsPipelineLayoutCompatibleForSet(format::HandleId lhs,
+                                                                format::HandleId rhs,
+                                                                uint32_t         set) const
+{
+    if (lhs == rhs)
+    {
+        return true;
+    }
+
+    const auto lhs_iter = pipeline_layout_entries_.find(lhs);
+    const auto rhs_iter = pipeline_layout_entries_.find(rhs);
+    if (lhs_iter == pipeline_layout_entries_.end() || rhs_iter == pipeline_layout_entries_.end())
+    {
+        return false;
+    }
+
+    const auto& lhs_info = lhs_iter->second;
+    const auto& rhs_info = rhs_iter->second;
+
+    // Push constant compatibility is order-insensitive, but still requires identical ranges.
+    if (lhs_info.pushConstantRanges.size() != rhs_info.pushConstantRanges.size())
+    {
+        return false;
+    }
+
+    auto lhs_push_constant_ranges    = lhs_info.pushConstantRanges;
+    auto rhs_push_constant_ranges    = rhs_info.pushConstantRanges;
+    auto compare_push_constant_range = [](const VkPushConstantRange& lhs_range, const VkPushConstantRange& rhs_range) {
+        if (lhs_range.offset != rhs_range.offset)
+        {
+            return lhs_range.offset < rhs_range.offset;
+        }
+        if (lhs_range.size != rhs_range.size)
+        {
+            return lhs_range.size < rhs_range.size;
+        }
+        return lhs_range.stageFlags < rhs_range.stageFlags;
+    };
+    std::sort(lhs_push_constant_ranges.begin(), lhs_push_constant_ranges.end(), compare_push_constant_range);
+    std::sort(rhs_push_constant_ranges.begin(), rhs_push_constant_ranges.end(), compare_push_constant_range);
+
+    for (size_t i = 0; i < lhs_push_constant_ranges.size(); ++i)
+    {
+        const VkPushConstantRange& lhs_range = lhs_push_constant_ranges[i];
+        const VkPushConstantRange& rhs_range = rhs_push_constant_ranges[i];
+        if (lhs_range.stageFlags != rhs_range.stageFlags || lhs_range.offset != rhs_range.offset ||
+            lhs_range.size != rhs_range.size)
+        {
+            return false;
+        }
+    }
+
+    // create independent_sets flag compatible
+    const VkPipelineLayoutCreateFlags independent_sets_flag = VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT;
+    if ((lhs_info.flags & independent_sets_flag) != (rhs_info.flags & independent_sets_flag))
+    {
+        return false;
+    }
+
+    // setlayout compatible
+    if (lhs_info.setLayouts.size() <= set || rhs_info.setLayouts.size() <= set)
+    {
+        return false;
+    }
+
+    for (uint32_t index = 0; index <= set; ++index)
+    {
+        const auto lhs_set_layout_iter = set_layout_entries_.find(lhs_info.setLayouts[index]);
+        const auto rhs_set_layout_iter = set_layout_entries_.find(rhs_info.setLayouts[index]);
+        if (lhs_set_layout_iter == set_layout_entries_.end() || rhs_set_layout_iter == set_layout_entries_.end())
+        {
+            return false;
+        }
+
+        const auto& lhs_set_layout_info = lhs_set_layout_iter->second;
+        const auto& rhs_set_layout_info = rhs_set_layout_iter->second;
+        if (lhs_set_layout_info.flags != rhs_set_layout_info.flags ||
+            lhs_set_layout_info.bindings.size() != rhs_set_layout_info.bindings.size())
+        {
+            return false;
+        }
+
+        auto lhs_binding_iter = lhs_set_layout_info.bindings.begin();
+        auto rhs_binding_iter = rhs_set_layout_info.bindings.begin();
+        while (lhs_binding_iter != lhs_set_layout_info.bindings.end())
+        {
+            const Binding& lhs_binding = lhs_binding_iter->second;
+            const Binding& rhs_binding = rhs_binding_iter->second;
+            if (lhs_binding.binding != rhs_binding.binding || lhs_binding.type != rhs_binding.type ||
+                lhs_binding.mutable_descriptor_types != rhs_binding.mutable_descriptor_types ||
+                lhs_binding.descriptorCount != rhs_binding.descriptorCount ||
+                lhs_binding.stageFlags != rhs_binding.stageFlags ||
+                lhs_binding.binding_flags != rhs_binding.binding_flags)
+            {
+                return false;
+            }
+
+            ++lhs_binding_iter;
+            ++rhs_binding_iter;
+        }
+    }
+
+    return true;
+}
+
+void VulkanSpirvTrackModifier::ApplyDescriptorStateCommands(format::HandleId              commandBuffer,
+                                                            const CommandBufferRecording& recording)
+{
+    CommandBufferState& current_command_buffer_state = command_buffer_state[commandBuffer];
+
+    auto clear_descriptor_set_backend_state = [](BindPointState& state) {
+        state.descriptor_set_map.clear();
+        state.dynamic_offsets.clear();
+        state.dynamic_offsets_perSet.clear();
+        state.dynamic_offsets_count.clear();
+    };
+
+    auto clear_descriptor_buffer_backend_state = [](BindPointState& state) {
+        state.descriptor_buffer_set_offset_map.clear();
+        // TODO: clear descriptor heap backend state when it is introduced.
+    };
+
+    auto erase_descriptor_set_binding = [](BindPointState& state, uint32_t set) {
+        state.descriptor_set_map.erase(set);
+        state.dynamic_offsets_perSet.erase(set);
+        state.dynamic_offsets_count.erase(set);
+    };
+
+    auto erase_descriptor_buffer_set_offset = [](BindPointState& state, uint32_t set) {
+        state.descriptor_buffer_set_offset_map.erase(set);
+    };
+
+    for (const DescriptorStateCommand& descriptor_command : recording.descriptor_state_commands)
+    {
+        switch (descriptor_command.type)
+        {
+            case DescriptorStateCommand::Type::BindDescriptorSets:
+            {
+                auto& current_bind_point_state =
+                    current_command_buffer_state.bind_point_state[descriptor_command.bind_point];
+
+                if (current_bind_point_state.descriptor_backend_mode != DescriptorBackendMode::DescriptorSet)
+                {
+                    clear_descriptor_buffer_backend_state(current_bind_point_state);
+                    // TODO: clear descriptor heap backend state when it is introduced.
+                }
+                current_bind_point_state.descriptor_backend_mode = DescriptorBackendMode::DescriptorSet;
+
+                for (const auto& map : descriptor_command.descriptor_sets)
+                {
+                    // check compatible for each set M < map.set
+                    std::vector<uint32_t> disturbed_lower_sets;
+                    for (const auto& bound_set_iter : current_bind_point_state.descriptor_set_map)
+                    {
+                        if (bound_set_iter.first < map.set &&
+                            !IsPipelineLayoutCompatibleForSet(
+                                bound_set_iter.second.layout, map.layout, bound_set_iter.first))
+                        {
+                            disturbed_lower_sets.push_back(bound_set_iter.first);
+                        }
+                    }
+                    for (uint32_t disturbed_set : disturbed_lower_sets)
+                    {
+                        erase_descriptor_set_binding(current_bind_point_state, disturbed_set);
+                    }
+
+                    // check compatible for map.set
+                    const auto current_set_iter = current_bind_point_state.descriptor_set_map.find(map.set);
+                    if (current_set_iter != current_bind_point_state.descriptor_set_map.end() &&
+                        !IsPipelineLayoutCompatibleForSet(current_set_iter->second.layout, map.layout, map.set))
+                    {
+                        std::vector<uint32_t> disturbed_higher_sets;
+                        for (const auto& bound_set_iter : current_bind_point_state.descriptor_set_map)
+                        {
+                            if (bound_set_iter.first > map.set)
+                            {
+                                disturbed_higher_sets.push_back(bound_set_iter.first);
+                            }
+                        }
+                        for (uint32_t disturbed_set : disturbed_higher_sets)
+                        {
+                            erase_descriptor_set_binding(current_bind_point_state, disturbed_set);
+                        }
+                    }
+
+                    // set current map.set
+                    erase_descriptor_set_binding(current_bind_point_state, map.set);
+                    current_bind_point_state.descriptor_set_map[map.set] = { map.descriptor_set, map.layout };
+
+                    const auto dynamic_offset_iter = descriptor_command.dynamic_offsets.find(map.set);
+                    if (dynamic_offset_iter != descriptor_command.dynamic_offsets.end())
+                    {
+                        std::vector<uint32_t> offsets;
+                        for (const auto& offset_iter : dynamic_offset_iter->second.binding_offsets)
+                        {
+                            auto pos = offsets.end();
+                            offsets.insert(pos, offset_iter.second.begin(), offset_iter.second.end());
+                            current_bind_point_state.dynamic_offsets_count[map.set][offset_iter.first] =
+                                offset_iter.second.size();
+                        }
+                        current_bind_point_state.dynamic_offsets_perSet[map.set] = std::move(offsets);
+                    }
+                }
+
+                current_bind_point_state.dynamic_offsets.clear();
+                for (const auto& it : current_bind_point_state.dynamic_offsets_perSet)
+                {
+                    auto pos = current_bind_point_state.dynamic_offsets.end();
+                    current_bind_point_state.dynamic_offsets.insert(pos, it.second.begin(), it.second.end());
+                }
+                break;
+            }
+            case DescriptorStateCommand::Type::BindDescriptorBuffers:
+            {
+                current_command_buffer_state.descriptor_buffers = descriptor_command.descriptor_buffers;
+
+                for (auto& bind_point_state_iter : current_command_buffer_state.bind_point_state)
+                {
+                    bind_point_state_iter.second.descriptor_buffer_set_offset_map.clear();
+                }
+                break;
+            }
+            case DescriptorStateCommand::Type::SetDescriptorBufferOffsets:
+            {
+                auto& current_bind_point_state =
+                    current_command_buffer_state.bind_point_state[descriptor_command.bind_point];
+
+                if (current_bind_point_state.descriptor_backend_mode != DescriptorBackendMode::DescriptorBuffer)
+                {
+                    clear_descriptor_set_backend_state(current_bind_point_state);
+                    // TODO: clear descriptor heap backend state when it is introduced.
+                }
+                current_bind_point_state.descriptor_backend_mode = DescriptorBackendMode::DescriptorBuffer;
+
+                for (const DescriptorBufferOffsetMap& map : descriptor_command.descriptor_buffer_offsets)
+                {
+                    // check compatible for each set M < map.set
+                    std::vector<uint32_t> disturbed_lower_sets;
+                    for (const auto& bound_set_iter : current_bind_point_state.descriptor_buffer_set_offset_map)
+                    {
+                        if (bound_set_iter.first < map.set &&
+                            !IsPipelineLayoutCompatibleForSet(
+                                bound_set_iter.second.layout, map.layout, bound_set_iter.first))
+                        {
+                            disturbed_lower_sets.push_back(bound_set_iter.first);
+                        }
+                    }
+                    for (uint32_t disturbed_set : disturbed_lower_sets)
+                    {
+                        erase_descriptor_buffer_set_offset(current_bind_point_state, disturbed_set);
+                    }
+
+                    // check compatible for map.set
+                    const auto current_set_iter =
+                        current_bind_point_state.descriptor_buffer_set_offset_map.find(map.set);
+                    if (current_set_iter != current_bind_point_state.descriptor_buffer_set_offset_map.end() &&
+                        !IsPipelineLayoutCompatibleForSet(current_set_iter->second.layout, map.layout, map.set))
+                    {
+                        std::vector<uint32_t> disturbed_higher_sets;
+                        for (const auto& bound_set_iter : current_bind_point_state.descriptor_buffer_set_offset_map)
+                        {
+                            if (bound_set_iter.first > map.set)
+                            {
+                                disturbed_higher_sets.push_back(bound_set_iter.first);
+                            }
+                        }
+                        for (uint32_t disturbed_set : disturbed_higher_sets)
+                        {
+                            erase_descriptor_buffer_set_offset(current_bind_point_state, disturbed_set);
+                        }
+                    }
+
+                    GFXRECON_ASSERT(map.buffer_index < current_command_buffer_state.descriptor_buffers.size());
+
+                    // set current map.set
+                    const auto& buffer_info = current_command_buffer_state.descriptor_buffers[map.buffer_index];
+                    erase_descriptor_buffer_set_offset(current_bind_point_state, map.set);
+                    if (!buffer_info.resolved)
+                    {
+                        continue;
+                    }
+                    current_bind_point_state.descriptor_buffer_set_offset_map[map.set] = {
+                        buffer_info.handle, buffer_info.base_address, buffer_info.address, map.offset, map.layout
+                    };
+                }
+                break;
+            }
+            default:
+                break;
+        }
+    }
 }
 
 void VulkanSpirvTrackModifier::executeCommandBuffer(format::HandleId commandBuffer)
@@ -1932,113 +2403,27 @@ void VulkanSpirvTrackModifier::executeCommandBuffer(format::HandleId commandBuff
 
     for (const CommandBufferRecording& recording : command_buffer_submit_recordings[commandBuffer])
     {
-        // execute command: update/copy bufer,build
-        for (const BufferWriteEvent& event : recording.buffer_write_list)
-        {
-            BufferInfo& dst_info = buffer_entries_.at(event.buffer);
-            switch (event.sourceType)
-            {
-                case SourceType::CopyBuffer:
-                {
-                    const BufferInfo& src_info = buffer_entries_.at(event.srcBuffer);
-                    for (const auto& region : event.regions)
-                    {
-                        GFXRECON_ASSERT(dst_info.size >= region.dstOffset + region.size);
-                        GFXRECON_ASSERT(src_info.size >= region.srcOffset + region.size);
-                        std::memcpy(dst_info.data.data() + region.dstOffset,
-                                    src_info.data.data() + region.srcOffset,
-                                    region.size);
-                    }
-                    break;
-                }
-                case SourceType::Update:
-                {
-                    VkDeviceSize offset = event.regions[0].dstOffset;
-                    VkDeviceSize size   = event.regions[0].size;
-                    GFXRECON_ASSERT(dst_info.size >= offset + size);
-                    std::memcpy(
-                        dst_info.data.data() + offset, event.srcPointer.data() + event.regions[0].srcOffset, size);
-                    break;
-                }
-                case SourceType::Fill:
-                {
-                    VkDeviceSize offset  = event.regions[0].dstOffset;
-                    VkDeviceSize size    = event.regions[0].size;
-                    uint8_t*     dst_ptr = dst_info.data.data() + offset;
-                    if (size == VK_WHOLE_SIZE)
-                    {
-                        size = dst_info.size - offset;
-                    }
-                    for (uint32_t i = 0; i < size / 4; i++)
-                    {
-                        std::memcpy(dst_ptr + i * 4, event.srcPointer.data(), sizeof(uint32_t));
-                    }
-                    break;
-                }
-                default:
-                    break;
-            }
-        }
+        ApplyActionCommands(recording);
 
         // update commandBuffer state
-        command_buffer_state[commandBuffer].command_buffer = commandBuffer;
+        CommandBufferState& current_command_buffer_state = command_buffer_state[commandBuffer];
+        current_command_buffer_state.command_buffer      = commandBuffer;
 
         for (const PushConstantData& pushconstant : recording.push_constants)
         {
-            std::memcpy(command_buffer_state[commandBuffer].push_constant.data() + pushconstant.offset,
+            std::memcpy(current_command_buffer_state.push_constant.data() + pushconstant.offset,
                         pushconstant.pValues.data(),
                         pushconstant.size);
         }
 
         for (const auto& pipeline_iter : recording.pipelines)
         {
-            command_buffer_state[commandBuffer].bind_point_state[pipeline_iter.first].pipeline = pipeline_iter.second;
-            command_buffer_state[commandBuffer].bind_point_state[pipeline_iter.first].pipeline_layout =
+            current_command_buffer_state.bind_point_state[pipeline_iter.first].pipeline = pipeline_iter.second;
+            current_command_buffer_state.bind_point_state[pipeline_iter.first].pipeline_layout =
                 pipeline_entries_[pipeline_iter.second].layout;
         }
 
-        for (const auto& bind_point_iter : recording.descriptor_sets)
-        {
-            for (const auto& map : bind_point_iter.second)
-            {
-                command_buffer_state[commandBuffer]
-                    .bind_point_state[bind_point_iter.first]
-                    .descriptor_set_map[map.set] = map.descriptor_set;
-            }
-        }
-
-        for (const auto& bind_point_iter : recording.dynamic_offsets)
-        {
-            for (const DynamicBindingOffsetMap& map : bind_point_iter.second)
-            {
-                std::vector<uint32_t> offsets;
-                for (const auto& offset_iter : map.binding_offsets)
-                {
-                    auto pos = offsets.end();
-                    offsets.insert(pos, offset_iter.second.begin(), offset_iter.second.end());
-
-                    command_buffer_state[commandBuffer]
-                        .bind_point_state[bind_point_iter.first]
-                        .dynamic_offsets_count[map.set][offset_iter.first] = offset_iter.second.size();
-                }
-                command_buffer_state[commandBuffer]
-                    .bind_point_state[bind_point_iter.first]
-                    .dynamic_offsets_perSet.erase(map.set);
-                command_buffer_state[commandBuffer]
-                    .bind_point_state[bind_point_iter.first]
-                    .dynamic_offsets_perSet[map.set] = std::move(offsets);
-            }
-            // construct a completed dynamic offset array per bind point
-            command_buffer_state[commandBuffer].bind_point_state[bind_point_iter.first].dynamic_offsets.clear();
-            for (const auto& it :
-                 command_buffer_state[commandBuffer].bind_point_state[bind_point_iter.first].dynamic_offsets_perSet)
-            {
-                auto pos =
-                    command_buffer_state[commandBuffer].bind_point_state[bind_point_iter.first].dynamic_offsets.end();
-                command_buffer_state[commandBuffer].bind_point_state[bind_point_iter.first].dynamic_offsets.insert(
-                    pos, it.second.begin(), it.second.end());
-            }
-        }
+        ApplyDescriptorStateCommands(commandBuffer, recording);
 
         // execute dispatch,draw
         if (recording.bind_point == VK_PIPELINE_BIND_POINT_COMPUTE ||
@@ -2055,6 +2440,58 @@ void VulkanSpirvTrackModifier::executeDispatchDraw(format::HandleId commandBuffe
 {
     const BindPointState& bind_point_state = command_buffer_state[commandBuffer].bind_point_state.at(bindPoint);
 
+    auto is_dynamic_buffer_descriptor_type = [](VkDescriptorType descriptor_type) {
+        return descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC ||
+               descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
+    };
+
+    auto is_static_buffer_descriptor_type = [](VkDescriptorType descriptor_type) {
+        return descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
+               descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    };
+
+    auto get_active_descriptor_type = [](const DescriptorArray& descriptor_array, const DescriptorEntry& desc_entry) {
+        return (descriptor_array.type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) ? desc_entry.type : descriptor_array.type;
+    };
+
+    auto is_buffer_back_descriptor_binding = [&](const DescriptorArray& descriptor_array) {
+        return is_static_buffer_descriptor_type(descriptor_array.type) ||
+               is_dynamic_buffer_descriptor_type(descriptor_array.type) ||
+               descriptor_array.type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
+    };
+
+    // At the sim_data.bindings boundary, gfxr currently collapses several "no usable payload pointer"
+    // cases to nullptr, including unbound / never-written slots, null descriptors and tracked resources
+    // that cannot be resolved to host shadow data.
+    // The current simulator integration does not distinguish these cases at the sim_data.bindings boundary.
+    // A nullptr is treated as "payload unavailable" and is intentionally conservative for the current data-flow
+    // behavior.
+    auto resolve_bound_buffer_descriptor_pointer = [&](uint32_t               set,
+                                                       const DescriptorArray& descriptor_array,
+                                                       uint32_t               array_index,
+                                                       const DescriptorEntry& desc_entry,
+                                                       uint32_t               dynamic_offset_base) -> void* {
+        const VkDescriptorType active_type = get_active_descriptor_type(descriptor_array, desc_entry);
+        if (!is_static_buffer_descriptor_type(active_type) && !is_dynamic_buffer_descriptor_type(active_type))
+        {
+            return nullptr;
+        }
+
+        const auto buffer_iter = buffer_entries_.find(desc_entry.buffer.handle);
+        if (buffer_iter == buffer_entries_.end())
+        {
+            return nullptr;
+        }
+
+        uint8_t* binding_ptr = buffer_iter->second.data.data() + desc_entry.buffer.offset;
+        if (is_dynamic_buffer_descriptor_type(descriptor_array.type))
+        {
+            binding_ptr += bind_point_state.dynamic_offsets_perSet.at(set).at(dynamic_offset_base + array_index);
+        }
+
+        return binding_ptr;
+    };
+
     std::string str = "Not support bindPoint";
     if (bindPoint == VK_PIPELINE_BIND_POINT_COMPUTE)
     {
@@ -2070,120 +2507,131 @@ void VulkanSpirvTrackModifier::executeDispatchDraw(format::HandleId commandBuffe
                       str.c_str());
 
     const auto& pipeline_info        = pipeline_entries_.at(bind_point_state.pipeline);
-    const auto& pipeline_layout_info = pipeline_layout_entries_.at(bind_point_state.pipeline_layout);
+    const auto  pipeline_layout_iter = pipeline_layout_entries_.find(bind_point_state.pipeline_layout);
 
-    if (m_verbose)
+    auto is_set_slot_accessible = [&](uint32_t set, format::HandleId bound_layout) {
+        return pipeline_layout_iter != pipeline_layout_entries_.end() &&
+               IsPipelineLayoutCompatibleForSet(bound_layout, bind_point_state.pipeline_layout, set);
+    };
+
+    SPIRVSimulator::SimulationData                                                 sim_data;
+    std::unordered_map<uint64_t, std::unordered_map<uint64_t, std::vector<void*>>> sim_binding_pointer_tables;
+
+    if (bind_point_state.descriptor_backend_mode == DescriptorBackendMode::DescriptorSet)
     {
-        // compatibility check
-        for (uint32_t set = 0; set < pipeline_layout_info.setLayouts.size(); set++)
+        // set up descriptors through descriptorSet
+        for (const auto& set_map_iter : bind_point_state.descriptor_set_map)
         {
-            const auto bound_set_iter = bind_point_state.descriptor_set_map.find(set);
-            if (bound_set_iter == bind_point_state.descriptor_set_map.end())
+            uint32_t set = set_map_iter.first;
+            if (!is_set_slot_accessible(set, set_map_iter.second.layout))
             {
-                GFXRECON_LOG_INFO("Set[%u]: No descriptor set bound.", set);
+                if (m_verbose)
+                {
+                    GFXRECON_LOG_INFO("Set[%u]: skipped, not compatible with current pipeline layout.", set);
+                }
                 continue;
             }
-            const auto& bound_desc_set        = descriptor_set_entries_.at(bound_set_iter->second);
-            const auto  given_set_layout_iter = set_layout_entries_.find(pipeline_layout_info.setLayouts[set]);
-            for (const auto& given_binding_iter : given_set_layout_iter->second.bindings)
+
+            const auto& descriptor_set_info  = descriptor_set_entries_.at(set_map_iter.second.descriptor_set);
+            uint32_t    dynamic_offset_index = 0;
+
+            for (const auto& binding_iter : descriptor_set_info.binding_descriptor_array)
             {
-                const Binding& given_binding      = given_binding_iter.second;
-                const auto     bound_binding_iter = bound_desc_set.binding_descriptor_array.find(given_binding.binding);
-                if (bound_binding_iter == bound_desc_set.binding_descriptor_array.end())
+                uint64_t    binding          = binding_iter.first;
+                const auto& descriptor_array = binding_iter.second;
+
+                uint32_t alloc_descriptor_count = descriptor_array.descriptorCount;
+                if (is_buffer_back_descriptor_binding(descriptor_array))
                 {
-                    GFXRECON_LOG_INFO("Set[%u] binding[%u]: No descriptor bound.", set, given_binding.binding);
-                    continue;
-                }
-                if (bound_binding_iter->second.type != given_binding.type)
-                {
-                    GFXRECON_LOG_INFO("Set[%u] binding[%u]: Descriptor type mismatch.", set, given_binding.binding);
-                    continue;
-                }
-                if (bound_binding_iter->second.type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
-                    bound_binding_iter->second.type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER ||
-                    bound_binding_iter->second.type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC ||
-                    bound_binding_iter->second.type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)
-                {
-                    const auto& desc_entry  = bound_binding_iter->second.descriptor_entries.at(0);
-                    const auto  buffer_iter = buffer_entries_.find(desc_entry.buffer.handle);
-                    if (bound_binding_iter->second.type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC ||
-                        bound_binding_iter->second.type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)
+                    const uint32_t dynamic_offset_base = dynamic_offset_index;
+                    if (is_dynamic_buffer_descriptor_type(descriptor_array.type))
                     {
-                        if (bind_point_state.dynamic_offsets_count.find(set) ==
-                            bind_point_state.dynamic_offsets_count.end())
+                        dynamic_offset_index += alloc_descriptor_count;
+                    }
+
+                    if (alloc_descriptor_count == 1)
+                    {
+                        void*      binding_ptr     = nullptr;
+                        const auto desc_entry_iter = descriptor_array.descriptor_entries.find(0);
+                        if (desc_entry_iter != descriptor_array.descriptor_entries.end())
                         {
-                            GFXRECON_LOG_INFO("Set[%u]: missing dynamic offset.", set);
+                            binding_ptr = resolve_bound_buffer_descriptor_pointer(
+                                set, descriptor_array, 0, desc_entry_iter->second, dynamic_offset_base);
                         }
-                        else
+                        sim_data.bindings[set][binding] = binding_ptr;
+                    }
+                    else if (alloc_descriptor_count > 1)
+                    {
+                        auto& pointer_array = sim_binding_pointer_tables[set][binding];
+                        pointer_array.assign(alloc_descriptor_count, nullptr);
+                        for (const auto& entry_iter : descriptor_array.descriptor_entries)
                         {
-                            const auto dyn_offset_binding_iter =
-                                bind_point_state.dynamic_offsets_count.at(set).find(bound_binding_iter->second.binding);
-                            if (dyn_offset_binding_iter == bind_point_state.dynamic_offsets_count.at(set).end())
+                            if (entry_iter.first >= alloc_descriptor_count)
                             {
-                                GFXRECON_LOG_INFO("Set[%u] binding[%u]: missing dynamic offset.",
-                                                  set,
-                                                  bound_binding_iter->second.binding);
+                                continue;
                             }
-                            else
-                            {
-                                if (dyn_offset_binding_iter->second != bound_binding_iter->second.descriptorCount)
-                                {
-                                    GFXRECON_LOG_INFO("Set[%u] binding[%u]: dynamic offset count mismatch.");
-                                }
-                            }
+
+                            pointer_array[entry_iter.first] = resolve_bound_buffer_descriptor_pointer(
+                                set, descriptor_array, entry_iter.first, entry_iter.second, dynamic_offset_base);
                         }
-                    } // check dynamic offset compability
-                }     // check uniform/storage buffer
-            }         // check compability for each binding
-        }             // check compability for each set
-    }
-
-    SPIRVSimulator::SimulationData sim_data;
-
-    // set up descriptors
-    for (const auto& set_map_iter : bind_point_state.descriptor_set_map)
-    {
-        uint64_t    set                 = set_map_iter.first;
-        const auto& descriptor_set_info = descriptor_set_entries_.at(set_map_iter.second);
-
-        for (const auto& binding_iter : descriptor_set_info.binding_descriptor_array)
-        {
-            uint64_t    binding          = binding_iter.first;
-            const auto& descriptor_array = binding_iter.second;
-
-            if (descriptor_array.type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
-                descriptor_array.type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER ||
-                descriptor_array.type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC ||
-                descriptor_array.type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)
-            {
-                const auto& desc_entry  = descriptor_array.descriptor_entries.at(0);
-                const auto  buffer_iter = buffer_entries_.find(desc_entry.buffer.handle);
-                if (buffer_iter == buffer_entries_.end())
-                {
-                    sim_data.bindings[set][binding] = nullptr;
+                        sim_data.bindings[set][binding] = pointer_array.data();
+                    }
                 }
+                else if (descriptor_array.type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK)
+                {
+                    uint8_t* binding_ptr = nullptr;
+                    if (!descriptor_array.inline_uniform_block_data.empty())
+                    {
+                        binding_ptr = const_cast<uint8_t*>(descriptor_array.inline_uniform_block_data.data());
+                    }
+                    sim_data.bindings[set][binding] = binding_ptr;
+                }
+                else if (descriptor_array.type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR)
+                {}
                 else
-                {
-                    sim_data.bindings[set][binding] = buffer_iter->second.data.data() + desc_entry.buffer.offset;
-                }
+                {}
             }
-            else if (descriptor_array.type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR)
-            {}
-            else
-            {}
         }
     }
 
-    for (const auto& it : pipeline_layout_info.dynamicBindingRef)
+    if (bind_point_state.descriptor_backend_mode == DescriptorBackendMode::DescriptorBuffer)
     {
-        uint32_t set = it.first;
-        for (const auto& ref : it.second)
+        // get binding offset within set offset
+        for (const auto& map_iter : bind_point_state.descriptor_buffer_set_offset_map)
         {
-            uint32_t binding = ref.binding;
-            if (sim_data.bindings[set][binding] != nullptr)
+            uint32_t   set        = map_iter.first;
+            uint64_t   binding    = 0;
+            const auto set_offset = map_iter.second;
+
+            if (!is_set_slot_accessible(set, set_offset.layout))
             {
-                sim_data.bindings[set][binding] = reinterpret_cast<uint8_t*>(sim_data.bindings[set][binding]) +
-                                                  bind_point_state.dynamic_offsets[ref.start_index];
+                if (m_verbose)
+                {
+                    GFXRECON_LOG_INFO("Set[%u]: skipped, not compatible with current pipeline layout.", set);
+                }
+                continue;
+            }
+
+            const auto& pipeline_layout_info = pipeline_layout_entries_.at(set_offset.layout);
+            const auto& set_layout_info      = set_layout_entries_.at(pipeline_layout_info.setLayouts[set]);
+            GFXRECON_ASSERT(set_layout_info.flags == VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
+
+            for (const auto& binding_iter : set_layout_info.bindings)
+            {
+                binding = binding_iter.first;
+                // TODO: handle arrayElement if the more elements in descriptor array needed.
+                VkDeviceSize binding_offset =
+                    (set_offset.address - set_offset.base_address) + set_offset.offset + binding_iter.second.offset;
+                const auto& buffer_info = buffer_entries_.at(set_offset.handle);
+
+                uint8_t* data_host_pointer      = (uint8_t*)buffer_info.data.data() + binding_offset;
+                sim_data.bindings[set][binding] = data_host_pointer;
+                // sim_data.descriptor_candidates[data_host_pointer].emplace_back({});
+                if (binding_iter.second.type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
+                    binding_iter.second.type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
+                {}
+                else if (binding_iter.second.type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR)
+                {}
             }
         }
     }
@@ -2215,11 +2663,15 @@ void VulkanSpirvTrackModifier::executeDispatchDraw(format::HandleId commandBuffe
 
         // push constant
         sim_data.push_constants = nullptr;
-        if (pipeline_layout_info.mergedRangePerStage.find(stage.stageFlagBit) !=
-            pipeline_layout_info.mergedRangePerStage.end())
+        if (pipeline_layout_iter != pipeline_layout_entries_.end())
         {
-            sim_data.push_constants = command_buffer_state[commandBuffer].push_constant.data() +
-                                      pipeline_layout_info.mergedRangePerStage.at(stage.stageFlagBit).offset;
+            const auto& pipeline_layout_info = pipeline_layout_entries_.at(bind_point_state.pipeline_layout);
+            if (pipeline_layout_info.mergedRangePerStage.find(stage.stageFlagBit) !=
+                pipeline_layout_info.mergedRangePerStage.end())
+            {
+                sim_data.push_constants = command_buffer_state[commandBuffer].push_constant.data() +
+                                          pipeline_layout_info.mergedRangePerStage.at(stage.stageFlagBit).offset;
+            }
         }
 
         const ShaderModuleInfo& module_info = shader_module_entries_.at(stage.module);
@@ -2227,15 +2679,17 @@ void VulkanSpirvTrackModifier::executeDispatchDraw(format::HandleId commandBuffe
         GFXRECON_LOG_INFO("     --------- run simulator for shader %llu: %s -------------",
                           stage.module,
                           util::ToString<VkShaderStageFlagBits>(stage.stageFlagBit).c_str());
-        SPIRVSimulator::SPIRVSimulator simulator(module_info.pCode, sim_data, m_verbose);
+        SPIRVSimulator::SimulationResults sim_results;
+        SPIRVSimulator::SPIRVSimulator    simulator(
+            module_info.pCode, &sim_data, &sim_results, nullptr, m_verbose, m_flags);
         simulator.Run();
-        outputSimulator(sim_data);
+        outputSimulator(sim_results);
     }
 }
 
-void VulkanSpirvTrackModifier::outputSimulator(const SPIRVSimulator::SimulationData& data)
+void VulkanSpirvTrackModifier::outputSimulator(const SPIRVSimulator::SimulationResults& results)
 {
-    auto physical_address_data = data.physical_address_data;
+    auto physical_address_data = results.physical_address_data;
 
     GFXRECON_LOG_INFO("     >>>>>>>>>>>>> Pointers to pbuffers: >>>>>>>>>>>>>");
     for (const auto& pointer_t : physical_address_data)

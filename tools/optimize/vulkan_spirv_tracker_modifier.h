@@ -47,7 +47,7 @@ GFXRECON_BEGIN_NAMESPACE(decode)
 class VulkanSpirvTrackModifier : public util::VulkanModifierBase
 {
   public:
-    VulkanSpirvTrackModifier(bool verbose = false);
+    VulkanSpirvTrackModifier(bool verbose = false, bool error_on_buffers_incomplete = false);
 
     virtual bool CanOptimize() override;
 
@@ -425,8 +425,7 @@ class VulkanSpirvTrackModifier : public util::VulkanModifierBase
 
     void executeCommandBuffer(format::HandleId commandBuffer_id);
     void executeDispatchDraw(format::HandleId commandBuffer_id, VkPipelineBindPoint bindPoint);
-    void outputSimulator(const SPIRVSimulator::SimulationData& data);
-
+    void outputSimulator(const SPIRVSimulator::SimulationResults& results);
     void resetRecording(format::HandleId commandBuffer);
 
   private:
@@ -442,6 +441,7 @@ class VulkanSpirvTrackModifier : public util::VulkanModifierBase
         uint64_t             size;
         VkBufferUsageFlags   usage;
         VkBufferCreateFlags  flags;
+        VkDeviceAddress      device_address;
         std::vector<uint8_t> data;
     };
 
@@ -499,11 +499,15 @@ class VulkanSpirvTrackModifier : public util::VulkanModifierBase
 
     struct Binding
     {
-        uint32_t                    binding;
-        VkDescriptorType            type;
-        uint32_t                    descriptorCount;
-        VkShaderStageFlags          stageFlags;
-        VkDescriptorBindingFlagsEXT binding_flags;
+        uint32_t binding;
+        // Declared descriptor type from VkDescriptorSetLayoutBinding::descriptorType.
+        // For VK_DESCRIPTOR_TYPE_MUTABLE_EXT, the runtime active descriptor type is tracked
+        // per descriptor in DescriptorEntry::type.
+        VkDescriptorType              type;
+        std::vector<VkDescriptorType> mutable_descriptor_types;
+        uint32_t                      descriptorCount;
+        VkShaderStageFlags            stageFlags;
+        VkDescriptorBindingFlagsEXT   binding_flags;
         // Binding offset for descriptor_buffer_bit flag. Unused otherwise.
         VkDeviceSize offset;
     };
@@ -514,7 +518,7 @@ class VulkanSpirvTrackModifier : public util::VulkanModifierBase
         // binding num -> binding info
         std::map<uint32_t, Binding> bindings;
         // descriptorSetLayout size when creating for descriptor buffer. Unused otherwise.
-        VkDeviceSize                  size;
+        VkDeviceSize size;
     };
 
     struct DescriptorPoolInfo : public ObjectInfo
@@ -544,6 +548,9 @@ class VulkanSpirvTrackModifier : public util::VulkanModifierBase
     {
         // array index of descriptors -> descriptor entry
         std::map<uint32_t, DescriptorEntry> descriptor_entries;
+        // Inline uniform block bindings are byte-addressed, not descriptor-entry-addressed.
+        std::vector<uint8_t> inline_uniform_block_data;
+        std::vector<uint8_t> inline_uniform_block_written;
     };
 
     struct DescriptorSetInfo : public ObjectInfo
@@ -563,8 +570,9 @@ class VulkanSpirvTrackModifier : public util::VulkanModifierBase
 
     struct PipelineLayoutInfo : public ObjectInfo
     {
+        VkPipelineLayoutCreateFlags flags = 0;
         // index:set number -> setLayout Id
-        std::vector<format::HandleId>    setLayouts;
+        std::vector<format::HandleId> setLayouts;
         // set number -> dynamic Ref
         std::unordered_map<uint32_t, std::vector<DynamicBindingRef>> dynamicBindingRef;
 
@@ -597,16 +605,30 @@ class VulkanSpirvTrackModifier : public util::VulkanModifierBase
     // used for BindDescriptorBufferEXT
     struct DescriptorBufferBindingInfo
     {
-        format::HandleId   handle;  // descriptor buffer handle
-        VkDeviceAddress    address; // descriptor buffer address
-        VkBufferUsageFlags usage;
+        format::HandleId    handle;       // descriptor buffer handle
+        VkDeviceAddress     base_address; // base address of buffer
+        VkDeviceAddress     address;      // bound address within buffer
+        VkBufferUsageFlags  usage;
+        VkBufferUsageFlags2 usage2;
+        bool                resolved; // whether the bound address was resolved to a tracked buffer
     };
 
     // used for SetDescriptorBufferOffsetEXT()
+    struct DescriptorBufferOffsetMap
+    {
+        uint32_t         set;
+        uint32_t         buffer_index; // the index of descriptor buffer array in CmdBindDescriptorBuffers
+        VkDeviceSize     offset;
+        format::HandleId layout; // pipeline layout
+    };
+
     struct DescriptorBufferOffset
     {
-        uint32_t     buffer_index; // the index of descriptor buffer array in CmdBindDescriptorBuffers
-        VkDeviceSize offset;
+        format::HandleId handle;       // descriptor buffer handle
+        VkDeviceAddress  base_address; // base address of buffer
+        VkDeviceAddress  address;      // bound address within buffer
+        VkDeviceSize     offset;
+        format::HandleId layout; // pipeline layout
     };
 
     enum class SourceType
@@ -647,17 +669,44 @@ class VulkanSpirvTrackModifier : public util::VulkanModifierBase
 
     struct DescriptorSetMap
     {
-        uint64_t         set;
+        uint32_t         set;
+        format::HandleId descriptor_set;
+        format::HandleId layout;
+    };
+
+    struct BoundDescriptorSet
+    {
         format::HandleId descriptor_set;
         format::HandleId layout;
     };
 
     struct DynamicBindingOffsetMap
     {
-        uint32_t         set;
-        format::HandleId layout;
+        uint32_t set;
         // binding -> offsets array, ordered map
         std::map<uint32_t, std::vector<uint32_t>> binding_offsets;
+    };
+
+    struct DescriptorStateCommand
+    {
+        enum class Type
+        {
+            BindDescriptorSets,
+            BindDescriptorBuffers,
+            SetDescriptorBufferOffsets,
+        };
+
+        Type                type       = Type::BindDescriptorSets;
+        VkPipelineBindPoint bind_point = VK_PIPELINE_BIND_POINT_MAX_ENUM;
+
+        // used only for BindDescriptorSets type
+        std::vector<DescriptorSetMap> descriptor_sets;
+        // set -> DynamicBindingOffsetMap
+        std::unordered_map<uint32_t, DynamicBindingOffsetMap> dynamic_offsets;
+        // used only for BindDescriptorBuffers type
+        std::vector<DescriptorBufferBindingInfo> descriptor_buffers;
+        // used only for SetDescriptorBufferOffsets
+        std::vector<DescriptorBufferOffsetMap> descriptor_buffer_offsets;
     };
 
     struct CommandBufferRecording
@@ -670,50 +719,54 @@ class VulkanSpirvTrackModifier : public util::VulkanModifierBase
 
         // bind point -> pipeline handle
         std::unordered_map<VkPipelineBindPoint, format::HandleId> pipelines;
-        // bind point -> array of descriptorSet map
-        std::unordered_map<VkPipelineBindPoint, std::vector<DescriptorSetMap>> descriptor_sets;
-        // bind point -> array of DynamicBindingOffset map
-        std::unordered_map<VkPipelineBindPoint, std::vector<DynamicBindingOffsetMap>> dynamic_offsets;
-
-        std::vector<DescriptorBufferBindingInfo> descriptor_buffers;
-
-        // index of bound descriptor buffers -> valid or not
-        // invalidate the offset once rebinding the descriptor buffer
-        std::unordered_map<uint32_t, bool> descriptor_offset_valid;
+        // ordered descriptor state commands. Preserve original recording order.
+        std::vector<DescriptorStateCommand> descriptor_state_commands;
 
         std::vector<BufferWriteEvent> buffer_write_list;
 
         ////////////////////////////////////
-        // bind point -> pipeline layout handle -> set num -> DescriptorBufferOffset
-        std::unordered_map<VkPipelineBindPoint,
-                           std::unordered_map<format::HandleId, std::unordered_map<uint64_t, DescriptorBufferOffset>>>
-            layout_bind_descriptorOffsets;
+        // index of bound descriptor buffers -> valid or not
+        // invalidate the offset once rebinding the descriptor buffer
+        std::unordered_map<uint32_t, bool> descriptor_offset_valid;
 
         // acceleration structure handle -> AS build info
         std::unordered_map<format::HandleId, AccelerationStructureBuildInfo> build_acceleration_structure;
     };
 
+    enum class DescriptorBackendMode
+    {
+        NoneBackend = 0,
+        DescriptorSet,
+        DescriptorBuffer,
+        DescriptorHeap,
+    };
+
     struct BindPointState
     {
         format::HandleId pipeline;
-        format::HandleId pipeline_layout;
+        format::HandleId pipeline_layout; // could be 0 if using descriptor heap
 
-        // set num -> descriptorSet handle
-        std::unordered_map<uint64_t, format::HandleId> descriptor_set_map;
+        DescriptorBackendMode descriptor_backend_mode = DescriptorBackendMode::NoneBackend;
+
+        // set num -> bound descriptor set and the pipeline layout used to bind it
+        // could be null map if descriptor buffer,descriptor heap in using
+        std::unordered_map<uint32_t, BoundDescriptorSet> descriptor_set_map;
         // dynamic offsets
         std::vector<uint32_t> dynamic_offsets;
         // set num -> array of dynamic offsets. Auxiliary function
         std::map<uint32_t, std::vector<uint32_t>> dynamic_offsets_perSet;
         // set num -> binding -> dynamic offset count, used to check compatibility
         std::unordered_map<uint32_t, std::unordered_map<uint32_t, uint32_t>> dynamic_offsets_count;
+
         // set num -> DescriptorBufferOffset
-        std::unordered_map<uint64_t, DescriptorBufferOffset> descriptorOffsets;
+        std::unordered_map<uint32_t, DescriptorBufferOffset> descriptor_buffer_set_offset_map;
     };
 
     struct CommandBufferState
     {
         format::HandleId                                        command_buffer;
         std::vector<uint8_t>                                    push_constant;
+        std::vector<DescriptorBufferBindingInfo>                descriptor_buffers;
         std::unordered_map<VkPipelineBindPoint, BindPointState> bind_point_state;
     };
 
@@ -770,7 +823,7 @@ class VulkanSpirvTrackModifier : public util::VulkanModifierBase
     std::unordered_map<VkDeviceAddress, format::HandleId> buffer_device_addresses_;
 
     // acceleration structure device address -> as handle
-    std::unordered_map<VkDeviceAddress, format::HandleId> acceleration_structure_device_addresses_;
+    std::unordered_map<VkDeviceAddress, std::unordered_set<format::HandleId>> acceleration_structure_device_addresses_;
 
     std::unordered_map<format::HandleId, CommandBufferRecording> command_buffer_recording;
 
@@ -790,6 +843,28 @@ class VulkanSpirvTrackModifier : public util::VulkanModifierBase
     // for internal debug
     uint64_t global_draw_index = 0;
     bool     m_verbose         = false;
+    uint64_t m_flags           = 0;
+
+  private:
+    void ApplyActionCommands(const CommandBufferRecording& recording);
+    void ApplyDescriptorStateCommands(format::HandleId commandBuffer, const CommandBufferRecording& recording);
+    bool IsPipelineLayoutCompatibleForSet(format::HandleId lhs, format::HandleId rhs, uint32_t set) const;
+
+    using BufferAddressMap = std::unordered_map<VkDeviceAddress, format::HandleId>;
+
+    inline BufferAddressMap::const_iterator findEntryFromBufferDeviceAddress(VkDeviceAddress address) const
+    {
+        return std::find_if(
+            buffer_device_addresses_.begin(), buffer_device_addresses_.end(), [address, this](const auto& entry) {
+                auto buffer_iter = buffer_entries_.find(entry.second);
+                if (buffer_iter == buffer_entries_.end())
+                {
+                    return false;
+                }
+                const auto& buffer_info = buffer_iter->second;
+                return (address >= entry.first) && (address < entry.first + buffer_info.size);
+            });
+    }
 };
 
 GFXRECON_END_NAMESPACE(decode)
