@@ -1559,8 +1559,26 @@ void VulkanRayTracingModifier::Process_vkFreeCommandBuffers(const ApiCallInfo&  
 
     for (uint32_t i = 0; i < commandBufferCount; i++)
     {
-        format::HandleId handle                               = pCommandBuffers->GetPointer()[i];
-        command_buffer_entries_.at(handle).destruction_index_ = call_info.index;
+        format::HandleId handle = pCommandBuffers->GetPointer()[i];
+        if (handle == format::kNullHandleId)
+        {
+            GFXRECON_LOG_WARNING("Skipping vkFreeCommandBuffers for null command buffer handle at call index %" PRIu64
+                                 ".",
+                                 call_info.index);
+            continue;
+        }
+
+        auto entry = command_buffer_entries_.find(handle);
+        if (entry == command_buffer_entries_.end())
+        {
+            GFXRECON_LOG_WARNING("Skipping vkFreeCommandBuffers for untracked command buffer handle %" PRIu64
+                                 " at call index %" PRIu64 ".",
+                                 handle,
+                                 call_info.index);
+            continue;
+        }
+
+        entry->second.destruction_index_ = call_info.index;
         command_buffers_with_compute_.erase(handle);
     }
 }
