@@ -995,6 +995,7 @@ void TrackAdapters(HRESULT result, void** ppFactory, graphics::dx12::ActiveAdapt
                 }
 
                 TrackAdapterDesc(std::move(adapter1.GetInterfacePtr()), adapter_idx, dxgi_desc, adapters, adapter_type);
+                adapter1 = nullptr;
             }
         }
 
@@ -1023,6 +1024,7 @@ void TrackAdapters(HRESULT result, void** ppFactory, graphics::dx12::ActiveAdapt
                                          dxgi_desc,
                                          adapters,
                                          format::AdapterType::kUnknownAdapter);
+                        adapter = nullptr;
                     }
                 }
                 else
