@@ -27,10 +27,12 @@
 #include "application/android_window.h"
 #include "decode/file_processor.h"
 #include "decode/preload_file_processor.h"
+#include "decode/vulkan_replay_frame_loop_consumer.h"
 #include "decode/vulkan_replay_options.h"
 #include "decode/vulkan_tracked_object_info_table.h"
 #include "decode/vulkan_pre_process_consumer.h"
 #include "format/format.h"
+#include "graphics/frame_loop_info.h"
 
 // Includes for recapture
 #include "encode/vulkan_capture_manager.h"
@@ -149,9 +151,19 @@ void android_main(struct android_app* app)
 
         try
         {
-            file_processor = arg_parser.IsOptionSet(kPreloadMeasurementRangeOption)
-                                 ? std::make_unique<gfxrecon::decode::PreloadFileProcessor>()
-                                 : std::make_unique<gfxrecon::decode::FileProcessor>();
+            uint32_t loop_frame        = 0;
+            uint32_t loop_count        = gfxrecon::graphics::FrameLoopInfo::INFINITE_ITERATIONS;
+            bool     enable_frame_loop = GetLoopFrame(arg_parser, loop_frame);
+            GetLoopCount(arg_parser, loop_count);
+
+            if (arg_parser.IsOptionSet(kPreloadMeasurementRangeOption) || enable_frame_loop)
+            {
+                file_processor = std::make_unique<gfxrecon::decode::PreloadFileProcessor>();
+            }
+            else
+            {
+                file_processor = std::make_unique<gfxrecon::decode::FileProcessor>();
+            }
 
             if (!file_processor->Initialize(filename))
             {
@@ -167,8 +179,24 @@ void android_main(struct android_app* app)
                     GetVulkanReplayOptions(arg_parser, filename, &tracked_object_info_table);
                 file_processor->SetSkipBlockIndices(replay_options.skip_block_indices);
 
-                gfxrecon::decode::VulkanReplayConsumer vulkan_replay_consumer(application, replay_options);
-                gfxrecon::decode::VulkanDecoder        vulkan_decoder;
+                std::unique_ptr<gfxrecon::decode::VulkanReplayConsumer> vulkan_replay_consumer;
+
+                gfxrecon::graphics::FrameLoopInfo fl_info;
+                if (enable_frame_loop)
+                {
+                    fl_info = gfxrecon::graphics::FrameLoopInfo(loop_frame, loop_count);
+                    application->SetFrameLoopInfo(&fl_info);
+
+                    vulkan_replay_consumer = std::make_unique<gfxrecon::decode::VulkanReplayFrameLoopConsumer>(
+                        application, replay_options, fl_info);
+                }
+                else
+                {
+                    vulkan_replay_consumer =
+                        std::make_unique<gfxrecon::decode::VulkanReplayConsumer>(application, replay_options);
+                }
+
+                gfxrecon::decode::VulkanDecoder vulkan_decoder;
 
                 if (replay_options.capture)
                 {
@@ -177,7 +205,7 @@ void android_main(struct android_app* app)
                     // Set replay to use the GetInstanceProcAddr function from RecaptureVulkanEntry so that replay first
                     // calls into the capture layer instead of directly into the loader and Vulkan runtime.
                     // Also sets the capture manager's instance and device creation callbacks.
-                    vulkan_replay_consumer.SetupForRecapture(
+                    vulkan_replay_consumer->SetupForRecapture(
                         gfxrecon::vulkan_recapture::GetInstanceProcAddr,
                         gfxrecon::vulkan_recapture::dispatch_CreateInstance,
                         gfxrecon::vulkan_recapture::dispatch_CreateDevice,
@@ -187,7 +215,7 @@ void android_main(struct android_app* app)
                 ApiReplayOptions  api_replay_options;
                 ApiReplayConsumer api_replay_consumer;
                 api_replay_options.vk_replay_options   = &replay_options;
-                api_replay_consumer.vk_replay_consumer = &vulkan_replay_consumer;
+                api_replay_consumer.vk_replay_consumer = vulkan_replay_consumer.get();
 
                 if (IsRunPreProcessConsumer(api_replay_options))
                 {
@@ -224,11 +252,11 @@ void android_main(struct android_app* app)
                                                      quit_after_frame,
                                                      quit_frame);
 
-                vulkan_replay_consumer.SetFatalErrorHandler(
+                vulkan_replay_consumer->SetFatalErrorHandler(
                     [](const char* message) { throw std::runtime_error(message); });
-                vulkan_replay_consumer.SetFpsInfo(&fps_info);
+                vulkan_replay_consumer->SetFpsInfo(&fps_info);
 
-                vulkan_decoder.AddConsumer(&vulkan_replay_consumer);
+                vulkan_decoder.AddConsumer(vulkan_replay_consumer.get());
 
                 file_processor->AddDecoder(&vulkan_decoder);
 
@@ -245,7 +273,7 @@ void android_main(struct android_app* app)
                 gfxrecon::decode::OpenXrReplayOptions  openxr_replay_options = {};
                 gfxrecon::decode::OpenXrDecoder        openxr_decoder;
                 gfxrecon::decode::OpenXrReplayConsumer openxr_replay_consumer(application, openxr_replay_options);
-                openxr_replay_consumer.SetVulkanReplayConsumer(&vulkan_replay_consumer);
+                openxr_replay_consumer.SetVulkanReplayConsumer(vulkan_replay_consumer.get());
                 openxr_replay_consumer.SetAndroidApp(app);
                 openxr_decoder.AddConsumer(&openxr_replay_consumer);
                 file_processor->AddDecoder(&openxr_decoder);

@@ -2223,6 +2223,8 @@ class VulkanReplayConsumerBase : public VulkanConsumer
     typedef std::unordered_map<uint64_t, std::pair<format::DescriptorDataLocationInfo, std::vector<uint8_t>>>
                           DescriptorLocationMap;
     DescriptorLocationMap descriptor_locations;
+
+    application::Application& GetApplication() { return *application_; }
 };
 
 GFXRECON_END_NAMESPACE(decode)
