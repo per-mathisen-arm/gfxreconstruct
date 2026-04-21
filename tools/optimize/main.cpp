@@ -71,7 +71,7 @@ constexpr char kOptions[] =
     "-h|--help,--version,--no-debug-popup,--d3d12-pso-removal,--d3d12-resource-removal,--dxr,--dxr-experimental,"
     "--dxr-offline,--d3d12-no-default,--vk-remove-rt";
 constexpr char kArguments[] = "--gpu,--set-replay-options,--set-replay-options,--remove-device-instance,"
-                              "--remove-thread,--remove-device-ids";
+                              "--keep-device-instance,--remove-thread,--remove-device-ids";
 
 constexpr char kD3d12PsoRemoval[]             = "--d3d12-pso-removal";
 constexpr char kD3d12ResourceRemoval[]        = "--d3d12-resource-removal";
@@ -80,6 +80,7 @@ constexpr char kDx12OptimizeDxrExperimental[] = "--dxr-experimental";
 constexpr char kDx12OptimizeDxrOffline[]      = "--dxr-offline";
 constexpr char kReplayOptions[]               = "--set-replay-options";
 constexpr char kVulkanDevInsRemoval[]         = "--remove-device-instance";
+constexpr char kVulkanDevInsKeep[]            = "--keep-device-instance";
 constexpr char kThreadRemoval[]               = "--remove-thread";
 constexpr char kRemoveDeviceIds[]             = "--remove-device-ids";
 constexpr char kDx12OptimizeNoDefault[]       = "--d3d12-no-default";
@@ -103,7 +104,7 @@ static void PrintUsage(const char* exe_name)
     GFXRECON_WRITE_CONSOLE("Usage:");
     GFXRECON_WRITE_CONSOLE("  %s [-h | --help] [--version] [--d3d12-pso-removal] [--d3d12-resource-removal] [--dxr] "
                            "[--dxr-offline] [--gpu <index>] "
-                           "[--set-replay-options] [--remove-device-instance] "
+                           "[--set-replay-options] [--remove-device-instance] [--keep-device-instance] "
                            "<input-file> <output-file>",
                            app_name.c_str());
     GFXRECON_WRITE_CONSOLE("");
@@ -118,6 +119,9 @@ static void PrintUsage(const char* exe_name)
     GFXRECON_WRITE_CONSOLE(
         "  --remove-device-instance <options>\t\tRemove redundant instance/device and corresponding APIs. Use "
         "comma marks for multiple arguments. the default value is \"android framework\".");
+    GFXRECON_WRITE_CONSOLE(
+        "  --keep-device-instance <options>\t\tKeep only the specified instance/device and corresponding APIs. "
+        "Use comma marks for multiple arguments.");
     GFXRECON_WRITE_CONSOLE("  --vk-remove-rt\t\tRemove ray-tracing related API calls from the trace");
     GFXRECON_WRITE_CONSOLE("  --remove-thread <threads>\t\tRemove the specified threads from the trace.");
     GFXRECON_WRITE_CONSOLE("  --remove-device-ids <ids>\t\tRemove the specified device from the D3D12 trace.");
@@ -304,6 +308,7 @@ GetVulkanOptimizationData(const std::string& input_filename, const gfxrecon::dec
         decoder.AddConsumer(raytracing_modifier_consumer.get());
 
         vulkan_skia_modifier_consumer.get()->SetAppName(options.remove_app_name);
+        vulkan_skia_modifier_consumer.get()->SetKeepDeviceInstanceMode(options.keep_device_instance);
         file_processor.AddDecoder(&decoder);
         file_processor.ProcessAllFrames();
 
@@ -443,6 +448,7 @@ int main(int argc, const char** argv)
 
         const bool set_replay_options     = arg_parser.IsArgumentSet(kReplayOptions);
         const bool remove_device_instance = arg_parser.IsArgumentSet(kVulkanDevInsRemoval);
+        const bool keep_device_instance   = arg_parser.IsArgumentSet(kVulkanDevInsKeep);
         const bool remove_thread          = arg_parser.IsArgumentSet(kThreadRemoval);
         const bool remove_device          = arg_parser.IsArgumentSet(kRemoveDeviceIds);
 
@@ -482,16 +488,28 @@ int main(int argc, const char** argv)
             }
         }
 
+        if (remove_device_instance && keep_device_instance)
+        {
+            throw std::runtime_error(
+                "Options --remove-device-instance and --keep-device-instance cannot be used together.");
+        }
+
         if (remove_device_instance)
         {
             remove_app_string = arg_parser.GetArgumentValue(kVulkanDevInsRemoval);
+        }
+        else if (keep_device_instance)
+        {
+            remove_app_string = arg_parser.GetArgumentValue(kVulkanDevInsKeep);
         }
         else
         {
             remove_app_string = "android framework";
         }
-        dx12_options.remove_app_name   = arg_parser.SplitStringByFlag(remove_app_string, ',');
-        vulkan_options.remove_app_name = arg_parser.SplitStringByFlag(remove_app_string, ',');
+        dx12_options.remove_app_name          = arg_parser.SplitStringByFlag(remove_app_string, ',');
+        vulkan_options.remove_app_name        = arg_parser.SplitStringByFlag(remove_app_string, ',');
+        vulkan_options.keep_device_instance   = keep_device_instance;
+        vulkan_options.filter_device_instance = remove_device_instance || keep_device_instance;
 
         if (remove_thread)
         {
@@ -525,7 +543,7 @@ int main(int argc, const char** argv)
         {
             RunDx12Optimizations(input_filename, output_filename, dx12_options);
         }
-        else if (vulkan_options.remove_rt)
+        else if (vulkan_options.remove_rt || vulkan_options.filter_device_instance)
         {
             RunVulkanOptimizations(input_filename, output_filename, vulkan_options);
         }
@@ -572,6 +590,12 @@ int main(int argc, const char** argv)
     catch (const std::runtime_error& error)
     {
         GFXRECON_WRITE_CONSOLE("File processing has encountered a fatal error and cannot continue: %s", error.what());
+        gfxrecon::util::Log::Release();
+        return -1;
+    }
+    catch (const std::exception& error)
+    {
+        GFXRECON_WRITE_CONSOLE("File processing has encountered an exception and cannot continue: %s", error.what());
         gfxrecon::util::Log::Release();
         return -1;
     }

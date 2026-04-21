@@ -22,10 +22,15 @@
 */
 
 #include "tools/optimize/vulkan_file_optimizer.h"
-#include "generated/generated_vulkan_skiavk_modifier.h"
 #include "framework/format/format_util.h"
 
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
+
+VulkanFileOptimizer::VulkanFileOptimizer(VulkanOptimizationData*                     optimization_data,
+                                         const std::unordered_set<format::ThreadId>& removed_threads_ids) :
+    FileOptimizer(optimization_data->unreferenced_ids, optimization_data->unreferenced_blocks, removed_threads_ids),
+    optimization_data_(optimization_data)
+{}
 
 bool VulkanFileOptimizer::ProcessFunctionCall(decode::ParsedBlock& parsed_block)
 {

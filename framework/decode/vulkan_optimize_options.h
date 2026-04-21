@@ -32,6 +32,7 @@ GFXRECON_BEGIN_NAMESPACE(decode)
 struct VulkanOptimizationOptions : public OptimizationOptions
 {
     bool remove_rt{ false };
+    bool filter_device_instance{ false };
 };
 
 GFXRECON_END_NAMESPACE(decode)

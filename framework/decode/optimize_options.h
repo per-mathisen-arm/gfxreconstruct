@@ -31,6 +31,7 @@ struct OptimizationOptions
 {
     std::vector<std::string>                       remove_app_name;
     std::unordered_set<gfxrecon::format::ThreadId> removed_threads_ids;
+    bool                                           keep_device_instance{ false };
 };
 
 GFXRECON_END_NAMESPACE(decode)

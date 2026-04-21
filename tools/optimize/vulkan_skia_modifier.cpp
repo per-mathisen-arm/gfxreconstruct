@@ -379,6 +379,15 @@ bool VulkanSkiaModifier::IsSkiaBlock(format::HandleId handle)
         }
     }
 
+    for (auto& e : skiavk_physical_device2device)
+    {
+        auto it = std::find(e.second.begin(), e.second.end(), handle);
+        if (it != e.second.end())
+        {
+            return true;
+        }
+    }
+
     for (auto& e : skia_device2queue)
     {
         auto it5 = std::find(e.second.begin(), e.second.end(), handle);
@@ -398,33 +407,53 @@ void VulkanSkiaModifier::Process_vkCreateInstance(const ApiCallInfo&            
 {
     if (IsModificationPass())
         return;
+
     const VkInstanceCreateInfo* pVkInstanceCreateInfo = pCreateInfo->GetPointer();
-    VkInstance*                 pVkInstance           = (VkInstance*)pInstance->GetPointer();
+
+    if (pVkInstanceCreateInfo == nullptr)
+    {
+        return;
+    }
+
+    bool name_match = false;
+
     if (pVkInstanceCreateInfo->pApplicationInfo != nullptr)
     {
-        for (auto& app_name : VulkanSkiaModifier::app_name_array)
+        for (const auto& app_name : VulkanSkiaModifier::app_name_array)
         {
-            bool remove = false;
             if (pVkInstanceCreateInfo->pApplicationInfo->pApplicationName != nullptr &&
                 strcmp(pVkInstanceCreateInfo->pApplicationInfo->pApplicationName, app_name.c_str()) == 0)
             {
-                remove = true;
+                name_match = true;
             }
             else if (pVkInstanceCreateInfo->pApplicationInfo->pEngineName != nullptr &&
                      strcmp(pVkInstanceCreateInfo->pApplicationInfo->pEngineName, app_name.c_str()) == 0)
             {
-                remove = true;
+                name_match = true;
             }
-            if (remove)
+
+            if (name_match)
             {
-                std::vector<format::HandleId> pyhsical_device;
-                skiavk_instance2physical_device[*(pInstance->GetPointer())] = pyhsical_device;
-                SetDeleteCurrentCall();
-                skiavk_instance = true;
-                return;
+                break;
             }
         }
     }
+
+    bool remove = name_match;
+    if (keep_device_instance_mode_)
+    {
+        remove = !name_match;
+    }
+
+    if (remove)
+    {
+        std::vector<format::HandleId> pyhsical_device;
+        skiavk_instance2physical_device[*(pInstance->GetPointer())] = pyhsical_device;
+        SetDeleteCurrentCall();
+        skiavk_instance = true;
+        return;
+    }
+
     not_skiavk_instance = true;
 }
 
@@ -718,8 +747,8 @@ void VulkanSkiaModifier::Process_vkAllocateMemory(const ApiCallInfo&            
 {
     if (IsModificationPass())
         return;
-    auto it = skia_device2queue.find(device);
-    if (it != skia_device2queue.end())
+
+    if (IsSkiaBlock(device))
     {
         SetDeleteCurrentCall();
         skia_device2memory[device].push_back(*pMemory->GetPointer());
@@ -733,10 +762,15 @@ void VulkanSkiaModifier::Process_vkFreeMemory(const ApiCallInfo&                
 {
     if (IsModificationPass())
         return;
+
+    if (IsSkiaBlock(device))
+    {
+        SetDeleteCurrentCall();
+    }
+
     auto it = skia_device2memory.find(device);
     if (it != skia_device2memory.end())
     {
-        SetDeleteCurrentCall();
         auto it1 = std::find(it->second.begin(), it->second.end(), memory);
         if (it1 != it->second.end())
         {

@@ -43,10 +43,7 @@ class VulkanFileOptimizer : public FileOptimizer
     };
 
     VulkanFileOptimizer(VulkanOptimizationData*                     optimization_data,
-                        const std::unordered_set<format::ThreadId>& removed_threads_ids) :
-        FileOptimizer(optimization_data->unreferenced_ids, optimization_data->unreferenced_blocks, removed_threads_ids),
-        optimization_data_(optimization_data)
-    {}
+                        const std::unordered_set<format::ThreadId>& removed_threads_ids);
 
   private:
     bool ProcessFunctionCall(decode::ParsedBlock& parsed_block) override;
@@ -112,14 +109,8 @@ class VulkanFileOptimizer : public FileOptimizer
                 }
                 else if constexpr (std::is_same_v<Args, decode::FrameEndMarkerArgs>)
                 {
-                    format::Marker marker;
-                    marker.header.size  = sizeof(format::Marker) - sizeof(format::BlockHeader);
-                    marker.header.type  = format::kFrameMarkerBlock;
-                    marker.marker_type  = format::kEndMarker;
-                    marker.frame_number = args.frame_number - frames_removed_;
-                    if (!WriteBytes(&marker, sizeof(marker)))
+                    if (!FileTransformer::WriteBytes(parsed_block))
                     {
-                        HandleBlockWriteError(decode::kErrorWritingBlockData, "Failed to write frame marker data");
                         return false;
                     }
                 }
@@ -129,13 +120,6 @@ class VulkanFileOptimizer : public FileOptimizer
                     {
                         return false;
                     }
-                }
-            }
-            else
-            {
-                if constexpr (std::is_same_v<Args, decode::FrameEndMarkerArgs>)
-                {
-                    ++frames_removed_;
                 }
             }
 
@@ -197,7 +181,6 @@ class VulkanFileOptimizer : public FileOptimizer
 
     VulkanOptimizationData* optimization_data_;
     decode::VulkanDecoder   decoder_;
-    uint64_t                frames_removed_ = 0;
 };
 
 GFXRECON_END_NAMESPACE(gfxrecon)

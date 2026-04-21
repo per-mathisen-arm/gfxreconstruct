@@ -41,6 +41,7 @@ class VulkanSkiaModifier : public util::VulkanModifierBase
 {
   public:
     void SetAppName(std::vector<std::string> appNameArray) { VulkanSkiaModifier::app_name_array = appNameArray; }
+    void SetKeepDeviceInstanceMode(bool enabled) { keep_device_instance_mode_ = enabled; }
     bool CanOptimize() override;
     void CheckSkiavk(format::HandleId vulkanHandle)
     {
@@ -4810,6 +4811,7 @@ class VulkanSkiaModifier : public util::VulkanModifierBase
     void AppendFrameEndMarkerForCurrentBlock();
     bool                                                                not_skiavk_instance = false;
     bool                                                                skiavk_instance     = false;
+    bool                                                                keep_device_instance_mode_ = false;
     static std::vector<std::string>                                     app_name_array;
     std::unordered_map<uint64_t, bool>                                  skiavkindex2remove;
     std::unordered_set<uint64_t>                                         frame_end_marker_blocks_to_insert_;
