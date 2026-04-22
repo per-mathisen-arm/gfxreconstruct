@@ -1919,8 +1919,7 @@ void Dx12ReplayConsumerBase::ProcessDxgiAdapterInfo(const format::DxgiAdapterInf
                     }
                 }
 
-                GFXRECON_LOG_WARNING(
-                    "Recorded instructions contain data aimed for the capture-time GPU. Replay may fail.")
+                GFXRECON_LOG_WARNING("Recorded instructions contain data aimed for the capture-time GPU.");
 
                 if (options_.enable_d3d12_two_pass_replay)
                 {
@@ -2875,9 +2874,20 @@ Dx12ReplayConsumerBase::OverrideGetGPUDescriptorHandleForHeapStart(
         if (((*heap_info->capture_increments)[heap_info->descriptor_type] == 0) &&
             ((*heap_info->replay_increments)[heap_info->descriptor_type] == 0))
         {
-            GFXRECON_LOG_ERROR(
-                "Descriptor heap increment sizes not recorded for descriptor heap type %u, replay may fail.",
-                heap_info->descriptor_type);
+            if (device_object->object != nullptr)
+            {
+                auto replay_device_object = static_cast<ID3D12Device*>(device_object->object);
+                auto replay_increment_size =
+                    replay_device_object->GetDescriptorHandleIncrementSize(heap_info->descriptor_type);
+                (*heap_info->capture_increments)[heap_info->descriptor_type] = replay_increment_size;
+                (*heap_info->replay_increments)[heap_info->descriptor_type]  = replay_increment_size;
+            }
+            else
+            {
+                GFXRECON_LOG_WARNING_ONCE(
+                    "Descriptor heap increment sizes not recorded for descriptor heap type %u, replay may fail.",
+                    heap_info->descriptor_type);
+            }
         }
 
         // Only initialize on the first call.
