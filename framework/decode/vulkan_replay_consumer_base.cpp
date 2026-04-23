@@ -3291,6 +3291,36 @@ void VulkanReplayConsumerBase::ModifyCreateInstanceInfo(
     VkInstanceCreateInfo&     modified_create_info = create_state.modified_create_info;
     modified_create_info                           = *replay_create_info;
 
+    if (replay_create_info->pApplicationInfo != nullptr)
+    {
+        create_state.modified_application_info = *replay_create_info->pApplicationInfo;
+
+        if (create_state.modified_application_info.apiVersion < kMinimumReplayApiVersion)
+        {
+            GFXRECON_LOG_INFO("Upgrading replay VkInstance API version from %u.%u.%u to %u.%u.%u",
+                              VK_API_VERSION_MAJOR(create_state.modified_application_info.apiVersion),
+                              VK_API_VERSION_MINOR(create_state.modified_application_info.apiVersion),
+                              VK_API_VERSION_PATCH(create_state.modified_application_info.apiVersion),
+                              VK_API_VERSION_MAJOR(kMinimumReplayApiVersion),
+                              VK_API_VERSION_MINOR(kMinimumReplayApiVersion),
+                              VK_API_VERSION_PATCH(kMinimumReplayApiVersion));
+            create_state.modified_application_info.apiVersion = kMinimumReplayApiVersion;
+        }
+
+        modified_create_info.pApplicationInfo = &create_state.modified_application_info;
+    }
+    else
+    {
+        create_state.modified_application_info            = { VK_STRUCTURE_TYPE_APPLICATION_INFO };
+        create_state.modified_application_info.apiVersion = kMinimumReplayApiVersion;
+        modified_create_info.pApplicationInfo             = &create_state.modified_application_info;
+
+        GFXRECON_LOG_INFO("Setting replay VkInstance API version to minimum required version %u.%u.%u",
+                          VK_API_VERSION_MAJOR(kMinimumReplayApiVersion),
+                          VK_API_VERSION_MINOR(kMinimumReplayApiVersion),
+                          VK_API_VERSION_PATCH(kMinimumReplayApiVersion));
+    }
+
     // If VkDebugUtilsMessengerCreateInfoEXT or VkDebugReportCallbackCreateInfoEXT are in the pNext chain, update the
     // callback pointers.
     ProcessCreateInstanceDebugCallbackInfo(pCreateInfo->GetMetaStructPointer());

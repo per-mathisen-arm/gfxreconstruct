@@ -81,6 +81,9 @@ class VulkanReplayConsumerBase : public VulkanConsumer
 {
     friend class VulkanReplayConsumerArmFeatures;
 
+    // Defines minimal vulkan API version used for instance creation
+    static constexpr uint32_t kMinimumReplayApiVersion = VK_API_VERSION_1_3;
+
   public:
     VulkanReplayConsumerBase(std::shared_ptr<application::Application> application, const VulkanReplayOptions& options);
 
@@ -289,6 +292,7 @@ class VulkanReplayConsumerBase : public VulkanConsumer
         std::vector<const char*>           modified_layers;
         std::vector<const char*>           modified_extensions;
         VkInstanceCreateInfo               modified_create_info;
+        VkApplicationInfo                  modified_application_info;
         VkDebugUtilsMessengerCreateInfoEXT messenger_create_info;
     };
     // create_state passed in by reference to conserve pointers to member variable
