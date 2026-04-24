@@ -2483,7 +2483,7 @@ bool GetIntersectForSparseMemoryBind(VkDeviceSize               new_bind_resourc
                                      bool&                      new_bind_range_include_existing_bind_tange,
                                      bool&                      existing_bind_range_include_new_bind_tange)
 {
-    bool     intersection_exist = false;
+    bool         intersection_exist = false;
     VkDeviceSize intersection_start = std::max(new_bind_resource_offset, existing_bind_resource_offset);
     VkDeviceSize intersection_end   = std::min(new_bind_resource_offset + new_bind_resource_size,
                                              existing_bind_resource_offset + existing_bind_resource_size);

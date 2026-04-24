@@ -125,7 +125,7 @@ bool CompressionConverter::ProcessMetaData(decode::ParsedBlock& parsed_block)
                 return WriteMetaData(*store);
             }
         };
-        VisitResult result     = std::visit(visit_meta, parsed_block.GetArgs());
+        VisitResult result = std::visit(visit_meta, parsed_block.GetArgs());
 
         if (result == kNeedsPassthrough)
         {
