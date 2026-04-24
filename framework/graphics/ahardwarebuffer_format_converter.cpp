@@ -575,7 +575,7 @@ VkResult AHardwareBufferFormatConverter::ConvertImageFormat(VkQueue             
     auto memory_dedicated_allocate_info =
         graphics::vulkan_struct_get_pnext<VkMemoryDedicatedAllocateInfo>(pAllocateInfo);
     const_cast<VkMemoryDedicatedAllocateInfo*>(memory_dedicated_allocate_info)->image = rgbImage;
-    device_table_->AllocateMemory(device_, pAllocateInfo, nullptr, rgbMemory);
+    result = device_table_->AllocateMemory(device_, pAllocateInfo, nullptr, rgbMemory);
     if (result != VK_SUCCESS)
     {
         GFXRECON_LOG_ERROR("Failed to allocate memory when converting image format!(Returned error value: %ld)",
@@ -610,7 +610,7 @@ VkResult AHardwareBufferFormatConverter::ConvertImageFormat(VkQueue             
     ext_image_view_create_info.subresourceRange.baseArrayLayer = 0;
     ext_image_view_create_info.subresourceRange.layerCount     = 1;
     VkImageView ext_image_view                                 = VK_NULL_HANDLE;
-    device_table_->CreateImageView(device_, &ext_image_view_create_info, nullptr, &ext_image_view);
+    result = device_table_->CreateImageView(device_, &ext_image_view_create_info, nullptr, &ext_image_view);
     if (result != VK_SUCCESS)
     {
         GFXRECON_LOG_ERROR("Failed to create image view for external format image when converting image "
@@ -635,7 +635,7 @@ VkResult AHardwareBufferFormatConverter::ConvertImageFormat(VkQueue             
     rgb_image_view_create_info.subresourceRange.baseArrayLayer = 0;
     rgb_image_view_create_info.subresourceRange.layerCount     = 1;
     VkImageView rgb_image_view                                 = VK_NULL_HANDLE;
-    device_table_->CreateImageView(device_, &rgb_image_view_create_info, nullptr, &rgb_image_view);
+    result = device_table_->CreateImageView(device_, &rgb_image_view_create_info, nullptr, &rgb_image_view);
     if (result != VK_SUCCESS)
     {
         GFXRECON_LOG_ERROR(

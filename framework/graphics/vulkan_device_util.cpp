@@ -397,6 +397,11 @@ void VulkanDeviceUtil::RestoreModifiedPhysicalDeviceFeatures()
             rayTracingPipelineShaderGroupHandleCaptureReplay_original;
         rayTracingPipelineShaderGroupHandleCaptureReplay_ptr = nullptr;
     }
+    if (descriptorBufferCaptureReplay_ptr != nullptr)
+    {
+        (*descriptorBufferCaptureReplay_ptr) = descriptorBufferCaptureReplay_original;
+        descriptorBufferCaptureReplay_ptr    = nullptr;
+    }
 }
 
 void VulkanDeviceUtil::GetReplayDeviceProperties(const VulkanInstanceUtilInfo&   instance_info,
