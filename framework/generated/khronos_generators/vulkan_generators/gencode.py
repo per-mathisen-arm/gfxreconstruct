@@ -1205,7 +1205,7 @@ if __name__ == '__main__':
     # <https://github.com/KhronosGroup/Vulkan-Docs/pull/2240>
     # if ptag_member := tree.find('types/type[@name="VkFrameBoundaryEXT"]/member[name="pTag"]'):
     #    ptag_member.set('len', 'tagSize')
-    if tensor_barriers_member := tree.find('types/type[@name="VkTensorDependencyInfoARM"]/member[name="pTensorMemoryBarriers"]'):
+    if (tensor_barriers_member := tree.find('types/type[@name="VkTensorDependencyInfoARM"]/member[name="pTensorMemoryBarriers"]')) is not None:
         if tensor_barriers_member.get('len') is None:
             tensor_barriers_member.set('len', 'tensorMemoryBarrierCount')
     end_timer(args.time, '* Time to patch ElementTree =')
