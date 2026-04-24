@@ -31,9 +31,10 @@ Dx12OffscreenSwapchain::Dx12OffscreenSwapchain(ID3D12Device* device, DXGI_SWAP_C
     m_device(device), m_width(desc->BufferDesc.Width), m_height(desc->BufferDesc.Height),
     m_format(desc->BufferDesc.Format), m_refresh_rate(desc->BufferDesc.RefreshRate),
     m_scanline_order(desc->BufferDesc.ScanlineOrdering), m_scaling(desc->BufferDesc.Scaling),
+    m_dxgi_scaling(DXGI_SCALING_STRETCH), // legacy CreateSwapChain always uses stretch
     m_sample_desc(desc->SampleDesc), m_buffer_usage(desc->BufferUsage), m_back_buffer_count(desc->BufferCount),
     m_orig_hwnd(desc->OutputWindow), m_orig_windowed(desc->Windowed), m_swap_effect(desc->SwapEffect),
-    m_flags(desc->Flags)
+    m_flags(desc->Flags), m_source_width(desc->BufferDesc.Width), m_source_height(desc->BufferDesc.Height)
 {}
 
 // Constructor for Dx12OffscreenSwapchain (used with IDXGIFactory2::CreateSwapChainForHwnd,
@@ -47,14 +48,15 @@ Dx12OffscreenSwapchain::Dx12OffscreenSwapchain(ID3D12Device*                    
     m_refresh_rate(fullscreen_desc ? fullscreen_desc->RefreshRate : DXGI_RATIONAL{ 0, 1 }),
     m_scanline_order(fullscreen_desc ? fullscreen_desc->ScanlineOrdering : DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED),
     m_scaling(fullscreen_desc ? fullscreen_desc->Scaling : DXGI_MODE_SCALING_UNSPECIFIED),
-    m_sample_desc(desc->SampleDesc), m_buffer_usage(desc->BufferUsage), m_back_buffer_count(desc->BufferCount),
-    m_orig_hwnd_id(hwnd_id), m_orig_windowed(fullscreen_desc ? fullscreen_desc->Windowed : TRUE),
-    m_swap_effect(desc->SwapEffect), m_flags(desc->Flags), m_stereo(desc->Stereo), m_alpha_mode(desc->AlphaMode)
+    m_dxgi_scaling(desc->Scaling), m_sample_desc(desc->SampleDesc), m_buffer_usage(desc->BufferUsage),
+    m_back_buffer_count(desc->BufferCount), m_orig_hwnd_id(hwnd_id),
+    m_orig_windowed(fullscreen_desc ? fullscreen_desc->Windowed : TRUE), m_swap_effect(desc->SwapEffect),
+    m_flags(desc->Flags), m_stereo(desc->Stereo), m_alpha_mode(desc->AlphaMode), m_source_width(desc->Width),
+    m_source_height(desc->Height)
 {}
 
 bool Dx12OffscreenSwapchain::CreateBackBuffers()
 {
-    // Create back buffers
     m_back_buffers.resize(m_back_buffer_count);
 
     D3D12_RESOURCE_DESC back_buffer_desc = {};
@@ -76,7 +78,6 @@ bool Dx12OffscreenSwapchain::CreateBackBuffers()
     heap_properties.CreationNodeMask      = 1;
     heap_properties.VisibleNodeMask       = 1;
 
-    // should work for most common formats
     D3D12_CLEAR_VALUE clearValue = {};
     clearValue.Format            = m_format;
     clearValue.Color[0]          = 0.0f;
@@ -89,7 +90,7 @@ bool Dx12OffscreenSwapchain::CreateBackBuffers()
         HRESULT hr = m_device->CreateCommittedResource(&heap_properties,
                                                        D3D12_HEAP_FLAG_NONE,
                                                        &back_buffer_desc,
-                                                       D3D12_RESOURCE_STATE_RENDER_TARGET,
+                                                       D3D12_RESOURCE_STATE_COMMON,
                                                        &clearValue,
                                                        IID_PPV_ARGS(&m_back_buffers[i]));
 
@@ -191,7 +192,7 @@ HRESULT Dx12OffscreenSwapchain::GetParent(REFIID riid, void** ppParent)
         return E_POINTER;
     }
 
-    *ppParent = nullptr; // No parent object for offscreen swapchain
+    *ppParent = nullptr;
 
     return E_NOINTERFACE;
 }
@@ -236,7 +237,8 @@ HRESULT Dx12OffscreenSwapchain::SetPrivateData(REFGUID guid, UINT DataSize, cons
 {
     if (!pData || (DataSize == 0))
     {
-        return E_POINTER;
+        m_private_data.erase(guid);
+        return S_OK;
     }
 
     m_private_data[guid] = std::vector<BYTE>((BYTE*)pData, (BYTE*)pData + DataSize);
@@ -252,7 +254,6 @@ HRESULT Dx12OffscreenSwapchain::SetPrivateDataInterface(REFGUID guid, const IUnk
         return S_OK;
     }
 
-    // store the interface in the map
     graphics::dx12::IUnknownComPtr spInterface;
     spInterface                = const_cast<IUnknown*>(pUnknown);
     m_private_interfaces[guid] = spInterface;
@@ -316,8 +317,8 @@ HRESULT Dx12OffscreenSwapchain::GetDesc(DXGI_SWAP_CHAIN_DESC* pDesc)
     pDesc->BufferDesc.Scaling                 = m_scaling;
     pDesc->SampleDesc.Count                   = m_sample_desc.Count;
     pDesc->SampleDesc.Quality                 = m_sample_desc.Quality;
-    pDesc->OutputWindow                       = nullptr; // Offscreen swapchain does not have an output window
-    pDesc->Windowed                           = TRUE;    // Assume windowed mode
+    pDesc->OutputWindow                       = nullptr;
+    pDesc->Windowed                           = TRUE;
     pDesc->SwapEffect                         = m_swap_effect;
     pDesc->Flags                              = m_flags;
 
@@ -371,8 +372,10 @@ HRESULT Dx12OffscreenSwapchain::GetLastPresentCount(UINT* pLastPresentCount)
 
 HRESULT Dx12OffscreenSwapchain::Present(UINT SyncInterval, UINT Flags)
 {
-    // No actual presentation in offscreen swapchain
-    m_current_back_buffer_index = (m_current_back_buffer_index + 1) % m_back_buffer_count;
+    if (m_back_buffer_count > 0)
+    {
+        m_current_back_buffer_index = (m_current_back_buffer_index + 1) % m_back_buffer_count;
+    }
     m_present_count++;
 
     return S_OK;
@@ -381,21 +384,55 @@ HRESULT Dx12OffscreenSwapchain::Present(UINT SyncInterval, UINT Flags)
 HRESULT Dx12OffscreenSwapchain::ResizeBuffers(
     UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags)
 {
-    // Release existing back buffers
+    // Release existing back buffers — buffers are owned by ComPtr, cleared before realloc
     m_back_buffers.clear();
 
-    // Update member variables
+    if (BufferCount == 0)
+    {
+        BufferCount = m_back_buffer_count;
+    }
+
+    // Since there is no real window in offscreen mode, we keep the current buffer dimensions
+    // as the best available approximation of the original window size.
+    if (Width == 0)
+    {
+        Width = m_width;
+    }
+    if (Height == 0)
+    {
+        Height = m_height;
+    }
+    if (NewFormat == DXGI_FORMAT_UNKNOWN)
+    {
+        NewFormat = m_format;
+    }
+
+    UINT        prev_count  = m_back_buffer_count;
+    UINT        prev_width  = m_width;
+    UINT        prev_height = m_height;
+    DXGI_FORMAT prev_format = m_format;
+    UINT        prev_flags  = m_flags;
+
     m_back_buffer_count = BufferCount;
     m_width             = Width;
     m_height            = Height;
     m_format            = NewFormat;
+    m_flags             = SwapChainFlags;
 
-    // Recreate back buffers
     if (!CreateBackBuffers())
     {
         GFXRECON_LOG_ERROR("Failed to resize offscreen swapchain buffers.");
+        m_back_buffer_count = prev_count;
+        m_width             = prev_width;
+        m_height            = prev_height;
+        m_format            = prev_format;
+        m_flags             = prev_flags;
+        m_back_buffers.clear();
         return E_FAIL;
     }
+
+    m_source_width  = m_width;
+    m_source_height = m_height;
 
     return S_OK;
 }
@@ -453,18 +490,17 @@ HRESULT Dx12OffscreenSwapchain::GetDesc1(DXGI_SWAP_CHAIN_DESC1* pDesc)
         return E_POINTER;
     }
 
-    pDesc->Width              = m_width;
-    pDesc->Height             = m_height;
-    pDesc->Format             = m_format;
-    pDesc->Stereo             = FALSE;
-    pDesc->SampleDesc.Count   = 1;
-    pDesc->SampleDesc.Quality = 0;
-    pDesc->BufferUsage        = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    pDesc->BufferCount        = m_back_buffer_count;
-    pDesc->Scaling            = DXGI_SCALING_NONE;
-    pDesc->SwapEffect         = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-    pDesc->AlphaMode          = DXGI_ALPHA_MODE_UNSPECIFIED;
-    pDesc->Flags              = 0;
+    pDesc->Width       = m_width;
+    pDesc->Height      = m_height;
+    pDesc->Format      = m_format;
+    pDesc->Stereo      = m_stereo;
+    pDesc->SampleDesc  = m_sample_desc;
+    pDesc->BufferUsage = m_buffer_usage;
+    pDesc->BufferCount = m_back_buffer_count;
+    pDesc->Scaling     = m_dxgi_scaling;
+    pDesc->SwapEffect  = m_swap_effect;
+    pDesc->AlphaMode   = m_alpha_mode;
+    pDesc->Flags       = m_flags;
 
     return S_OK;
 }
@@ -533,13 +569,12 @@ BOOL Dx12OffscreenSwapchain::IsTemporaryMonoSupported()
 {
     GFXRECON_LOG_INFO_ONCE("IsTemporaryMonoSupported is not applicable in offscreen swapchain mode. Returning FALSE.");
 
-    return FALSE; // Offscreen swapchain does not support temporary mono
+    return FALSE;
 }
 
 HRESULT
 Dx12OffscreenSwapchain::Present1(UINT SyncInterval, UINT Flags, const DXGI_PRESENT_PARAMETERS* pPresentParameters)
 {
-    // No actual presentation in offscreen swapchain
     return Present(SyncInterval, Flags);
 }
 
@@ -659,7 +694,7 @@ HRESULT Dx12OffscreenSwapchain::CheckColorSpaceSupport(DXGI_COLOR_SPACE_TYPE Col
         return E_POINTER;
     }
 
-    *pColorSpaceSupport = 0; // No color space support in offscreen swapchain
+    *pColorSpaceSupport = 0;
     GFXRECON_LOG_INFO_ONCE("CheckColorSpaceSupport is not applicable in offscreen swapchain mode. No color space "
                            "support is available for offscreen rendering.");
 
@@ -684,22 +719,54 @@ HRESULT Dx12OffscreenSwapchain::ResizeBuffers1(UINT             BufferCount,
         return E_POINTER;
     }
 
-    // Release existing back buffers
     m_back_buffers.clear();
 
-    // Update member variables
+    if (BufferCount == 0)
+    {
+        BufferCount = m_back_buffer_count;
+    }
+
+    // Since there is no real window in offscreen mode, we keep the current buffer dimensions
+    // as the best available approximation of the original window size.
+    if (Width == 0)
+    {
+        Width = m_width;
+    }
+    if (Height == 0)
+    {
+        Height = m_height;
+    }
+    if (NewFormat == DXGI_FORMAT_UNKNOWN)
+    {
+        NewFormat = m_format;
+    }
+
+    UINT        prev_count  = m_back_buffer_count;
+    UINT        prev_width  = m_width;
+    UINT        prev_height = m_height;
+    DXGI_FORMAT prev_format = m_format;
+    UINT        prev_flags  = m_flags;
+
     m_back_buffer_count = BufferCount;
     m_width             = Width;
     m_height            = Height;
     m_format            = NewFormat;
     m_flags             = SwapChainFlags;
 
-    // Recreate back buffers
     if (!CreateBackBuffers())
     {
         GFXRECON_LOG_ERROR("Failed to resize offscreen swapchain buffers.");
+        m_back_buffer_count = prev_count;
+        m_width             = prev_width;
+        m_height            = prev_height;
+        m_format            = prev_format;
+        m_flags             = prev_flags;
+        m_back_buffers.clear();
         return E_FAIL;
     }
+
+    m_source_width  = m_width;
+    m_source_height = m_height;
 
     return S_OK;
 }

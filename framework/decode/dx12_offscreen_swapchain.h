@@ -134,6 +134,7 @@ class Dx12OffscreenSwapchain : public IDXGISwapChain4
     DXGI_RATIONAL            m_refresh_rate{ 0, 1 };
     DXGI_MODE_SCANLINE_ORDER m_scanline_order{ DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED };
     DXGI_MODE_SCALING        m_scaling{ DXGI_MODE_SCALING_UNSPECIFIED };
+    DXGI_SCALING             m_dxgi_scaling{ DXGI_SCALING_STRETCH }; // from DXGI_SWAP_CHAIN_DESC1::Scaling
 
     DXGI_SAMPLE_DESC m_sample_desc{ 1, 0 };
     DXGI_USAGE       m_buffer_usage{ DXGI_USAGE_RENDER_TARGET_OUTPUT };

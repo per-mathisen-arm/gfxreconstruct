@@ -171,23 +171,37 @@ HRESULT Dx12ReplayConsumerArmFeatures::CreateSwapChainForComposition(DxObjectInf
 
     if (pDesc->Width == 0 || pDesc->Height == 0)
     {
-        if (consumer_->options_.windowed_width != 0 && consumer_->options_.windowed_height != 0)
-        {
-            pDesc->Width  = consumer_->options_.windowed_width;
-            pDesc->Height = consumer_->options_.windowed_height;
-            GFXRECON_LOG_WARNING_ONCE(
-                "In CreateSwapChainForComposition, the Width or Height is 0, using default window height and width.");
-        }
-        else
-        {
-            int screen_width  = GetSystemMetrics(SM_CXSCREEN);
-            int screen_height = GetSystemMetrics(SM_CYSCREEN);
-            pDesc->Width      = screen_width;
-            pDesc->Height     = screen_height;
-            GFXRECON_LOG_WARNING_ONCE(
-                "In CreateSwapChainForComposition, the Width or Height is 0, using system screen height and width.");
-            ;
-        }
+        auto resolve_dim = [](UINT cur, uint32_t opt, int metric, UINT fallback, const char*& src) -> UINT {
+            if (cur > 0)
+            {
+                src = "original";
+                return cur;
+            }
+            if (opt > 0)
+            {
+                src = "consumer";
+                return opt;
+            }
+            int v = GetSystemMetrics(metric);
+            if (v > 0)
+            {
+                src = "system";
+                return static_cast<UINT>(v);
+            }
+            src = "default";
+            return fallback;
+        };
+
+        const char* width_src  = "";
+        const char* height_src = "";
+        UINT new_width  = resolve_dim(pDesc->Width, consumer_->options_.windowed_width, SM_CXSCREEN, 320, width_src);
+        UINT new_height = resolve_dim(pDesc->Height, consumer_->options_.windowed_height, SM_CYSCREEN, 240, height_src);
+
+        pDesc->Width  = new_width;
+        pDesc->Height = new_height;
+        GFXRECON_LOG_WARNING_ONCE(("Swapchain zero dimension resolved: Width=" + std::to_string(new_width) + " (" +
+                                   width_src + "), Height=" + std::to_string(new_height) + " (" + height_src + ").")
+                                      .c_str());
     }
 
     IDXGISwapChain1* pSwapchain1 = nullptr;
@@ -242,23 +256,37 @@ HRESULT Dx12ReplayConsumerArmFeatures::CreateSwapChainForComposition(DxObjectInf
 
     if (desc->Width == 0 || desc->Height == 0)
     {
-        if (consumer_->options_.windowed_width != 0 && consumer_->options_.windowed_height != 0)
-        {
-            desc->Width  = consumer_->options_.windowed_width;
-            desc->Height = consumer_->options_.windowed_height;
-            GFXRECON_LOG_WARNING_ONCE(
-                "In CreateSwapChainForComposition, the Width or Height is 0, using default window height and width.");
-        }
-        else
-        {
-            int screen_width  = GetSystemMetrics(SM_CXSCREEN);
-            int screen_height = GetSystemMetrics(SM_CYSCREEN);
-            desc->Width       = screen_width;
-            desc->Height      = screen_height;
-            GFXRECON_LOG_WARNING_ONCE(
-                "In CreateSwapChainForComposition, the Width or Height is 0, using system screen height and width.");
-            ;
-        }
+        auto resolve_dim = [](UINT cur, uint32_t opt, int metric, UINT fallback, const char*& src) -> UINT {
+            if (cur > 0)
+            {
+                src = "original";
+                return cur;
+            }
+            if (opt > 0)
+            {
+                src = "consumer";
+                return opt;
+            }
+            int v = GetSystemMetrics(metric);
+            if (v > 0)
+            {
+                src = "system";
+                return static_cast<UINT>(v);
+            }
+            src = "default";
+            return fallback;
+        };
+
+        const char* width_src  = "";
+        const char* height_src = "";
+        UINT new_width  = resolve_dim(desc->Width, consumer_->options_.windowed_width, SM_CXSCREEN, 320, width_src);
+        UINT new_height = resolve_dim(desc->Height, consumer_->options_.windowed_height, SM_CYSCREEN, 240, height_src);
+
+        desc->Width  = new_width;
+        desc->Height = new_height;
+        GFXRECON_LOG_WARNING_ONCE(("Swapchain zero dimension resolved: Width=" + std::to_string(new_width) + " (" +
+                                   width_src + "), Height=" + std::to_string(new_height) + " (" + height_src + ").")
+                                      .c_str());
     }
 
     desc->Scaling    = DXGI_SCALING_STRETCH;
@@ -311,6 +339,43 @@ HRESULT Dx12ReplayConsumerArmFeatures::CreateSwapChainForOffscreen(DxObjectInfo*
     {
         GFXRECON_LOG_ERROR("Failed to retrieve device from command queue while creating offscreen swapchain.");
         return result;
+    }
+
+    if (desc->BufferDesc.Width == 0 || desc->BufferDesc.Height == 0)
+    {
+        auto resolve_dim = [](UINT cur, uint32_t opt, int metric, UINT fallback, const char*& src) -> UINT {
+            if (cur > 0)
+            {
+                src = "original";
+                return cur;
+            }
+            if (opt > 0)
+            {
+                src = "consumer";
+                return opt;
+            }
+            int v = GetSystemMetrics(metric);
+            if (v > 0)
+            {
+                src = "system";
+                return static_cast<UINT>(v);
+            }
+            src = "default";
+            return fallback;
+        };
+
+        const char* width_src  = "";
+        const char* height_src = "";
+        UINT        new_width =
+            resolve_dim(desc->BufferDesc.Width, consumer_->options_.windowed_width, SM_CXSCREEN, 320, width_src);
+        UINT new_height =
+            resolve_dim(desc->BufferDesc.Height, consumer_->options_.windowed_height, SM_CYSCREEN, 240, height_src);
+
+        desc->BufferDesc.Width  = new_width;
+        desc->BufferDesc.Height = new_height;
+        GFXRECON_LOG_WARNING_ONCE(("Swapchain zero dimension resolved: Width=" + std::to_string(new_width) + " (" +
+                                   width_src + "), Height=" + std::to_string(new_height) + " (" + height_src + ").")
+                                      .c_str());
     }
 
     Microsoft::WRL::ComPtr<Dx12OffscreenSwapchain> offscreen_swapchain =
@@ -366,6 +431,41 @@ HRESULT Dx12ReplayConsumerArmFeatures::CreateSwapChainForOffscreen(DxObjectInfo*
     {
         GFXRECON_LOG_ERROR("Failed to retrieve device from command queue while creating offscreen swapchain.");
         return result;
+    }
+
+    if (desc->Width == 0 || desc->Height == 0)
+    {
+        auto resolve_dim = [](UINT cur, uint32_t opt, int metric, UINT fallback, const char*& src) -> UINT {
+            if (cur > 0)
+            {
+                src = "original";
+                return cur;
+            }
+            if (opt > 0)
+            {
+                src = "consumer";
+                return opt;
+            }
+            int v = GetSystemMetrics(metric);
+            if (v > 0)
+            {
+                src = "system";
+                return static_cast<UINT>(v);
+            }
+            src = "default";
+            return fallback;
+        };
+
+        const char* width_src  = "";
+        const char* height_src = "";
+        UINT new_width  = resolve_dim(desc->Width, consumer_->options_.windowed_width, SM_CXSCREEN, 320, width_src);
+        UINT new_height = resolve_dim(desc->Height, consumer_->options_.windowed_height, SM_CYSCREEN, 240, height_src);
+
+        desc->Width  = new_width;
+        desc->Height = new_height;
+        GFXRECON_LOG_WARNING_ONCE(("Swapchain zero dimension resolved: Width=" + std::to_string(new_width) + " (" +
+                                   width_src + "), Height=" + std::to_string(new_height) + " (" + height_src + ").")
+                                      .c_str());
     }
 
     Microsoft::WRL::ComPtr<Dx12OffscreenSwapchain> offscreen_swapchain =
