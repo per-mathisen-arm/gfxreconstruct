@@ -166,6 +166,16 @@ enum ValidationCacheEXTArrayIndices : uint32_t
     kValidationCacheEXTArrayGetValidationCacheDataEXT = 0
 };
 
+enum DeviceArrayGetDeviceFaultReportsIndices : uint32_t
+{
+    kDeviceArrayGetDeviceFaultReportsKHR = 0
+};
+
+enum PhysicalDeviceArrayGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsIndices : uint32_t
+{
+    kPhysicalDeviceArrayGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM = 0
+};
+
 //
 // Structures for storing Vulkan object info.
 //

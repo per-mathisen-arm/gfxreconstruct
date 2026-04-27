@@ -350,6 +350,9 @@ void to_json(nlohmann::ordered_json& jdata, const VkDataGraphPipelineSessionCrea
         case VK_DATA_GRAPH_PIPELINE_SESSION_CREATE_PROTECTED_BIT_ARM:
             jdata = "VK_DATA_GRAPH_PIPELINE_SESSION_CREATE_PROTECTED_BIT_ARM";
             break;
+        case VK_DATA_GRAPH_PIPELINE_SESSION_CREATE_OPTICAL_FLOW_CACHE_BIT_ARM:
+            jdata = "VK_DATA_GRAPH_PIPELINE_SESSION_CREATE_OPTICAL_FLOW_CACHE_BIT_ARM";
+            break;
         default:
             jdata = gfxrecon::decode::to_hex_fixed_width(static_cast<VkDataGraphPipelineSessionCreateFlagBitsARM>(value));
             break;
@@ -521,6 +524,15 @@ void to_json(nlohmann::ordered_json& jdata, const VkFormatFeatureFlagBits2_t& va
         case VK_FORMAT_FEATURE_2_STENCIL_COPY_ON_TRANSFER_QUEUE_BIT_KHR:
             jdata = "VK_FORMAT_FEATURE_2_STENCIL_COPY_ON_TRANSFER_QUEUE_BIT_KHR";
             break;
+        case VK_FORMAT_FEATURE_2_DATA_GRAPH_OPTICAL_FLOW_IMAGE_BIT_ARM:
+            jdata = "VK_FORMAT_FEATURE_2_DATA_GRAPH_OPTICAL_FLOW_IMAGE_BIT_ARM";
+            break;
+        case VK_FORMAT_FEATURE_2_DATA_GRAPH_OPTICAL_FLOW_VECTOR_BIT_ARM:
+            jdata = "VK_FORMAT_FEATURE_2_DATA_GRAPH_OPTICAL_FLOW_VECTOR_BIT_ARM";
+            break;
+        case VK_FORMAT_FEATURE_2_DATA_GRAPH_OPTICAL_FLOW_COST_BIT_ARM:
+            jdata = "VK_FORMAT_FEATURE_2_DATA_GRAPH_OPTICAL_FLOW_COST_BIT_ARM";
+            break;
         default:
             jdata = gfxrecon::decode::to_hex_fixed_width(static_cast<VkFormatFeatureFlagBits2>(value));
             break;
@@ -544,6 +556,9 @@ void to_json(nlohmann::ordered_json& jdata, const VkPhysicalDeviceSchedulingCont
     switch (static_cast<VkPhysicalDeviceSchedulingControlsFlagBitsARM>(value)) {
         case VK_PHYSICAL_DEVICE_SCHEDULING_CONTROLS_SHADER_CORE_COUNT_ARM:
             jdata = "VK_PHYSICAL_DEVICE_SCHEDULING_CONTROLS_SHADER_CORE_COUNT_ARM";
+            break;
+        case VK_PHYSICAL_DEVICE_SCHEDULING_CONTROLS_DISPATCH_PARAMETERS_ARM:
+            jdata = "VK_PHYSICAL_DEVICE_SCHEDULING_CONTROLS_DISPATCH_PARAMETERS_ARM";
             break;
         default:
             jdata = gfxrecon::decode::to_hex_fixed_width(static_cast<VkPhysicalDeviceSchedulingControlsFlagBitsARM>(value));
@@ -1134,6 +1149,34 @@ void to_json(nlohmann::ordered_json& jdata, const VkAcquireProfilingLockFlagsKHR
     jdata = to_hex_fixed_width(static_cast<VkAcquireProfilingLockFlagsKHR>(flags));
 }
 
+void to_json(nlohmann::ordered_json& jdata, const VkAddressCommandFlagsKHR_t& flags)
+{
+    if (!JsonOptions::expand_flags)
+    {
+        jdata = to_hex_fixed_width(static_cast<VkAddressCommandFlagsKHR>(flags));
+        return;
+    }
+    jdata = ExpandFlags(static_cast<VkAddressCommandFlagsKHR>(flags), [](VkFlags flags)
+    {
+        switch (flags)
+        {
+            case VK_ADDRESS_COMMAND_PROTECTED_BIT_KHR:
+                return std::string("VK_ADDRESS_COMMAND_PROTECTED_BIT_KHR");
+            case VK_ADDRESS_COMMAND_FULLY_BOUND_BIT_KHR:
+                return std::string("VK_ADDRESS_COMMAND_FULLY_BOUND_BIT_KHR");
+            case VK_ADDRESS_COMMAND_STORAGE_BUFFER_USAGE_BIT_KHR:
+                return std::string("VK_ADDRESS_COMMAND_STORAGE_BUFFER_USAGE_BIT_KHR");
+            case VK_ADDRESS_COMMAND_UNKNOWN_STORAGE_BUFFER_USAGE_BIT_KHR:
+                return std::string("VK_ADDRESS_COMMAND_UNKNOWN_STORAGE_BUFFER_USAGE_BIT_KHR");
+            case VK_ADDRESS_COMMAND_TRANSFORM_FEEDBACK_BUFFER_USAGE_BIT_KHR:
+                return std::string("VK_ADDRESS_COMMAND_TRANSFORM_FEEDBACK_BUFFER_USAGE_BIT_KHR");
+            case VK_ADDRESS_COMMAND_UNKNOWN_TRANSFORM_FEEDBACK_BUFFER_USAGE_BIT_KHR:
+                return std::string("VK_ADDRESS_COMMAND_UNKNOWN_TRANSFORM_FEEDBACK_BUFFER_USAGE_BIT_KHR");
+        }
+        return to_hex_fixed_width(flags);
+    });
+}
+
 void to_json(nlohmann::ordered_json& jdata, const VkAddressCopyFlagsKHR_t& flags)
 {
     if (!JsonOptions::expand_flags)
@@ -1625,6 +1668,8 @@ void to_json(nlohmann::ordered_json& jdata, const VkDataGraphPipelineSessionCrea
         {
             case VK_DATA_GRAPH_PIPELINE_SESSION_CREATE_PROTECTED_BIT_ARM:
                 return std::string("VK_DATA_GRAPH_PIPELINE_SESSION_CREATE_PROTECTED_BIT_ARM");
+            case VK_DATA_GRAPH_PIPELINE_SESSION_CREATE_OPTICAL_FLOW_CACHE_BIT_ARM:
+                return std::string("VK_DATA_GRAPH_PIPELINE_SESSION_CREATE_OPTICAL_FLOW_CACHE_BIT_ARM");
         }
         return to_hex_fixed_width(flags);
     });
@@ -1874,6 +1919,34 @@ void to_json(nlohmann::ordered_json& jdata, const VkDeviceDiagnosticsConfigFlags
                 return std::string("VK_DEVICE_DIAGNOSTICS_CONFIG_ENABLE_AUTOMATIC_CHECKPOINTS_BIT_NV");
             case VK_DEVICE_DIAGNOSTICS_CONFIG_ENABLE_SHADER_ERROR_REPORTING_BIT_NV:
                 return std::string("VK_DEVICE_DIAGNOSTICS_CONFIG_ENABLE_SHADER_ERROR_REPORTING_BIT_NV");
+        }
+        return to_hex_fixed_width(flags);
+    });
+}
+
+void to_json(nlohmann::ordered_json& jdata, const VkDeviceFaultFlagsKHR_t& flags)
+{
+    if (!JsonOptions::expand_flags)
+    {
+        jdata = to_hex_fixed_width(static_cast<VkDeviceFaultFlagsKHR>(flags));
+        return;
+    }
+    jdata = ExpandFlags(static_cast<VkDeviceFaultFlagsKHR>(flags), [](VkFlags flags)
+    {
+        switch (flags)
+        {
+            case VK_DEVICE_FAULT_FLAG_DEVICE_LOST_KHR:
+                return std::string("VK_DEVICE_FAULT_FLAG_DEVICE_LOST_KHR");
+            case VK_DEVICE_FAULT_FLAG_MEMORY_ADDRESS_KHR:
+                return std::string("VK_DEVICE_FAULT_FLAG_MEMORY_ADDRESS_KHR");
+            case VK_DEVICE_FAULT_FLAG_INSTRUCTION_ADDRESS_KHR:
+                return std::string("VK_DEVICE_FAULT_FLAG_INSTRUCTION_ADDRESS_KHR");
+            case VK_DEVICE_FAULT_FLAG_VENDOR_KHR:
+                return std::string("VK_DEVICE_FAULT_FLAG_VENDOR_KHR");
+            case VK_DEVICE_FAULT_FLAG_WATCHDOG_TIMEOUT_KHR:
+                return std::string("VK_DEVICE_FAULT_FLAG_WATCHDOG_TIMEOUT_KHR");
+            case VK_DEVICE_FAULT_FLAG_OVERFLOW_KHR:
+                return std::string("VK_DEVICE_FAULT_FLAG_OVERFLOW_KHR");
         }
         return to_hex_fixed_width(flags);
     });
@@ -2435,6 +2508,12 @@ void to_json(nlohmann::ordered_json& jdata, const VkFormatFeatureFlags2_t& flags
                 return std::string("VK_FORMAT_FEATURE_2_STENCIL_COPY_ON_COMPUTE_QUEUE_BIT_KHR");
             case VK_FORMAT_FEATURE_2_STENCIL_COPY_ON_TRANSFER_QUEUE_BIT_KHR:
                 return std::string("VK_FORMAT_FEATURE_2_STENCIL_COPY_ON_TRANSFER_QUEUE_BIT_KHR");
+            case VK_FORMAT_FEATURE_2_DATA_GRAPH_OPTICAL_FLOW_IMAGE_BIT_ARM:
+                return std::string("VK_FORMAT_FEATURE_2_DATA_GRAPH_OPTICAL_FLOW_IMAGE_BIT_ARM");
+            case VK_FORMAT_FEATURE_2_DATA_GRAPH_OPTICAL_FLOW_VECTOR_BIT_ARM:
+                return std::string("VK_FORMAT_FEATURE_2_DATA_GRAPH_OPTICAL_FLOW_VECTOR_BIT_ARM");
+            case VK_FORMAT_FEATURE_2_DATA_GRAPH_OPTICAL_FLOW_COST_BIT_ARM:
+                return std::string("VK_FORMAT_FEATURE_2_DATA_GRAPH_OPTICAL_FLOW_COST_BIT_ARM");
         }
         return to_hex_fixed_width(flags);
     });
@@ -3321,6 +3400,8 @@ void to_json(nlohmann::ordered_json& jdata, const VkPhysicalDeviceSchedulingCont
         {
             case VK_PHYSICAL_DEVICE_SCHEDULING_CONTROLS_SHADER_CORE_COUNT_ARM:
                 return std::string("VK_PHYSICAL_DEVICE_SCHEDULING_CONTROLS_SHADER_CORE_COUNT_ARM");
+            case VK_PHYSICAL_DEVICE_SCHEDULING_CONTROLS_DISPATCH_PARAMETERS_ARM:
+                return std::string("VK_PHYSICAL_DEVICE_SCHEDULING_CONTROLS_DISPATCH_PARAMETERS_ARM");
         }
         return to_hex_fixed_width(flags);
     });
@@ -6800,6 +6881,33 @@ void to_json(nlohmann::ordered_json& jdata, const VkAcquireProfilingLockFlagBits
     jdata = gfxrecon::decode::to_hex_fixed_width(value);
 }
 
+void to_json(nlohmann::ordered_json& jdata, const VkAddressCommandFlagBitsKHR& value)
+{
+    switch (value) {
+        case VK_ADDRESS_COMMAND_PROTECTED_BIT_KHR:
+            jdata = "VK_ADDRESS_COMMAND_PROTECTED_BIT_KHR";
+            break;
+        case VK_ADDRESS_COMMAND_FULLY_BOUND_BIT_KHR:
+            jdata = "VK_ADDRESS_COMMAND_FULLY_BOUND_BIT_KHR";
+            break;
+        case VK_ADDRESS_COMMAND_STORAGE_BUFFER_USAGE_BIT_KHR:
+            jdata = "VK_ADDRESS_COMMAND_STORAGE_BUFFER_USAGE_BIT_KHR";
+            break;
+        case VK_ADDRESS_COMMAND_UNKNOWN_STORAGE_BUFFER_USAGE_BIT_KHR:
+            jdata = "VK_ADDRESS_COMMAND_UNKNOWN_STORAGE_BUFFER_USAGE_BIT_KHR";
+            break;
+        case VK_ADDRESS_COMMAND_TRANSFORM_FEEDBACK_BUFFER_USAGE_BIT_KHR:
+            jdata = "VK_ADDRESS_COMMAND_TRANSFORM_FEEDBACK_BUFFER_USAGE_BIT_KHR";
+            break;
+        case VK_ADDRESS_COMMAND_UNKNOWN_TRANSFORM_FEEDBACK_BUFFER_USAGE_BIT_KHR:
+            jdata = "VK_ADDRESS_COMMAND_UNKNOWN_TRANSFORM_FEEDBACK_BUFFER_USAGE_BIT_KHR";
+            break;
+        default:
+            jdata = gfxrecon::decode::to_hex_fixed_width(value);
+            break;
+    }
+}
+
 void to_json(nlohmann::ordered_json& jdata, const VkAddressCopyFlagBitsKHR& value)
 {
     switch (value) {
@@ -7949,6 +8057,9 @@ void to_json(nlohmann::ordered_json& jdata, const VkDataGraphPipelineSessionBind
         case VK_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_TRANSIENT_ARM:
             jdata = "VK_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_TRANSIENT_ARM";
             break;
+        case VK_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_OPTICAL_FLOW_CACHE_ARM:
+            jdata = "VK_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_OPTICAL_FLOW_CACHE_ARM";
+            break;
         default:
             jdata = gfxrecon::decode::to_hex_fixed_width(value);
             break;
@@ -8456,29 +8567,29 @@ void to_json(nlohmann::ordered_json& jdata, const VkDeviceEventTypeEXT& value)
     }
 }
 
-void to_json(nlohmann::ordered_json& jdata, const VkDeviceFaultAddressTypeEXT& value)
+void to_json(nlohmann::ordered_json& jdata, const VkDeviceFaultAddressTypeKHR& value)
 {
     switch (value) {
-        case VK_DEVICE_FAULT_ADDRESS_TYPE_NONE_EXT:
-            jdata = "VK_DEVICE_FAULT_ADDRESS_TYPE_NONE_EXT";
+        case VK_DEVICE_FAULT_ADDRESS_TYPE_NONE_KHR:
+            jdata = "VK_DEVICE_FAULT_ADDRESS_TYPE_NONE_KHR";
             break;
-        case VK_DEVICE_FAULT_ADDRESS_TYPE_READ_INVALID_EXT:
-            jdata = "VK_DEVICE_FAULT_ADDRESS_TYPE_READ_INVALID_EXT";
+        case VK_DEVICE_FAULT_ADDRESS_TYPE_READ_INVALID_KHR:
+            jdata = "VK_DEVICE_FAULT_ADDRESS_TYPE_READ_INVALID_KHR";
             break;
-        case VK_DEVICE_FAULT_ADDRESS_TYPE_WRITE_INVALID_EXT:
-            jdata = "VK_DEVICE_FAULT_ADDRESS_TYPE_WRITE_INVALID_EXT";
+        case VK_DEVICE_FAULT_ADDRESS_TYPE_WRITE_INVALID_KHR:
+            jdata = "VK_DEVICE_FAULT_ADDRESS_TYPE_WRITE_INVALID_KHR";
             break;
-        case VK_DEVICE_FAULT_ADDRESS_TYPE_EXECUTE_INVALID_EXT:
-            jdata = "VK_DEVICE_FAULT_ADDRESS_TYPE_EXECUTE_INVALID_EXT";
+        case VK_DEVICE_FAULT_ADDRESS_TYPE_EXECUTE_INVALID_KHR:
+            jdata = "VK_DEVICE_FAULT_ADDRESS_TYPE_EXECUTE_INVALID_KHR";
             break;
-        case VK_DEVICE_FAULT_ADDRESS_TYPE_INSTRUCTION_POINTER_UNKNOWN_EXT:
-            jdata = "VK_DEVICE_FAULT_ADDRESS_TYPE_INSTRUCTION_POINTER_UNKNOWN_EXT";
+        case VK_DEVICE_FAULT_ADDRESS_TYPE_INSTRUCTION_POINTER_UNKNOWN_KHR:
+            jdata = "VK_DEVICE_FAULT_ADDRESS_TYPE_INSTRUCTION_POINTER_UNKNOWN_KHR";
             break;
-        case VK_DEVICE_FAULT_ADDRESS_TYPE_INSTRUCTION_POINTER_INVALID_EXT:
-            jdata = "VK_DEVICE_FAULT_ADDRESS_TYPE_INSTRUCTION_POINTER_INVALID_EXT";
+        case VK_DEVICE_FAULT_ADDRESS_TYPE_INSTRUCTION_POINTER_INVALID_KHR:
+            jdata = "VK_DEVICE_FAULT_ADDRESS_TYPE_INSTRUCTION_POINTER_INVALID_KHR";
             break;
-        case VK_DEVICE_FAULT_ADDRESS_TYPE_INSTRUCTION_POINTER_FAULT_EXT:
-            jdata = "VK_DEVICE_FAULT_ADDRESS_TYPE_INSTRUCTION_POINTER_FAULT_EXT";
+        case VK_DEVICE_FAULT_ADDRESS_TYPE_INSTRUCTION_POINTER_FAULT_KHR:
+            jdata = "VK_DEVICE_FAULT_ADDRESS_TYPE_INSTRUCTION_POINTER_FAULT_KHR";
             break;
         default:
             jdata = gfxrecon::decode::to_hex_fixed_width(value);
@@ -8486,11 +8597,38 @@ void to_json(nlohmann::ordered_json& jdata, const VkDeviceFaultAddressTypeEXT& v
     }
 }
 
-void to_json(nlohmann::ordered_json& jdata, const VkDeviceFaultVendorBinaryHeaderVersionEXT& value)
+void to_json(nlohmann::ordered_json& jdata, const VkDeviceFaultFlagBitsKHR& value)
 {
     switch (value) {
-        case VK_DEVICE_FAULT_VENDOR_BINARY_HEADER_VERSION_ONE_EXT:
-            jdata = "VK_DEVICE_FAULT_VENDOR_BINARY_HEADER_VERSION_ONE_EXT";
+        case VK_DEVICE_FAULT_FLAG_DEVICE_LOST_KHR:
+            jdata = "VK_DEVICE_FAULT_FLAG_DEVICE_LOST_KHR";
+            break;
+        case VK_DEVICE_FAULT_FLAG_MEMORY_ADDRESS_KHR:
+            jdata = "VK_DEVICE_FAULT_FLAG_MEMORY_ADDRESS_KHR";
+            break;
+        case VK_DEVICE_FAULT_FLAG_INSTRUCTION_ADDRESS_KHR:
+            jdata = "VK_DEVICE_FAULT_FLAG_INSTRUCTION_ADDRESS_KHR";
+            break;
+        case VK_DEVICE_FAULT_FLAG_VENDOR_KHR:
+            jdata = "VK_DEVICE_FAULT_FLAG_VENDOR_KHR";
+            break;
+        case VK_DEVICE_FAULT_FLAG_WATCHDOG_TIMEOUT_KHR:
+            jdata = "VK_DEVICE_FAULT_FLAG_WATCHDOG_TIMEOUT_KHR";
+            break;
+        case VK_DEVICE_FAULT_FLAG_OVERFLOW_KHR:
+            jdata = "VK_DEVICE_FAULT_FLAG_OVERFLOW_KHR";
+            break;
+        default:
+            jdata = gfxrecon::decode::to_hex_fixed_width(value);
+            break;
+    }
+}
+
+void to_json(nlohmann::ordered_json& jdata, const VkDeviceFaultVendorBinaryHeaderVersionKHR& value)
+{
+    switch (value) {
+        case VK_DEVICE_FAULT_VENDOR_BINARY_HEADER_VERSION_ONE_KHR:
+            jdata = "VK_DEVICE_FAULT_VENDOR_BINARY_HEADER_VERSION_ONE_KHR";
             break;
         default:
             jdata = gfxrecon::decode::to_hex_fixed_width(value);
@@ -11996,6 +12134,27 @@ void to_json(nlohmann::ordered_json& jdata, const VkPeerMemoryFeatureFlagBits& v
     }
 }
 
+void to_json(nlohmann::ordered_json& jdata, const VkPerfHintTypeQCOM& value)
+{
+    switch (value) {
+        case VK_PERF_HINT_TYPE_DEFAULT_QCOM:
+            jdata = "VK_PERF_HINT_TYPE_DEFAULT_QCOM";
+            break;
+        case VK_PERF_HINT_TYPE_FREQUENCY_MIN_QCOM:
+            jdata = "VK_PERF_HINT_TYPE_FREQUENCY_MIN_QCOM";
+            break;
+        case VK_PERF_HINT_TYPE_FREQUENCY_MAX_QCOM:
+            jdata = "VK_PERF_HINT_TYPE_FREQUENCY_MAX_QCOM";
+            break;
+        case VK_PERF_HINT_TYPE_FREQUENCY_SCALED_QCOM:
+            jdata = "VK_PERF_HINT_TYPE_FREQUENCY_SCALED_QCOM";
+            break;
+        default:
+            jdata = gfxrecon::decode::to_hex_fixed_width(value);
+            break;
+    }
+}
+
 void to_json(nlohmann::ordered_json& jdata, const VkPerformanceConfigurationTypeINTEL& value)
 {
     switch (value) {
@@ -12175,6 +12334,9 @@ void to_json(nlohmann::ordered_json& jdata, const VkPhysicalDeviceDataGraphOpera
             break;
         case VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_BUILTIN_MODEL_QCOM:
             jdata = "VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_BUILTIN_MODEL_QCOM";
+            break;
+        case VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_OPTICAL_FLOW_ARM:
+            jdata = "VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_OPTICAL_FLOW_ARM";
             break;
         default:
             jdata = gfxrecon::decode::to_hex_fixed_width(value);
@@ -15708,6 +15870,18 @@ void to_json(nlohmann::ordered_json& jdata, const VkStructureType& value)
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COHERENT_MEMORY_FEATURES_AMD:
             jdata = "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COHERENT_MEMORY_FEATURES_AMD";
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CONSTANT_DATA_FEATURES_KHR:
+            jdata = "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CONSTANT_DATA_FEATURES_KHR";
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ABORT_FEATURES_KHR:
+            jdata = "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ABORT_FEATURES_KHR";
+            break;
+        case VK_STRUCTURE_TYPE_DEVICE_FAULT_SHADER_ABORT_MESSAGE_INFO_KHR:
+            jdata = "VK_STRUCTURE_TYPE_DEVICE_FAULT_SHADER_ABORT_MESSAGE_INFO_KHR";
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ABORT_PROPERTIES_KHR:
+            jdata = "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ABORT_PROPERTIES_KHR";
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_IMAGE_ATOMIC_INT64_FEATURES_EXT:
             jdata = "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_IMAGE_ATOMIC_INT64_FEATURES_EXT";
             break;
@@ -15948,6 +16122,15 @@ void to_json(nlohmann::ordered_json& jdata, const VkStructureType& value)
         case VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREATE_INFO_NV:
             jdata = "VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREATE_INFO_NV";
             break;
+        case VK_STRUCTURE_TYPE_PERF_HINT_INFO_QCOM:
+            jdata = "VK_STRUCTURE_TYPE_PERF_HINT_INFO_QCOM";
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_QUEUE_PERF_HINT_FEATURES_QCOM:
+            jdata = "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_QUEUE_PERF_HINT_FEATURES_QCOM";
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_QUEUE_PERF_HINT_PROPERTIES_QCOM:
+            jdata = "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_QUEUE_PERF_HINT_PROPERTIES_QCOM";
+            break;
         case VK_STRUCTURE_TYPE_CUDA_MODULE_CREATE_INFO_NV:
             jdata = "VK_STRUCTURE_TYPE_CUDA_MODULE_CREATE_INFO_NV";
             break;
@@ -16058,6 +16241,54 @@ void to_json(nlohmann::ordered_json& jdata, const VkStructureType& value)
             break;
         case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CAPTURE_DESCRIPTOR_DATA_INFO_EXT:
             jdata = "VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CAPTURE_DESCRIPTOR_DATA_INFO_EXT";
+            break;
+        case VK_STRUCTURE_TYPE_DEVICE_MEMORY_COPY_KHR:
+            jdata = "VK_STRUCTURE_TYPE_DEVICE_MEMORY_COPY_KHR";
+            break;
+        case VK_STRUCTURE_TYPE_COPY_DEVICE_MEMORY_INFO_KHR:
+            jdata = "VK_STRUCTURE_TYPE_COPY_DEVICE_MEMORY_INFO_KHR";
+            break;
+        case VK_STRUCTURE_TYPE_DEVICE_MEMORY_IMAGE_COPY_KHR:
+            jdata = "VK_STRUCTURE_TYPE_DEVICE_MEMORY_IMAGE_COPY_KHR";
+            break;
+        case VK_STRUCTURE_TYPE_COPY_DEVICE_MEMORY_IMAGE_INFO_KHR:
+            jdata = "VK_STRUCTURE_TYPE_COPY_DEVICE_MEMORY_IMAGE_INFO_KHR";
+            break;
+        case VK_STRUCTURE_TYPE_MEMORY_RANGE_BARRIERS_INFO_KHR:
+            jdata = "VK_STRUCTURE_TYPE_MEMORY_RANGE_BARRIERS_INFO_KHR";
+            break;
+        case VK_STRUCTURE_TYPE_MEMORY_RANGE_BARRIER_KHR:
+            jdata = "VK_STRUCTURE_TYPE_MEMORY_RANGE_BARRIER_KHR";
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_ADDRESS_COMMANDS_FEATURES_KHR:
+            jdata = "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_ADDRESS_COMMANDS_FEATURES_KHR";
+            break;
+        case VK_STRUCTURE_TYPE_BIND_INDEX_BUFFER_3_INFO_KHR:
+            jdata = "VK_STRUCTURE_TYPE_BIND_INDEX_BUFFER_3_INFO_KHR";
+            break;
+        case VK_STRUCTURE_TYPE_BIND_VERTEX_BUFFER_3_INFO_KHR:
+            jdata = "VK_STRUCTURE_TYPE_BIND_VERTEX_BUFFER_3_INFO_KHR";
+            break;
+        case VK_STRUCTURE_TYPE_DRAW_INDIRECT_2_INFO_KHR:
+            jdata = "VK_STRUCTURE_TYPE_DRAW_INDIRECT_2_INFO_KHR";
+            break;
+        case VK_STRUCTURE_TYPE_DRAW_INDIRECT_COUNT_2_INFO_KHR:
+            jdata = "VK_STRUCTURE_TYPE_DRAW_INDIRECT_COUNT_2_INFO_KHR";
+            break;
+        case VK_STRUCTURE_TYPE_DISPATCH_INDIRECT_2_INFO_KHR:
+            jdata = "VK_STRUCTURE_TYPE_DISPATCH_INDIRECT_2_INFO_KHR";
+            break;
+        case VK_STRUCTURE_TYPE_CONDITIONAL_RENDERING_BEGIN_INFO_2_EXT:
+            jdata = "VK_STRUCTURE_TYPE_CONDITIONAL_RENDERING_BEGIN_INFO_2_EXT";
+            break;
+        case VK_STRUCTURE_TYPE_BIND_TRANSFORM_FEEDBACK_BUFFER_2_INFO_EXT:
+            jdata = "VK_STRUCTURE_TYPE_BIND_TRANSFORM_FEEDBACK_BUFFER_2_INFO_EXT";
+            break;
+        case VK_STRUCTURE_TYPE_MEMORY_MARKER_INFO_AMD:
+            jdata = "VK_STRUCTURE_TYPE_MEMORY_MARKER_INFO_AMD";
+            break;
+        case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_2_KHR:
+            jdata = "VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_2_KHR";
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GRAPHICS_PIPELINE_LIBRARY_FEATURES_EXT:
             jdata = "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GRAPHICS_PIPELINE_LIBRARY_FEATURES_EXT";
@@ -16382,6 +16613,12 @@ void to_json(nlohmann::ordered_json& jdata, const VkStructureType& value)
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCHEDULING_CONTROLS_PROPERTIES_ARM:
             jdata = "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCHEDULING_CONTROLS_PROPERTIES_ARM";
+            break;
+        case VK_STRUCTURE_TYPE_DISPATCH_PARAMETERS_ARM:
+            jdata = "VK_STRUCTURE_TYPE_DISPATCH_PARAMETERS_ARM";
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCHEDULING_CONTROLS_DISPATCH_PARAMETERS_PROPERTIES_ARM:
+            jdata = "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCHEDULING_CONTROLS_DISPATCH_PARAMETERS_PROPERTIES_ARM";
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_SLICED_VIEW_OF_3D_FEATURES_EXT:
             jdata = "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_SLICED_VIEW_OF_3D_FEATURES_EXT";
@@ -16893,6 +17130,9 @@ void to_json(nlohmann::ordered_json& jdata, const VkStructureType& value)
         case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_CONSTANT_TENSOR_SEMI_STRUCTURED_SPARSITY_INFO_ARM:
             jdata = "VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_CONSTANT_TENSOR_SEMI_STRUCTURED_SPARSITY_INFO_ARM";
             break;
+        case VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_TOSA_PROPERTIES_ARM:
+            jdata = "VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_TOSA_PROPERTIES_ARM";
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_RENDER_AREAS_FEATURES_QCOM:
             jdata = "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_RENDER_AREAS_FEATURES_QCOM";
             break;
@@ -17259,6 +17499,18 @@ void to_json(nlohmann::ordered_json& jdata, const VkStructureType& value)
         case VK_STRUCTURE_TYPE_GENERATED_COMMANDS_SHADER_INFO_EXT:
             jdata = "VK_STRUCTURE_TYPE_GENERATED_COMMANDS_SHADER_INFO_EXT";
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FAULT_FEATURES_KHR:
+            jdata = "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FAULT_FEATURES_KHR";
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FAULT_PROPERTIES_KHR:
+            jdata = "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FAULT_PROPERTIES_KHR";
+            break;
+        case VK_STRUCTURE_TYPE_DEVICE_FAULT_INFO_KHR:
+            jdata = "VK_STRUCTURE_TYPE_DEVICE_FAULT_INFO_KHR";
+            break;
+        case VK_STRUCTURE_TYPE_DEVICE_FAULT_DEBUG_INFO_KHR:
+            jdata = "VK_STRUCTURE_TYPE_DEVICE_FAULT_DEBUG_INFO_KHR";
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_8_FEATURES_KHR:
             jdata = "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_8_FEATURES_KHR";
             break;
@@ -17454,6 +17706,33 @@ void to_json(nlohmann::ordered_json& jdata, const VkStructureType& value)
         case VK_STRUCTURE_TYPE_RESOLVE_IMAGE_MODE_INFO_KHR:
             jdata = "VK_STRUCTURE_TYPE_RESOLVE_IMAGE_MODE_INFO_KHR";
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_OPTICAL_FLOW_FEATURES_ARM:
+            jdata = "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_OPTICAL_FLOW_FEATURES_ARM";
+            break;
+        case VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_OPTICAL_FLOW_PROPERTIES_ARM:
+            jdata = "VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_OPTICAL_FLOW_PROPERTIES_ARM";
+            break;
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_OPTICAL_FLOW_IMAGE_FORMAT_INFO_ARM:
+            jdata = "VK_STRUCTURE_TYPE_DATA_GRAPH_OPTICAL_FLOW_IMAGE_FORMAT_INFO_ARM";
+            break;
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_OPTICAL_FLOW_IMAGE_FORMAT_PROPERTIES_ARM:
+            jdata = "VK_STRUCTURE_TYPE_DATA_GRAPH_OPTICAL_FLOW_IMAGE_FORMAT_PROPERTIES_ARM";
+            break;
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_OPTICAL_FLOW_DISPATCH_INFO_ARM:
+            jdata = "VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_OPTICAL_FLOW_DISPATCH_INFO_ARM";
+            break;
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_OPTICAL_FLOW_CREATE_INFO_ARM:
+            jdata = "VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_OPTICAL_FLOW_CREATE_INFO_ARM";
+            break;
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_RESOURCE_INFO_IMAGE_LAYOUT_ARM:
+            jdata = "VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_RESOURCE_INFO_IMAGE_LAYOUT_ARM";
+            break;
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SINGLE_NODE_CREATE_INFO_ARM:
+            jdata = "VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SINGLE_NODE_CREATE_INFO_ARM";
+            break;
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SINGLE_NODE_CONNECTION_ARM:
+            jdata = "VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SINGLE_NODE_CONNECTION_ARM";
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_LONG_VECTOR_FEATURES_EXT:
             jdata = "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_LONG_VECTOR_FEATURES_EXT";
             break;
@@ -17480,6 +17759,9 @@ void to_json(nlohmann::ordered_json& jdata, const VkStructureType& value)
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MIXED_FLOAT_DOT_PRODUCT_FEATURES_VALVE:
             jdata = "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MIXED_FLOAT_DOT_PRODUCT_FEATURES_VALVE";
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_RESTART_INDEX_FEATURES_EXT:
+            jdata = "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_RESTART_INDEX_FEATURES_EXT";
             break;
         default:
             jdata = gfxrecon::decode::to_hex_fixed_width(value);

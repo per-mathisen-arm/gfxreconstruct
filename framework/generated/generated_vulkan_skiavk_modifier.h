@@ -2447,6 +2447,140 @@ class VulkanSkiaModifier : public util::VulkanModifierBase
         uint32_t                                    submitCount,
         StructPointerDecoder<Decoded_VkSubmitInfo2>* pSubmits,
         format::HandleId                            fence);
+    virtual void Process_vkCmdBindIndexBuffer3KHR(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        StructPointerDecoder<Decoded_VkBindIndexBuffer3InfoKHR>* pInfo){ CheckSkiavk(commandBuffer);}
+
+    virtual void Process_vkCmdBindVertexBuffers3KHR(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        uint32_t                                    firstBinding,
+        uint32_t                                    bindingCount,
+        StructPointerDecoder<Decoded_VkBindVertexBuffer3InfoKHR>* pBindingInfos){ CheckSkiavk(commandBuffer);}
+
+    virtual void Process_vkCmdDrawIndirect2KHR(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        StructPointerDecoder<Decoded_VkDrawIndirect2InfoKHR>* pInfo){ CheckSkiavk(commandBuffer);}
+
+    virtual void Process_vkCmdDrawIndexedIndirect2KHR(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        StructPointerDecoder<Decoded_VkDrawIndirect2InfoKHR>* pInfo){ CheckSkiavk(commandBuffer);}
+
+    virtual void Process_vkCmdDispatchIndirect2KHR(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        StructPointerDecoder<Decoded_VkDispatchIndirect2InfoKHR>* pInfo){ CheckSkiavk(commandBuffer);}
+
+    virtual void Process_vkCmdCopyMemoryKHR(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        StructPointerDecoder<Decoded_VkCopyDeviceMemoryInfoKHR>* pCopyMemoryInfo){ CheckSkiavk(commandBuffer);}
+
+    virtual void Process_vkCmdCopyMemoryToImageKHR(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        StructPointerDecoder<Decoded_VkCopyDeviceMemoryImageInfoKHR>* pCopyMemoryInfo){ CheckSkiavk(commandBuffer);}
+
+    virtual void Process_vkCmdCopyImageToMemoryKHR(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        StructPointerDecoder<Decoded_VkCopyDeviceMemoryImageInfoKHR>* pCopyMemoryInfo){ CheckSkiavk(commandBuffer);}
+
+    virtual void Process_vkCmdUpdateMemoryKHR(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        StructPointerDecoder<Decoded_VkDeviceAddressRangeKHR>* pDstRange,
+        VkAddressCommandFlagsKHR                    dstFlags,
+        VkDeviceSize                                dataSize,
+        PointerDecoder<uint8_t>*                    pData){ CheckSkiavk(commandBuffer);}
+
+    virtual void Process_vkCmdFillMemoryKHR(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        StructPointerDecoder<Decoded_VkDeviceAddressRangeKHR>* pDstRange,
+        VkAddressCommandFlagsKHR                    dstFlags,
+        uint32_t                                    data){ CheckSkiavk(commandBuffer);}
+
+    virtual void Process_vkCmdCopyQueryPoolResultsToMemoryKHR(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        format::HandleId                            queryPool,
+        uint32_t                                    firstQuery,
+        uint32_t                                    queryCount,
+        StructPointerDecoder<Decoded_VkStridedDeviceAddressRangeKHR>* pDstRange,
+        VkAddressCommandFlagsKHR                    dstFlags,
+        VkQueryResultFlags                          queryResultFlags){ CheckSkiavk(commandBuffer);}
+
+    virtual void Process_vkCmdDrawIndirectCount2KHR(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        StructPointerDecoder<Decoded_VkDrawIndirectCount2InfoKHR>* pInfo){ CheckSkiavk(commandBuffer);}
+
+    virtual void Process_vkCmdDrawIndexedIndirectCount2KHR(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        StructPointerDecoder<Decoded_VkDrawIndirectCount2InfoKHR>* pInfo){ CheckSkiavk(commandBuffer);}
+
+    virtual void Process_vkCmdBeginConditionalRendering2EXT(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        StructPointerDecoder<Decoded_VkConditionalRenderingBeginInfo2EXT>* pConditionalRenderingBegin){ CheckSkiavk(commandBuffer);}
+
+    virtual void Process_vkCmdBindTransformFeedbackBuffers2EXT(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        uint32_t                                    firstBinding,
+        uint32_t                                    bindingCount,
+        StructPointerDecoder<Decoded_VkBindTransformFeedbackBuffer2InfoEXT>* pBindingInfos){ CheckSkiavk(commandBuffer);}
+
+    virtual void Process_vkCmdBeginTransformFeedback2EXT(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        uint32_t                                    firstCounterRange,
+        uint32_t                                    counterRangeCount,
+        StructPointerDecoder<Decoded_VkBindTransformFeedbackBuffer2InfoEXT>* pCounterInfos){ CheckSkiavk(commandBuffer);}
+
+    virtual void Process_vkCmdEndTransformFeedback2EXT(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        uint32_t                                    firstCounterRange,
+        uint32_t                                    counterRangeCount,
+        StructPointerDecoder<Decoded_VkBindTransformFeedbackBuffer2InfoEXT>* pCounterInfos){ CheckSkiavk(commandBuffer);}
+
+    virtual void Process_vkCmdDrawIndirectByteCount2EXT(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        uint32_t                                    instanceCount,
+        uint32_t                                    firstInstance,
+        StructPointerDecoder<Decoded_VkBindTransformFeedbackBuffer2InfoEXT>* pCounterInfo,
+        uint32_t                                    counterOffset,
+        uint32_t                                    vertexStride){ CheckSkiavk(commandBuffer);}
+
+    virtual void Process_vkCmdDrawMeshTasksIndirect2EXT(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        StructPointerDecoder<Decoded_VkDrawIndirect2InfoKHR>* pInfo){ CheckSkiavk(commandBuffer);}
+
+    virtual void Process_vkCmdDrawMeshTasksIndirectCount2EXT(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        StructPointerDecoder<Decoded_VkDrawIndirectCount2InfoKHR>* pInfo){ CheckSkiavk(commandBuffer);}
+
+    virtual void Process_vkCmdWriteMarkerToMemoryAMD(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        StructPointerDecoder<Decoded_VkMemoryMarkerInfoAMD>* pInfo){ CheckSkiavk(commandBuffer);}
+
+    virtual void Process_vkCreateAccelerationStructure2KHR(
+        const ApiCallInfo&                          call_info,
+        VkResult                                    returnValue,
+        format::HandleId                            device,
+        StructPointerDecoder<Decoded_VkAccelerationStructureCreateInfo2KHR>* pCreateInfo,
+        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
+        HandlePointerDecoder<VkAccelerationStructureKHR>* pAccelerationStructure){ CheckSkiavk(device);}
     virtual void Process_vkCmdCopyBuffer2KHR(
         const ApiCallInfo&                          call_info,
         format::HandleId                            commandBuffer,
@@ -2630,6 +2764,19 @@ class VulkanSkiaModifier : public util::VulkanModifierBase
         const ApiCallInfo&                          call_info,
         format::HandleId                            commandBuffer,
         StructPointerDecoder<Decoded_VkCopyMemoryToImageIndirectInfoKHR>* pCopyMemoryToImageIndirectInfo){ CheckSkiavk(commandBuffer);}
+    virtual void Process_vkGetDeviceFaultReportsKHR(
+        const ApiCallInfo&                          call_info,
+        VkResult                                    returnValue,
+        format::HandleId                            device,
+        uint64_t                                    timeout,
+        PointerDecoder<uint32_t>*                   pFaultCounts,
+        StructPointerDecoder<Decoded_VkDeviceFaultInfoKHR>* pFaultInfo){ CheckSkiavk(device);}
+
+    virtual void Process_vkGetDeviceFaultDebugInfoKHR(
+        const ApiCallInfo&                          call_info,
+        VkResult                                    returnValue,
+        format::HandleId                            device,
+        StructPointerDecoder<Decoded_VkDeviceFaultDebugInfoKHR>* pDebugInfo){ CheckSkiavk(device);}
     virtual void Process_vkCmdEndRendering2KHR(
         const ApiCallInfo&                          call_info,
         format::HandleId                            commandBuffer,
@@ -3644,6 +3791,11 @@ class VulkanSkiaModifier : public util::VulkanModifierBase
         uint64_t                                    objectHandle,
         format::HandleId                            privateDataSlot,
         PointerDecoder<uint64_t>*                   pData){ CheckSkiavk(device);}
+    virtual void Process_vkQueueSetPerfHintQCOM(
+        const ApiCallInfo&                          call_info,
+        VkResult                                    returnValue,
+        format::HandleId                            queue,
+        StructPointerDecoder<Decoded_VkPerfHintInfoQCOM>* pPerfHintInfo){ CheckSkiavk(queue);}
     virtual void Process_vkCmdDispatchTileQCOM(
         const ApiCallInfo&                          call_info,
         format::HandleId                            commandBuffer,
@@ -3955,6 +4107,10 @@ class VulkanSkiaModifier : public util::VulkanModifierBase
         format::HandleId                            device,
         format::HandleId                            memory,
         float                                       priority){ CheckSkiavk(device);}
+    virtual void Process_vkCmdSetDispatchParametersARM(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        StructPointerDecoder<Decoded_VkDispatchParametersARM>* pDispatchParameters){ CheckSkiavk(commandBuffer);}
     virtual void Process_vkGetDescriptorSetLayoutHostMappingInfoVALVE(
         const ApiCallInfo&                          call_info,
         format::HandleId                            device,
@@ -4565,6 +4721,10 @@ class VulkanSkiaModifier : public util::VulkanModifierBase
         const ApiCallInfo&                          call_info,
         format::HandleId                            commandBuffer,
         StructPointerDecoder<Decoded_VkComputeOccupancyPriorityParametersNV>* pParameters){ CheckSkiavk(commandBuffer);}
+    virtual void Process_vkCmdSetPrimitiveRestartIndexEXT(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        uint32_t                                    primitiveRestartIndex){ CheckSkiavk(commandBuffer);}
     virtual void Process_vkCreateAccelerationStructureKHR(
         const ApiCallInfo&                          call_info,
         VkResult                                    returnValue,
