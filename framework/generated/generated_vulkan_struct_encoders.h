@@ -1302,6 +1302,15 @@ void EncodeStruct(ParameterEncoder* encoder, const VkCustomResolveCreateInfoEXT&
 void EncodeStruct(ParameterEncoder* encoder, const VkPipelineCacheHeaderVersionDataGraphQCOM& value);
 void EncodeStruct(ParameterEncoder* encoder, const VkDataGraphPipelineBuiltinModelCreateInfoQCOM& value);
 void EncodeStruct(ParameterEncoder* encoder, const VkPhysicalDeviceDataGraphModelFeaturesQCOM& value);
+void EncodeStruct(ParameterEncoder* encoder, const VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM& value);
+void EncodeStruct(ParameterEncoder* encoder, const VkQueueFamilyDataGraphOpticalFlowPropertiesARM& value);
+void EncodeStruct(ParameterEncoder* encoder, const VkDataGraphPipelineOpticalFlowCreateInfoARM& value);
+void EncodeStruct(ParameterEncoder* encoder, const VkDataGraphOpticalFlowImageFormatPropertiesARM& value);
+void EncodeStruct(ParameterEncoder* encoder, const VkDataGraphOpticalFlowImageFormatInfoARM& value);
+void EncodeStruct(ParameterEncoder* encoder, const VkDataGraphPipelineOpticalFlowDispatchInfoARM& value);
+void EncodeStruct(ParameterEncoder* encoder, const VkDataGraphPipelineResourceInfoImageLayoutARM& value);
+void EncodeStruct(ParameterEncoder* encoder, const VkDataGraphPipelineSingleNodeConnectionARM& value);
+void EncodeStruct(ParameterEncoder* encoder, const VkDataGraphPipelineSingleNodeCreateInfoARM& value);
 void EncodeStruct(ParameterEncoder* encoder, const VkPhysicalDeviceShaderLongVectorFeaturesEXT& value);
 void EncodeStruct(ParameterEncoder* encoder, const VkPhysicalDeviceShaderLongVectorPropertiesEXT& value);
 void EncodeStruct(ParameterEncoder* encoder, const VkPhysicalDevicePipelineCacheIncrementalModeFeaturesSEC& value);

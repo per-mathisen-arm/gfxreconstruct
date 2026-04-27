@@ -16892,6 +16892,145 @@ VkPhysicalDeviceDataGraphModelFeaturesQCOM* TrackStruct(const VkPhysicalDeviceDa
     return unwrapped_struct;
 }
 
+VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM* TrackStruct(const VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkQueueFamilyDataGraphOpticalFlowPropertiesARM* TrackStruct(const VkQueueFamilyDataGraphOpticalFlowPropertiesARM* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkQueueFamilyDataGraphOpticalFlowPropertiesARM* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkDataGraphPipelineOpticalFlowCreateInfoARM* TrackStruct(const VkDataGraphPipelineOpticalFlowCreateInfoARM* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkDataGraphPipelineOpticalFlowCreateInfoARM* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkDataGraphOpticalFlowImageFormatPropertiesARM* TrackStruct(const VkDataGraphOpticalFlowImageFormatPropertiesARM* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkDataGraphOpticalFlowImageFormatPropertiesARM* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkDataGraphOpticalFlowImageFormatInfoARM* TrackStruct(const VkDataGraphOpticalFlowImageFormatInfoARM* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkDataGraphOpticalFlowImageFormatInfoARM* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkDataGraphPipelineOpticalFlowDispatchInfoARM* TrackStruct(const VkDataGraphPipelineOpticalFlowDispatchInfoARM* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkDataGraphPipelineOpticalFlowDispatchInfoARM* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkDataGraphPipelineResourceInfoImageLayoutARM* TrackStruct(const VkDataGraphPipelineResourceInfoImageLayoutARM* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkDataGraphPipelineResourceInfoImageLayoutARM* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkDataGraphPipelineSingleNodeConnectionARM* TrackStruct(const VkDataGraphPipelineSingleNodeConnectionARM* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkDataGraphPipelineSingleNodeConnectionARM* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkDataGraphPipelineSingleNodeCreateInfoARM* TrackStruct(const VkDataGraphPipelineSingleNodeCreateInfoARM* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkDataGraphPipelineSingleNodeCreateInfoARM* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+    if (unwrapped_struct->pConnections)
+    {
+        unwrapped_struct->pConnections = vulkan_wrappers::MakeUnwrapStructs(unwrapped_struct->pConnections, unwrapped_struct->connectionCount, unwrap_memory);
+    }
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
 VkPhysicalDeviceShaderLongVectorFeaturesEXT* TrackStruct(const VkPhysicalDeviceShaderLongVectorFeaturesEXT* value, HandleUnwrapMemory* unwrap_memory)
 {
     if (value == nullptr)
@@ -19577,6 +19716,24 @@ void* TrackStruct(const void* value, HandleUnwrapMemory* unwrap_memory)
             return TrackStruct(reinterpret_cast<const VkDataGraphPipelineBuiltinModelCreateInfoQCOM*>(value), unwrap_memory);
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_MODEL_FEATURES_QCOM:
             return TrackStruct(reinterpret_cast<const VkPhysicalDeviceDataGraphModelFeaturesQCOM*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_OPTICAL_FLOW_FEATURES_ARM:
+            return TrackStruct(reinterpret_cast<const VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_OPTICAL_FLOW_PROPERTIES_ARM:
+            return TrackStruct(reinterpret_cast<const VkQueueFamilyDataGraphOpticalFlowPropertiesARM*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_OPTICAL_FLOW_CREATE_INFO_ARM:
+            return TrackStruct(reinterpret_cast<const VkDataGraphPipelineOpticalFlowCreateInfoARM*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_OPTICAL_FLOW_IMAGE_FORMAT_PROPERTIES_ARM:
+            return TrackStruct(reinterpret_cast<const VkDataGraphOpticalFlowImageFormatPropertiesARM*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_OPTICAL_FLOW_IMAGE_FORMAT_INFO_ARM:
+            return TrackStruct(reinterpret_cast<const VkDataGraphOpticalFlowImageFormatInfoARM*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_OPTICAL_FLOW_DISPATCH_INFO_ARM:
+            return TrackStruct(reinterpret_cast<const VkDataGraphPipelineOpticalFlowDispatchInfoARM*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_RESOURCE_INFO_IMAGE_LAYOUT_ARM:
+            return TrackStruct(reinterpret_cast<const VkDataGraphPipelineResourceInfoImageLayoutARM*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SINGLE_NODE_CONNECTION_ARM:
+            return TrackStruct(reinterpret_cast<const VkDataGraphPipelineSingleNodeConnectionARM*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SINGLE_NODE_CREATE_INFO_ARM:
+            return TrackStruct(reinterpret_cast<const VkDataGraphPipelineSingleNodeCreateInfoARM*>(value), unwrap_memory);
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_LONG_VECTOR_FEATURES_EXT:
             return TrackStruct(reinterpret_cast<const VkPhysicalDeviceShaderLongVectorFeaturesEXT*>(value), unwrap_memory);
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_LONG_VECTOR_PROPERTIES_EXT:

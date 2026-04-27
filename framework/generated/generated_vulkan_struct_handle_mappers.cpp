@@ -12661,6 +12661,107 @@ void MapStructHandles(Decoded_VkPhysicalDeviceDataGraphModelFeaturesQCOM* wrappe
     }
 }
 
+void MapStructHandles(Decoded_VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM* wrapper, const CommonObjectInfoTable& object_info_table)
+{
+    if (wrapper != nullptr)
+    {
+        if (wrapper->pNext)
+        {
+            MapPNextStructHandles(wrapper->pNext, object_info_table);
+        }
+    }
+}
+
+void MapStructHandles(Decoded_VkQueueFamilyDataGraphOpticalFlowPropertiesARM* wrapper, const CommonObjectInfoTable& object_info_table)
+{
+    if (wrapper != nullptr)
+    {
+        if (wrapper->pNext)
+        {
+            MapPNextStructHandles(wrapper->pNext, object_info_table);
+        }
+    }
+}
+
+void MapStructHandles(Decoded_VkDataGraphPipelineOpticalFlowCreateInfoARM* wrapper, const CommonObjectInfoTable& object_info_table)
+{
+    if (wrapper != nullptr)
+    {
+        if (wrapper->pNext)
+        {
+            MapPNextStructHandles(wrapper->pNext, object_info_table);
+        }
+    }
+}
+
+void MapStructHandles(Decoded_VkDataGraphOpticalFlowImageFormatPropertiesARM* wrapper, const CommonObjectInfoTable& object_info_table)
+{
+    if (wrapper != nullptr)
+    {
+        if (wrapper->pNext)
+        {
+            MapPNextStructHandles(wrapper->pNext, object_info_table);
+        }
+    }
+}
+
+void MapStructHandles(Decoded_VkDataGraphOpticalFlowImageFormatInfoARM* wrapper, const CommonObjectInfoTable& object_info_table)
+{
+    if (wrapper != nullptr)
+    {
+        if (wrapper->pNext)
+        {
+            MapPNextStructHandles(wrapper->pNext, object_info_table);
+        }
+    }
+}
+
+void MapStructHandles(Decoded_VkDataGraphPipelineOpticalFlowDispatchInfoARM* wrapper, const CommonObjectInfoTable& object_info_table)
+{
+    if (wrapper != nullptr)
+    {
+        if (wrapper->pNext)
+        {
+            MapPNextStructHandles(wrapper->pNext, object_info_table);
+        }
+    }
+}
+
+void MapStructHandles(Decoded_VkDataGraphPipelineResourceInfoImageLayoutARM* wrapper, const CommonObjectInfoTable& object_info_table)
+{
+    if (wrapper != nullptr)
+    {
+        if (wrapper->pNext)
+        {
+            MapPNextStructHandles(wrapper->pNext, object_info_table);
+        }
+    }
+}
+
+void MapStructHandles(Decoded_VkDataGraphPipelineSingleNodeConnectionARM* wrapper, const CommonObjectInfoTable& object_info_table)
+{
+    if (wrapper != nullptr)
+    {
+        if (wrapper->pNext)
+        {
+            MapPNextStructHandles(wrapper->pNext, object_info_table);
+        }
+    }
+}
+
+void MapStructHandles(Decoded_VkDataGraphPipelineSingleNodeCreateInfoARM* wrapper, const CommonObjectInfoTable& object_info_table)
+{
+    if (wrapper != nullptr)
+    {
+        if (wrapper->pNext)
+        {
+            MapPNextStructHandles(wrapper->pNext, object_info_table);
+        }
+
+        MapStructArrayHandles<Decoded_VkDataGraphPipelineSingleNodeConnectionARM>(wrapper->pConnections->GetMetaStructPointer(), wrapper->pConnections->GetLength(), object_info_table);
+    }
+}
+
 void MapStructHandles(Decoded_VkPhysicalDeviceShaderLongVectorFeaturesEXT* wrapper, const CommonObjectInfoTable& object_info_table)
 {
     if (wrapper != nullptr)
@@ -13425,6 +13526,12 @@ void MapPNextStructHandles(PNextNode* pnext, const CommonObjectInfoTable& object
     case VK_STRUCTURE_TYPE_D3D12_FENCE_SUBMIT_INFO_KHR:
         MapStructHandles(reinterpret_cast<Decoded_VkD3D12FenceSubmitInfoKHR*>(wrapper), object_info_table);
         break;
+    case VK_STRUCTURE_TYPE_DATA_GRAPH_OPTICAL_FLOW_IMAGE_FORMAT_INFO_ARM:
+        MapStructHandles(reinterpret_cast<Decoded_VkDataGraphOpticalFlowImageFormatInfoARM*>(wrapper), object_info_table);
+        break;
+    case VK_STRUCTURE_TYPE_DATA_GRAPH_OPTICAL_FLOW_IMAGE_FORMAT_PROPERTIES_ARM:
+        MapStructHandles(reinterpret_cast<Decoded_VkDataGraphOpticalFlowImageFormatPropertiesARM*>(wrapper), object_info_table);
+        break;
     case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_BUILTIN_MODEL_CREATE_INFO_QCOM:
         MapStructHandles(reinterpret_cast<Decoded_VkDataGraphPipelineBuiltinModelCreateInfoQCOM*>(wrapper), object_info_table);
         break;
@@ -13449,11 +13556,20 @@ void MapPNextStructHandles(PNextNode* pnext, const CommonObjectInfoTable& object
     case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_NEURAL_STATISTICS_CREATE_INFO_ARM:
         MapStructHandles(reinterpret_cast<Decoded_VkDataGraphPipelineNeuralStatisticsCreateInfoARM*>(wrapper), object_info_table);
         break;
+    case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_OPTICAL_FLOW_CREATE_INFO_ARM:
+        MapStructHandles(reinterpret_cast<Decoded_VkDataGraphPipelineOpticalFlowCreateInfoARM*>(wrapper), object_info_table);
+        break;
+    case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_OPTICAL_FLOW_DISPATCH_INFO_ARM:
+        MapStructHandles(reinterpret_cast<Decoded_VkDataGraphPipelineOpticalFlowDispatchInfoARM*>(wrapper), object_info_table);
+        break;
     case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_PROPERTY_QUERY_RESULT_ARM:
         MapStructHandles(reinterpret_cast<Decoded_VkDataGraphPipelinePropertyQueryResultARM*>(wrapper), object_info_table);
         break;
     case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_RESOURCE_INFO_ARM:
         MapStructHandles(reinterpret_cast<Decoded_VkDataGraphPipelineResourceInfoARM*>(wrapper), object_info_table);
+        break;
+    case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_RESOURCE_INFO_IMAGE_LAYOUT_ARM:
+        MapStructHandles(reinterpret_cast<Decoded_VkDataGraphPipelineResourceInfoImageLayoutARM*>(wrapper), object_info_table);
         break;
     case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_REQUIREMENT_ARM:
         MapStructHandles(reinterpret_cast<Decoded_VkDataGraphPipelineSessionBindPointRequirementARM*>(wrapper), object_info_table);
@@ -13472,6 +13588,12 @@ void MapPNextStructHandles(PNextNode* pnext, const CommonObjectInfoTable& object
         break;
     case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SHADER_MODULE_CREATE_INFO_ARM:
         MapStructHandles(reinterpret_cast<Decoded_VkDataGraphPipelineShaderModuleCreateInfoARM*>(wrapper), object_info_table);
+        break;
+    case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SINGLE_NODE_CONNECTION_ARM:
+        MapStructHandles(reinterpret_cast<Decoded_VkDataGraphPipelineSingleNodeConnectionARM*>(wrapper), object_info_table);
+        break;
+    case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SINGLE_NODE_CREATE_INFO_ARM:
+        MapStructHandles(reinterpret_cast<Decoded_VkDataGraphPipelineSingleNodeCreateInfoARM*>(wrapper), object_info_table);
         break;
     case VK_STRUCTURE_TYPE_DATA_GRAPH_PROCESSING_ENGINE_CREATE_INFO_ARM:
         MapStructHandles(reinterpret_cast<Decoded_VkDataGraphProcessingEngineCreateInfoARM*>(wrapper), object_info_table);
@@ -14402,6 +14524,9 @@ void MapPNextStructHandles(PNextNode* pnext, const CommonObjectInfoTable& object
         break;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_NEURAL_ACCELERATOR_STATISTICS_FEATURES_ARM:
         MapStructHandles(reinterpret_cast<Decoded_VkPhysicalDeviceDataGraphNeuralAcceleratorStatisticsFeaturesARM*>(wrapper), object_info_table);
+        break;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_OPTICAL_FLOW_FEATURES_ARM:
+        MapStructHandles(reinterpret_cast<Decoded_VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM*>(wrapper), object_info_table);
         break;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEDICATED_ALLOCATION_IMAGE_ALIASING_FEATURES_NV:
         MapStructHandles(reinterpret_cast<Decoded_VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV*>(wrapper), object_info_table);
@@ -15653,6 +15778,9 @@ void MapPNextStructHandles(PNextNode* pnext, const CommonObjectInfoTable& object
         break;
     case VK_STRUCTURE_TYPE_QUEUE_FAMILY_CHECKPOINT_PROPERTIES_NV:
         MapStructHandles(reinterpret_cast<Decoded_VkQueueFamilyCheckpointPropertiesNV*>(wrapper), object_info_table);
+        break;
+    case VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_OPTICAL_FLOW_PROPERTIES_ARM:
+        MapStructHandles(reinterpret_cast<Decoded_VkQueueFamilyDataGraphOpticalFlowPropertiesARM*>(wrapper), object_info_table);
         break;
     case VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_PROCESSING_ENGINE_PROPERTIES_ARM:
         MapStructHandles(reinterpret_cast<Decoded_VkQueueFamilyDataGraphProcessingEnginePropertiesARM*>(wrapper), object_info_table);

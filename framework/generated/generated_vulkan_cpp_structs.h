@@ -2528,6 +2528,24 @@ std::string GenerateStruct_VkPhysicalDeviceDataGraphModelFeaturesQCOM(std::ostre
 
 std::string GenerateStruct_VkPipelineCacheHeaderVersionDataGraphQCOM(std::ostream &out, const VkPipelineCacheHeaderVersionDataGraphQCOM* structInfo, Decoded_VkPipelineCacheHeaderVersionDataGraphQCOM* metaInfo, VulkanCppConsumerBase &consumer);
 
+std::string GenerateStruct_VkDataGraphOpticalFlowImageFormatInfoARM(std::ostream &out, const VkDataGraphOpticalFlowImageFormatInfoARM* structInfo, Decoded_VkDataGraphOpticalFlowImageFormatInfoARM* metaInfo, VulkanCppConsumerBase &consumer);
+
+std::string GenerateStruct_VkDataGraphOpticalFlowImageFormatPropertiesARM(std::ostream &out, const VkDataGraphOpticalFlowImageFormatPropertiesARM* structInfo, Decoded_VkDataGraphOpticalFlowImageFormatPropertiesARM* metaInfo, VulkanCppConsumerBase &consumer);
+
+std::string GenerateStruct_VkDataGraphPipelineOpticalFlowCreateInfoARM(std::ostream &out, const VkDataGraphPipelineOpticalFlowCreateInfoARM* structInfo, Decoded_VkDataGraphPipelineOpticalFlowCreateInfoARM* metaInfo, VulkanCppConsumerBase &consumer);
+
+std::string GenerateStruct_VkDataGraphPipelineOpticalFlowDispatchInfoARM(std::ostream &out, const VkDataGraphPipelineOpticalFlowDispatchInfoARM* structInfo, Decoded_VkDataGraphPipelineOpticalFlowDispatchInfoARM* metaInfo, VulkanCppConsumerBase &consumer);
+
+std::string GenerateStruct_VkDataGraphPipelineResourceInfoImageLayoutARM(std::ostream &out, const VkDataGraphPipelineResourceInfoImageLayoutARM* structInfo, Decoded_VkDataGraphPipelineResourceInfoImageLayoutARM* metaInfo, VulkanCppConsumerBase &consumer);
+
+std::string GenerateStruct_VkDataGraphPipelineSingleNodeConnectionARM(std::ostream &out, const VkDataGraphPipelineSingleNodeConnectionARM* structInfo, Decoded_VkDataGraphPipelineSingleNodeConnectionARM* metaInfo, VulkanCppConsumerBase &consumer);
+
+std::string GenerateStruct_VkDataGraphPipelineSingleNodeCreateInfoARM(std::ostream &out, const VkDataGraphPipelineSingleNodeCreateInfoARM* structInfo, Decoded_VkDataGraphPipelineSingleNodeCreateInfoARM* metaInfo, VulkanCppConsumerBase &consumer);
+
+std::string GenerateStruct_VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM(std::ostream &out, const VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM* structInfo, Decoded_VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM* metaInfo, VulkanCppConsumerBase &consumer);
+
+std::string GenerateStruct_VkQueueFamilyDataGraphOpticalFlowPropertiesARM(std::ostream &out, const VkQueueFamilyDataGraphOpticalFlowPropertiesARM* structInfo, Decoded_VkQueueFamilyDataGraphOpticalFlowPropertiesARM* metaInfo, VulkanCppConsumerBase &consumer);
+
 std::string GenerateStruct_VkPhysicalDeviceShaderLongVectorFeaturesEXT(std::ostream &out, const VkPhysicalDeviceShaderLongVectorFeaturesEXT* structInfo, Decoded_VkPhysicalDeviceShaderLongVectorFeaturesEXT* metaInfo, VulkanCppConsumerBase &consumer);
 
 std::string GenerateStruct_VkPhysicalDeviceShaderLongVectorPropertiesEXT(std::ostream &out, const VkPhysicalDeviceShaderLongVectorPropertiesEXT* structInfo, Decoded_VkPhysicalDeviceShaderLongVectorPropertiesEXT* metaInfo, VulkanCppConsumerBase &consumer);

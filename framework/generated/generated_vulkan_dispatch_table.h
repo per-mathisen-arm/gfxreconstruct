@@ -182,6 +182,8 @@ inline VKAPI_ATTR VkResult VKAPI_CALL vkGetPhysicalDeviceQueueFamilyDataGraphPro
 inline VKAPI_ATTR void VKAPI_CALL vkGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM(VkPhysicalDevice, const VkPhysicalDeviceQueueFamilyDataGraphProcessingEngineInfoARM*, VkQueueFamilyDataGraphProcessingEnginePropertiesARM*) { GFXRECON_LOG_WARNING_ONCE("Unsupported function vkGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM was called, resulting in no-op behavior."); }
 inline VKAPI_ATTR VkResult VKAPI_CALL vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(VkPhysicalDevice, uint32_t*, VkCooperativeMatrixFlexibleDimensionsPropertiesNV*) { GFXRECON_LOG_WARNING_ONCE("Unsupported function vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV was called, resulting in no-op behavior."); return VK_SUCCESS; }
 inline VKAPI_ATTR VkResult VKAPI_CALL vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM(VkPhysicalDevice, uint32_t, uint32_t*, VkPerformanceCounterARM*, VkPerformanceCounterDescriptionARM*) { GFXRECON_LOG_WARNING_ONCE("Unsupported function vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM was called, resulting in no-op behavior."); return VK_SUCCESS; }
+inline VKAPI_ATTR VkResult VKAPI_CALL vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM(VkPhysicalDevice, uint32_t, const VkQueueFamilyDataGraphPropertiesARM*, const VkDataGraphOpticalFlowImageFormatInfoARM*, uint32_t*, VkDataGraphOpticalFlowImageFormatPropertiesARM*) { GFXRECON_LOG_WARNING_ONCE("Unsupported function vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM was called, resulting in no-op behavior."); return VK_SUCCESS; }
+inline VKAPI_ATTR VkResult VKAPI_CALL vkGetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM(VkPhysicalDevice, uint32_t, const VkQueueFamilyDataGraphPropertiesARM*, VkBaseOutStructure*) { GFXRECON_LOG_WARNING_ONCE("Unsupported function vkGetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM was called, resulting in no-op behavior."); return VK_SUCCESS; }
 inline VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vkGetDeviceProcAddr(VkDevice, const char*) { GFXRECON_LOG_WARNING_ONCE("Unsupported function vkGetDeviceProcAddr was called, resulting in no-op behavior."); return nullptr; }
 inline VKAPI_ATTR void VKAPI_CALL vkDestroyDevice(VkDevice, const VkAllocationCallbacks*) { GFXRECON_LOG_WARNING_ONCE("Unsupported function vkDestroyDevice was called, resulting in no-op behavior."); }
 inline VKAPI_ATTR void VKAPI_CALL vkGetDeviceQueue(VkDevice, uint32_t, uint32_t, VkQueue*) { GFXRECON_LOG_WARNING_ONCE("Unsupported function vkGetDeviceQueue was called, resulting in no-op behavior."); }
@@ -951,6 +953,8 @@ struct VulkanInstanceTable
     PFN_vkGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM GetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM{ noop::vkGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM };
     PFN_vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV{ noop::vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV };
     PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM{ noop::vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM };
+    PFN_vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM{ noop::vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM };
+    PFN_vkGetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM GetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM{ noop::vkGetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM };
 };
 
 struct VulkanDeviceTable
@@ -1728,6 +1732,8 @@ static void LoadVulkanInstanceTable(PFN_vkGetInstanceProcAddr gpa, VkInstance in
     LoadVulkanFunction(gpa, instance, "vkGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM", &table->GetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM);
     LoadVulkanFunction(gpa, instance, "vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV", &table->GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV);
     LoadVulkanFunction(gpa, instance, "vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM", &table->EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM);
+    LoadVulkanFunction(gpa, instance, "vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM", &table->GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM);
+    LoadVulkanFunction(gpa, instance, "vkGetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM", &table->GetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM);
 }
 
 static void LoadVulkanDeviceTable(PFN_vkGetDeviceProcAddr gpa, VkDevice device, VulkanDeviceTable* table)

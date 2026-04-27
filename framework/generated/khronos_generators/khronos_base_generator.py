@@ -294,7 +294,8 @@ class ValueInfo():
         bitfield_width=None,
         is_const=False,
         is_optional=False,
-        is_com_outptr=False
+        is_com_outptr=False,
+        valid_structs=None
     ):
         self.name = name
         self.base_type = base_type
@@ -314,6 +315,7 @@ class ValueInfo():
         self.is_dynamic = True if not array_capacity else False
         self.is_const = is_const
         self.is_com_outptr = is_com_outptr
+        self.valid_structs = valid_structs
 
 
 
@@ -1718,6 +1720,10 @@ class KhronosBaseGenerator(OutputGenerator):
             if 'optional' in param.attrib:
                 is_optional = param.attrib.get('optional').lower() == 'true'
 
+            valid_structs = None
+            if 'validstructs' in param.attrib:
+                valid_structs = param.attrib.get('validstructs')
+
             # Get array length, always use altlen when available to avoid parsing latexmath
             if 'altlen' in param.attrib:
                 array_length = param.attrib.get('altlen')
@@ -1755,7 +1761,8 @@ class KhronosBaseGenerator(OutputGenerator):
                     platform_base_type=platform_base_type,
                     platform_full_type=platform_full_type,
                     bitfield_width=bitfield_width,
-                    is_optional=is_optional
+                    is_optional=is_optional,
+                    valid_structs=valid_structs
                 )
             )
 
@@ -2347,6 +2354,14 @@ class KhronosBaseGenerator(OutputGenerator):
         self, name, value, values, prefix, omit_output_param=None
     ):
         """Generate a parameter encoder method call invocation."""
+
+        # ppEnabledLayerNames/enabledLayerCount in VkDeviceCreateInfo were deprecated
+        # in Vulkan-Headers 1.4.349, and the len attribute for ppEnabledLayerNames
+        # was removed at the same time. Keep generating the prior string-array
+        # encoding so older apps and existing captures remain compatible.
+        if name == 'VkDeviceCreateInfo' and value.name == 'ppEnabledLayerNames':
+            return "encoder->EncodeStringArray(value.ppEnabledLayerNames, value.enabledLayerCount)"
+
         arg_name = prefix + value.name
         if self.is_generic_struct_handle_value(
             name, value.name

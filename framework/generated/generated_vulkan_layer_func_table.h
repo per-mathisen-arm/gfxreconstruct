@@ -785,6 +785,8 @@ static inline const std::unordered_map<std::string, PFN_vkVoidFunction> GetVulka
         { "vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM",                                  reinterpret_cast<PFN_vkVoidFunction>(encode::vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM) },
         { "vkCmdEndRendering2EXT",                                                                               reinterpret_cast<PFN_vkVoidFunction>(encode::vkCmdEndRendering2EXT) },
         { "vkCmdBeginCustomResolveEXT",                                                                          reinterpret_cast<PFN_vkVoidFunction>(encode::vkCmdBeginCustomResolveEXT) },
+        { "vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM",                                   reinterpret_cast<PFN_vkVoidFunction>(encode::vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM) },
+        { "vkGetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM",                                 reinterpret_cast<PFN_vkVoidFunction>(encode::vkGetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM) },
         { "vkCmdSetComputeOccupancyPriorityNV",                                                                  reinterpret_cast<PFN_vkVoidFunction>(encode::vkCmdSetComputeOccupancyPriorityNV) },
         { "vkCmdSetPrimitiveRestartIndexEXT",                                                                    reinterpret_cast<PFN_vkVoidFunction>(encode::vkCmdSetPrimitiveRestartIndexEXT) },
         { "vkCreateAccelerationStructureKHR",                                                                    reinterpret_cast<PFN_vkVoidFunction>(encode::vkCreateAccelerationStructureKHR) },

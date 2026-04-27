@@ -24745,6 +24745,168 @@ std::string GenerateStruct_VkPipelineCacheHeaderVersionDataGraphQCOM(std::ostrea
 }
 
 
+std::string GenerateStruct_VkDataGraphOpticalFlowImageFormatInfoARM(std::ostream &out, const VkDataGraphOpticalFlowImageFormatInfoARM* structInfo, Decoded_VkDataGraphOpticalFlowImageFormatInfoARM* metaInfo, VulkanCppConsumerBase &consumer){
+    std::stringstream struct_body;
+    std::string pnext_name = GenerateExtension(out, structInfo->pNext, metaInfo->pNext, consumer);
+    struct_body << "\t" << "VkStructureType(" << structInfo->sType << ")" << "," << std::endl;
+    struct_body << "\t\t\t" << pnext_name << "," << std::endl;
+    struct_body << "\t\t\t" << "VkDataGraphOpticalFlowImageUsageFlagsARM(" << structInfo->usage << ")" << ",";
+    std::string variable_name = consumer.AddStruct(struct_body, "dataGraphOpticalFlowImageFormatInfoARM");
+    out << "\t\t" << "VkDataGraphOpticalFlowImageFormatInfoARM " << variable_name << " {" << std::endl;
+    out << "\t\t" << struct_body.str() << std::endl;
+    out << "\t\t" << "};" << std::endl;
+    return variable_name;
+}
+
+
+std::string GenerateStruct_VkDataGraphOpticalFlowImageFormatPropertiesARM(std::ostream &out, const VkDataGraphOpticalFlowImageFormatPropertiesARM* structInfo, Decoded_VkDataGraphOpticalFlowImageFormatPropertiesARM* metaInfo, VulkanCppConsumerBase &consumer){
+    std::stringstream struct_body;
+    std::string pnext_name = GenerateExtension(out, structInfo->pNext, metaInfo->pNext, consumer);
+    struct_body << "\t" << "VkStructureType(" << structInfo->sType << ")" << "," << std::endl;
+    struct_body << "\t\t\t" << pnext_name << "," << std::endl;
+    struct_body << "\t\t\t" << "VkFormat(" << structInfo->format << ")" << ",";
+    std::string variable_name = consumer.AddStruct(struct_body, "dataGraphOpticalFlowImageFormatPropertiesARM");
+    out << "\t\t" << "VkDataGraphOpticalFlowImageFormatPropertiesARM " << variable_name << " {" << std::endl;
+    out << "\t\t" << struct_body.str() << std::endl;
+    out << "\t\t" << "};" << std::endl;
+    return variable_name;
+}
+
+
+std::string GenerateStruct_VkDataGraphPipelineOpticalFlowCreateInfoARM(std::ostream &out, const VkDataGraphPipelineOpticalFlowCreateInfoARM* structInfo, Decoded_VkDataGraphPipelineOpticalFlowCreateInfoARM* metaInfo, VulkanCppConsumerBase &consumer){
+    std::stringstream struct_body;
+    std::string pnext_name = GenerateExtension(out, structInfo->pNext, metaInfo->pNext, consumer);
+    struct_body << "\t" << "VkStructureType(" << structInfo->sType << ")" << "," << std::endl;
+    struct_body << "\t\t\t" << pnext_name << "," << std::endl;
+    struct_body << "\t\t\t" << structInfo->width << "," << std::endl;
+    struct_body << "\t\t\t" << structInfo->height << "," << std::endl;
+    struct_body << "\t\t\t" << "VkFormat(" << structInfo->imageFormat << ")" << "," << std::endl;
+    struct_body << "\t\t\t" << "VkFormat(" << structInfo->flowVectorFormat << ")" << "," << std::endl;
+    struct_body << "\t\t\t" << "VkFormat(" << structInfo->costFormat << ")" << "," << std::endl;
+    struct_body << "\t\t\t" << "VkDataGraphOpticalFlowGridSizeFlagsARM(" << structInfo->outputGridSize << ")" << "," << std::endl;
+    struct_body << "\t\t\t" << "VkDataGraphOpticalFlowGridSizeFlagsARM(" << structInfo->hintGridSize << ")" << "," << std::endl;
+    struct_body << "\t\t\t" << "VkDataGraphOpticalFlowPerformanceLevelARM(" << structInfo->performanceLevel << ")" << "," << std::endl;
+    struct_body << "\t\t\t" << "VkDataGraphOpticalFlowCreateFlagsARM(" << structInfo->flags << ")" << ",";
+    std::string variable_name = consumer.AddStruct(struct_body, "dataGraphPipelineOpticalFlowCreateInfoARM");
+    out << "\t\t" << "VkDataGraphPipelineOpticalFlowCreateInfoARM " << variable_name << " {" << std::endl;
+    out << "\t\t" << struct_body.str() << std::endl;
+    out << "\t\t" << "};" << std::endl;
+    return variable_name;
+}
+
+
+std::string GenerateStruct_VkDataGraphPipelineOpticalFlowDispatchInfoARM(std::ostream &out, const VkDataGraphPipelineOpticalFlowDispatchInfoARM* structInfo, Decoded_VkDataGraphPipelineOpticalFlowDispatchInfoARM* metaInfo, VulkanCppConsumerBase &consumer){
+    std::stringstream struct_body;
+    std::string pnext_name = GenerateExtension(out, structInfo->pNext, metaInfo->pNext, consumer);
+    struct_body << "\t" << "VkStructureType(" << structInfo->sType << ")" << "," << std::endl;
+    struct_body << "\t\t\t" << pnext_name << "," << std::endl;
+    struct_body << "\t\t\t" << "VkDataGraphOpticalFlowExecuteFlagsARM(" << structInfo->flags << ")" << "," << std::endl;
+    struct_body << "\t\t\t" << structInfo->meanFlowL1NormHint << ",";
+    std::string variable_name = consumer.AddStruct(struct_body, "dataGraphPipelineOpticalFlowDispatchInfoARM");
+    out << "\t\t" << "VkDataGraphPipelineOpticalFlowDispatchInfoARM " << variable_name << " {" << std::endl;
+    out << "\t\t" << struct_body.str() << std::endl;
+    out << "\t\t" << "};" << std::endl;
+    return variable_name;
+}
+
+
+std::string GenerateStruct_VkDataGraphPipelineResourceInfoImageLayoutARM(std::ostream &out, const VkDataGraphPipelineResourceInfoImageLayoutARM* structInfo, Decoded_VkDataGraphPipelineResourceInfoImageLayoutARM* metaInfo, VulkanCppConsumerBase &consumer){
+    std::stringstream struct_body;
+    std::string pnext_name = GenerateExtension(out, structInfo->pNext, metaInfo->pNext, consumer);
+    struct_body << "\t" << "VkStructureType(" << structInfo->sType << ")" << "," << std::endl;
+    struct_body << "\t\t\t" << pnext_name << "," << std::endl;
+    struct_body << "\t\t\t" << "VkImageLayout(" << structInfo->layout << ")" << ",";
+    std::string variable_name = consumer.AddStruct(struct_body, "dataGraphPipelineResourceInfoImageLayoutARM");
+    out << "\t\t" << "VkDataGraphPipelineResourceInfoImageLayoutARM " << variable_name << " {" << std::endl;
+    out << "\t\t" << struct_body.str() << std::endl;
+    out << "\t\t" << "};" << std::endl;
+    return variable_name;
+}
+
+
+std::string GenerateStruct_VkDataGraphPipelineSingleNodeConnectionARM(std::ostream &out, const VkDataGraphPipelineSingleNodeConnectionARM* structInfo, Decoded_VkDataGraphPipelineSingleNodeConnectionARM* metaInfo, VulkanCppConsumerBase &consumer){
+    std::stringstream struct_body;
+    std::string pnext_name = GenerateExtension(out, structInfo->pNext, metaInfo->pNext, consumer);
+    struct_body << "\t" << "VkStructureType(" << structInfo->sType << ")" << "," << std::endl;
+    struct_body << "\t\t\t" << pnext_name << "," << std::endl;
+    struct_body << "\t\t\t" << structInfo->set << "," << std::endl;
+    struct_body << "\t\t\t" << structInfo->binding << "," << std::endl;
+    struct_body << "\t\t\t" << "VkDataGraphPipelineNodeConnectionTypeARM(" << structInfo->connection << ")" << ",";
+    std::string variable_name = consumer.AddStruct(struct_body, "dataGraphPipelineSingleNodeConnectionARM");
+    out << "\t\t" << "VkDataGraphPipelineSingleNodeConnectionARM " << variable_name << " {" << std::endl;
+    out << "\t\t" << struct_body.str() << std::endl;
+    out << "\t\t" << "};" << std::endl;
+    return variable_name;
+}
+
+
+std::string GenerateStruct_VkDataGraphPipelineSingleNodeCreateInfoARM(std::ostream &out, const VkDataGraphPipelineSingleNodeCreateInfoARM* structInfo, Decoded_VkDataGraphPipelineSingleNodeCreateInfoARM* metaInfo, VulkanCppConsumerBase &consumer){
+    std::stringstream struct_body;
+    std::string pnext_name = GenerateExtension(out, structInfo->pNext, metaInfo->pNext, consumer);
+    std::string pconnections_array = "NULL";
+    if (structInfo->pConnections != NULL) {
+        pconnections_array = "pConnections_" + std::to_string(consumer.GetNextId());
+        std::string pconnections_names;
+        for (uint32_t idx = 0; idx < structInfo->connectionCount; idx++) {
+            std::string variable_name = "NULL";
+            if (structInfo->pConnections + idx != NULL) {
+                variable_name = GenerateStruct_VkDataGraphPipelineSingleNodeConnectionARM(out,
+                                                                                          structInfo->pConnections + idx,
+                                                                                          metaInfo->pConnections->GetMetaStructPointer() + idx,
+                                                                                          consumer);
+            }
+            pconnections_names += variable_name + ", ";
+        }
+        out << "\t\t" << "VkDataGraphPipelineSingleNodeConnectionARM " << pconnections_array << "[] = {" << pconnections_names << "};" << std::endl;
+    }
+    struct_body << "\t" << "VkStructureType(" << structInfo->sType << ")" << "," << std::endl;
+    struct_body << "\t\t\t" << pnext_name << "," << std::endl;
+    struct_body << "\t\t\t" << "VkDataGraphPipelineNodeTypeARM(" << structInfo->nodeType << ")" << "," << std::endl;
+    struct_body << "\t\t\t" << structInfo->connectionCount << "," << std::endl;
+    struct_body << "\t\t\t" << pconnections_array << ",";
+    std::string variable_name = consumer.AddStruct(struct_body, "dataGraphPipelineSingleNodeCreateInfoARM");
+    out << "\t\t" << "VkDataGraphPipelineSingleNodeCreateInfoARM " << variable_name << " {" << std::endl;
+    out << "\t\t" << struct_body.str() << std::endl;
+    out << "\t\t" << "};" << std::endl;
+    return variable_name;
+}
+
+
+std::string GenerateStruct_VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM(std::ostream &out, const VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM* structInfo, Decoded_VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM* metaInfo, VulkanCppConsumerBase &consumer){
+    std::stringstream struct_body;
+    std::string pnext_name = GenerateExtension(out, structInfo->pNext, metaInfo->pNext, consumer);
+    struct_body << "\t" << "VkStructureType(" << structInfo->sType << ")" << "," << std::endl;
+    struct_body << "\t\t\t" << pnext_name << "," << std::endl;
+    struct_body << "\t\t\t" << structInfo->dataGraphOpticalFlow << ",";
+    std::string variable_name = consumer.AddStruct(struct_body, "physicalDeviceDataGraphOpticalFlowFeaturesARM");
+    out << "\t\t" << "VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM " << variable_name << " {" << std::endl;
+    out << "\t\t" << struct_body.str() << std::endl;
+    out << "\t\t" << "};" << std::endl;
+    return variable_name;
+}
+
+
+std::string GenerateStruct_VkQueueFamilyDataGraphOpticalFlowPropertiesARM(std::ostream &out, const VkQueueFamilyDataGraphOpticalFlowPropertiesARM* structInfo, Decoded_VkQueueFamilyDataGraphOpticalFlowPropertiesARM* metaInfo, VulkanCppConsumerBase &consumer){
+    std::stringstream struct_body;
+    std::string pnext_name = GenerateExtension(out, structInfo->pNext, metaInfo->pNext, consumer);
+    struct_body << "\t" << "VkStructureType(" << structInfo->sType << ")" << "," << std::endl;
+    struct_body << "\t\t\t" << pnext_name << "," << std::endl;
+    struct_body << "\t\t\t" << "VkDataGraphOpticalFlowGridSizeFlagsARM(" << structInfo->supportedOutputGridSizes << ")" << "," << std::endl;
+    struct_body << "\t\t\t" << "VkDataGraphOpticalFlowGridSizeFlagsARM(" << structInfo->supportedHintGridSizes << ")" << "," << std::endl;
+    struct_body << "\t\t\t" << structInfo->hintSupported << "," << std::endl;
+    struct_body << "\t\t\t" << structInfo->costSupported << "," << std::endl;
+    struct_body << "\t\t\t" << structInfo->minWidth << "," << std::endl;
+    struct_body << "\t\t\t" << structInfo->minHeight << "," << std::endl;
+    struct_body << "\t\t\t" << structInfo->maxWidth << "," << std::endl;
+    struct_body << "\t\t\t" << structInfo->maxHeight << ",";
+    std::string variable_name = consumer.AddStruct(struct_body, "queueFamilyDataGraphOpticalFlowPropertiesARM");
+    out << "\t\t" << "VkQueueFamilyDataGraphOpticalFlowPropertiesARM " << variable_name << " {" << std::endl;
+    out << "\t\t" << struct_body.str() << std::endl;
+    out << "\t\t" << "};" << std::endl;
+    return variable_name;
+}
+
+
 std::string GenerateStruct_VkPhysicalDeviceShaderLongVectorFeaturesEXT(std::ostream &out, const VkPhysicalDeviceShaderLongVectorFeaturesEXT* structInfo, Decoded_VkPhysicalDeviceShaderLongVectorFeaturesEXT* metaInfo, VulkanCppConsumerBase &consumer){
     std::stringstream struct_body;
     std::string pnext_name = GenerateExtension(out, structInfo->pNext, metaInfo->pNext, consumer);

@@ -879,13 +879,34 @@ class VulkanCppConsumerBodyGenerator(VulkanBaseGenerator):
                 else:
                     varDef += makeGenVar(varName, arg.name, handleObjectType, locals(), indent=8, addType=False)
                     if self.is_struct(arg.base_type):
-                        # zero-initialize struct in case it contains pointers
-                        # TODO: It may be necessary to initialize it using the capture value in the future
-                        varDef += makeGen(f'fprintf(file, "\\t\\t{varType} %s = {{{{}}}};\\n", {varName}.c_str());', locals(), indent=8)
+                        if arg.base_type == self.get_base_output_structure_name():
+                            structVarName = makeSnakeCaseName(arg.name + 'Struct')
+                            varDef += makeGen('std::stringstream {streamName};', locals(), indent=8)
+                            varDef += makeGenVarCall(
+                                'std::string',
+                                structVarName,
+                                f'GenerateStruct_{arg.base_type}',
+                                [streamName,
+                                 f'{arg.name}->GetPointer()',
+                                 f'{arg.name}->GetMetaStructPointer()',
+                                 '*this'],
+                                locals(),
+                                indent=8)
+                            varDef += makeCppOutputStream(streamName, indent=8)
+                            varDef += makeGenCond(f'{structVarName} != "NULL"',
+                                                  [makeGen('{varName} = "&" + {structVarName};', locals(), indent=12)],
+                                                  [],
+                                                  locals(),
+                                                  indent=8)
+                        else:
+                            # zero-initialize struct in case it contains pointers
+                            # TODO: It may be necessary to initialize it using the capture value in the future
+                            varDef += makeGen(f'fprintf(file, "\\t\\t{varType} %s = {{{{}}}};\\n", {varName}.c_str());', locals(), indent=8)
+                            varDef += makeGen('{varName}.insert(0, "&");', locals(), indent=8)
                     else:
                         # scalar output args are often in+out (vkGet*, vkEnum*) so initialize them using the capture value
                         varDef += makeGen(f'fprintf(file, "\\t\\t{varType} %s = %s;\\n", {varName}.c_str(), util::ToString(*{arg.name}->GetPointer()).c_str());', locals(), indent=8)
-                    varDef += makeGen('{varName}.insert(0, "&");', locals(), indent=8)
+                        varDef += makeGen('{varName}.insert(0, "&");', locals(), indent=8)
 
                 # only define a local output variable if the captured pointer is non-null
                 body += makeGenVar(varName, None, handleObjectType, locals(), indent=4)

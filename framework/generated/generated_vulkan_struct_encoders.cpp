@@ -10822,7 +10822,7 @@ void EncodeStruct(ParameterEncoder* encoder, const VkDataGraphPipelineIdentifier
 void EncodeStruct(ParameterEncoder* encoder, const VkDataGraphPipelineDispatchInfoARM& value)
 {
     encoder->EncodeEnumValue(value.sType);
-    EncodePNextStructIfValid(encoder, value.pNext);
+    EncodePNextStruct(encoder, value.pNext);
     encoder->EncodeFlags64Value(value.flags);
 }
 
@@ -11691,6 +11691,89 @@ void EncodeStruct(ParameterEncoder* encoder, const VkPhysicalDeviceDataGraphMode
     encoder->EncodeEnumValue(value.sType);
     EncodePNextStruct(encoder, value.pNext);
     encoder->EncodeUInt32Value(value.dataGraphModel);
+}
+
+void EncodeStruct(ParameterEncoder* encoder, const VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM& value)
+{
+    encoder->EncodeEnumValue(value.sType);
+    EncodePNextStruct(encoder, value.pNext);
+    encoder->EncodeUInt32Value(value.dataGraphOpticalFlow);
+}
+
+void EncodeStruct(ParameterEncoder* encoder, const VkQueueFamilyDataGraphOpticalFlowPropertiesARM& value)
+{
+    encoder->EncodeEnumValue(value.sType);
+    EncodePNextStructIfValid(encoder, value.pNext);
+    encoder->EncodeFlagsValue(value.supportedOutputGridSizes);
+    encoder->EncodeFlagsValue(value.supportedHintGridSizes);
+    encoder->EncodeUInt32Value(value.hintSupported);
+    encoder->EncodeUInt32Value(value.costSupported);
+    encoder->EncodeUInt32Value(value.minWidth);
+    encoder->EncodeUInt32Value(value.minHeight);
+    encoder->EncodeUInt32Value(value.maxWidth);
+    encoder->EncodeUInt32Value(value.maxHeight);
+}
+
+void EncodeStruct(ParameterEncoder* encoder, const VkDataGraphPipelineOpticalFlowCreateInfoARM& value)
+{
+    encoder->EncodeEnumValue(value.sType);
+    EncodePNextStruct(encoder, value.pNext);
+    encoder->EncodeUInt32Value(value.width);
+    encoder->EncodeUInt32Value(value.height);
+    encoder->EncodeEnumValue(value.imageFormat);
+    encoder->EncodeEnumValue(value.flowVectorFormat);
+    encoder->EncodeEnumValue(value.costFormat);
+    encoder->EncodeFlagsValue(value.outputGridSize);
+    encoder->EncodeFlagsValue(value.hintGridSize);
+    encoder->EncodeEnumValue(value.performanceLevel);
+    encoder->EncodeFlagsValue(value.flags);
+}
+
+void EncodeStruct(ParameterEncoder* encoder, const VkDataGraphOpticalFlowImageFormatPropertiesARM& value)
+{
+    encoder->EncodeEnumValue(value.sType);
+    EncodePNextStructIfValid(encoder, value.pNext);
+    encoder->EncodeEnumValue(value.format);
+}
+
+void EncodeStruct(ParameterEncoder* encoder, const VkDataGraphOpticalFlowImageFormatInfoARM& value)
+{
+    encoder->EncodeEnumValue(value.sType);
+    EncodePNextStruct(encoder, value.pNext);
+    encoder->EncodeFlagsValue(value.usage);
+}
+
+void EncodeStruct(ParameterEncoder* encoder, const VkDataGraphPipelineOpticalFlowDispatchInfoARM& value)
+{
+    encoder->EncodeEnumValue(value.sType);
+    EncodePNextStruct(encoder, value.pNext);
+    encoder->EncodeFlagsValue(value.flags);
+    encoder->EncodeUInt32Value(value.meanFlowL1NormHint);
+}
+
+void EncodeStruct(ParameterEncoder* encoder, const VkDataGraphPipelineResourceInfoImageLayoutARM& value)
+{
+    encoder->EncodeEnumValue(value.sType);
+    EncodePNextStruct(encoder, value.pNext);
+    encoder->EncodeEnumValue(value.layout);
+}
+
+void EncodeStruct(ParameterEncoder* encoder, const VkDataGraphPipelineSingleNodeConnectionARM& value)
+{
+    encoder->EncodeEnumValue(value.sType);
+    EncodePNextStructIfValid(encoder, value.pNext);
+    encoder->EncodeUInt32Value(value.set);
+    encoder->EncodeUInt32Value(value.binding);
+    encoder->EncodeEnumValue(value.connection);
+}
+
+void EncodeStruct(ParameterEncoder* encoder, const VkDataGraphPipelineSingleNodeCreateInfoARM& value)
+{
+    encoder->EncodeEnumValue(value.sType);
+    EncodePNextStruct(encoder, value.pNext);
+    encoder->EncodeEnumValue(value.nodeType);
+    encoder->EncodeUInt32Value(value.connectionCount);
+    EncodeStructArray(encoder, value.pConnections, value.connectionCount);
 }
 
 void EncodeStruct(ParameterEncoder* encoder, const VkPhysicalDeviceShaderLongVectorFeaturesEXT& value)

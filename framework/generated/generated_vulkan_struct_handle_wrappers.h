@@ -2167,6 +2167,24 @@ void UnwrapStructHandles(VkDataGraphPipelineBuiltinModelCreateInfoQCOM* value, H
 
 void UnwrapStructHandles(VkPhysicalDeviceDataGraphModelFeaturesQCOM* value, HandleUnwrapMemory* unwrap_memory);
 
+void UnwrapStructHandles(VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM* value, HandleUnwrapMemory* unwrap_memory);
+
+void UnwrapStructHandles(VkQueueFamilyDataGraphOpticalFlowPropertiesARM* value, HandleUnwrapMemory* unwrap_memory);
+
+void UnwrapStructHandles(VkDataGraphPipelineOpticalFlowCreateInfoARM* value, HandleUnwrapMemory* unwrap_memory);
+
+void UnwrapStructHandles(VkDataGraphOpticalFlowImageFormatPropertiesARM* value, HandleUnwrapMemory* unwrap_memory);
+
+void UnwrapStructHandles(VkDataGraphOpticalFlowImageFormatInfoARM* value, HandleUnwrapMemory* unwrap_memory);
+
+void UnwrapStructHandles(VkDataGraphPipelineOpticalFlowDispatchInfoARM* value, HandleUnwrapMemory* unwrap_memory);
+
+void UnwrapStructHandles(VkDataGraphPipelineResourceInfoImageLayoutARM* value, HandleUnwrapMemory* unwrap_memory);
+
+void UnwrapStructHandles(VkDataGraphPipelineSingleNodeConnectionARM* value, HandleUnwrapMemory* unwrap_memory);
+
+void UnwrapStructHandles(VkDataGraphPipelineSingleNodeCreateInfoARM* value, HandleUnwrapMemory* unwrap_memory);
+
 void UnwrapStructHandles(VkPhysicalDeviceShaderLongVectorFeaturesEXT* value, HandleUnwrapMemory* unwrap_memory);
 
 void UnwrapStructHandles(VkPhysicalDeviceShaderLongVectorPropertiesEXT* value, HandleUnwrapMemory* unwrap_memory);

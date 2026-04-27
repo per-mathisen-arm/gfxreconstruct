@@ -1650,6 +1650,106 @@ void to_json(nlohmann::ordered_json& jdata, const VkCullModeFlags_t& flags)
     });
 }
 
+void to_json(nlohmann::ordered_json& jdata, const VkDataGraphOpticalFlowCreateFlagsARM_t& flags)
+{
+    if (!JsonOptions::expand_flags)
+    {
+        jdata = to_hex_fixed_width(static_cast<VkDataGraphOpticalFlowCreateFlagsARM>(flags));
+        return;
+    }
+    jdata = ExpandFlags(static_cast<VkDataGraphOpticalFlowCreateFlagsARM>(flags), [](VkFlags flags)
+    {
+        switch (flags)
+        {
+            case VK_DATA_GRAPH_OPTICAL_FLOW_CREATE_ENABLE_HINT_BIT_ARM:
+                return std::string("VK_DATA_GRAPH_OPTICAL_FLOW_CREATE_ENABLE_HINT_BIT_ARM");
+            case VK_DATA_GRAPH_OPTICAL_FLOW_CREATE_ENABLE_COST_BIT_ARM:
+                return std::string("VK_DATA_GRAPH_OPTICAL_FLOW_CREATE_ENABLE_COST_BIT_ARM");
+            case VK_DATA_GRAPH_OPTICAL_FLOW_CREATE_RESERVED_30_BIT_ARM:
+                return std::string("VK_DATA_GRAPH_OPTICAL_FLOW_CREATE_RESERVED_30_BIT_ARM");
+        }
+        return to_hex_fixed_width(flags);
+    });
+}
+
+void to_json(nlohmann::ordered_json& jdata, const VkDataGraphOpticalFlowExecuteFlagsARM_t& flags)
+{
+    if (!JsonOptions::expand_flags)
+    {
+        jdata = to_hex_fixed_width(static_cast<VkDataGraphOpticalFlowExecuteFlagsARM>(flags));
+        return;
+    }
+    jdata = ExpandFlags(static_cast<VkDataGraphOpticalFlowExecuteFlagsARM>(flags), [](VkFlags flags)
+    {
+        switch (flags)
+        {
+            case VK_DATA_GRAPH_OPTICAL_FLOW_EXECUTE_DISABLE_TEMPORAL_HINTS_BIT_ARM:
+                return std::string("VK_DATA_GRAPH_OPTICAL_FLOW_EXECUTE_DISABLE_TEMPORAL_HINTS_BIT_ARM");
+            case VK_DATA_GRAPH_OPTICAL_FLOW_EXECUTE_INPUT_UNCHANGED_BIT_ARM:
+                return std::string("VK_DATA_GRAPH_OPTICAL_FLOW_EXECUTE_INPUT_UNCHANGED_BIT_ARM");
+            case VK_DATA_GRAPH_OPTICAL_FLOW_EXECUTE_REFERENCE_UNCHANGED_BIT_ARM:
+                return std::string("VK_DATA_GRAPH_OPTICAL_FLOW_EXECUTE_REFERENCE_UNCHANGED_BIT_ARM");
+            case VK_DATA_GRAPH_OPTICAL_FLOW_EXECUTE_INPUT_IS_PREVIOUS_REFERENCE_BIT_ARM:
+                return std::string("VK_DATA_GRAPH_OPTICAL_FLOW_EXECUTE_INPUT_IS_PREVIOUS_REFERENCE_BIT_ARM");
+            case VK_DATA_GRAPH_OPTICAL_FLOW_EXECUTE_REFERENCE_IS_PREVIOUS_INPUT_BIT_ARM:
+                return std::string("VK_DATA_GRAPH_OPTICAL_FLOW_EXECUTE_REFERENCE_IS_PREVIOUS_INPUT_BIT_ARM");
+        }
+        return to_hex_fixed_width(flags);
+    });
+}
+
+void to_json(nlohmann::ordered_json& jdata, const VkDataGraphOpticalFlowGridSizeFlagsARM_t& flags)
+{
+    if (!JsonOptions::expand_flags)
+    {
+        jdata = to_hex_fixed_width(static_cast<VkDataGraphOpticalFlowGridSizeFlagsARM>(flags));
+        return;
+    }
+    jdata = ExpandFlags(static_cast<VkDataGraphOpticalFlowGridSizeFlagsARM>(flags), [](VkFlags flags)
+    {
+        switch (flags)
+        {
+            case VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_UNKNOWN_ARM:
+                return std::string("VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_UNKNOWN_ARM");
+            case VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_1X1_BIT_ARM:
+                return std::string("VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_1X1_BIT_ARM");
+            case VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_2X2_BIT_ARM:
+                return std::string("VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_2X2_BIT_ARM");
+            case VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_4X4_BIT_ARM:
+                return std::string("VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_4X4_BIT_ARM");
+            case VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_8X8_BIT_ARM:
+                return std::string("VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_8X8_BIT_ARM");
+        }
+        return to_hex_fixed_width(flags);
+    });
+}
+
+void to_json(nlohmann::ordered_json& jdata, const VkDataGraphOpticalFlowImageUsageFlagsARM_t& flags)
+{
+    if (!JsonOptions::expand_flags)
+    {
+        jdata = to_hex_fixed_width(static_cast<VkDataGraphOpticalFlowImageUsageFlagsARM>(flags));
+        return;
+    }
+    jdata = ExpandFlags(static_cast<VkDataGraphOpticalFlowImageUsageFlagsARM>(flags), [](VkFlags flags)
+    {
+        switch (flags)
+        {
+            case VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_UNKNOWN_ARM:
+                return std::string("VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_UNKNOWN_ARM");
+            case VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_INPUT_BIT_ARM:
+                return std::string("VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_INPUT_BIT_ARM");
+            case VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_OUTPUT_BIT_ARM:
+                return std::string("VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_OUTPUT_BIT_ARM");
+            case VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_HINT_BIT_ARM:
+                return std::string("VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_HINT_BIT_ARM");
+            case VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_COST_BIT_ARM:
+                return std::string("VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_COST_BIT_ARM");
+        }
+        return to_hex_fixed_width(flags);
+    });
+}
+
 void to_json(nlohmann::ordered_json& jdata, const VkDataGraphPipelineDispatchFlagsARM_t& flags)
 {
     jdata = to_hex_fixed_width(static_cast<VkDataGraphPipelineDispatchFlagsARM>(flags));
@@ -8035,6 +8135,153 @@ void to_json(nlohmann::ordered_json& jdata, const VkDataGraphModelCacheTypeQCOM&
     switch (value) {
         case VK_DATA_GRAPH_MODEL_CACHE_TYPE_GENERIC_BINARY_QCOM:
             jdata = "VK_DATA_GRAPH_MODEL_CACHE_TYPE_GENERIC_BINARY_QCOM";
+            break;
+        default:
+            jdata = gfxrecon::decode::to_hex_fixed_width(value);
+            break;
+    }
+}
+
+void to_json(nlohmann::ordered_json& jdata, const VkDataGraphOpticalFlowCreateFlagBitsARM& value)
+{
+    switch (value) {
+        case VK_DATA_GRAPH_OPTICAL_FLOW_CREATE_ENABLE_HINT_BIT_ARM:
+            jdata = "VK_DATA_GRAPH_OPTICAL_FLOW_CREATE_ENABLE_HINT_BIT_ARM";
+            break;
+        case VK_DATA_GRAPH_OPTICAL_FLOW_CREATE_ENABLE_COST_BIT_ARM:
+            jdata = "VK_DATA_GRAPH_OPTICAL_FLOW_CREATE_ENABLE_COST_BIT_ARM";
+            break;
+        case VK_DATA_GRAPH_OPTICAL_FLOW_CREATE_RESERVED_30_BIT_ARM:
+            jdata = "VK_DATA_GRAPH_OPTICAL_FLOW_CREATE_RESERVED_30_BIT_ARM";
+            break;
+        default:
+            jdata = gfxrecon::decode::to_hex_fixed_width(value);
+            break;
+    }
+}
+
+void to_json(nlohmann::ordered_json& jdata, const VkDataGraphOpticalFlowExecuteFlagBitsARM& value)
+{
+    switch (value) {
+        case VK_DATA_GRAPH_OPTICAL_FLOW_EXECUTE_DISABLE_TEMPORAL_HINTS_BIT_ARM:
+            jdata = "VK_DATA_GRAPH_OPTICAL_FLOW_EXECUTE_DISABLE_TEMPORAL_HINTS_BIT_ARM";
+            break;
+        case VK_DATA_GRAPH_OPTICAL_FLOW_EXECUTE_INPUT_UNCHANGED_BIT_ARM:
+            jdata = "VK_DATA_GRAPH_OPTICAL_FLOW_EXECUTE_INPUT_UNCHANGED_BIT_ARM";
+            break;
+        case VK_DATA_GRAPH_OPTICAL_FLOW_EXECUTE_REFERENCE_UNCHANGED_BIT_ARM:
+            jdata = "VK_DATA_GRAPH_OPTICAL_FLOW_EXECUTE_REFERENCE_UNCHANGED_BIT_ARM";
+            break;
+        case VK_DATA_GRAPH_OPTICAL_FLOW_EXECUTE_INPUT_IS_PREVIOUS_REFERENCE_BIT_ARM:
+            jdata = "VK_DATA_GRAPH_OPTICAL_FLOW_EXECUTE_INPUT_IS_PREVIOUS_REFERENCE_BIT_ARM";
+            break;
+        case VK_DATA_GRAPH_OPTICAL_FLOW_EXECUTE_REFERENCE_IS_PREVIOUS_INPUT_BIT_ARM:
+            jdata = "VK_DATA_GRAPH_OPTICAL_FLOW_EXECUTE_REFERENCE_IS_PREVIOUS_INPUT_BIT_ARM";
+            break;
+        default:
+            jdata = gfxrecon::decode::to_hex_fixed_width(value);
+            break;
+    }
+}
+
+void to_json(nlohmann::ordered_json& jdata, const VkDataGraphOpticalFlowGridSizeFlagBitsARM& value)
+{
+    switch (value) {
+        case VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_UNKNOWN_ARM:
+            jdata = "VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_UNKNOWN_ARM";
+            break;
+        case VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_1X1_BIT_ARM:
+            jdata = "VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_1X1_BIT_ARM";
+            break;
+        case VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_2X2_BIT_ARM:
+            jdata = "VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_2X2_BIT_ARM";
+            break;
+        case VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_4X4_BIT_ARM:
+            jdata = "VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_4X4_BIT_ARM";
+            break;
+        case VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_8X8_BIT_ARM:
+            jdata = "VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_8X8_BIT_ARM";
+            break;
+        default:
+            jdata = gfxrecon::decode::to_hex_fixed_width(value);
+            break;
+    }
+}
+
+void to_json(nlohmann::ordered_json& jdata, const VkDataGraphOpticalFlowImageUsageFlagBitsARM& value)
+{
+    switch (value) {
+        case VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_UNKNOWN_ARM:
+            jdata = "VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_UNKNOWN_ARM";
+            break;
+        case VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_INPUT_BIT_ARM:
+            jdata = "VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_INPUT_BIT_ARM";
+            break;
+        case VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_OUTPUT_BIT_ARM:
+            jdata = "VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_OUTPUT_BIT_ARM";
+            break;
+        case VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_HINT_BIT_ARM:
+            jdata = "VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_HINT_BIT_ARM";
+            break;
+        case VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_COST_BIT_ARM:
+            jdata = "VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_COST_BIT_ARM";
+            break;
+        default:
+            jdata = gfxrecon::decode::to_hex_fixed_width(value);
+            break;
+    }
+}
+
+void to_json(nlohmann::ordered_json& jdata, const VkDataGraphOpticalFlowPerformanceLevelARM& value)
+{
+    switch (value) {
+        case VK_DATA_GRAPH_OPTICAL_FLOW_PERFORMANCE_LEVEL_UNKNOWN_ARM:
+            jdata = "VK_DATA_GRAPH_OPTICAL_FLOW_PERFORMANCE_LEVEL_UNKNOWN_ARM";
+            break;
+        case VK_DATA_GRAPH_OPTICAL_FLOW_PERFORMANCE_LEVEL_SLOW_ARM:
+            jdata = "VK_DATA_GRAPH_OPTICAL_FLOW_PERFORMANCE_LEVEL_SLOW_ARM";
+            break;
+        case VK_DATA_GRAPH_OPTICAL_FLOW_PERFORMANCE_LEVEL_MEDIUM_ARM:
+            jdata = "VK_DATA_GRAPH_OPTICAL_FLOW_PERFORMANCE_LEVEL_MEDIUM_ARM";
+            break;
+        case VK_DATA_GRAPH_OPTICAL_FLOW_PERFORMANCE_LEVEL_FAST_ARM:
+            jdata = "VK_DATA_GRAPH_OPTICAL_FLOW_PERFORMANCE_LEVEL_FAST_ARM";
+            break;
+        default:
+            jdata = gfxrecon::decode::to_hex_fixed_width(value);
+            break;
+    }
+}
+
+void to_json(nlohmann::ordered_json& jdata, const VkDataGraphPipelineNodeConnectionTypeARM& value)
+{
+    switch (value) {
+        case VK_DATA_GRAPH_PIPELINE_NODE_CONNECTION_TYPE_OPTICAL_FLOW_INPUT_ARM:
+            jdata = "VK_DATA_GRAPH_PIPELINE_NODE_CONNECTION_TYPE_OPTICAL_FLOW_INPUT_ARM";
+            break;
+        case VK_DATA_GRAPH_PIPELINE_NODE_CONNECTION_TYPE_OPTICAL_FLOW_REFERENCE_ARM:
+            jdata = "VK_DATA_GRAPH_PIPELINE_NODE_CONNECTION_TYPE_OPTICAL_FLOW_REFERENCE_ARM";
+            break;
+        case VK_DATA_GRAPH_PIPELINE_NODE_CONNECTION_TYPE_OPTICAL_FLOW_HINT_ARM:
+            jdata = "VK_DATA_GRAPH_PIPELINE_NODE_CONNECTION_TYPE_OPTICAL_FLOW_HINT_ARM";
+            break;
+        case VK_DATA_GRAPH_PIPELINE_NODE_CONNECTION_TYPE_OPTICAL_FLOW_FLOW_VECTOR_ARM:
+            jdata = "VK_DATA_GRAPH_PIPELINE_NODE_CONNECTION_TYPE_OPTICAL_FLOW_FLOW_VECTOR_ARM";
+            break;
+        case VK_DATA_GRAPH_PIPELINE_NODE_CONNECTION_TYPE_OPTICAL_FLOW_COST_ARM:
+            jdata = "VK_DATA_GRAPH_PIPELINE_NODE_CONNECTION_TYPE_OPTICAL_FLOW_COST_ARM";
+            break;
+        default:
+            jdata = gfxrecon::decode::to_hex_fixed_width(value);
+            break;
+    }
+}
+
+void to_json(nlohmann::ordered_json& jdata, const VkDataGraphPipelineNodeTypeARM& value)
+{
+    switch (value) {
+        case VK_DATA_GRAPH_PIPELINE_NODE_TYPE_OPTICAL_FLOW_ARM:
+            jdata = "VK_DATA_GRAPH_PIPELINE_NODE_TYPE_OPTICAL_FLOW_ARM";
             break;
         default:
             jdata = gfxrecon::decode::to_hex_fixed_width(value);

@@ -43,6 +43,11 @@ std::string GenerateStruct_VkWriteDescriptorSet(std::ostream&                 ou
                                                 Decoded_VkWriteDescriptorSet* metaInfo,
                                                 VulkanCppConsumerBase&        consumer);
 
+std::string GenerateStruct_VkBaseOutStructure(std::ostream&               out,
+                                              const VkBaseOutStructure*   structInfo,
+                                              Decoded_VkBaseOutStructure* metaInfo,
+                                              VulkanCppConsumerBase&      consumer);
+
 std::string GenerateStruct_VkSubmitInfo(std::ostream&                        out,
                                         const VkSubmitInfo*                  structInfo,
                                         Decoded_VkSubmitInfo*                metaInfo,

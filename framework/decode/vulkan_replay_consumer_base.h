@@ -1732,6 +1732,19 @@ class VulkanReplayConsumerBase : public VulkanConsumer
         const VulkanDeviceInfo*                                               device_info,
         StructPointerDecoder<Decoded_VkDeviceMemoryOpaqueCaptureAddressInfo>* pInfo);
 
+    void InitializeReplayDataGraphOpticalFlowInfo(VulkanPhysicalDeviceInfo* physical_device_info);
+
+    VkResult
+    OverrideCreateDataGraphPipelinesARM(PFN_vkCreateDataGraphPipelinesARM     func,
+                                        VkResult                              original_result,
+                                        const VulkanDeviceInfo*               device_info,
+                                        const VulkanDeferredOperationKHRInfo* deferred_operation_info,
+                                        const VulkanPipelineCacheInfo*        pipeline_cache_info,
+                                        uint32_t                              createInfoCount,
+                                        StructPointerDecoder<Decoded_VkDataGraphPipelineCreateInfoARM>* pCreateInfos,
+                                        StructPointerDecoder<Decoded_VkAllocationCallbacks>*            pAllocator,
+                                        HandlePointerDecoder<VkPipeline>*                               pPipelines);
+
     VkResult OverrideCreateDataGraphPipelineSessionARM(
         PFN_vkCreateDataGraphPipelineSessionARM                                func,
         VkResult                                                               returnValue,
@@ -1880,6 +1893,9 @@ class VulkanReplayConsumerBase : public VulkanConsumer
     //// End recapture members
 
   private:
+    static bool SupportsDataGraphOpticalFlowPipeline(const VulkanReplayDeviceInfo::DataGraphOpticalFlowInfo& info,
+                                                     const VkDataGraphPipelineOpticalFlowCreateInfoARM& create_info);
+
     void RaiseFatalError(const char* message) const;
 
     void InitializeLoader();

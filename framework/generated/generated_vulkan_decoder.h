@@ -1485,6 +1485,10 @@ class VulkanDecoder : public VulkanDecoderBase
 
     size_t Decode_vkCmdBeginCustomResolveEXT(const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size);
 
+    size_t Decode_vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM(const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size);
+
+    size_t Decode_vkGetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM(const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size);
+
     size_t Decode_vkCmdSetComputeOccupancyPriorityNV(const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size);
 
     size_t Decode_vkCmdSetPrimitiveRestartIndexEXT(const ApiCallInfo& call_info, const uint8_t* parameter_buffer, size_t buffer_size);

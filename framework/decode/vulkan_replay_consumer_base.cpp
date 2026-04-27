@@ -15222,6 +15222,272 @@ void VulkanReplayConsumerBase::OverrideGetDeviceMemoryOpaqueCaptureAddress(
 
     allocator->GetDeviceMemoryOpaqueCaptureAddress(info, allocator_data);
 }
+
+bool VulkanReplayConsumerBase::SupportsDataGraphOpticalFlowPipeline(
+    const VulkanReplayDeviceInfo::DataGraphOpticalFlowInfo& info,
+    const VkDataGraphPipelineOpticalFlowCreateInfoARM&      create_info)
+{
+    if (!graphics::ContainsFormat(info.input_formats, create_info.imageFormat))
+    {
+        return false;
+    }
+
+    if (!graphics::ContainsFormat(info.output_formats, create_info.flowVectorFormat))
+    {
+        return false;
+    }
+
+    if ((create_info.flags & VK_DATA_GRAPH_OPTICAL_FLOW_CREATE_ENABLE_HINT_BIT_ARM) &&
+        !graphics::ContainsFormat(info.hint_formats, create_info.flowVectorFormat))
+    {
+        return false;
+    }
+
+    if ((create_info.flags & VK_DATA_GRAPH_OPTICAL_FLOW_CREATE_ENABLE_COST_BIT_ARM) &&
+        !graphics::ContainsFormat(info.cost_formats, create_info.costFormat))
+    {
+        return false;
+    }
+
+    if (!info.optical_flow_properties.has_value())
+    {
+        return false;
+    }
+
+    const auto& properties = *info.optical_flow_properties;
+
+    if ((create_info.width < properties.minWidth) || (create_info.width > properties.maxWidth) ||
+        (create_info.height < properties.minHeight) || (create_info.height > properties.maxHeight))
+    {
+        return false;
+    }
+
+    if ((properties.supportedOutputGridSizes & create_info.outputGridSize) == 0)
+    {
+        return false;
+    }
+
+    if (create_info.flags & VK_DATA_GRAPH_OPTICAL_FLOW_CREATE_ENABLE_HINT_BIT_ARM)
+    {
+        if (!properties.hintSupported)
+        {
+            return false;
+        }
+
+        if ((create_info.hintGridSize != 0) && (create_info.hintGridSize != create_info.outputGridSize))
+        {
+            return false;
+        }
+
+        if ((create_info.hintGridSize != 0) && ((properties.supportedHintGridSizes & create_info.hintGridSize) == 0))
+        {
+            return false;
+        }
+    }
+
+    if ((create_info.flags & VK_DATA_GRAPH_OPTICAL_FLOW_CREATE_ENABLE_COST_BIT_ARM) && !properties.costSupported)
+    {
+        return false;
+    }
+
+    return true;
+}
+
+void VulkanReplayConsumerBase::InitializeReplayDataGraphOpticalFlowInfo(VulkanPhysicalDeviceInfo* physical_device_info)
+{
+    GFXRECON_ASSERT((physical_device_info != nullptr) && (physical_device_info->replay_device_info != nullptr));
+
+    auto* replay_device_info = physical_device_info->replay_device_info;
+    if (replay_device_info->data_graph_optical_flow_initialized)
+    {
+        return;
+    }
+
+    replay_device_info->data_graph_optical_flow_initialized = true;
+    replay_device_info->data_graph_optical_flow_infos.clear();
+
+    VkPhysicalDevice physical_device = physical_device_info->handle;
+    auto*            instance_table  = GetInstanceTable(physical_device);
+    GFXRECON_ASSERT(instance_table != nullptr);
+
+    uint32_t queue_family_count = 0;
+    instance_table->GetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_count, nullptr);
+
+    for (uint32_t queue_family_index = 0; queue_family_index < queue_family_count; ++queue_family_index)
+    {
+        uint32_t data_graph_property_count = 0;
+        VkResult result                    = instance_table->GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(
+            physical_device, queue_family_index, &data_graph_property_count, nullptr);
+
+        if ((result != VK_SUCCESS) || (data_graph_property_count == 0))
+        {
+            continue;
+        }
+
+        std::vector<VkQueueFamilyDataGraphPropertiesARM> queue_family_data_graph_properties(
+            data_graph_property_count,
+            VkQueueFamilyDataGraphPropertiesARM{ VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_PROPERTIES_ARM, nullptr });
+
+        result = instance_table->GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(
+            physical_device, queue_family_index, &data_graph_property_count, queue_family_data_graph_properties.data());
+        if (result != VK_SUCCESS)
+        {
+            GFXRECON_LOG_WARNING("Failed to query replay queue family data graph properties for queue family %u: %s",
+                                 queue_family_index,
+                                 util::ToString<VkResult>(result).c_str());
+            continue;
+        }
+
+        for (const auto& queue_family_data_graph_property : queue_family_data_graph_properties)
+        {
+            if (queue_family_data_graph_property.operation.operationType !=
+                VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_OPTICAL_FLOW_ARM)
+            {
+                continue;
+            }
+
+            VulkanReplayDeviceInfo::DataGraphOpticalFlowInfo optical_flow_info = {};
+            optical_flow_info.queue_family_index                               = queue_family_index;
+            optical_flow_info.queue_family_data_graph_properties               = queue_family_data_graph_property;
+            optical_flow_info.queue_family_data_graph_properties.pNext         = nullptr;
+
+            VkQueueFamilyDataGraphOpticalFlowPropertiesARM optical_flow_properties{
+                VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_OPTICAL_FLOW_PROPERTIES_ARM, nullptr
+            };
+
+            result = instance_table->GetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM(
+                physical_device,
+                queue_family_index,
+                &optical_flow_info.queue_family_data_graph_properties,
+                reinterpret_cast<VkBaseOutStructure*>(&optical_flow_properties));
+
+            if (result == VK_SUCCESS)
+            {
+                optical_flow_properties.pNext             = nullptr;
+                optical_flow_info.optical_flow_properties = optical_flow_properties;
+            }
+            else
+            {
+                GFXRECON_LOG_WARNING("Failed to query replay optical flow properties for queue family %u: %s",
+                                     queue_family_index,
+                                     util::ToString<VkResult>(result).c_str());
+            }
+
+            auto query_image_formats = [&](VkDataGraphOpticalFlowImageUsageFlagsARM usage,
+                                           std::vector<VkFormat>*                   formats) {
+                GFXRECON_ASSERT(formats != nullptr);
+
+                VkDataGraphOpticalFlowImageFormatInfoARM image_format_info{
+                    VK_STRUCTURE_TYPE_DATA_GRAPH_OPTICAL_FLOW_IMAGE_FORMAT_INFO_ARM, nullptr, usage
+                };
+                uint32_t format_count = 0;
+
+                VkResult image_format_result =
+                    instance_table->GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM(
+                        physical_device,
+                        queue_family_index,
+                        &optical_flow_info.queue_family_data_graph_properties,
+                        &image_format_info,
+                        &format_count,
+                        nullptr);
+
+                if ((image_format_result != VK_SUCCESS) || (format_count == 0))
+                {
+                    return;
+                }
+
+                std::vector<VkDataGraphOpticalFlowImageFormatPropertiesARM> image_format_properties(
+                    format_count,
+                    VkDataGraphOpticalFlowImageFormatPropertiesARM{
+                        VK_STRUCTURE_TYPE_DATA_GRAPH_OPTICAL_FLOW_IMAGE_FORMAT_PROPERTIES_ARM, nullptr });
+
+                image_format_result = instance_table->GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM(
+                    physical_device,
+                    queue_family_index,
+                    &optical_flow_info.queue_family_data_graph_properties,
+                    &image_format_info,
+                    &format_count,
+                    image_format_properties.data());
+
+                if (image_format_result == VK_SUCCESS)
+                {
+                    for (const auto& property : image_format_properties)
+                    {
+                        if (std::find(formats->begin(), formats->end(), property.format) == formats->end())
+                        {
+                            formats->push_back(property.format);
+                        }
+                    }
+                }
+            };
+
+            query_image_formats(VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_INPUT_BIT_ARM, &optical_flow_info.input_formats);
+            query_image_formats(VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_OUTPUT_BIT_ARM,
+                                &optical_flow_info.output_formats);
+            query_image_formats(VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_HINT_BIT_ARM, &optical_flow_info.hint_formats);
+            query_image_formats(VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_COST_BIT_ARM, &optical_flow_info.cost_formats);
+
+            replay_device_info->data_graph_optical_flow_infos.push_back(std::move(optical_flow_info));
+        }
+    }
+}
+
+VkResult VulkanReplayConsumerBase::OverrideCreateDataGraphPipelinesARM(
+    PFN_vkCreateDataGraphPipelinesARM                               func,
+    VkResult                                                        original_result,
+    const VulkanDeviceInfo*                                         device_info,
+    const VulkanDeferredOperationKHRInfo*                           deferred_operation_info,
+    const VulkanPipelineCacheInfo*                                  pipeline_cache_info,
+    uint32_t                                                        createInfoCount,
+    StructPointerDecoder<Decoded_VkDataGraphPipelineCreateInfoARM>* pCreateInfos,
+    StructPointerDecoder<Decoded_VkAllocationCallbacks>*            pAllocator,
+    HandlePointerDecoder<VkPipeline>*                               pPipelines)
+{
+    GFXRECON_UNREFERENCED_PARAMETER(original_result);
+
+    GFXRECON_ASSERT((device_info != nullptr) && (pCreateInfos != nullptr) && (pPipelines != nullptr));
+
+    auto* physical_device_info = object_info_table_->GetVkPhysicalDeviceInfo(device_info->parent_id);
+    GFXRECON_ASSERT((physical_device_info != nullptr) && (physical_device_info->replay_device_info != nullptr));
+
+    InitializeReplayDataGraphOpticalFlowInfo(physical_device_info);
+    const auto& replay_optical_flow_infos = physical_device_info->replay_device_info->data_graph_optical_flow_infos;
+
+    auto any_optical_flow_support = !replay_optical_flow_infos.empty();
+    auto create_infos             = pCreateInfos->GetPointer();
+
+    for (uint32_t i = 0; i < createInfoCount; ++i)
+    {
+        const auto& create_info = create_infos[i];
+        const auto* optical_flow_info =
+            graphics::vulkan_struct_get_pnext<VkDataGraphPipelineOpticalFlowCreateInfoARM>(&create_info);
+        if (optical_flow_info == nullptr)
+        {
+            continue;
+        }
+
+        if (!any_optical_flow_support ||
+            std::none_of(replay_optical_flow_infos.begin(),
+                         replay_optical_flow_infos.end(),
+                         [&](const VulkanReplayDeviceInfo::DataGraphOpticalFlowInfo& info) {
+                             return SupportsDataGraphOpticalFlowPipeline(info, *optical_flow_info);
+                         }))
+        {
+            static constexpr const char* kErrorMessage =
+                "vkCreateDataGraphPipelinesARM optical flow pipeline failed compatibility check. Replay may fail.";
+            GFXRECON_LOG_ERROR("%s", kErrorMessage);
+        }
+    }
+
+    return func(device_info->handle,
+                deferred_operation_info != nullptr ? deferred_operation_info->handle : VK_NULL_HANDLE,
+                pipeline_cache_info != nullptr ? pipeline_cache_info->handle : VK_NULL_HANDLE,
+                createInfoCount,
+                pCreateInfos->GetPointer(),
+                GetAllocationCallbacks(pAllocator),
+                pPipelines->GetHandlePointer());
+}
+
 VkResult
 VulkanReplayConsumerBase::OverrideCreateTensorARM(PFN_vkCreateTensorARM                                func,
                                                   VkResult                                             result,

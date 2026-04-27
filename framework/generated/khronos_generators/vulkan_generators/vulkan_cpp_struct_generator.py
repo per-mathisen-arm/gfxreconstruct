@@ -252,6 +252,12 @@ class VulkanCppStructGenerator(VulkanBaseGenerator):
         local_body.extend(body)
 
         if arg.is_pointer and arg.pointer_count > 1:
+            # ppEnabledLayerNames/enabledLayerCount in VkDeviceDescriptorInfo were deprecated
+            # in Vulkan-Headers 1.4.349, and the len attribute for ppEnabledLayerNames
+            # was removed at the same time. Keep generating code for the prior schema so
+            # existing captures and older apps remain compatible.
+            if arg.name == 'ppEnabledLayerNames' and arg.array_length is None:
+                arg.array_length = 'enabledLayerCount'
 
             handleObjectType = None
             if arg.base_type in self.handle_names:

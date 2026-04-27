@@ -2558,6 +2558,24 @@ void MapStructHandles(Decoded_VkDataGraphPipelineBuiltinModelCreateInfoQCOM* wra
 
 void MapStructHandles(Decoded_VkPhysicalDeviceDataGraphModelFeaturesQCOM* wrapper, const CommonObjectInfoTable& object_info_table);
 
+void MapStructHandles(Decoded_VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM* wrapper, const CommonObjectInfoTable& object_info_table);
+
+void MapStructHandles(Decoded_VkQueueFamilyDataGraphOpticalFlowPropertiesARM* wrapper, const CommonObjectInfoTable& object_info_table);
+
+void MapStructHandles(Decoded_VkDataGraphPipelineOpticalFlowCreateInfoARM* wrapper, const CommonObjectInfoTable& object_info_table);
+
+void MapStructHandles(Decoded_VkDataGraphOpticalFlowImageFormatPropertiesARM* wrapper, const CommonObjectInfoTable& object_info_table);
+
+void MapStructHandles(Decoded_VkDataGraphOpticalFlowImageFormatInfoARM* wrapper, const CommonObjectInfoTable& object_info_table);
+
+void MapStructHandles(Decoded_VkDataGraphPipelineOpticalFlowDispatchInfoARM* wrapper, const CommonObjectInfoTable& object_info_table);
+
+void MapStructHandles(Decoded_VkDataGraphPipelineResourceInfoImageLayoutARM* wrapper, const CommonObjectInfoTable& object_info_table);
+
+void MapStructHandles(Decoded_VkDataGraphPipelineSingleNodeConnectionARM* wrapper, const CommonObjectInfoTable& object_info_table);
+
+void MapStructHandles(Decoded_VkDataGraphPipelineSingleNodeCreateInfoARM* wrapper, const CommonObjectInfoTable& object_info_table);
+
 void MapStructHandles(Decoded_VkPhysicalDeviceShaderLongVectorFeaturesEXT* wrapper, const CommonObjectInfoTable& object_info_table);
 
 void MapStructHandles(Decoded_VkPhysicalDeviceShaderLongVectorPropertiesEXT* wrapper, const CommonObjectInfoTable& object_info_table);

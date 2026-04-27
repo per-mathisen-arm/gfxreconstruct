@@ -1299,6 +1299,15 @@ struct Decoded_VkCustomResolveCreateInfoEXT;
 struct Decoded_VkPipelineCacheHeaderVersionDataGraphQCOM;
 struct Decoded_VkDataGraphPipelineBuiltinModelCreateInfoQCOM;
 struct Decoded_VkPhysicalDeviceDataGraphModelFeaturesQCOM;
+struct Decoded_VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM;
+struct Decoded_VkQueueFamilyDataGraphOpticalFlowPropertiesARM;
+struct Decoded_VkDataGraphPipelineOpticalFlowCreateInfoARM;
+struct Decoded_VkDataGraphOpticalFlowImageFormatPropertiesARM;
+struct Decoded_VkDataGraphOpticalFlowImageFormatInfoARM;
+struct Decoded_VkDataGraphPipelineOpticalFlowDispatchInfoARM;
+struct Decoded_VkDataGraphPipelineResourceInfoImageLayoutARM;
+struct Decoded_VkDataGraphPipelineSingleNodeConnectionARM;
+struct Decoded_VkDataGraphPipelineSingleNodeCreateInfoARM;
 struct Decoded_VkPhysicalDeviceShaderLongVectorFeaturesEXT;
 struct Decoded_VkPhysicalDeviceShaderLongVectorPropertiesEXT;
 struct Decoded_VkPhysicalDevicePipelineCacheIncrementalModeFeaturesSEC;
@@ -1338,6 +1347,7 @@ struct Decoded_VkPhysicalDeviceRayQueryFeaturesKHR;
 struct Decoded_VkPhysicalDeviceMeshShaderFeaturesEXT;
 struct Decoded_VkPhysicalDeviceMeshShaderPropertiesEXT;
 struct Decoded_VkDrawMeshTasksIndirectCommandEXT;
+struct Decoded_VkBaseOutStructure;
 
 size_t DecodeStruct(const uint8_t* parameter_buffer, size_t buffer_size, Decoded_StdVideoH264SpsVuiFlags* wrapper);
 size_t DecodeStruct(const uint8_t* parameter_buffer, size_t buffer_size, Decoded_StdVideoH264HrdParameters* wrapper);
@@ -2593,6 +2603,15 @@ size_t DecodeStruct(const uint8_t* parameter_buffer, size_t buffer_size, Decoded
 size_t DecodeStruct(const uint8_t* parameter_buffer, size_t buffer_size, Decoded_VkPipelineCacheHeaderVersionDataGraphQCOM* wrapper);
 size_t DecodeStruct(const uint8_t* parameter_buffer, size_t buffer_size, Decoded_VkDataGraphPipelineBuiltinModelCreateInfoQCOM* wrapper);
 size_t DecodeStruct(const uint8_t* parameter_buffer, size_t buffer_size, Decoded_VkPhysicalDeviceDataGraphModelFeaturesQCOM* wrapper);
+size_t DecodeStruct(const uint8_t* parameter_buffer, size_t buffer_size, Decoded_VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM* wrapper);
+size_t DecodeStruct(const uint8_t* parameter_buffer, size_t buffer_size, Decoded_VkQueueFamilyDataGraphOpticalFlowPropertiesARM* wrapper);
+size_t DecodeStruct(const uint8_t* parameter_buffer, size_t buffer_size, Decoded_VkDataGraphPipelineOpticalFlowCreateInfoARM* wrapper);
+size_t DecodeStruct(const uint8_t* parameter_buffer, size_t buffer_size, Decoded_VkDataGraphOpticalFlowImageFormatPropertiesARM* wrapper);
+size_t DecodeStruct(const uint8_t* parameter_buffer, size_t buffer_size, Decoded_VkDataGraphOpticalFlowImageFormatInfoARM* wrapper);
+size_t DecodeStruct(const uint8_t* parameter_buffer, size_t buffer_size, Decoded_VkDataGraphPipelineOpticalFlowDispatchInfoARM* wrapper);
+size_t DecodeStruct(const uint8_t* parameter_buffer, size_t buffer_size, Decoded_VkDataGraphPipelineResourceInfoImageLayoutARM* wrapper);
+size_t DecodeStruct(const uint8_t* parameter_buffer, size_t buffer_size, Decoded_VkDataGraphPipelineSingleNodeConnectionARM* wrapper);
+size_t DecodeStruct(const uint8_t* parameter_buffer, size_t buffer_size, Decoded_VkDataGraphPipelineSingleNodeCreateInfoARM* wrapper);
 size_t DecodeStruct(const uint8_t* parameter_buffer, size_t buffer_size, Decoded_VkPhysicalDeviceShaderLongVectorFeaturesEXT* wrapper);
 size_t DecodeStruct(const uint8_t* parameter_buffer, size_t buffer_size, Decoded_VkPhysicalDeviceShaderLongVectorPropertiesEXT* wrapper);
 size_t DecodeStruct(const uint8_t* parameter_buffer, size_t buffer_size, Decoded_VkPhysicalDevicePipelineCacheIncrementalModeFeaturesSEC* wrapper);
@@ -2632,6 +2651,7 @@ size_t DecodeStruct(const uint8_t* parameter_buffer, size_t buffer_size, Decoded
 size_t DecodeStruct(const uint8_t* parameter_buffer, size_t buffer_size, Decoded_VkPhysicalDeviceMeshShaderFeaturesEXT* wrapper);
 size_t DecodeStruct(const uint8_t* parameter_buffer, size_t buffer_size, Decoded_VkPhysicalDeviceMeshShaderPropertiesEXT* wrapper);
 size_t DecodeStruct(const uint8_t* parameter_buffer, size_t buffer_size, Decoded_VkDrawMeshTasksIndirectCommandEXT* wrapper);
+size_t DecodeStruct(const uint8_t* parameter_buffer, size_t buffer_size, Decoded_VkBaseOutStructure* wrapper);
 
 GFXRECON_END_NAMESPACE(decode)
 GFXRECON_END_NAMESPACE(gfxrecon)

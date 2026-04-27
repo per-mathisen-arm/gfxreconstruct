@@ -304,6 +304,35 @@ void StripImportedSemaphoreInfos(std::ostream&                        out,
     }
 }
 
+std::string GenerateStruct_VkBaseOutStructure(std::ostream&               out,
+                                              const VkBaseOutStructure*   structInfo,
+                                              Decoded_VkBaseOutStructure* metaInfo,
+                                              VulkanCppConsumerBase&      consumer)
+{
+    if ((structInfo == nullptr) || (metaInfo == nullptr))
+    {
+        return "NULL";
+    }
+
+    switch (structInfo->sType)
+    {
+        case VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_OPTICAL_FLOW_PROPERTIES_ARM:
+            return GenerateStruct_VkQueueFamilyDataGraphOpticalFlowPropertiesARM(
+                out,
+                reinterpret_cast<const VkQueueFamilyDataGraphOpticalFlowPropertiesARM*>(structInfo),
+                reinterpret_cast<Decoded_VkQueueFamilyDataGraphOpticalFlowPropertiesARM*>(metaInfo),
+                consumer);
+        case VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_PROCESSING_ENGINE_PROPERTIES_ARM:
+            return GenerateStruct_VkQueueFamilyDataGraphProcessingEnginePropertiesARM(
+                out,
+                reinterpret_cast<const VkQueueFamilyDataGraphProcessingEnginePropertiesARM*>(structInfo),
+                reinterpret_cast<Decoded_VkQueueFamilyDataGraphProcessingEnginePropertiesARM*>(metaInfo),
+                consumer);
+        default:
+            return "NULL";
+    }
+}
+
 std::string GenerateStruct_VkSubmitInfo(std::ostream&                        out,
                                         const VkSubmitInfo*                  structInfo,
                                         Decoded_VkSubmitInfo*                metaInfo,

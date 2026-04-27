@@ -68,6 +68,7 @@
 #include <algorithm>
 #include <cassert>
 #include <stdexcept>
+#include <unordered_map>
 #include <unordered_set>
 
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
@@ -2976,6 +2977,17 @@ VulkanRebindAllocator::BindDataGraphPipelineSessionMemory(uint32_t bind_info_cou
                                                           const MemoryData*      allocator_memory_datas,
                                                           VkMemoryPropertyFlags* bind_memory_properties)
 {
+    struct DataGraphBindPointRequirementInfo
+    {
+        VkDataGraphPipelineSessionBindPointTypeARM bind_point_type = {};
+        uint32_t                                   num_objects     = 0;
+    };
+
+    struct DataGraphSessionBindRequirements
+    {
+        uint32_t                                                        bind_point_requirement_count = 0;
+        std::unordered_map<uint32_t, DataGraphBindPointRequirementInfo> requirements;
+    };
 
     if (!bind_infos || !allocator_session_datas || !allocator_memory_datas || !bind_memory_properties)
         return VK_ERROR_INITIALIZATION_FAILED;
@@ -2986,27 +2998,7 @@ VulkanRebindAllocator::BindDataGraphPipelineSessionMemory(uint32_t bind_info_cou
         return VK_SUCCESS;
     }
 
-    uint32_t                                               bindPointRequirementCount = 0;
-    VkDataGraphPipelineSessionBindPointRequirementsInfoARM bind_info_req{};
-    bind_info_req.sType   = VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_REQUIREMENTS_INFO_ARM;
-    bind_info_req.session = bind_infos[0].session;
-    functions_.get_data_graph_pipeline_session_bind_point_requirements(
-        device_, &bind_info_req, &bindPointRequirementCount, nullptr);
-
-    GFXRECON_ASSERT(bindPointRequirementCount == bind_info_count);
-
-    std::vector<VkDataGraphPipelineSessionBindPointRequirementARM> bindPointRequirements(
-        bindPointRequirementCount,
-        VkDataGraphPipelineSessionBindPointRequirementARM{
-            VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_REQUIREMENT_ARM });
-    for (auto& req : bindPointRequirements)
-    {
-        req.sType = VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_REQUIREMENT_ARM;
-        req.pNext = nullptr;
-    }
-    functions_.get_data_graph_pipeline_session_bind_point_requirements(
-        device_, &bind_info_req, &bindPointRequirementCount, bindPointRequirements.data());
-
+    std::unordered_map<uint64_t, DataGraphSessionBindRequirements> session_bind_requirements_cache;
     for (uint32_t i = 0; i < bind_info_count; ++i)
     {
         const auto&                         in            = bind_infos[i];
@@ -3014,21 +3006,94 @@ VulkanRebindAllocator::BindDataGraphPipelineSessionMemory(uint32_t bind_info_cou
         const auto                          bind_point    = in.bindPoint;
         const uint32_t                      object_idx    = in.objectIndex;
         const VkDeviceSize                  memory_offset = in.memoryOffset;
-        GFXRECON_LOG_INFO(
-            "BindDataGraphPipelineSessionMemory[%u]: session=0x%llx bindPoint=%u obj=%u memOffset=%" PRIu64
-            " numObjects=%u",
-            i,
-            static_cast<unsigned long long>(VK_HANDLE_TO_UINT64(session)),
-            static_cast<unsigned>(bind_point),
-            object_idx,
-            static_cast<unsigned long long>(memory_offset),
-            bindPointRequirements[i].numObjects);
-
         if (session == VK_NULL_HANDLE)
         {
             GFXRECON_LOG_ERROR("BindDataGraphPipelineSessionMemory[%u]: session handle is VK_NULL_HANDLE.", i);
             return VK_ERROR_INITIALIZATION_FAILED;
         }
+
+        const uint64_t session_id = VK_HANDLE_TO_UINT64(session);
+        auto           session_it = session_bind_requirements_cache.find(session_id);
+        if (session_it == session_bind_requirements_cache.end())
+        {
+            DataGraphSessionBindRequirements                       session_requirements = {};
+            VkDataGraphPipelineSessionBindPointRequirementsInfoARM bind_info_req{};
+            bind_info_req.sType   = VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_REQUIREMENTS_INFO_ARM;
+            bind_info_req.session = session;
+
+            functions_.get_data_graph_pipeline_session_bind_point_requirements(
+                device_, &bind_info_req, &session_requirements.bind_point_requirement_count, nullptr);
+
+            if (session_requirements.bind_point_requirement_count > 0)
+            {
+                std::vector<VkDataGraphPipelineSessionBindPointRequirementARM> bind_point_requirements(
+                    session_requirements.bind_point_requirement_count,
+                    VkDataGraphPipelineSessionBindPointRequirementARM{
+                        VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_REQUIREMENT_ARM, nullptr });
+
+                functions_.get_data_graph_pipeline_session_bind_point_requirements(
+                    device_,
+                    &bind_info_req,
+                    &session_requirements.bind_point_requirement_count,
+                    bind_point_requirements.data());
+
+                for (const auto& requirement : bind_point_requirements)
+                {
+                    session_requirements.requirements[static_cast<uint32_t>(requirement.bindPoint)] = {
+                        requirement.bindPointType, requirement.numObjects
+                    };
+                }
+            }
+
+            session_it = session_bind_requirements_cache.emplace(session_id, std::move(session_requirements)).first;
+        }
+
+        const auto requirement_it = session_it->second.requirements.find(static_cast<uint32_t>(bind_point));
+        if (requirement_it == session_it->second.requirements.end())
+        {
+            GFXRECON_LOG_ERROR("BindDataGraphPipelineSessionMemory[%u]: session=0x%llx bindPoint=%u was captured "
+                               "with memory binding, but replay reports no matching bind point requirement "
+                               "(requirementCount=%u).",
+                               i,
+                               static_cast<unsigned long long>(session_id),
+                               static_cast<unsigned>(bind_point),
+                               session_it->second.bind_point_requirement_count);
+            return VK_ERROR_INITIALIZATION_FAILED;
+        }
+
+        const auto& bind_point_requirement = requirement_it->second;
+        if (bind_point_requirement.bind_point_type != VK_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_TYPE_MEMORY_ARM)
+        {
+            GFXRECON_LOG_ERROR("BindDataGraphPipelineSessionMemory[%u]: session=0x%llx bindPoint=%u has replay "
+                               "bind point type %u instead of MEMORY_ARM.",
+                               i,
+                               static_cast<unsigned long long>(session_id),
+                               static_cast<unsigned>(bind_point),
+                               static_cast<unsigned>(bind_point_requirement.bind_point_type));
+            return VK_ERROR_INITIALIZATION_FAILED;
+        }
+
+        if (object_idx >= bind_point_requirement.num_objects)
+        {
+            GFXRECON_LOG_ERROR("BindDataGraphPipelineSessionMemory[%u]: session=0x%llx bindPoint=%u objectIndex=%u "
+                               "is outside replay range [0, %u).",
+                               i,
+                               static_cast<unsigned long long>(session_id),
+                               static_cast<unsigned>(bind_point),
+                               object_idx,
+                               bind_point_requirement.num_objects);
+            return VK_ERROR_INITIALIZATION_FAILED;
+        }
+
+        GFXRECON_LOG_INFO(
+            "BindDataGraphPipelineSessionMemory[%u]: session=0x%llx bindPoint=%u obj=%u memOffset=%" PRIu64
+            " numObjects=%u",
+            i,
+            static_cast<unsigned long long>(session_id),
+            static_cast<unsigned>(bind_point),
+            object_idx,
+            static_cast<unsigned long long>(memory_offset),
+            bind_point_requirement.num_objects);
 
         const uintptr_t session_ud = allocator_session_datas[i];
         const uintptr_t memory_ud  = allocator_memory_datas[i];

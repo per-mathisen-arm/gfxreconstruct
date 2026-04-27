@@ -1029,6 +1029,8 @@ class KhronosReplayConsumerBodyGenerator():
                                     expr += '{paramname}->IsNull() ? nullptr : {paramname}->AllocateOutputData(1);'.format(
                                         paramname=value.name
                                     )
+                                    if value.base_type == 'VkBaseOutStructure':
+                                        need_initialize_output_pnext_struct = value.name
 
                                 # If this is a struct with handles, we need to add replay mappings for the embedded handles.
                                 if value.base_type in self.structs_with_handles:

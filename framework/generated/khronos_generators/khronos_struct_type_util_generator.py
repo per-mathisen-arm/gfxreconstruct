@@ -63,6 +63,31 @@ class KhronosStructTypeUtilGenerator():
         )
         self.newline()
 
+    def write_struct_type_list(self):
+        current_api_data = self.get_api_data()
+        macro_name = 'GFXRECON_{}_STRUCT_TYPE_INFO_LIST'.format(current_api_data.snake_guard.upper())
+
+        entries = []
+        for struct in self.all_struct_members.keys():
+            if self.skip_struct_type(struct):
+                continue
+
+            if struct in self.struct_type_names:
+                entries.append((struct, self.struct_type_names[struct]))
+
+        if not entries:
+            write('#define {}(X)'.format(macro_name), file=self.outFile)
+            self.newline()
+            return
+
+        write('#define {}(X) \\\n'.format(macro_name), end='', file=self.outFile)
+
+        for index, (struct, struct_type_name) in enumerate(entries):
+            line_end = ' \\\n' if index != (len(entries) - 1) else '\n'
+            write('    X({}, {})'.format(struct, struct_type_name), end=line_end, file=self.outFile)
+
+        self.newline()
+
     def skip_struct_type(self, struct):
         """ Maybe be overridden """
         return struct in self.children_structs

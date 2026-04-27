@@ -12483,23 +12483,23 @@ void VulkanReplayConsumer::Process_vkCreateDataGraphPipelinesARM(
     StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
     HandlePointerDecoder<VkPipeline>*           pPipelines)
 {
-    VkDevice in_device = MapHandle<VulkanDeviceInfo>(device, &CommonObjectInfoTable::GetVkDeviceInfo);
-    VkDeferredOperationKHR in_deferredOperation = MapHandle<VulkanDeferredOperationKHRInfo>(deferredOperation, &CommonObjectInfoTable::GetVkDeferredOperationKHRInfo);
-    VkPipelineCache in_pipelineCache = MapHandle<VulkanPipelineCacheInfo>(pipelineCache, &CommonObjectInfoTable::GetVkPipelineCacheInfo);
-    const VkDataGraphPipelineCreateInfoARM* in_pCreateInfos = pCreateInfos->GetPointer();
+    auto in_device = GetObjectInfoTable().GetVkDeviceInfo(device);
+    auto in_deferredOperation = GetObjectInfoTable().GetVkDeferredOperationKHRInfo(deferredOperation);
+    auto in_pipelineCache = GetObjectInfoTable().GetVkPipelineCacheInfo(pipelineCache);
+
     MapStructArrayHandles(pCreateInfos->GetMetaStructPointer(), pCreateInfos->GetLength(), GetObjectInfoTable());
-    const VkAllocationCallbacks* in_pAllocator = GetAllocationCallbacks(pAllocator);
     if (!pPipelines->IsNull()) { pPipelines->SetHandleLength(createInfoCount); }
-    VkPipeline* out_pPipelines = pPipelines->GetHandlePointer();
+    std::vector<VulkanPipelineInfo> handle_info(createInfoCount);
+    for (size_t i = 0; i < createInfoCount; ++i) { pPipelines->SetConsumerData(i, &handle_info[i]); }
 
     PushRecaptureHandleIds(pPipelines->GetPointer(), pPipelines->GetLength());
-    VkResult replay_result = GetDeviceTable(in_device)->CreateDataGraphPipelinesARM(in_device, in_deferredOperation, in_pipelineCache, createInfoCount, in_pCreateInfos, in_pAllocator, out_pPipelines);
+    VkResult replay_result = OverrideCreateDataGraphPipelinesARM(GetDeviceTable(in_device->handle)->CreateDataGraphPipelinesARM, returnValue, in_device, in_deferredOperation, in_pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
     CheckResult("vkCreateDataGraphPipelinesARM", returnValue, replay_result, call_info);
     ClearRecaptureHandleIds();
 
-    AddHandles<VulkanPipelineInfo>(device, pPipelines->GetPointer(), pPipelines->GetLength(), out_pPipelines, createInfoCount, &CommonObjectInfoTable::AddVkPipelineInfo);
+    AddHandles<VulkanPipelineInfo>(device, pPipelines->GetPointer(), pPipelines->GetLength(), pPipelines->GetHandlePointer(), createInfoCount, std::move(handle_info), &CommonObjectInfoTable::AddVkPipelineInfo);
 
-    arm_features_->ProcessDeviceFaultData(replay_result, in_device, GetDeviceTable(in_device)->GetDeviceFaultInfoEXT);
+    arm_features_->ProcessDeviceFaultData(replay_result, in_device->handle, GetDeviceTable(in_device->handle)->GetDeviceFaultInfoEXT);
 }
 
 void VulkanReplayConsumer::Process_vkCreateDataGraphPipelineSessionARM(
@@ -13057,6 +13057,50 @@ void VulkanReplayConsumer::Process_vkCmdBeginCustomResolveEXT(
     {
         resource_dumper_->Process_vkCmdBeginCustomResolveEXT(call_info, GetDeviceTable(in_commandBuffer)->CmdBeginCustomResolveEXT, in_commandBuffer, in_pBeginCustomResolveInfo);
     }
+}
+
+void VulkanReplayConsumer::Process_vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM(
+    const ApiCallInfo&                          call_info,
+    VkResult                                    returnValue,
+    format::HandleId                            physicalDevice,
+    uint32_t                                    queueFamilyIndex,
+    StructPointerDecoder<Decoded_VkQueueFamilyDataGraphPropertiesARM>* pQueueFamilyDataGraphProperties,
+    StructPointerDecoder<Decoded_VkDataGraphOpticalFlowImageFormatInfoARM>* pOpticalFlowImageFormatInfo,
+    PointerDecoder<uint32_t>*                   pFormatCount,
+    StructPointerDecoder<Decoded_VkDataGraphOpticalFlowImageFormatPropertiesARM>* pImageFormatProperties)
+{
+    VkPhysicalDevice in_physicalDevice = MapHandle<VulkanPhysicalDeviceInfo>(physicalDevice, &CommonObjectInfoTable::GetVkPhysicalDeviceInfo);
+    const VkQueueFamilyDataGraphPropertiesARM* in_pQueueFamilyDataGraphProperties = pQueueFamilyDataGraphProperties->GetPointer();
+    MapStructHandles(pQueueFamilyDataGraphProperties->GetMetaStructPointer(), GetObjectInfoTable());
+    const VkDataGraphOpticalFlowImageFormatInfoARM* in_pOpticalFlowImageFormatInfo = pOpticalFlowImageFormatInfo->GetPointer();
+    MapStructHandles(pOpticalFlowImageFormatInfo->GetMetaStructPointer(), GetObjectInfoTable());
+    uint32_t* out_pFormatCount = pFormatCount->IsNull() ? nullptr : pFormatCount->AllocateOutputData(1, GetOutputArrayCount<uint32_t, VulkanPhysicalDeviceInfo>("vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM", returnValue, physicalDevice, kPhysicalDeviceArrayGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM, pFormatCount, pImageFormatProperties, &CommonObjectInfoTable::GetVkPhysicalDeviceInfo));
+    VkDataGraphOpticalFlowImageFormatPropertiesARM* out_pImageFormatProperties = pImageFormatProperties->IsNull() ? nullptr : pImageFormatProperties->AllocateOutputData(*out_pFormatCount, VkDataGraphOpticalFlowImageFormatPropertiesARM{ VK_STRUCTURE_TYPE_DATA_GRAPH_OPTICAL_FLOW_IMAGE_FORMAT_PROPERTIES_ARM, nullptr });
+
+    VkResult replay_result = GetInstanceTable(in_physicalDevice)->GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM(in_physicalDevice, queueFamilyIndex, in_pQueueFamilyDataGraphProperties, in_pOpticalFlowImageFormatInfo, out_pFormatCount, out_pImageFormatProperties);
+    CheckResult("vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM", returnValue, replay_result, call_info);
+
+    if (pImageFormatProperties->IsNull()) { SetOutputArrayCount<VulkanPhysicalDeviceInfo>(physicalDevice, kPhysicalDeviceArrayGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM, *out_pFormatCount, &CommonObjectInfoTable::GetVkPhysicalDeviceInfo); }
+
+}
+
+void VulkanReplayConsumer::Process_vkGetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM(
+    const ApiCallInfo&                          call_info,
+    VkResult                                    returnValue,
+    format::HandleId                            physicalDevice,
+    uint32_t                                    queueFamilyIndex,
+    StructPointerDecoder<Decoded_VkQueueFamilyDataGraphPropertiesARM>* pQueueFamilyDataGraphProperties,
+    StructPointerDecoder<Decoded_VkBaseOutStructure>* pProperties)
+{
+    VkPhysicalDevice in_physicalDevice = MapHandle<VulkanPhysicalDeviceInfo>(physicalDevice, &CommonObjectInfoTable::GetVkPhysicalDeviceInfo);
+    const VkQueueFamilyDataGraphPropertiesARM* in_pQueueFamilyDataGraphProperties = pQueueFamilyDataGraphProperties->GetPointer();
+    MapStructHandles(pQueueFamilyDataGraphProperties->GetMetaStructPointer(), GetObjectInfoTable());
+    VkBaseOutStructure* out_pProperties = pProperties->IsNull() ? nullptr : pProperties->AllocateOutputData(1);
+    InitializeOutputStructPNext(pProperties);
+
+    VkResult replay_result = GetInstanceTable(in_physicalDevice)->GetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM(in_physicalDevice, queueFamilyIndex, in_pQueueFamilyDataGraphProperties, out_pProperties);
+    CheckResult("vkGetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM", returnValue, replay_result, call_info);
+
 }
 
 void VulkanReplayConsumer::Process_vkCmdSetComputeOccupancyPriorityNV(
@@ -18791,6 +18835,51 @@ void InitializeOutputStructPNextImpl(const VkBaseInStructure* in_pnext, VkBaseOu
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_MODEL_FEATURES_QCOM:
             {
                 output_struct->pNext = reinterpret_cast<VkBaseOutStructure*>(DecodeAllocator::Allocate<VkPhysicalDeviceDataGraphModelFeaturesQCOM>());
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_OPTICAL_FLOW_FEATURES_ARM:
+            {
+                output_struct->pNext = reinterpret_cast<VkBaseOutStructure*>(DecodeAllocator::Allocate<VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM>());
+                break;
+            }
+            case VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_OPTICAL_FLOW_PROPERTIES_ARM:
+            {
+                output_struct->pNext = reinterpret_cast<VkBaseOutStructure*>(DecodeAllocator::Allocate<VkQueueFamilyDataGraphOpticalFlowPropertiesARM>());
+                break;
+            }
+            case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_OPTICAL_FLOW_CREATE_INFO_ARM:
+            {
+                output_struct->pNext = reinterpret_cast<VkBaseOutStructure*>(DecodeAllocator::Allocate<VkDataGraphPipelineOpticalFlowCreateInfoARM>());
+                break;
+            }
+            case VK_STRUCTURE_TYPE_DATA_GRAPH_OPTICAL_FLOW_IMAGE_FORMAT_PROPERTIES_ARM:
+            {
+                output_struct->pNext = reinterpret_cast<VkBaseOutStructure*>(DecodeAllocator::Allocate<VkDataGraphOpticalFlowImageFormatPropertiesARM>());
+                break;
+            }
+            case VK_STRUCTURE_TYPE_DATA_GRAPH_OPTICAL_FLOW_IMAGE_FORMAT_INFO_ARM:
+            {
+                output_struct->pNext = reinterpret_cast<VkBaseOutStructure*>(DecodeAllocator::Allocate<VkDataGraphOpticalFlowImageFormatInfoARM>());
+                break;
+            }
+            case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_OPTICAL_FLOW_DISPATCH_INFO_ARM:
+            {
+                output_struct->pNext = reinterpret_cast<VkBaseOutStructure*>(DecodeAllocator::Allocate<VkDataGraphPipelineOpticalFlowDispatchInfoARM>());
+                break;
+            }
+            case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_RESOURCE_INFO_IMAGE_LAYOUT_ARM:
+            {
+                output_struct->pNext = reinterpret_cast<VkBaseOutStructure*>(DecodeAllocator::Allocate<VkDataGraphPipelineResourceInfoImageLayoutARM>());
+                break;
+            }
+            case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SINGLE_NODE_CONNECTION_ARM:
+            {
+                output_struct->pNext = reinterpret_cast<VkBaseOutStructure*>(DecodeAllocator::Allocate<VkDataGraphPipelineSingleNodeConnectionARM>());
+                break;
+            }
+            case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SINGLE_NODE_CREATE_INFO_ARM:
+            {
+                output_struct->pNext = reinterpret_cast<VkBaseOutStructure*>(DecodeAllocator::Allocate<VkDataGraphPipelineSingleNodeCreateInfoARM>());
                 break;
             }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_LONG_VECTOR_FEATURES_EXT:

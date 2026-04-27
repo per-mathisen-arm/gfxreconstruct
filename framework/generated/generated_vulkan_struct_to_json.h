@@ -1285,6 +1285,15 @@ void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_VkCustomResolveCre
 void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_VkPipelineCacheHeaderVersionDataGraphQCOM* data);
 void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_VkDataGraphPipelineBuiltinModelCreateInfoQCOM* data);
 void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_VkPhysicalDeviceDataGraphModelFeaturesQCOM* data);
+void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM* data);
+void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_VkQueueFamilyDataGraphOpticalFlowPropertiesARM* data);
+void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_VkDataGraphPipelineOpticalFlowCreateInfoARM* data);
+void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_VkDataGraphOpticalFlowImageFormatPropertiesARM* data);
+void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_VkDataGraphOpticalFlowImageFormatInfoARM* data);
+void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_VkDataGraphPipelineOpticalFlowDispatchInfoARM* data);
+void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_VkDataGraphPipelineResourceInfoImageLayoutARM* data);
+void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_VkDataGraphPipelineSingleNodeConnectionARM* data);
+void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_VkDataGraphPipelineSingleNodeCreateInfoARM* data);
 void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_VkPhysicalDeviceShaderLongVectorFeaturesEXT* data);
 void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_VkPhysicalDeviceShaderLongVectorPropertiesEXT* data);
 void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_VkPhysicalDevicePipelineCacheIncrementalModeFeaturesSEC* data);
@@ -1328,6 +1337,7 @@ void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_VkDrawMeshTasksInd
 /// Works out the type of the struct at the end of a pNext pointer and dispatches
 /// recursively to the FieldToJson for that.
 void FieldToJson(nlohmann::ordered_json& jdata, const PNextNode* data);
+void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_VkBaseOutStructure* data);
 GFXRECON_END_NAMESPACE(decode)
 GFXRECON_END_NAMESPACE(gfxrecon)
 

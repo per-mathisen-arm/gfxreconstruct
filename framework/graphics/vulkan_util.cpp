@@ -25,6 +25,7 @@
 
 #include "Vulkan-Utility-Libraries/vk_format_utils.h"
 
+#include <algorithm>
 #include <vector>
 
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
@@ -53,6 +54,11 @@ void ReleaseLoader(util::platform::LibraryHandle loader_handle)
 bool ImageHasUsage(VkImageUsageFlags usage_flags, VkImageUsageFlagBits bit)
 {
     return (usage_flags & bit) == bit;
+}
+
+bool ContainsFormat(const std::vector<VkFormat>& formats, VkFormat format)
+{
+    return std::find(formats.begin(), formats.end(), format) != formats.end();
 }
 
 VkDeviceSize AlignBufferOffset(VkDeviceSize offset, VkDeviceSize alignment)
