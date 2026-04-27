@@ -87,6 +87,7 @@ const char kPauseFrameArgument[]                 = "--pause-frame";
 const char kLoopFrameArgument[]                  = "--loop-frame";
 const char kLoopCountArgument[]                  = "--loop-count";
 const char kCaptureOption[]                      = "--capture";
+const char kBlackholeOption[]                    = "--blackhole";
 const char kSkipFailedAllocationShortOption[]    = "--sfa";
 const char kSkipFailedAllocationLongOption[]     = "--skip-failed-allocations";
 const char kDiscardCachedPsosShortOption[]       = "--dcp";
@@ -1223,6 +1224,11 @@ GetVulkanReplayOptions(const gfxrecon::util::ArgumentParser&           arg_parse
         replay_options.capture = true;
     }
 
+    if (arg_parser.IsOptionSet(kBlackholeOption))
+    {
+        replay_options.blackhole = true;
+    }
+
     const auto& override_gpu_group = arg_parser.GetArgumentValue(kOverrideGpuGroupArgument);
     if (!override_gpu_group.empty())
     {
@@ -1507,6 +1513,30 @@ GetVulkanReplayOptions(const gfxrecon::util::ArgumentParser&           arg_parse
 
     replay_options.replay_event_plugin_path   = arg_parser.GetArgumentValue(kReplayEventPluginPath);
     replay_options.replay_event_plugin_params = arg_parser.GetArgumentValue(kReplayEventPluginParams);
+
+    if (replay_options.blackhole)
+    {
+        if (!replay_options.screenshot_ranges.empty())
+        {
+            GFXRECON_LOG_FATAL(
+                "The %s option cannot be used together with %s.", kScreenshotRangeArgument, kBlackholeOption);
+            exit(EXIT_FAILURE);
+        }
+
+        if (!replay_options.present_override_image_name.empty())
+        {
+            GFXRECON_LOG_FATAL(
+                "The %s option cannot be used together with %s.", kPresentOverrideImageArgument, kBlackholeOption);
+            exit(EXIT_FAILURE);
+        }
+
+        if (replay_options.enable_dump_resources)
+        {
+            GFXRECON_LOG_FATAL(
+                "The %s option cannot be used together with %s.", kDumpResourcesArgument, kBlackholeOption);
+            exit(EXIT_FAILURE);
+        }
+    }
 
     return replay_options;
 }

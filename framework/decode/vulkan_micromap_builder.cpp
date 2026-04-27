@@ -23,6 +23,7 @@
 
 #include "graphics/vulkan_resources_util.h"
 #include "decode/vulkan_micromap_builder.h"
+#include "decode/vulkan_query_util.h"
 #include "util/callbacks.h"
 #include <algorithm>
 
@@ -435,6 +436,52 @@ void VulkanMicromapBuilder::OnGetQueryPoolResults(const VulkanDeviceInfo*    dev
         }
     }
     compacted_sizes_unprocessed_.erase(query_pool_info->handle);
+}
+
+void VulkanMicromapBuilder::ProcessCapturedQueryPoolResults(const VulkanQueryPoolInfo* query_pool_info,
+                                                            uint32_t                   first_query,
+                                                            uint32_t                   query_count,
+                                                            const uint8_t*             data,
+                                                            size_t                     data_size,
+                                                            VkDeviceSize               stride,
+                                                            VkQueryResultFlags         flags)
+{
+    if ((query_pool_info == nullptr) || (data == nullptr) ||
+        !compacted_sizes_unprocessed_.count(query_pool_info->handle))
+    {
+        return;
+    }
+
+    const size_t value_size  = ((flags & VK_QUERY_RESULT_64_BIT) != 0) ? sizeof(uint64_t) : sizeof(uint32_t);
+    auto&        unprocessed = compacted_sizes_unprocessed_[query_pool_info->handle];
+
+    auto it = unprocessed.begin();
+    while (it != unprocessed.end())
+    {
+        const uint32_t range_begin = it->first_query;
+        const uint32_t range_end   = it->first_query + static_cast<uint32_t>(it->parents.size());
+        const uint32_t query_end   = first_query + query_count;
+
+        if ((range_begin < first_query) || (range_end > query_end))
+        {
+            ++it;
+            continue;
+        }
+
+        const uint32_t source_offset = range_begin - first_query;
+        for (size_t i = 0; i < it->parents.size(); ++i)
+        {
+            compacted_sizes_processed_[it->parents[i]] =
+                ReadCapturedQueryResult(data, data_size, stride, source_offset + static_cast<uint32_t>(i), value_size);
+        }
+
+        it = unprocessed.erase(it);
+    }
+
+    if (unprocessed.empty())
+    {
+        compacted_sizes_unprocessed_.erase(query_pool_info->handle);
+    }
 }
 
 void VulkanMicromapBuilder::InitializeFunctionPointers(const graphics::VulkanDeviceTable* device_table)

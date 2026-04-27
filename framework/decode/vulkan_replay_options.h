@@ -156,6 +156,7 @@ struct VulkanReplayOptions : public ReplayOptions
 {
     bool                    enable_vulkan{ true };
     bool                    capture{ false };
+    bool                    blackhole{ false };
     bool                    omit_pipeline_cache_data{ false };
     bool                    use_colorspace_fallback{ false };
     bool                    disable_subpass_fusion{ false };

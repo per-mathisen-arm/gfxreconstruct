@@ -89,6 +89,14 @@ class VulkanMicromapBuilder
     // inject duplicate of this command to retrieve compact sizes
     void OnGetQueryPoolResults(const VulkanDeviceInfo* device_info, const VulkanQueryPoolInfo* query_pool_info);
 
+    void ProcessCapturedQueryPoolResults(const VulkanQueryPoolInfo* query_pool_info,
+                                         uint32_t                   first_query,
+                                         uint32_t                   query_count,
+                                         const uint8_t*             data,
+                                         size_t                     data_size,
+                                         VkDeviceSize               stride,
+                                         VkQueryResultFlags         flags);
+
     static void OnCmdBuildAccStrHandling(VulkanDeviceAddressTracker&                  device_address_tracker,
                                          uint32_t                                     info_count,
                                          VkAccelerationStructureBuildGeometryInfoKHR* infos);

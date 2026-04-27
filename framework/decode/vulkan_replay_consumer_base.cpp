@@ -115,6 +115,24 @@ const std::unordered_map<VkResult, VkResult> kResultValuesAllowedDifferentCodeTh
     { VK_ERROR_OUT_OF_POOL_MEMORY, VK_SUCCESS }
 };
 
+static void StripSubmitCommandBuffers(VkSubmitInfo* submit_infos, uint32_t submit_count)
+{
+    for (uint32_t i = 0; i < submit_count; ++i)
+    {
+        submit_infos[i].commandBufferCount = 0;
+        submit_infos[i].pCommandBuffers    = nullptr;
+    }
+}
+
+static void StripSubmitCommandBuffers(VkSubmitInfo2* submit_infos, uint32_t submit_count)
+{
+    for (uint32_t i = 0; i < submit_count; ++i)
+    {
+        submit_infos[i].commandBufferInfoCount = 0;
+        submit_infos[i].pCommandBufferInfos    = nullptr;
+    }
+}
+
 static VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(VkDebugReportFlagsEXT      flags,
                                                           VkDebugReportObjectTypeEXT objectType,
                                                           uint64_t                   object,
@@ -4978,6 +4996,26 @@ VkResult VulkanReplayConsumerBase::OverrideGetQueryPoolResults(PFN_vkGetQueryPoo
     {
         flags |= VK_QUERY_RESULT_WAIT_BIT;
     }
+    if (options_.blackhole)
+    {
+        if ((original_result == VK_SUCCESS) && (pData->GetPointer() != nullptr))
+        {
+            util::platform::MemoryCopy(
+                pData->GetOutputPointer(), dataSize, pData->GetPointer(), std::min(dataSize, pData->GetLength()));
+        }
+
+        if ((original_result == VK_SUCCESS) && use_acceleration_structure_builder_)
+        {
+            GetAccelerationStructureBuilder(device_info)
+                .ProcessCapturedQueryPoolResults(
+                    query_pool_info, firstQuery, queryCount, pData->GetPointer(), pData->GetLength(), stride, flags);
+            GetMicromapBuilder(device_info)
+                .ProcessCapturedQueryPoolResults(
+                    query_pool_info, firstQuery, queryCount, pData->GetPointer(), pData->GetLength(), stride, flags);
+        }
+
+        return original_result;
+    }
 
     const VkResult result =
         func(device, query_pool, firstQuery, queryCount, dataSize, pData->GetOutputPointer(), stride, flags);
@@ -5171,6 +5209,14 @@ VkResult VulkanReplayConsumerBase::OverrideQueueSubmit(PFN_vkQueueSubmit        
 
         // Update current submits span to reference modified submit info vector.
         current_submits_span = std::span(modified_submit_infos.data(), modified_submit_infos.size());
+    }
+
+    std::vector<VkSubmitInfo> blackhole_submit_infos;
+    if (options_.blackhole)
+    {
+        blackhole_submit_infos = std::vector<VkSubmitInfo>(current_submits_span.begin(), current_submits_span.end());
+        StripSubmitCommandBuffers(blackhole_submit_infos.data(), static_cast<uint32_t>(blackhole_submit_infos.size()));
+        current_submits_span = std::span(blackhole_submit_infos.data(), blackhole_submit_infos.size());
     }
 
     if (options_.dumping_resources && resource_dumper_->MustDumpQueueSubmitIndex(index))
@@ -5440,6 +5486,14 @@ VkResult VulkanReplayConsumerBase::OverrideQueueSubmit2(PFN_vkQueueSubmit2      
         }
 
         current_submits_span = std::span(modified_submit_infos.data(), modified_submit_infos.size());
+    }
+
+    std::vector<VkSubmitInfo2> blackhole_submit_infos;
+    if (options_.blackhole)
+    {
+        blackhole_submit_infos = std::vector<VkSubmitInfo2>(current_submits_span.begin(), current_submits_span.end());
+        StripSubmitCommandBuffers(blackhole_submit_infos.data(), static_cast<uint32_t>(blackhole_submit_infos.size()));
+        current_submits_span = std::span(blackhole_submit_infos.data(), blackhole_submit_infos.size());
     }
 
     result = func(
