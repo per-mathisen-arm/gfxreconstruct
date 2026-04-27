@@ -1031,6 +1031,59 @@ uint64_t VulkanResourcesUtil::GetImageResourceSizesOptimal(VkFormat             
     return resource_size;
 }
 
+uint64_t VulkanResourcesUtil::GetImageResourceSizesLinear(VkFormat               format,
+                                                          const VkExtent3D&      extent,
+                                                          uint32_t               mip_levels,
+                                                          uint32_t               array_layers,
+                                                          VkImageAspectFlagBits  aspect,
+                                                          std::vector<uint64_t>& subresource_offsets,
+                                                          std::vector<uint64_t>& subresource_sizes)
+{
+    // Calculate linear size for CmdCopyImageToBuffer output (bufferRowLength=0).
+    // GetImageMemoryRequirements returns optimal size which can differ on mobile GPUs.
+    const VkFormat aspect_format = GetImageAspectFormat(format, aspect);
+    VkDeviceSize   texel_size    = 0;
+    bool           is_texel_block_size;
+    uint16_t       block_width, block_height;
+
+    if (!GetImageTexelSize(aspect_format, &texel_size, &is_texel_block_size, &block_width, &block_height))
+    {
+        GFXRECON_LOG_ERROR("Format %s is not supported", util::ToString<VkFormat>(aspect_format).c_str());
+        return 0;
+    }
+
+    const uint32_t total_subresources = mip_levels * array_layers;
+    subresource_sizes.resize(total_subresources);
+    subresource_offsets.resize(total_subresources);
+
+    uint64_t resource_size = 0;
+    uint32_t sub           = 0;
+    for (uint32_t m = 0; m < mip_levels; ++m)
+    {
+        VkExtent3D mip_extent = graphics::ScaleToMipLevel(extent, m);
+
+        if (is_texel_block_size)
+        {
+            mip_extent.width  = (mip_extent.width + block_width - 1) / block_width;
+            mip_extent.height = (mip_extent.height + block_height - 1) / block_height;
+        }
+
+        const VkDeviceSize mip_size = texel_size * mip_extent.width * mip_extent.height * mip_extent.depth;
+
+        for (uint32_t l = 0; l < array_layers; ++l)
+        {
+            subresource_sizes[sub]   = mip_size;
+            subresource_offsets[sub] = resource_size;
+
+            ++sub;
+            resource_size += mip_size;
+        }
+    }
+    GFXRECON_ASSERT(total_subresources == sub);
+
+    return resource_size;
+}
+
 VkResult VulkanResourcesUtil::CreateStagingBuffer(VkDeviceSize size)
 {
     GFXRECON_ASSERT(memory_properties_);
@@ -3124,12 +3177,12 @@ void VulkanResourcesUtil::BlitHelper(VkCommandBuffer command_buffer, const blit_
         blit_region.srcOffsets[1].x = std::max(static_cast<int32_t>(blit_image_params.src_extent.width) >> i, 1);
         blit_region.srcOffsets[1].y = std::max(static_cast<int32_t>(blit_image_params.src_extent.height) >> i, 1);
         blit_region.srcOffsets[1].z = std::max(static_cast<int32_t>(blit_image_params.src_extent.depth) >> i, 1);
-        blit_region.srcSubresource  = { aspectMask, i, 0, blit_image_params.layer_count };
+        blit_region.srcSubresource  = { aspectMask, i, blit_image_params.src_layer, blit_image_params.layer_count };
 
         blit_region.dstOffsets[1].x = std::max(static_cast<int32_t>(blit_image_params.dst_extent.width) >> i, 1);
         blit_region.dstOffsets[1].y = std::max(static_cast<int32_t>(blit_image_params.dst_extent.height) >> i, 1);
         blit_region.dstOffsets[1].z = std::max(static_cast<int32_t>(blit_image_params.dst_extent.depth) >> i, 1);
-        blit_region.dstSubresource  = { aspectMask, i, 0, blit_image_params.layer_count };
+        blit_region.dstSubresource  = { aspectMask, i, blit_image_params.dst_layer, blit_image_params.layer_count };
 
         blit_regions[i] = blit_region;
 

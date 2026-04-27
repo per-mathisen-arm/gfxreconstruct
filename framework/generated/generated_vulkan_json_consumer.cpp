@@ -6192,7 +6192,7 @@ void VulkanExportJsonConsumer::Process_vkDebugReportMessageEXT(
         HandleToJson(args["instance"], instance);
         args["flags"] = VkDebugReportFlagsEXT_t{flags};
         args["objectType"] = objectType;
-        args["object"] = object;
+        HandleToJson(args["object"], object);
         args["location"] = location;
         args["messageCode"] = messageCode;
         FieldToJson(args["pLayerPrefix"], pLayerPrefix);

@@ -89,6 +89,16 @@ class VulkanResourcesUtil
                                           std::vector<uint64_t>* subresource_sizes    = nullptr,
                                           bool                   all_layers_per_level = false);
 
+    // Behaves exactly like GetImageResourceSizesOptimal but returns the image subresources sizes for a tightly packed
+    // image with linear tiling (no hardware imposed alignments)
+    uint64_t GetImageResourceSizesLinear(VkFormat               format,
+                                         const VkExtent3D&      extent,
+                                         uint32_t               mip_levels,
+                                         uint32_t               array_layers,
+                                         VkImageAspectFlagBits  aspect,
+                                         std::vector<uint64_t>& subresource_offsets,
+                                         std::vector<uint64_t>& subresource_sizes);
+
     //! aggregate type to group information about an image-resource
     struct ImageResource
     {
@@ -200,7 +210,8 @@ class VulkanResourcesUtil
         VkImageAspectFlags  aspect      = VK_IMAGE_ASPECT_COLOR_BIT;
         VkOffset3D          src_offset  = { 0, 0, 0 };
         VkOffset3D          dst_offset  = { 0, 0, 0 };
-        uint32_t            base_layer  = 0;
+        uint32_t            src_layer   = 0;
+        uint32_t            dst_layer   = 0;
         uint32_t            layer_count = 1;
         uint32_t            mip_levels  = 1;
         std::array<bool, 3> flip_axis   = { false, false, false };
