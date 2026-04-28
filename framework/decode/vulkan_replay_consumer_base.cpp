@@ -13711,7 +13711,7 @@ VkResult VulkanReplayConsumerBase::OverrideCreateGraphicsPipelines(
 
         if (UseAddressReplacement(device_info))
         {
-            // Populate pipeline buffer-reference metadata only when replay will use it for address replacement.
+            // populate all VulkanPipelineInfo structs with information related to shader-modules
             graphics::populate_shader_stages(pCreateInfos, pPipelines, GetObjectInfoTable());
         }
     }
@@ -14189,7 +14189,7 @@ std::function<decode::handle_create_result_t<VkPipeline>()> VulkanReplayConsumer
 
     if (UseAddressReplacement(device_info))
     {
-        // Populate pipeline buffer-reference metadata only when replay will use it for address replacement.
+        // populate VulkanPipelineInfo structs with information related to shader-modules
         graphics::populate_shader_stages(pCreateInfos, pPipelines, GetObjectInfoTable());
     }
 
@@ -14318,7 +14318,7 @@ std::function<handle_create_result_t<VkPipeline>()> VulkanReplayConsumerBase::As
 
     if (UseAddressReplacement(device_info))
     {
-        // Populate pipeline buffer-reference metadata only when replay will use it for address replacement.
+        // populate VulkanPipelineInfo structs with information related to shader-modules
         graphics::populate_shader_stages(pCreateInfos, pPipelines, GetObjectInfoTable());
     }
 
