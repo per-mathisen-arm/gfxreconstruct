@@ -30,6 +30,7 @@
 #include "vulkan_raytracing_modifier.h"
 #include "vulkan_descriptor_buffer_modifier.h"
 #include "resource_memory_requirements_modifier.h"
+#include "vulkan_shader_replacement_modifier.h"
 
 #include "../tool_settings.h"
 
@@ -72,7 +73,7 @@ constexpr char kOptions[] =
     "-h|--help,--version,--no-debug-popup,--d3d12-pso-removal,--d3d12-resource-removal,--dxr,--dxr-experimental,"
     "--dxr-offline,--d3d12-no-default,--vk-remove-rt";
 constexpr char kArguments[] = "--gpu,--set-replay-options,--set-replay-options,--remove-device-instance,"
-                              "--keep-device-instance,--remove-thread,--remove-device-ids";
+                              "--keep-device-instance,--remove-thread,--remove-device-ids,--replace-shaders";
 
 constexpr char kD3d12PsoRemoval[]             = "--d3d12-pso-removal";
 constexpr char kD3d12ResourceRemoval[]        = "--d3d12-resource-removal";
@@ -86,6 +87,7 @@ constexpr char kThreadRemoval[]               = "--remove-thread";
 constexpr char kRemoveDeviceIds[]             = "--remove-device-ids";
 constexpr char kDx12OptimizeNoDefault[]       = "--d3d12-no-default";
 constexpr char kVulkanRTRemoval[]             = "--vk-remove-rt";
+constexpr char kReplaceShaders[]              = "--replace-shaders";
 
 static void PrintUsage(const char* exe_name)
 {
@@ -149,6 +151,10 @@ static void PrintUsage(const char* exe_name)
     GFXRECON_WRITE_CONSOLE("Note: running without optional arguments will instruct the optimizer to detect API and run "
                            "all available optimizations.");
 #endif
+    GFXRECON_WRITE_CONSOLE("  --replace-shaders <dir>");
+    GFXRECON_WRITE_CONSOLE("       \t\t\tReplace the shader code in each `VkShaderModuleCreateInfo`");
+    GFXRECON_WRITE_CONSOLE("       \t\t\twith the content of the matching file in <dir> if found.");
+    GFXRECON_WRITE_CONSOLE("       \t\t\tSee gfxrecon-extract.");
 }
 
 void GetUnreferencedResources(const std::string&                              input_filename,
@@ -303,6 +309,9 @@ GetVulkanOptimizationData(const std::string& input_filename, const gfxrecon::dec
         auto descriptor_buffer_modifier_consumer =
             std::make_unique<gfxrecon::decode::VulkanDescriptorBufferModifier>(options);
 
+        auto shader_replacement_modifier_consumer =
+            std::make_unique<gfxrecon::decode::VulkanShaderReplacementModifier>(options.replace_shader_dir);
+
         decoder.AddConsumer(&resref_consumer);
         decoder.AddConsumer(feature_tracker_consumer.get());
         decoder.AddConsumer(micromap_modifier_consumer.get());
@@ -310,6 +319,10 @@ GetVulkanOptimizationData(const std::string& input_filename, const gfxrecon::dec
         decoder.AddConsumer(descriptor_buffer_modifier_consumer.get());
         decoder.AddConsumer(raytracing_modifier_consumer.get());
         decoder.AddConsumer(resource_memory_requirements_modifier.get());
+        if (!options.replace_shader_dir.empty())
+        {
+            decoder.AddConsumer(shader_replacement_modifier_consumer.get());
+        }
 
         vulkan_skia_modifier_consumer.get()->SetAppName(options.remove_app_name);
         vulkan_skia_modifier_consumer.get()->SetKeepDeviceInstanceMode(options.keep_device_instance);
@@ -346,6 +359,10 @@ GetVulkanOptimizationData(const std::string& input_filename, const gfxrecon::dec
         if (resource_memory_requirements_modifier->CanOptimize())
         {
             result->modifiers.push_back(std::move(resource_memory_requirements_modifier));
+        }
+        if (shader_replacement_modifier_consumer->CanOptimize())
+        {
+            result->modifiers.push_back(std::move(shader_replacement_modifier_consumer));
         }
     }
 
@@ -474,7 +491,8 @@ int main(int argc, const char** argv)
         const auto& override_gpu                           = arg_parser.GetArgumentValue(kOverrideGpuArgument);
 
         gfxrecon::decode::VulkanOptimizationOptions vulkan_options;
-        vulkan_options.remove_rt = arg_parser.IsOptionSet(kVulkanRTRemoval);
+        vulkan_options.remove_rt          = arg_parser.IsOptionSet(kVulkanRTRemoval);
+        vulkan_options.replace_shader_dir = arg_parser.GetArgumentValue(kReplaceShaders);
 
         if (!override_gpu.empty())
         {

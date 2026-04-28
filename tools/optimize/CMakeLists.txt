@@ -47,6 +47,8 @@ target_sources(gfxrecon-optimize
                    ${CMAKE_CURRENT_LIST_DIR}/vulkan_descriptor_buffer_modifier.cpp
                    ${CMAKE_CURRENT_LIST_DIR}/resource_memory_requirements_modifier.h
                    ${CMAKE_CURRENT_LIST_DIR}/resource_memory_requirements_modifier.cpp
+                   ${CMAKE_CURRENT_LIST_DIR}/vulkan_shader_replacement_modifier.h
+                   ${CMAKE_CURRENT_LIST_DIR}/vulkan_shader_replacement_modifier.cpp
                    ${PROJECT_SOURCE_DIR}/framework/generated/generated_vulkan_skiavk_modifier.h
                    ${CMAKE_CURRENT_LIST_DIR}/vulkan_skia_modifier.cpp
                    $<$<BOOL:${D3D12_SUPPORT}>:${CMAKE_CURRENT_LIST_DIR}/dx12_file_optimizer.h>

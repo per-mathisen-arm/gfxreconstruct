@@ -31,8 +31,9 @@ GFXRECON_BEGIN_NAMESPACE(decode)
 
 struct VulkanOptimizationOptions : public OptimizationOptions
 {
-    bool remove_rt{ false };
-    bool filter_device_instance{ false };
+    bool        remove_rt{ false };
+    bool        filter_device_instance{ false };
+    std::string replace_shader_dir{};
 };
 
 GFXRECON_END_NAMESPACE(decode)
