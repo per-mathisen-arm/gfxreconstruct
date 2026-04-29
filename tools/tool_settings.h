@@ -1455,10 +1455,6 @@ GetVulkanReplayOptions(const gfxrecon::util::ArgumentParser&           arg_parse
         replay_options.skip_get_fence_ranges.push_back(range);
     }
 
-    replay_options.save_pipeline_cache_filename = arg_parser.GetArgumentValue(kSavePipelineCacheArgument);
-    replay_options.load_pipeline_cache_filename = arg_parser.GetArgumentValue(kLoadPipelineCacheArgument);
-    replay_options.add_new_pipeline_caches      = arg_parser.IsOptionSet(kCreateNewPipelineCacheOption);
-
     replay_options.marking_layers_names = GetMarkingLayersNames(arg_parser);
 
     if (arg_parser.IsOptionSet(kWaitBeforePresent))
