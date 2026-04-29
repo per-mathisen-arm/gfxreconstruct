@@ -899,7 +899,6 @@ VulkanResourcesUtil::~VulkanResourcesUtil()
 }
 
 uint64_t VulkanResourcesUtil::GetImageResourceSizesOptimal(VkFormat               format,
-                                                           VkImageType            type,
                                                            const VkExtent3D&      extent,
                                                            uint32_t               mip_levels,
                                                            uint32_t               array_layers,
@@ -938,52 +937,17 @@ uint64_t VulkanResourcesUtil::GetImageResourceSizesOptimal(VkFormat             
     uint32_t       subresource_idx   = 0;
     const uint32_t subresource_count = all_layers_per_level ? mip_levels : (mip_levels * array_layers);
 
-    VkImageCreateInfo create_info     = { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
-    create_info.pNext                 = nullptr;
-    create_info.flags                 = 0;
-    create_info.imageType             = type;
-    create_info.format                = GetImageAspectFormat(format, aspect);
-    create_info.extent                = extent;
-    create_info.mipLevels             = 1;
-    create_info.arrayLayers           = all_layers_per_level ? array_layers : 1;
-    create_info.samples               = VK_SAMPLE_COUNT_1_BIT;
-    create_info.tiling                = tiling;
-    create_info.usage                 = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    create_info.sharingMode           = VK_SHARING_MODE_EXCLUSIVE;
-    create_info.queueFamilyIndexCount = 0;
-    create_info.pQueueFamilyIndices   = nullptr;
-    create_info.initialLayout         = VK_IMAGE_LAYOUT_UNDEFINED;
-
     for (uint32_t m = 0; m < mip_levels; ++m)
     {
-        create_info.extent.width  = std::max(1u, (extent.width >> m));
-        create_info.extent.height = std::max(1u, (extent.height >> m));
-        create_info.extent.depth  = std::max(1u, (extent.depth >> m));
-
-        VkImage  temp_image;
-        VkResult result = device_table_.CreateImage(device_, &create_info, nullptr, &temp_image);
-        if (result != VK_SUCCESS)
-        {
-            GFXRECON_LOG_ERROR("VulkanResourcesUtil::%s() Failed creating VkImage", __func__)
-
-            if (subresource_offsets != nullptr)
-            {
-                subresource_offsets->clear();
-            }
-
-            if (subresource_sizes != nullptr)
-            {
-                subresource_sizes->clear();
-            }
-
-            return 0;
-        }
+        const VkExtent3D mip_extent = { std::max(1u, (extent.width >> m)),
+                                        std::max(1u, (extent.height >> m)),
+                                        std::max(1u, (extent.depth >> m)) };
 
         // Compute exact bytes copied for one tightly-packed region.
         VkImageToMemoryCopy copy_region{};
         copy_region.memoryRowLength                 = 0;
         copy_region.memoryImageHeight               = 0;
-        copy_region.imageExtent                     = create_info.extent;
+        copy_region.imageExtent                     = mip_extent;
         copy_region.imageSubresource.aspectMask     = aspect;
         copy_region.imageSubresource.baseArrayLayer = 0;
         copy_region.imageSubresource.layerCount     = all_layers_per_level ? array_layers : 1;
@@ -1024,8 +988,6 @@ uint64_t VulkanResourcesUtil::GetImageResourceSizesOptimal(VkFormat             
                 break;
             }
         }
-
-        device_table_.DestroyImage(device_, temp_image, nullptr);
     }
 
     return resource_size;
@@ -2119,7 +2081,6 @@ VkResult VulkanResourcesUtil::ReadImageResources(const std::vector<ImageResource
         else if (resource_size == 0 || img.level_sizes == nullptr)
         {
             resource_size = GetImageResourceSizesOptimal(tmp_data[i].use_blit ? dst_format : img.format,
-                                                         img.type,
                                                          tmp_data[i].use_blit ? tmp_data[i].scaled_extent : img.extent,
                                                          img.level_count,
                                                          img.layer_count,

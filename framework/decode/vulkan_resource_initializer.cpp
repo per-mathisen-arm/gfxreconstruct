@@ -28,6 +28,7 @@
 #include "graphics/vulkan_util.h"
 #include "util/logging.h"
 #include "util/platform.h"
+#include "util/alignment_utils.h"
 
 #include <algorithm>
 #include <cassert>
