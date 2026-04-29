@@ -1232,23 +1232,23 @@ VkResult VulkanResourcesUtil::CreateStagingTensor(const VkTensorDescriptionARM* 
     info.sharingMode           = VK_SHARING_MODE_EXCLUSIVE;
     info.queueFamilyIndexCount = 0;
     info.pQueueFamilyIndices   = nullptr;
-    VkTensorARM tensor;
-    VkResult    result = device_table_.CreateTensorARM(device_, &info, nullptr, &tensor);
+
+    VkResult result = device_table_.CreateTensorARM(device_, &info, nullptr, &staging_tensor_.tensor);
 
     VkTensorMemoryRequirementsInfoARM mem_req;
     mem_req.sType  = VK_STRUCTURE_TYPE_TENSOR_MEMORY_REQUIREMENTS_INFO_ARM;
     mem_req.pNext  = nullptr;
-    mem_req.tensor = tensor;
+    mem_req.tensor = staging_tensor_.tensor;
     VkMemoryRequirements2 mem_req2;
     mem_req2.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
     mem_req2.pNext = nullptr;
     device_table_.GetTensorMemoryRequirementsARM(device_, &mem_req, &mem_req2);
     VkMemoryRequirements* memory_requirements = &mem_req2.memoryRequirements;
 
+    // If the new size is bigger than the previous staging tensor size, a reallocation is needed
     if (memory_requirements->size > staging_tensor_.size)
     {
         DestroyStagingTensorMemory();
-        staging_tensor_.tensor     = tensor;
         uint32_t memory_type_index = std::numeric_limits<uint32_t>::max();
         bool     found             = FindMemoryTypeIndex(*memory_properties_,
                                          memory_requirements->memoryTypeBits,
@@ -1272,6 +1272,7 @@ VkResult VulkanResourcesUtil::CreateStagingTensor(const VkTensorDescriptionARM* 
         result               = device_table_.AllocateMemory(device_, &alloc_info, nullptr, &staging_tensor_.memory);
         staging_tensor_.size = memory_requirements->size;
     }
+
     if (result == VK_SUCCESS)
     {
         VkBindTensorMemoryInfoARM bind_info;
@@ -1289,7 +1290,8 @@ VkResult VulkanResourcesUtil::CreateStagingTensor(const VkTensorDescriptionARM* 
         DestroyStagingTensor();
         DestroyStagingTensorMemory();
     }
-    return VK_SUCCESS;
+
+    return result;
 }
 
 VkResult VulkanResourcesUtil::MapStagingTensor()
@@ -1426,7 +1428,7 @@ VkResult VulkanResourcesUtil::ReadFromTensorResource(VkTensorARM                
     data.resize(static_cast<size_t>(staging_tensor_.size));
 
     InvalidateStagingTensor();
-    util::platform::MemoryCopy(data.data(), staging_tensor_.size, staging_buffer_.mapped_ptr, staging_tensor_.size);
+    util::platform::MemoryCopy(data.data(), staging_tensor_.size, staging_tensor_.mapped_ptr, staging_tensor_.size);
     return VK_SUCCESS;
 }
 
