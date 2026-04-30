@@ -3023,7 +3023,6 @@ inline void to_json(nlohmann::ordered_json& jdata, const DXGI_DEBUG_RLO_FLAGS_t 
 
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(util)
-
 // IID struct-as-enum special case:
 inline void FieldToJson(nlohmann::ordered_json& jdata, const IID& value)
 {

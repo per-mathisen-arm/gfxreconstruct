@@ -9817,7 +9817,7 @@ void Dx12JsonConsumer::Process_DXGIGetDebugInterface(
     nlohmann::ordered_json& args = function[format::kNameArgs];
     {
         FieldToJson(args["riid"], riid);
-        FieldToJson(args["ppDebug"], ppDebug);
+        HandleToJson(args["ppDebug"], ppDebug);
     }
     writer_->WriteBlockEnd();
 
@@ -10508,7 +10508,7 @@ void Dx12JsonConsumer::Process_IDXGIDebug_ReportLiveObjects(
     nlohmann::ordered_json& args = method[format::kNameArgs];
     {
         FieldToJson(args["apiid"], apiid);
-        args["flags"] = flags;
+        args["flags"] = DXGI_DEBUG_RLO_FLAGS_t{ flags };
     }
     writer_->WriteBlockEnd();
 }
