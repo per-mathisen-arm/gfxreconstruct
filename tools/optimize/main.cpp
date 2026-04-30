@@ -349,12 +349,11 @@ GetVulkanOptimizationData(const std::string& input_filename, const gfxrecon::dec
         }
     }
 
-    // This should be uncommented once this issue is solved: https://github.com/LunarG/gfxreconstruct/issues/2744
-    // if (!result->unreferenced_ids.empty())
-    // {
-    //     auto block_result           = GetUnreferencedBlocks(input_filename, result->unreferenced_ids);
-    //     result->unreferenced_blocks = std::move(block_result.unreferenced_blocks);
-    // }
+    if (!result->unreferenced_ids.empty())
+    {
+        auto block_result           = GetUnreferencedBlocks(input_filename, result->unreferenced_ids);
+        result->unreferenced_blocks = std::move(block_result.unreferenced_blocks);
+    }
 
     return result;
 }
