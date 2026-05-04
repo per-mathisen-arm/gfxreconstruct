@@ -769,8 +769,7 @@ Optional arguments:
   -m <mode>             Enable memory translation for replay on GPUs with memory
                         types that are not compatible with the capture GPU's
                         memory types.  Available modes are:
-                            none        No memory translation is performed.  This
-                                        is the default behavior.
+                            none        No memory translation is performed.
                             remap       Attempt to map capture memory types to
                                         compatible replay memory types, without
                                         altering memory allocation behavior.
@@ -782,7 +781,8 @@ Optional arguments:
                                         properties.  Resources may be bound
                                         to different allocations with different
                                         offsets.  Uses VMA to manage allocations
-                                        and suballocations.
+                                        and suballocations. This
+                                        is the default behavior.
   --fwo <x,y>           Force windowed mode if not already, and allow setting of a custom window location.
                         (Same as --force-windowed-origin)
   --no-debug-popup      Disable the 'Abort, Retry, Ignore' message box

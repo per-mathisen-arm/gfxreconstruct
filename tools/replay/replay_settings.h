@@ -256,8 +256,7 @@ static void PrintUsage(const char* exe_name)
     GFXRECON_WRITE_CONSOLE("  -m <mode>\t\tEnable memory translation for replay on GPUs with memory");
     GFXRECON_WRITE_CONSOLE("          \t\ttypes that are not compatible with the capture GPU's");
     GFXRECON_WRITE_CONSOLE("          \t\tmemory types.  Available modes are:");
-    GFXRECON_WRITE_CONSOLE("          \t\t    %s\tNo memory translation is performed.  This", kMemoryTranslationNone);
-    GFXRECON_WRITE_CONSOLE("          \t\t         \tis the default behavior.");
+    GFXRECON_WRITE_CONSOLE("          \t\t    %s\tNo memory translation is performed.", kMemoryTranslationNone);
     GFXRECON_WRITE_CONSOLE("          \t\t    %s\tAttempt to map capture memory types to", kMemoryTranslationRemap);
     GFXRECON_WRITE_CONSOLE("          \t\t         \tcompatible replay memory types, without");
     GFXRECON_WRITE_CONSOLE("          \t\t         \taltering memory allocation behavior.");
@@ -269,7 +268,8 @@ static void PrintUsage(const char* exe_name)
     GFXRECON_WRITE_CONSOLE("          \t\t         \tproperties.  Resources may be bound");
     GFXRECON_WRITE_CONSOLE("          \t\t         \tto different allocations with different");
     GFXRECON_WRITE_CONSOLE("          \t\t         \toffsets.  Uses VMA to manage allocations");
-    GFXRECON_WRITE_CONSOLE("          \t\t         \tand suballocations.");
+    GFXRECON_WRITE_CONSOLE("          \t\t         \tand suballocations. This");
+    GFXRECON_WRITE_CONSOLE("          \t\t         \tis the default behavior.");
     GFXRECON_WRITE_CONSOLE("  --swapchain <mode>\tChoose a swapchain mode to replay.");
     GFXRECON_WRITE_CONSOLE("          \t\tAvailable modes are:");
     GFXRECON_WRITE_CONSOLE("          \t\t    %s\tVirtual Swapchain of images which match", kSwapchainVirtual);
