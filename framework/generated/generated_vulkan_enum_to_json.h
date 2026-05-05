@@ -662,6 +662,7 @@ void to_json(nlohmann::ordered_json& jdata, const VkMemoryPropertyFlagBits& valu
 void to_json(nlohmann::ordered_json& jdata, const VkMemoryUnmapFlagBits& value);
 void to_json(nlohmann::ordered_json& jdata, const VkMicromapCreateFlagBitsEXT& value);
 void to_json(nlohmann::ordered_json& jdata, const VkMicromapTypeEXT& value);
+void to_json(nlohmann::ordered_json& jdata, const VkNeuralAcceleratorStatisticsModeARM& value);
 void to_json(nlohmann::ordered_json& jdata, const VkObjectType& value);
 void to_json(nlohmann::ordered_json& jdata, const VkOpacityMicromapFormatEXT& value);
 void to_json(nlohmann::ordered_json& jdata, const VkOpacityMicromapSpecialIndexEXT& value);
@@ -768,6 +769,7 @@ void to_json(nlohmann::ordered_json& jdata, const VkSwapchainCreateFlagBitsKHR& 
 void to_json(nlohmann::ordered_json& jdata, const VkSystemAllocationScope& value);
 void to_json(nlohmann::ordered_json& jdata, const VkTensorTilingARM& value);
 void to_json(nlohmann::ordered_json& jdata, const VkTessellationDomainOrigin& value);
+void to_json(nlohmann::ordered_json& jdata, const VkThrottleHintTypeSEC& value);
 void to_json(nlohmann::ordered_json& jdata, const VkTileShadingRenderPassFlagBitsQCOM& value);
 void to_json(nlohmann::ordered_json& jdata, const VkTimeDomainKHR& value);
 void to_json(nlohmann::ordered_json& jdata, const VkToolPurposeFlagBits& value);

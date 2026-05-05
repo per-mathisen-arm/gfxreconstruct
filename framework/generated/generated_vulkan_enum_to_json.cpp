@@ -2836,6 +2836,8 @@ void to_json(nlohmann::ordered_json& jdata, const VkImageCreateFlags_t& flags)
                 return std::string("VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR");
             case VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT:
                 return std::string("VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT");
+            case VK_IMAGE_CREATE_ALIAS_SINGLE_LAYER_DESCRIPTOR_BIT_KHR:
+                return std::string("VK_IMAGE_CREATE_ALIAS_SINGLE_LAYER_DESCRIPTOR_BIT_KHR");
         }
         return to_hex_fixed_width(flags);
     });
@@ -3711,6 +3713,8 @@ void to_json(nlohmann::ordered_json& jdata, const VkPipelineLayoutCreateFlags_t&
         {
             case VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT:
                 return std::string("VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT");
+            case VK_PIPELINE_LAYOUT_CREATE_NO_TASK_SHADER_BIT_KHR:
+                return std::string("VK_PIPELINE_LAYOUT_CREATE_NO_TASK_SHADER_BIT_KHR");
         }
         return to_hex_fixed_width(flags);
     });
@@ -4458,6 +4462,8 @@ void to_json(nlohmann::ordered_json& jdata, const VkShaderCreateFlagsEXT_t& flag
                 return std::string("VK_SHADER_CREATE_INDIRECT_BINDABLE_BIT_EXT");
             case VK_SHADER_CREATE_64_BIT_INDEXING_BIT_EXT:
                 return std::string("VK_SHADER_CREATE_64_BIT_INDEXING_BIT_EXT");
+            case VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR:
+                return std::string("VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR");
         }
         return to_hex_fixed_width(flags);
     });
@@ -8045,6 +8051,12 @@ void to_json(nlohmann::ordered_json& jdata, const VkDataGraphPipelinePropertyARM
         case VK_DATA_GRAPH_PIPELINE_PROPERTY_IDENTIFIER_ARM:
             jdata = "VK_DATA_GRAPH_PIPELINE_PROPERTY_IDENTIFIER_ARM";
             break;
+        case VK_DATA_GRAPH_PIPELINE_PROPERTY_NEURAL_ACCELERATOR_DEBUG_DATABASE_ARM:
+            jdata = "VK_DATA_GRAPH_PIPELINE_PROPERTY_NEURAL_ACCELERATOR_DEBUG_DATABASE_ARM";
+            break;
+        case VK_DATA_GRAPH_PIPELINE_PROPERTY_NEURAL_ACCELERATOR_STATISTICS_INFO_ARM:
+            jdata = "VK_DATA_GRAPH_PIPELINE_PROPERTY_NEURAL_ACCELERATOR_STATISTICS_INFO_ARM";
+            break;
         default:
             jdata = gfxrecon::decode::to_hex_fixed_width(value);
             break;
@@ -8059,6 +8071,9 @@ void to_json(nlohmann::ordered_json& jdata, const VkDataGraphPipelineSessionBind
             break;
         case VK_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_OPTICAL_FLOW_CACHE_ARM:
             jdata = "VK_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_OPTICAL_FLOW_CACHE_ARM";
+            break;
+        case VK_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_NEURAL_ACCELERATOR_STATISTICS_ARM:
+            jdata = "VK_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_NEURAL_ACCELERATOR_STATISTICS_ARM";
             break;
         default:
             jdata = gfxrecon::decode::to_hex_fixed_width(value);
@@ -10853,6 +10868,9 @@ void to_json(nlohmann::ordered_json& jdata, const VkImageCreateFlagBits& value)
         case VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT:
             jdata = "VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT";
             break;
+        case VK_IMAGE_CREATE_ALIAS_SINGLE_LAYER_DESCRIPTOR_BIT_KHR:
+            jdata = "VK_IMAGE_CREATE_ALIAS_SINGLE_LAYER_DESCRIPTOR_BIT_KHR";
+            break;
         default:
             jdata = gfxrecon::decode::to_hex_fixed_width(value);
             break;
@@ -11665,6 +11683,24 @@ void to_json(nlohmann::ordered_json& jdata, const VkMicromapTypeEXT& value)
             break;
         case VK_MICROMAP_TYPE_DISPLACEMENT_MICROMAP_NV:
             jdata = "VK_MICROMAP_TYPE_DISPLACEMENT_MICROMAP_NV";
+            break;
+        default:
+            jdata = gfxrecon::decode::to_hex_fixed_width(value);
+            break;
+    }
+}
+
+void to_json(nlohmann::ordered_json& jdata, const VkNeuralAcceleratorStatisticsModeARM& value)
+{
+    switch (value) {
+        case VK_NEURAL_ACCELERATOR_STATISTICS_MODE_DISABLED_ARM:
+            jdata = "VK_NEURAL_ACCELERATOR_STATISTICS_MODE_DISABLED_ARM";
+            break;
+        case VK_NEURAL_ACCELERATOR_STATISTICS_MODE_STATISTICS0_ARM:
+            jdata = "VK_NEURAL_ACCELERATOR_STATISTICS_MODE_STATISTICS0_ARM";
+            break;
+        case VK_NEURAL_ACCELERATOR_STATISTICS_MODE_STATISTICS1_ARM:
+            jdata = "VK_NEURAL_ACCELERATOR_STATISTICS_MODE_STATISTICS1_ARM";
             break;
         default:
             jdata = gfxrecon::decode::to_hex_fixed_width(value);
@@ -12645,6 +12681,9 @@ void to_json(nlohmann::ordered_json& jdata, const VkPipelineLayoutCreateFlagBits
     switch (value) {
         case VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT:
             jdata = "VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT";
+            break;
+        case VK_PIPELINE_LAYOUT_CREATE_NO_TASK_SHADER_BIT_KHR:
+            jdata = "VK_PIPELINE_LAYOUT_CREATE_NO_TASK_SHADER_BIT_KHR";
             break;
         default:
             jdata = gfxrecon::decode::to_hex_fixed_width(value);
@@ -13862,6 +13901,9 @@ void to_json(nlohmann::ordered_json& jdata, const VkShaderCreateFlagBitsEXT& val
             break;
         case VK_SHADER_CREATE_64_BIT_INDEXING_BIT_EXT:
             jdata = "VK_SHADER_CREATE_64_BIT_INDEXING_BIT_EXT";
+            break;
+        case VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR:
+            jdata = "VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR";
             break;
         default:
             jdata = gfxrecon::decode::to_hex_fixed_width(value);
@@ -17751,6 +17793,12 @@ void to_json(nlohmann::ordered_json& jdata, const VkStructureType& value)
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_OCCUPANCY_PRIORITY_FEATURES_NV:
             jdata = "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_OCCUPANCY_PRIORITY_FEATURES_NV";
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_11_FEATURES_KHR:
+            jdata = "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_11_FEATURES_KHR";
+            break;
+        case VK_STRUCTURE_TYPE_QUEUE_FAMILY_OPTIMAL_IMAGE_TRANSFER_GRANULARITY_PROPERTIES_KHR:
+            jdata = "VK_STRUCTURE_TYPE_QUEUE_FAMILY_OPTIMAL_IMAGE_TRANSFER_GRANULARITY_PROPERTIES_KHR";
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_PARTITIONED_FEATURES_EXT:
             jdata = "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_PARTITIONED_FEATURES_EXT";
             break;
@@ -17759,6 +17807,21 @@ void to_json(nlohmann::ordered_json& jdata, const VkStructureType& value)
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MIXED_FLOAT_DOT_PRODUCT_FEATURES_VALVE:
             jdata = "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MIXED_FLOAT_DOT_PRODUCT_FEATURES_VALVE";
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_THROTTLE_HINT_FEATURES_SEC:
+            jdata = "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_THROTTLE_HINT_FEATURES_SEC";
+            break;
+        case VK_STRUCTURE_TYPE_THROTTLE_HINT_SUBMIT_INFO_SEC:
+            jdata = "VK_STRUCTURE_TYPE_THROTTLE_HINT_SUBMIT_INFO_SEC";
+            break;
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_NEURAL_STATISTICS_CREATE_INFO_ARM:
+            jdata = "VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_NEURAL_STATISTICS_CREATE_INFO_ARM";
+            break;
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SESSION_NEURAL_STATISTICS_CREATE_INFO_ARM:
+            jdata = "VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SESSION_NEURAL_STATISTICS_CREATE_INFO_ARM";
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_NEURAL_ACCELERATOR_STATISTICS_FEATURES_ARM:
+            jdata = "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_NEURAL_ACCELERATOR_STATISTICS_FEATURES_ARM";
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_RESTART_INDEX_FEATURES_EXT:
             jdata = "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_RESTART_INDEX_FEATURES_EXT";
@@ -18053,6 +18116,24 @@ void to_json(nlohmann::ordered_json& jdata, const VkTessellationDomainOrigin& va
             break;
         case VK_TESSELLATION_DOMAIN_ORIGIN_LOWER_LEFT:
             jdata = "VK_TESSELLATION_DOMAIN_ORIGIN_LOWER_LEFT";
+            break;
+        default:
+            jdata = gfxrecon::decode::to_hex_fixed_width(value);
+            break;
+    }
+}
+
+void to_json(nlohmann::ordered_json& jdata, const VkThrottleHintTypeSEC& value)
+{
+    switch (value) {
+        case VK_THROTTLE_HINT_TYPE_DEFAULT_SEC:
+            jdata = "VK_THROTTLE_HINT_TYPE_DEFAULT_SEC";
+            break;
+        case VK_THROTTLE_HINT_TYPE_LOW_SEC:
+            jdata = "VK_THROTTLE_HINT_TYPE_LOW_SEC";
+            break;
+        case VK_THROTTLE_HINT_TYPE_HIGH_SEC:
+            jdata = "VK_THROTTLE_HINT_TYPE_HIGH_SEC";
             break;
         default:
             jdata = gfxrecon::decode::to_hex_fixed_width(value);

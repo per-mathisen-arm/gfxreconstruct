@@ -103,6 +103,10 @@ VkDeviceCreateInfo* TrackStruct(const VkDeviceCreateInfo* value, HandleUnwrapMem
     {
         unwrapped_struct->pQueueCreateInfos = vulkan_wrappers::MakeUnwrapStructs(unwrapped_struct->pQueueCreateInfos, unwrapped_struct->queueCreateInfoCount, unwrap_memory);
     }
+    if (unwrapped_struct->ppEnabledLayerNames)
+    {
+        unwrapped_struct->ppEnabledLayerNames = vulkan_wrappers::MakeUnwrapStructs(unwrapped_struct->ppEnabledLayerNames, unwrapped_struct->enabledLayerCount, unwrap_memory);
+    }
     if (unwrapped_struct->ppEnabledExtensionNames)
     {
         unwrapped_struct->ppEnabledExtensionNames = vulkan_wrappers::MakeUnwrapStructs(unwrapped_struct->ppEnabledExtensionNames, unwrapped_struct->enabledExtensionCount, unwrap_memory);
@@ -8415,6 +8419,36 @@ VkResolveImageModeInfoKHR* TrackStruct(const VkResolveImageModeInfoKHR* value, H
     }
 
     VkResolveImageModeInfoKHR* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkPhysicalDeviceMaintenance11FeaturesKHR* TrackStruct(const VkPhysicalDeviceMaintenance11FeaturesKHR* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkPhysicalDeviceMaintenance11FeaturesKHR* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkQueueFamilyOptimalImageTransferGranularityPropertiesKHR* TrackStruct(const VkQueueFamilyOptimalImageTransferGranularityPropertiesKHR* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkQueueFamilyOptimalImageTransferGranularityPropertiesKHR* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
 
 
     unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
@@ -16978,6 +17012,81 @@ VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE* TrackStruct(const VkPhy
     return unwrapped_struct;
 }
 
+VkThrottleHintSubmitInfoSEC* TrackStruct(const VkThrottleHintSubmitInfoSEC* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkThrottleHintSubmitInfoSEC* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkPhysicalDeviceThrottleHintFeaturesSEC* TrackStruct(const VkPhysicalDeviceThrottleHintFeaturesSEC* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkPhysicalDeviceThrottleHintFeaturesSEC* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkPhysicalDeviceDataGraphNeuralAcceleratorStatisticsFeaturesARM* TrackStruct(const VkPhysicalDeviceDataGraphNeuralAcceleratorStatisticsFeaturesARM* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkPhysicalDeviceDataGraphNeuralAcceleratorStatisticsFeaturesARM* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkDataGraphPipelineNeuralStatisticsCreateInfoARM* TrackStruct(const VkDataGraphPipelineNeuralStatisticsCreateInfoARM* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkDataGraphPipelineNeuralStatisticsCreateInfoARM* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkDataGraphPipelineSessionNeuralStatisticsCreateInfoARM* TrackStruct(const VkDataGraphPipelineSessionNeuralStatisticsCreateInfoARM* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkDataGraphPipelineSessionNeuralStatisticsCreateInfoARM* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
 VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT* TrackStruct(const VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT* value, HandleUnwrapMemory* unwrap_memory)
 {
     if (value == nullptr)
@@ -18392,6 +18501,10 @@ void* TrackStruct(const void* value, HandleUnwrapMemory* unwrap_memory)
             return TrackStruct(reinterpret_cast<const VkRenderingAttachmentFlagsInfoKHR*>(value), unwrap_memory);
         case VK_STRUCTURE_TYPE_RESOLVE_IMAGE_MODE_INFO_KHR:
             return TrackStruct(reinterpret_cast<const VkResolveImageModeInfoKHR*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_11_FEATURES_KHR:
+            return TrackStruct(reinterpret_cast<const VkPhysicalDeviceMaintenance11FeaturesKHR*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_QUEUE_FAMILY_OPTIMAL_IMAGE_TRANSFER_GRANULARITY_PROPERTIES_KHR:
+            return TrackStruct(reinterpret_cast<const VkQueueFamilyOptimalImageTransferGranularityPropertiesKHR*>(value), unwrap_memory);
         case VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT:
             return TrackStruct(reinterpret_cast<const VkDebugReportCallbackCreateInfoEXT*>(value), unwrap_memory);
         case VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_RASTERIZATION_ORDER_AMD:
@@ -19480,6 +19593,16 @@ void* TrackStruct(const void* value, HandleUnwrapMemory* unwrap_memory)
             return TrackStruct(reinterpret_cast<const VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT*>(value), unwrap_memory);
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MIXED_FLOAT_DOT_PRODUCT_FEATURES_VALVE:
             return TrackStruct(reinterpret_cast<const VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_THROTTLE_HINT_SUBMIT_INFO_SEC:
+            return TrackStruct(reinterpret_cast<const VkThrottleHintSubmitInfoSEC*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_THROTTLE_HINT_FEATURES_SEC:
+            return TrackStruct(reinterpret_cast<const VkPhysicalDeviceThrottleHintFeaturesSEC*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_NEURAL_ACCELERATOR_STATISTICS_FEATURES_ARM:
+            return TrackStruct(reinterpret_cast<const VkPhysicalDeviceDataGraphNeuralAcceleratorStatisticsFeaturesARM*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_NEURAL_STATISTICS_CREATE_INFO_ARM:
+            return TrackStruct(reinterpret_cast<const VkDataGraphPipelineNeuralStatisticsCreateInfoARM*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SESSION_NEURAL_STATISTICS_CREATE_INFO_ARM:
+            return TrackStruct(reinterpret_cast<const VkDataGraphPipelineSessionNeuralStatisticsCreateInfoARM*>(value), unwrap_memory);
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_RESTART_INDEX_FEATURES_EXT:
             return TrackStruct(reinterpret_cast<const VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT*>(value), unwrap_memory);
         case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR:
