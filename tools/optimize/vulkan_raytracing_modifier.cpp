@@ -1810,28 +1810,22 @@ void VulkanRayTracingModifier::Process_vkCmdWriteAccelerationStructuresPropertie
 
 bool VulkanRayTracingModifier::HeuristicCheck(format::HandleId command_buffer)
 {
-    if (command_buffers_with_compute_.size() > 0)
+    if (command_buffers_with_compute_.erase(command_buffer) > 0)
     {
         return true;
     }
-    else
+
+    for (const auto& a : instance_buffer_ranges_)
     {
-        for (const auto& a : instance_buffer_ranges_)
+        for (const auto& b : transfer_ranges_)
         {
-            for (const auto& b : transfer_ranges_)
+            if (std::max(a.first, b.first) < std::min(a.second, b.second))
             {
-                int64_t s1, s2, d1, d2;
-                s1 = a.first + b.first;
-                s2 = a.second + b.second;
-                d1 = b.first - a.first;
-                d2 = b.second - a.second;
-                if (std::abs(s2 - s1) < d1 + d2)
-                {
-                    return true;
-                }
+                return true;
             }
         }
     }
+
     return false;
 }
 

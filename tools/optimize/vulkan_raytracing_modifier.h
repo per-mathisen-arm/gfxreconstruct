@@ -347,7 +347,6 @@ class VulkanRayTracingModifier : public util::VulkanModifierBase
     virtual void ProcessFrameEndMarker(uint64_t frame_number) override
     {
         command_buffers_with_compute_.clear();
-        instance_buffer_ranges_.clear();
         transfer_ranges_.clear();
     }
 
