@@ -2080,7 +2080,7 @@ bool VulkanRebindAllocator::TranslateMemoryRange(const VmaMemoryInfo* bound_memo
     }
 
     VkDeviceSize resource_start = bound_memory_info->offset_from_original_device_memory;
-    auto         original_size  = bound_memory_info->memory_info->allocation_size;
+    auto         original_size  = bound_memory_info->capture_mem_req.size;
     auto         rebind_size    = bound_memory_info->replay_mem_req.size;
 
     // This should correspond to the offset to the end of the resource at capture time.
