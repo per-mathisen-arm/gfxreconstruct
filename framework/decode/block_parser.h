@@ -199,6 +199,8 @@ class BlockParser
     constexpr static uint64_t kReadSizeFromBuffer = std::numeric_limits<std::uint64_t>::max();
     ParameterReadResult
     ReadParameterBuffer(const char* label, BlockBuffer& block_buffer, uint64_t uncompressed_size = kReadSizeFromBuffer);
+    format::MetaDataId ResolveLegacyAmbiguousMetaDataId(const BlockBuffer& block_buffer,
+                                                        format::MetaDataId meta_data_id) const;
 
     ErrorHandler        err_handler_;
     util::Compressor*   compressor_           = nullptr;

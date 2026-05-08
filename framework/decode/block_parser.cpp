@@ -33,6 +33,57 @@
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(decode)
 
+format::MetaDataId BlockParser::ResolveLegacyAmbiguousMetaDataId(const BlockBuffer& block_buffer,
+                                                                 format::MetaDataId meta_data_id) const
+{
+    if ((file_header_.major_version != 0) || (file_header_.minor_version != 0))
+    {
+        return meta_data_id;
+    }
+
+    const format::ApiFamilyId  api_family     = format::GetMetaDataApi(meta_data_id);
+    const format::MetaDataType conflicting_35 = static_cast<format::MetaDataType>(
+        format::arm::MetaDataType::ConflictingMetaDataTypes::kFixShaderGroupHandleCommand);
+    const format::MetaDataType conflicting_36 =
+        static_cast<format::MetaDataType>(format::arm::MetaDataType::ConflictingMetaDataTypes::kInitTensorCommand);
+    const format::MetaDataType current_type = format::GetMetaDataType(meta_data_id);
+
+    if (current_type == conflicting_36)
+    {
+        if (api_family != format::ApiFamily_D3D12)
+        {
+            return format::MakeMetaDataId(api_family, format::arm::MetaDataType::kInitTensorCommand);
+        }
+    }
+    else if (current_type == conflicting_35)
+    {
+        bool keep_upstream_type = false;
+
+        if ((api_family == format::ApiFamily_Vulkan) &&
+            (block_buffer.Remainder() >=
+             (sizeof(format::CreateHardwareBufferCommandHeader) - sizeof(format::MetaDataHeader))))
+        {
+            const auto* payload = reinterpret_cast<const uint8_t*>(block_buffer.GetData()) + block_buffer.ReadPos();
+            format::CreateHardwareBufferCommandHeader create_buffer_header = {};
+            memcpy(reinterpret_cast<uint8_t*>(&create_buffer_header) + sizeof(format::MetaDataHeader),
+                   payload,
+                   sizeof(create_buffer_header) - sizeof(format::MetaDataHeader));
+
+            const size_t expected_size =
+                (sizeof(format::CreateHardwareBufferCommandHeader) - sizeof(format::MetaDataHeader)) +
+                (static_cast<size_t>(create_buffer_header.planes) * sizeof(format::HardwareBufferPlaneInfo));
+            keep_upstream_type = (block_buffer.Remainder() == expected_size);
+        }
+
+        if (!keep_upstream_type)
+        {
+            return format::MakeMetaDataId(api_family, format::arm::MetaDataType::kFixShaderGroupHandleCommand);
+        }
+    }
+
+    return meta_data_id;
+}
+
 // Parse the block header and load the whole block into a block buffer
 BlockIOError BlockParser::ReadBlockBuffer(FileInputStreamPtr& input_stream, BlockBuffer& block_buffer)
 {
@@ -498,8 +549,6 @@ ParsedBlock& BlockParser::ParseMetaData(BlockBuffer& block_buffer)
     format::MetaDataId         meta_data_id;
     bool                       success = block_buffer.Read(meta_data_id);
 
-    meta_data_id = format::arm::MetaDataType::GetVersionedMetaDataId(file_header_, meta_data_id);
-
     if (!success)
     {
         HandleBlockReadError(kErrorReadingBlockHeader, "Failed to read function call block header");
@@ -507,6 +556,8 @@ ParsedBlock& BlockParser::ParseMetaData(BlockBuffer& block_buffer)
     }
 
     // Optional backing store for the various uncompressed metadata contents
+
+    meta_data_id = ResolveLegacyAmbiguousMetaDataId(block_buffer, meta_data_id);
 
     format::MetaDataType meta_data_type = format::GetMetaDataType(meta_data_id);
 

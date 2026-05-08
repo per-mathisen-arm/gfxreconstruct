@@ -61,45 +61,6 @@ enum class ConflictingMetaDataTypes : MetaDataTypeUnderlyingType
     kInitTensorCommand           = 36,
 };
 
-inline bool IsConflictingMetadata(const format::FileHeader& trace_header, format::MetaDataType input_type)
-{
-    if (trace_header.major_version == 0 && trace_header.minor_version == 0)
-    {
-        if (input_type == static_cast<format::MetaDataType>(ConflictingMetaDataTypes::kInitTensorCommand) ||
-            input_type == static_cast<format::MetaDataType>(ConflictingMetaDataTypes::kFixShaderGroupHandleCommand))
-        {
-            return true;
-        }
-    }
-    return false;
-}
-
-// Conversion from trace metadata id to replay metadata id
-inline MetaDataId GetVersionedMetaDataId(const format::FileHeader& trace_header, MetaDataId meta_data_id)
-{
-    ApiFamilyId          api_family = GetMetaDataApi(meta_data_id);
-    format::MetaDataType input_type = GetMetaDataType(meta_data_id);
-
-    if (!IsConflictingMetadata(trace_header, input_type))
-    {
-        return meta_data_id;
-    }
-
-    format::MetaDataType output_type = input_type;
-
-    ConflictingMetaDataTypes original_type = static_cast<ConflictingMetaDataTypes>(input_type);
-    switch (original_type)
-    {
-        case ConflictingMetaDataTypes::kInitTensorCommand:
-            output_type = arm::MetaDataType::kInitTensorCommand;
-            break;
-        case ConflictingMetaDataTypes::kFixShaderGroupHandleCommand:
-            output_type = arm::MetaDataType::kFixShaderGroupHandleCommand;
-            break;
-    }
-    return MakeMetaDataId(api_family, output_type);
-}
-
 GFXRECON_END_NAMESPACE(MetaDataType)
 
 #pragma pack(push)
