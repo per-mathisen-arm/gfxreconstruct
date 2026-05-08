@@ -46,7 +46,8 @@ const char kArguments[] =
     "get-fence-status,--sgfr|--skip-get-fence-ranges,--dump-resources,--dump-resources-dir,--dump-resources-image-"
     "format,pbis,--pcj|--pipeline-creation-jobs,--save-pipeline-cache,--load-pipeline-cache,--quit-after-frame,--"
     "present-mode,--wait-before-first-submit,--idle-before-submit,--present-override,--serialize-render-passes,--frame-"
-    "warm-up-spirv,--frame-warm-up-load,--wait-before-frame,--loop-frame,--loop-count,--skip-index";
+    "warm-up-spirv,--frame-warm-up-load,--wait-before-frame,--loop-frame,--loop-count,--serialize-queue-submissions,"
+    "--skip-index";
 
 static void PrintUsage(const char* exe_name)
 {
@@ -91,6 +92,7 @@ static void PrintUsage(const char* exe_name)
     GFXRECON_WRITE_CONSOLE("\t\t\t[--frame-warm-up-spirv <spirv-file>] [--frame-warm-up-load <load>]");
     GFXRECON_WRITE_CONSOLE("\t\t\t[--idle-before-submit] [--pbi-all] [--pbis <index1,index2>]");
     GFXRECON_WRITE_CONSOLE("\t\t\t[--serialize-render-passes] [--wait-before-frame <milliseconds>]");
+    GFXRECON_WRITE_CONSOLE("\t\t\t[--serialize-queue-submissions]");
 #if !defined(WIN32)
     GFXRECON_WRITE_CONSOLE("\t\t\t[--dump-resources <filename>.json]");
 #endif
@@ -406,6 +408,9 @@ static void PrintUsage(const char* exe_name)
     GFXRECON_WRITE_CONSOLE("  --wait-before-frame <milliseconds>");
     GFXRECON_WRITE_CONSOLE("          \t\tWait for the specified amount of milliseconds before starting to replay");
     GFXRECON_WRITE_CONSOLE("          \t\teach frame. Default is 0 (no wait).");
+    GFXRECON_WRITE_CONSOLE("  --serialize-queue-submissions");
+    GFXRECON_WRITE_CONSOLE("          \t\tSerialize submit entries within one vkQueueSubmit/vkQueueSubmit2");
+    GFXRECON_WRITE_CONSOLE("          \t\tcall by adding semaphores between consecutive submits.");
 #if defined(WIN32)
     GFXRECON_WRITE_CONSOLE("")
     GFXRECON_WRITE_CONSOLE("D3D12 only:")

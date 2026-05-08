@@ -46,7 +46,7 @@ class VulkanExportJsonConsumerBase : public VulkanConsumer
 
     virtual ~VulkanExportJsonConsumerBase() override;
 
-    void Initialize(JsonWriter* writer, const std::string_view vulkanVersion);
+    void Initialize(JsonWriter* writer);
 
     void Destroy();
 

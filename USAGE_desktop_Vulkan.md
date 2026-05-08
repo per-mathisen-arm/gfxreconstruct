@@ -612,7 +612,7 @@ The `gfxrecon-replay` tool for desktop accepts the following command line
 arguments:
 
 ```text
-gfxrecon-replay         [-h | --help] [--version] [--cpu-mask <binary-mask>] [--gpu <index>]
+gfxrecon-replay <file>  [-h | --help] [--version] [--cpu-mask <binary-mask>] [--gpu <index>]
                         [--pause-frame <N>] [--paused] [--sync] [--screenshot-all]
                         [--screenshots <N1(-N2),...>] [--screenshot-format <format>]
                         [--screenshot-dir <dir>] [--screenshot-prefix <file-prefix>]
@@ -646,7 +646,7 @@ gfxrecon-replay         [-h | --help] [--version] [--cpu-mask <binary-mask>] [--
                         [--wait-before-first-submit MILLISECONDS]
                         [--idle-before-submit] [--serialize-render-passes]
                         [--wait-before-frame MILLISECONDS]
-                        <file>
+                        [--serialize-queue-submissions]
 
 
 Required arguments:
@@ -926,6 +926,10 @@ Optional arguments:
               run before each frame replay. Default is 0 (disabled).
   --wait-before-frame <milliseconds>
               Specify a wait time in milliseconds before starting replay of each frame. Default is 0 (disabled).
+  --serialize-queue-submissions
+              Serialize submit entries within one `vkQueueSubmit` or
+              `vkQueueSubmit2` call by adding semaphores between consecutive
+              submits during replay.
 ```
 
 ### Frame Warm-Up

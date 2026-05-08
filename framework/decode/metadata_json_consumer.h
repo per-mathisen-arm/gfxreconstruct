@@ -29,6 +29,7 @@
 #include "format/format_json.h"
 #include "util/defines.h"
 #include "util/file_path.h"
+#include "util/strings.h"
 
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(decode)

@@ -48,7 +48,7 @@ class OpenXrExportJsonConsumerBase : public OpenXrConsumer
 
     virtual ~OpenXrExportJsonConsumerBase() override;
 
-    void Initialize(JsonWriter* writer, const std::string_view openxrVersion);
+    void Initialize(JsonWriter* writer);
 
     void Destroy();
 

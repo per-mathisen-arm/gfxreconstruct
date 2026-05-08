@@ -30,6 +30,8 @@
 #include "util/file_path.h"
 #include "util/to_string.h"
 
+#include "openxr/openxr.h"
+
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(decode)
 
@@ -44,20 +46,19 @@ OpenXrExportJsonConsumerBase::~OpenXrExportJsonConsumerBase()
     Destroy();
 }
 
-void OpenXrExportJsonConsumerBase::Initialize(JsonWriter* writer, const std::string_view openxrVersion)
+void OpenXrExportJsonConsumerBase::Initialize(JsonWriter* writer)
 {
     GFXRECON_ASSERT(writer);
     writer_ = writer;
 
-    writer->GetHeaderJson()["openxr-version"] = std::string(openxrVersion);
+    writer->GetHeaderJson()["openxr-version"] = std::to_string(XR_VERSION_MAJOR(XR_CURRENT_API_VERSION)) + "." +
+                                                std::to_string(XR_VERSION_MINOR(XR_CURRENT_API_VERSION)) + "." +
+                                                std::to_string(XR_VERSION_PATCH(XR_CURRENT_API_VERSION));
 }
 
 void OpenXrExportJsonConsumerBase::Destroy()
 {
-    if (writer_)
-    {
-        writer_->Destroy();
-    }
+    writer_ = nullptr;
 }
 
 std::string OpenXrExportJsonConsumerBase::GenerateFilename(const std::string& filename)
@@ -77,7 +78,7 @@ void OpenXrExportJsonConsumerBase::Process_xrInitializeLoaderKHR(
 {
     nlohmann::ordered_json& jdata = WriteApiCallStart(call_info, "xrInitializeLoaderKHR");
     jdata[NameReturn()]           = returnValue;
-    auto& args = jdata[NameArgs()];
+    auto& args                    = jdata[NameArgs()];
     switch (loaderInitInfo->GetPointer()->type)
     {
         default:
@@ -100,7 +101,7 @@ void OpenXrExportJsonConsumerBase::Process_xrCreateApiLayerInstance(
 {
     nlohmann::ordered_json& jdata = WriteApiCallStart(call_info, "xrCreateApiLayerInstance");
     jdata[NameReturn()]           = returnValue;
-    auto& args = jdata[NameArgs()];
+    auto& args                    = jdata[NameArgs()];
     FieldToJson(args["info"], info);
     FieldToJson(args["layerInfo"], layerInfo);
     HandleToJson(args["instance"], instance);
@@ -118,7 +119,7 @@ void OpenXrExportJsonConsumerBase::Process_xrEnumerateSwapchainImages(
 {
     nlohmann::ordered_json& jdata = WriteApiCallStart(call_info, "xrEnumerateSwapchainImages");
     jdata[NameReturn()]           = returnValue;
-    auto& args = jdata[NameArgs()];
+    auto& args                    = jdata[NameArgs()];
     HandleToJson(args["swapchain"], swapchain);
     args["imageCapacityInput"] = imageCapacityInput;
     FieldToJson(args["imageCountOutput"], imageCountOutput);
