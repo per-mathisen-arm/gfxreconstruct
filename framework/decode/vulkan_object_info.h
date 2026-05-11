@@ -359,6 +359,8 @@ struct VulkanDeviceInfo : public VulkanObjectInfo<VkDevice>
 
     std::vector<VkPhysicalDevice> replay_device_group;
 
+    std::unordered_map<uint32_t, uint32_t> queue_family_index_to_queue_count;
+
     // For use with device deduplication
     format::HandleId duplicate_source_id{ format::kNullHandleId };
 

@@ -325,7 +325,8 @@ class VulkanReplayConsumerBase : public VulkanConsumer
     // create_state passed in by reference to conserve pointers to member variable
     // Not initialized in a CreateDeviceInfoState constructor as *many* VulkanReplayConsumerBase
     // member functions and variables are referenced
-    void ModifyCreateDeviceInfo(VulkanPhysicalDeviceInfo*                               physical_device_info,
+    void ModifyCreateDeviceInfo(VulkanDeviceInfo*                                       device_info,
+                                VulkanPhysicalDeviceInfo*                               physical_device_info,
                                 const StructPointerDecoder<Decoded_VkDeviceCreateInfo>* pCreateInfo,
                                 CreateDeviceInfoState&                                  create_state);
 

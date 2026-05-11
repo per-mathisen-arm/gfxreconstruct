@@ -3817,6 +3817,7 @@ void VulkanReplayConsumerBase::OverrideDestroyInstance(
 }
 
 void VulkanReplayConsumerBase::ModifyCreateDeviceInfo(
+    VulkanDeviceInfo*                                       device_info,
     VulkanPhysicalDeviceInfo*                               physical_device_info,
     const StructPointerDecoder<Decoded_VkDeviceCreateInfo>* pCreateInfo,
     CreateDeviceInfoState&                                  create_state)
@@ -3875,6 +3876,7 @@ void VulkanReplayConsumerBase::ModifyCreateDeviceInfo(
                 queue_create_info.queueCount = queue_family_properties.queueCount;
             }
         }
+        device_info->queue_family_index_to_queue_count.emplace(queue_family_index, queue_create_info.queueCount);
     }
 
     const auto* decoded_capture_device_group_create_info =
@@ -4265,7 +4267,7 @@ VulkanReplayConsumerBase::OverrideCreateDevice(VkResult                  origina
     // Note: create_state is passed into the Modify call to allow the modified_create_info to reference
     //       addresses of create_state members which a return value doesn't appear to preserve
     CreateDeviceInfoState create_state;
-    ModifyCreateDeviceInfo(physical_device_info, pCreateInfo, create_state);
+    ModifyCreateDeviceInfo(device_info, physical_device_info, pCreateInfo, create_state);
 
     VkResult result        = VK_ERROR_INITIALIZATION_FAILED;
     auto     replay_device = pDevice->GetHandlePointer();
@@ -4555,6 +4557,12 @@ void VulkanReplayConsumerBase::OverrideGetDeviceQueue(PFN_vkGetDeviceQueue      
                                                       uint32_t                       queueIndex,
                                                       HandlePointerDecoder<VkQueue>* pQueue)
 {
+    if (device_info->queue_family_index_to_queue_count[queueFamilyIndex] <= queueIndex)
+    {
+        GFXRECON_LOG_WARNING_ONCE("Skipping vkGetDeviceQueue as queueIndex is higher than replay device queue count");
+        return;
+    }
+
     VkDevice device = device_info->handle;
     if (!pQueue->IsNull())
     {

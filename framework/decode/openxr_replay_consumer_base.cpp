@@ -769,6 +769,8 @@ void OpenXrReplayConsumerBase::Process_xrCreateVulkanDeviceKHR(
     HandlePointerDecoder<VkDevice>*                            vulkanDevice,
     PointerDecoder<VkResult>*                                  vulkanResult)
 {
+    VulkanDeviceInfo device_info;
+
     XrInstance in_instance = MapHandle<OpenXrInstanceInfo>(instance, &CommonObjectInfoTable::GetXrInstanceInfo);
     const XrVulkanDeviceCreateInfoKHR* in_createInfo = createInfo->GetPointer();
     MapStructHandles(createInfo->GetMetaStructPointer(), GetObjectInfoTable());
@@ -787,7 +789,7 @@ void OpenXrReplayConsumerBase::Process_xrCreateVulkanDeviceKHR(
 
     VulkanReplayConsumerBase::CreateDeviceInfoState create_state;
     vulkan_replay_consumer_->ModifyCreateDeviceInfo(
-        physical_device_info, xr_create_info_wrapper->vulkanCreateInfo, create_state);
+        &device_info, physical_device_info, xr_create_info_wrapper->vulkanCreateInfo, create_state);
     XrVulkanDeviceCreateInfoKHR replay_info = *in_createInfo;
     replay_info.vulkanCreateInfo            = &create_state.modified_create_info;
     replay_info.pfnGetInstanceProcAddr      = vulkan_replay_consumer_->GetGetInstanceProcAddr();
@@ -807,7 +809,6 @@ void OpenXrReplayConsumerBase::Process_xrCreateVulkanDeviceKHR(
     CheckResult("xrCreateVulkanDeviceKHR", returnValue, replay_result, call_info);
 
     // There's a bit more Vulkan to call to finish device creation
-    VulkanDeviceInfo device_info;
     if (replay_vulkan_result == VK_SUCCESS)
     {
         replay_vulkan_result = vulkan_replay_consumer_->PostCreateDeviceUpdateState(
