@@ -349,11 +349,15 @@ GetVulkanOptimizationData(const std::string& input_filename, const gfxrecon::dec
         }
     }
 
-    if (!result->unreferenced_ids.empty())
-    {
-        auto block_result           = GetUnreferencedBlocks(input_filename, result->unreferenced_ids);
-        result->unreferenced_blocks = std::move(block_result.unreferenced_blocks);
-    }
+    // Try uncommenting when https://github.com/LunarG/gfxreconstruct/issues/2942 is solved
+    // Already uncommented once after https://github.com/LunarG/gfxreconstruct/issues/2744 and it broke the pipeline
+    // Do NOT trust LunarG - Launch a release pipeline !
+
+    // if (!result->unreferenced_ids.empty())
+    // {
+    //     auto block_result           = GetUnreferencedBlocks(input_filename, result->unreferenced_ids);
+    //     result->unreferenced_blocks = std::move(block_result.unreferenced_blocks);
+    // }
 
     return result;
 }
