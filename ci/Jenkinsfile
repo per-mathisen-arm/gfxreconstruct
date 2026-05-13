@@ -21,12 +21,25 @@
 ** DEALINGS IN THE SOFTWARE.
 */
 
-def extendedGitCommit = null
+def devTestedCommit = null
+def scriptLabel = 'Linux'
+
+def gitRemoteCredentialsId(scmConfig) {
+    def remoteConfig = scmConfig.userRemoteConfigs?.first()
+    if (!remoteConfig?.credentialsId) {
+        error('Unable to resolve Git credentials ID from Jenkins SCM configuration')
+    }
+    return remoteConfig.credentialsId
+}
 
 pipeline {
+    // Do not reserve one Jenkins agent for the whole pipeline.  Each stage or
+    // test branch asks for the agent it needs with node { ... }.
     agent none
 
     options {
+        // Only one build of a branch should run at a time.  For dev, a newer
+        // build aborts an older one instead of letting both publish candidates.
         disableConcurrentBuilds(abortPrevious: true)
     }
 
@@ -50,8 +63,14 @@ pipeline {
 
                     // Checkout and load on any available node
                     node {
+                        // checkout scm checks out the branch/commit Jenkins is
+                        // building and returns metadata from the Git plugin.
                         def scmVars = checkout scm
-                        extendedGitCommit = scmVars.GIT_COMMIT
+                        // Save the exact commit tested by this dev build.  Do
+                        // not use the dev branch name later because it can move.
+                        devTestedCommit = scmVars.GIT_COMMIT
+                        // load evaluates runJob.groovy and returns its map of
+                        // labels and helper functions for creating test stages.
                         def runJob = load 'ci/runJob.groovy'
 
                         tests = [
@@ -76,30 +95,47 @@ pipeline {
                             'Windows11 Nvidia 5080 Dbg32': runJob.gfxrTestWindows('Win11 Nvidia 5080 Dbg32', runJob.ReleaseMode, runJob.Win11Nvidia50XXLabel, runJob.Bit32, "commit-suite.json", scm.branches),
                         ]
                     }
-                    // parallel runs OUTSIDE the node block - each branch allocates its own node
+                    // Run the test closures in parallel.  This is outside the
+                    // setup node above, so each closure allocates its own test
+                    // machine instead of sharing one workspace.
                     parallel tests
                 }
             }
         }
 
-        stage('Trigger Extended Tests') {
+        stage('Publish Extended Candidate') {
             when {
-                branch 'dev'
+                allOf {
+                    // Only the dev branch publishes a candidate for the scheduled
+                    // extended job.  PR and other branch builds only run commit tests.
+                    branch 'dev'
+                    // Some test helpers use catchError, which marks the build
+                    // failed but lets the pipeline continue.  Do not publish a
+                    // candidate unless every parallel test branch succeeded.
+                    expression { return currentBuild.currentResult == 'SUCCESS' }
+                }
             }
 
             steps {
                 script {
-                    if (!extendedGitCommit?.trim()) {
-                        error('Unable to resolve commit SHA for extended pipeline trigger')
+                    if (!devTestedCommit?.trim()) {
+                        error('Unable to resolve tested commit SHA')
                     }
 
-                    build job: 'gfxr-pipelines/gfxr-extended',
-                          wait: false,
-                          propagate: false,
-                          quietPeriod: calculateQuietPeriod(),
-                          parameters: [
-                              string(name: 'GIT_COMMIT', value: extendedGitCommit)
-                          ]
+                    // The marker update script uses sh, so run it on a Linux
+                    // agent.  It pushes refs/heads/ci/gfxr-dev-tested to the
+                    // exact commit this dev build validated.
+                    node(scriptLabel) {
+                        // This node has a fresh workspace, so checkout before
+                        // running the script from the repository.
+                        checkout scm
+                        withCredentials([gitUsernamePassword(
+                            credentialsId: gitRemoteCredentialsId(scm),
+                            gitToolName: 'Default'
+                        )]) {
+                            sh "./ci/updateDevTestedRef.sh ${devTestedCommit.trim()}"
+                        }
+                    }
                 }
             }
         }
@@ -120,37 +156,4 @@ pipeline {
             }
         }
     }
-}
-
-// extended should only be run between 8pm and midnight, only on weekdays
-// this function will calculate the amount of time to wait until the next time extended should run
-def calculateQuietPeriod() {
-    def now = new Date()
-    def hour = now.getHours()
-    def dayOfWeek = now.getDay()  // 0=Sun, 1=Mon, ..., 6=Sat
-
-    // In window (Mon-Fri 8pm-midnight): run immediately
-    if (dayOfWeek >= 1 && dayOfWeek <= 5 && hour >= 20 && hour < 24) {
-        return 0
-    }
-
-    // Calculate seconds until next 8pm Mon-Fri
-    def target = now.clone()
-    target.setHours(20)
-    target.setMinutes(0)
-    target.setSeconds(0)
-
-    // If today is weekday and before 8pm, target is today
-    if (dayOfWeek >= 1 && dayOfWeek <= 5 && hour < 20) {
-        // target is today at 8pm, already set
-    }
-    // If weekend or after midnight, find next weekday
-    else {
-        target = target + 1  // tomorrow
-        while (target.getDay() == 0 || target.getDay() == 6) {
-            target = target + 1  // skip weekend
-        }
-    }
-
-    return (int) ((target.getTime() - now.getTime()) / 1000)
 }

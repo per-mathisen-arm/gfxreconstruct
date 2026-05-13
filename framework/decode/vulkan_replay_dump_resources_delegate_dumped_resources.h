@@ -28,6 +28,7 @@
 #include "decode/vulkan_replay_options.h"
 #include "util/defines.h"
 #include "format/format.h"
+#include "util/logging.h"
 
 #include <list>
 #include <stdint.h>
@@ -578,18 +579,12 @@ struct TransferedImageInfo
 {
     TransferedImageInfo() = delete;
 
-    TransferedImageInfo(format::HandleId i, VkFormat f, VkExtent3D e, VkImageLayout l) :
-        id(i), format(f), extent(e), layout(l)
-    {}
+    TransferedImageInfo(const VulkanImageInfo& img_info, VkImageLayout l) : image_info(img_info), layout(l) {}
 
-    TransferedImageInfo(const TransferedImageInfo& other) :
-        id(other.id), format(other.format), extent(other.extent), layout(other.layout)
-    {}
+    TransferedImageInfo(const TransferedImageInfo& other) : image_info(other.image_info), layout(other.layout) {}
 
-    format::HandleId id;
-    VkFormat         format;
-    VkExtent3D       extent;
-    VkImageLayout    layout;
+    const VulkanImageInfo image_info;
+    VkImageLayout         layout;
 };
 
 struct DumpedInitBufferMetaCommand
@@ -825,7 +820,7 @@ struct DumpedTransferCommand : DumpedResourceBase
 
         if (hb)
         {
-            dumped_resource_before = DumpedCopyBufferToImage(s, transf_img_info);
+            dumped_resource_before.emplace<DumpedCopyBufferToImage>(s, transf_img_info);
         }
     }
 
@@ -843,7 +838,7 @@ struct DumpedTransferCommand : DumpedResourceBase
 
         if (hb)
         {
-            dumped_resource_before = DumpedCopyImage(si, di);
+            dumped_resource_before.emplace<DumpedCopyImage>(si, di);
         }
     }
 
@@ -857,7 +852,7 @@ struct DumpedTransferCommand : DumpedResourceBase
 
         if (hb)
         {
-            dumped_resource_before = DumpedCopyImageToBuffer(si, d);
+            dumped_resource_before.emplace<DumpedCopyImageToBuffer>(si, d);
         }
     }
 
@@ -876,7 +871,7 @@ struct DumpedTransferCommand : DumpedResourceBase
 
         if (hb)
         {
-            dumped_resource_before = DumpedBlitImage(si, di, f);
+            dumped_resource_before.emplace<DumpedBlitImage>(si, di, f);
         }
     }
 
