@@ -1,0 +1,3 @@
+LIBRARY d3d11on12_capture
+EXPORTS
+    D3D11On12Capture_WrapFactory

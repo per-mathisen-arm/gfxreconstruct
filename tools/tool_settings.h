@@ -675,7 +675,7 @@ static std::optional<std::array<float, 2>> GetScreenshotScale(const gfxrecon::ut
             }
             else
             {
-                // single value provided — apply uniformly
+                // single value provided - apply uniformly
                 scale[1] = scale[0];
             }
             return scale;

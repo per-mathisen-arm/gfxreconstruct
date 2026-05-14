@@ -39,6 +39,42 @@ const char kCaptureDllName[]            = "d3d12_capture.dll";
 const char kCaptureDllInitProcName[]    = "InitializeDxgiCapture";
 const char kCaptureDllDestroyProcName[] = "ReleaseDxgiCapture";
 
+// Optional D3D11On12 capture plugin.  When d3d11on12_capture.dll is present in the
+// same directory as this dxgi.dll, it is loaded on DLL_PROCESS_ATTACH and its
+// D3D11On12Capture_WrapFactory export is called after every CreateDXGIFactory*.
+// If the DLL is absent the plugin pointers stay null and all code paths are skipped.
+static HMODULE g_hD3D11On12Capture                      = nullptr;
+static void (*g_pfnD3D11On12CaptureWrapFactory)(void**) = nullptr;
+
+static void TryLoadD3D11On12Capture(HINSTANCE hDLL)
+{
+    // Locate d3d11on12_capture.dll in the same directory as this dxgi.dll.
+    wchar_t dllPath[MAX_PATH] = {};
+    if (!GetModuleFileNameW(hDLL, dllPath, MAX_PATH))
+        return;
+    wchar_t* sep = wcsrchr(dllPath, L'\\');
+    if (!sep)
+        return;
+    *(sep + 1) = L'\0'; // keep trailing backslash
+    wcscat_s(dllPath, L"d3d11on12_capture.dll");
+
+    // Attempt to load; silently skip if absent (pure D3D12 deployment).
+    HMODULE hMod = LoadLibraryW(dllPath);
+    if (!hMod)
+        return;
+
+    auto pfnWrap = reinterpret_cast<void (*)(void**)>(GetProcAddress(hMod, "D3D11On12Capture_WrapFactory"));
+    if (!pfnWrap)
+    {
+        // Unexpected: DLL present but export missing - unload and ignore.
+        FreeLibrary(hMod);
+        return;
+    }
+
+    g_hD3D11On12Capture              = hMod;
+    g_pfnD3D11On12CaptureWrapFactory = pfnWrap;
+}
+
 static gfxrecon::encode::DxDllInitializer<gfxrecon::encode::DxgiDispatchTable> dll_initializer;
 
 inline const gfxrecon::encode::DxgiDispatchTable& GetDispatchTable()
@@ -109,7 +145,10 @@ EXTERN_C HRESULT WINAPI gfxrecon_CreateDXGIFactory(REFIID riid, void** ppFactory
 {
     if (gfxrecon::Initialize())
     {
-        return GetDispatchTable().CreateDXGIFactory(riid, ppFactory);
+        HRESULT hr = GetDispatchTable().CreateDXGIFactory(riid, ppFactory);
+        if (SUCCEEDED(hr) && g_pfnD3D11On12CaptureWrapFactory)
+            g_pfnD3D11On12CaptureWrapFactory(ppFactory);
+        return hr;
     }
 
     return E_FAIL;
@@ -119,7 +158,10 @@ EXTERN_C HRESULT WINAPI gfxrecon_CreateDXGIFactory1(REFIID riid, void** ppFactor
 {
     if (gfxrecon::Initialize())
     {
-        return GetDispatchTable().CreateDXGIFactory1(riid, ppFactory);
+        HRESULT hr = GetDispatchTable().CreateDXGIFactory1(riid, ppFactory);
+        if (SUCCEEDED(hr) && g_pfnD3D11On12CaptureWrapFactory)
+            g_pfnD3D11On12CaptureWrapFactory(ppFactory);
+        return hr;
     }
 
     return E_FAIL;
@@ -129,7 +171,10 @@ EXTERN_C HRESULT WINAPI gfxrecon_CreateDXGIFactory2(UINT Flags, REFIID riid, voi
 {
     if (gfxrecon::Initialize())
     {
-        return GetDispatchTable().CreateDXGIFactory2(Flags, riid, ppFactory);
+        HRESULT hr = GetDispatchTable().CreateDXGIFactory2(Flags, riid, ppFactory);
+        if (SUCCEEDED(hr) && g_pfnD3D11On12CaptureWrapFactory)
+            g_pfnD3D11On12CaptureWrapFactory(ppFactory);
+        return hr;
     }
 
     return E_FAIL;
@@ -159,10 +204,19 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 {
     switch (fdwReason)
     {
+        case DLL_PROCESS_ATTACH:
+            TryLoadD3D11On12Capture(hinstDLL);
+            break;
         case DLL_PROCESS_DETACH:
             // Only cleanup if the process is not exiting.
             if (lpvReserved == nullptr)
             {
+                if (g_hD3D11On12Capture)
+                {
+                    FreeLibrary(g_hD3D11On12Capture);
+                    g_hD3D11On12Capture              = nullptr;
+                    g_pfnD3D11On12CaptureWrapFactory = nullptr;
+                }
                 gfxrecon::Destroy();
             }
             break;
