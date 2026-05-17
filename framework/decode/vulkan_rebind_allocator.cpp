@@ -94,6 +94,36 @@ VulkanRebindAllocator::VulkanRebindAllocator() :
     capture_device_type_(VK_PHYSICAL_DEVICE_TYPE_OTHER), capture_memory_properties_{}, replay_memory_properties_{}
 {}
 
+VkResult VulkanRebindAllocator::DefaultVmaBackend::CreateBuffer(VmaAllocator                   allocator,
+                                                                const VkBufferCreateInfo*      create_info,
+                                                                const VmaAllocationCreateInfo* allocation_create_info,
+                                                                VkBuffer*                      buffer,
+                                                                VmaAllocation*                 allocation,
+                                                                VmaAllocationInfo*             allocation_info)
+{
+    return vmaCreateBuffer(allocator, create_info, allocation_create_info, buffer, allocation, allocation_info);
+}
+
+VkResult VulkanRebindAllocator::DefaultVmaBackend::MapMemory(VmaAllocator  allocator,
+                                                             VmaAllocation allocation,
+                                                             void**        mapped_pointer)
+{
+    return vmaMapMemory(allocator, allocation, mapped_pointer);
+}
+
+void VulkanRebindAllocator::DefaultVmaBackend::FlushAllocation(VmaAllocator  allocator,
+                                                               VmaAllocation allocation,
+                                                               VkDeviceSize  offset,
+                                                               VkDeviceSize  size)
+{
+    vmaFlushAllocation(allocator, allocation, offset, size);
+}
+
+void VulkanRebindAllocator::DefaultVmaBackend::UnmapMemory(VmaAllocator allocator, VmaAllocation allocation)
+{
+    vmaUnmapMemory(allocator, allocation);
+}
+
 std::mutex& VulkanRebindAllocator::GetOrCreateBlockMutex(VkDeviceMemory device_memory)
 {
     std::lock_guard guard(block_mutexes_guard_);
@@ -1851,27 +1881,28 @@ void VulkanRebindAllocator::WriteBoundResourceStaging(ResourceAllocInfo* resourc
             VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
         staging_alloc_create_info.usage = VMA_MEMORY_USAGE_CPU_ONLY;
 
-        result = vmaCreateBuffer(allocator_,
-                                 &staging_buf_create_info,
-                                 &staging_alloc_create_info,
-                                 &staging_resources.staging_buf,
-                                 &staging_resources.staging_alloc,
-                                 &staging_alloc_info);
+        result = vma_backend_->CreateBuffer(allocator_,
+                                            &staging_buf_create_info,
+                                            &staging_alloc_create_info,
+                                            &staging_resources.staging_buf,
+                                            &staging_resources.staging_alloc,
+                                            &staging_alloc_info);
     }
 
     void* copy_mapped_pointer{ bound_memory_info->mapped_pointer };
 
     if (result == VK_SUCCESS)
     {
-        result = vmaMapMemory(allocator_, staging_resources.staging_alloc, &bound_memory_info->mapped_pointer);
+        result =
+            vma_backend_->MapMemory(allocator_, staging_resources.staging_alloc, &bound_memory_info->mapped_pointer);
     }
 
     if (result == VK_SUCCESS)
     {
         WriteBoundResourceDirect(resource_alloc_info, bound_memory_info, src_offset, 0, data_size, data);
         bound_memory_info->mapped_pointer = copy_mapped_pointer;
-        vmaFlushAllocation(allocator_, staging_resources.staging_alloc, 0, VK_WHOLE_SIZE);
-        vmaUnmapMemory(allocator_, staging_resources.staging_alloc);
+        vma_backend_->FlushAllocation(allocator_, staging_resources.staging_alloc, 0, VK_WHOLE_SIZE);
+        vma_backend_->UnmapMemory(allocator_, staging_resources.staging_alloc);
 
         VkCommandBufferBeginInfo cmd_buf_begin_info = {};
         cmd_buf_begin_info.sType                    = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
