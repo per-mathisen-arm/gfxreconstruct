@@ -696,6 +696,7 @@ void VulkanRebindAllocator::UpdateAllocInfo(ResourceAllocInfo&     resource_allo
         }
         case MemoryInfoType::kSparse:
         case MemoryInfoType::kVideoSession:
+        case MemoryInfoType::kDataGraphSession:
         {
             bool is_found = false;
             for (const auto& mem_info : resource_alloc_info.bound_memory_infos)
@@ -3111,10 +3112,9 @@ VulkanRebindAllocator::BindDataGraphPipelineSessionMemory(uint32_t bind_info_cou
         mem_info.allocation_info = alloc_info;
         memory_alloc_info->vma_mem_infos.emplace_back(std::make_unique<VmaMemoryInfo>(mem_info));
 
-        VkMemoryPropertyFlags nonconst_want_props = want_props;
         UpdateAllocInfo(*resource_alloc_info,
                         VK_HANDLE_TO_UINT64(session),
-                        MemoryInfoType::kBasic,
+                        MemoryInfoType::kDataGraphSession,
                         *memory_alloc_info,
                         *memory_alloc_info->vma_mem_infos.back(),
                         bind_memory_properties[i]);
