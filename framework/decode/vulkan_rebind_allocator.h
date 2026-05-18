@@ -584,7 +584,9 @@ class VulkanRebindAllocator : public VulkanResourceAllocator
         VkObjectType  object_type{ VK_OBJECT_TYPE_UNKNOWN };
         VkFlags       usage{ 0 };
         VkImageTiling tiling{};
+        uint32_t      width{ 0 };
         uint32_t      height{ 0 };
+        uint32_t      depth{ 0 };
         bool          uses_extensions{ false };
         VkFormat      format{ VK_FORMAT_UNDEFINED };
 

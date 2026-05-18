@@ -342,7 +342,9 @@ VkResult VulkanRebindAllocator::CreateImage(const VkImageCreateInfo*     create_
             auto resource_alloc_info         = new ResourceAllocInfo;
             resource_alloc_info->usage       = create_info->usage;
             resource_alloc_info->tiling      = create_info->tiling;
+            resource_alloc_info->width       = create_info->extent.width;
             resource_alloc_info->height      = create_info->extent.height;
+            resource_alloc_info->depth       = create_info->extent.depth;
             resource_alloc_info->format      = create_info->format;
             resource_alloc_info->object_type = VK_OBJECT_TYPE_IMAGE;
             resource_alloc_info->capture_id  = capture_id;
@@ -1925,6 +1927,10 @@ void VulkanRebindAllocator::WriteBoundResourceStaging(ResourceAllocInfo* resourc
                         "Ignoring potential mip maps/array layers in staging buffer to image copy: support "
                         "not yet implemented");
 
+                    const VkExtent3D image_extent = { std::max(1u, resource_alloc_info->width),
+                                                      std::max(1u, resource_alloc_info->height),
+                                                      std::max(1u, resource_alloc_info->depth) };
+
                     std::vector<VkImageAspectFlagBits> aspects;
                     graphics::GetFormatAspects(resource_alloc_info->format, &aspects);
 
@@ -1938,7 +1944,7 @@ void VulkanRebindAllocator::WriteBoundResourceStaging(ResourceAllocInfo* resourc
                         region.bufferImageHeight = 0;
                         region.imageSubresource  = { aspect_flags, 0, 0, 1 };
                         region.imageOffset       = { 0, 0, 0 };
-                        region.imageExtent       = { 1, 1, 1 };
+                        region.imageExtent       = image_extent;
                         functions_.cmd_copy_buffer_to_image(staging_resources.cmd_buffer,
                                                             staging_resources.staging_buf,
                                                             original_image,
