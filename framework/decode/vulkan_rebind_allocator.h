@@ -33,6 +33,7 @@
 #include <limits>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -698,6 +699,10 @@ class VulkanRebindAllocator : public VulkanResourceAllocator
 
     VmaMemoryUsage AdjustMemoryUsage(VmaMemoryUsage desired_usage, const VkMemoryRequirements& replay_requirements);
 
+    VmaMemoryUsage GetAliasedGroupMemoryUsage(uint8_t                     aliasing_group,
+                                              const MemoryAllocInfo&      memory_alloc_info,
+                                              const VkMemoryRequirements& replay_requirements);
+
     void ReportBindIncompatibility(const ResourceData* allocator_resource_datas, uint32_t resource_count);
 
     VkResult BindBufferMemory(VkBuffer                                buffer,
@@ -805,6 +810,13 @@ class VulkanRebindAllocator : public VulkanResourceAllocator
     // which became private in VMA 3.3.0.
     std::mutex& GetOrCreateBlockMutex(VkDeviceMemory device_memory);
 
+    struct AliasingGroupResourceInfo
+    {
+        VkObjectType                 object_type{ VK_OBJECT_TYPE_UNKNOWN };
+        uint64_t                     usage{ 0 };
+        std::optional<VkImageTiling> tiling{};
+    };
+
     VkDevice                         device_ = VK_NULL_HANDLE;
     VmaAllocator                     allocator_;
     Functions                        functions_;
@@ -819,6 +831,7 @@ class VulkanRebindAllocator : public VulkanResourceAllocator
     // Maps a captured resource handle id to its aliasing group identifier.
     std::unordered_map<format::HandleId, uint8_t>     resources_aliasing_group_{};
     std::unordered_map<uint8_t, VkMemoryRequirements> aliasing_group_max_memory_requirements_{};
+    std::unordered_map<uint8_t, std::vector<AliasingGroupResourceInfo>> aliasing_group_resource_infos_{};
     std::vector<StagingResources>                     staging_resources_{};
 
     // external per-block mutexes replacing VmaDeviceMemoryBlock::m_MapAndBindMutex (now private in VMA 3.3.0).

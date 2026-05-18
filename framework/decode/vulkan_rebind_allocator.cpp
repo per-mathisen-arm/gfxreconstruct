@@ -2493,6 +2493,98 @@ VmaMemoryUsage VulkanRebindAllocator::AdjustMemoryUsage(VmaMemoryUsage          
     return memory_usage;
 }
 
+VmaMemoryUsage VulkanRebindAllocator::GetAliasedGroupMemoryUsage(uint8_t                     aliasing_group,
+                                                                 const MemoryAllocInfo&      memory_alloc_info,
+                                                                 const VkMemoryRequirements& replay_requirements)
+{
+    const VkMemoryPropertyFlags capture_properties =
+        capture_memory_properties_.memoryTypes[memory_alloc_info.original_index].propertyFlags;
+
+    bool prefer_host_cached  = false;
+    bool prefer_host_visible = false;
+    bool prefer_lazy         = false;
+    bool found_group_member  = false;
+
+    auto merge_usage = [&](const AliasingGroupResourceInfo& resource_info) {
+        VmaMemoryUsage usage = VMA_MEMORY_USAGE_UNKNOWN;
+
+        switch (resource_info.object_type)
+        {
+            case VK_OBJECT_TYPE_BUFFER:
+                usage = GetBufferMemoryUsage(
+                    static_cast<VkBufferUsageFlags>(resource_info.usage), capture_properties, replay_requirements);
+                break;
+            case VK_OBJECT_TYPE_IMAGE:
+                if (!resource_info.tiling.has_value())
+                {
+                    GFXRECON_LOG_FATAL("Missing tiling metadata for aliased image resource group %u", aliasing_group);
+                    throw std::runtime_error("Missing tiling metadata for aliased image resource group");
+                }
+                usage = GetImageMemoryUsage(static_cast<VkImageUsageFlags>(resource_info.usage),
+                                            *resource_info.tiling,
+                                            capture_properties,
+                                            replay_requirements);
+                break;
+            case VK_OBJECT_TYPE_TENSOR_ARM:
+                usage = GetTensorMemoryUsage(
+                    static_cast<VkTensorUsageFlagsARM>(resource_info.usage), capture_properties, replay_requirements);
+                break;
+            default:
+                return;
+        }
+
+        found_group_member = true;
+
+        switch (usage)
+        {
+            case VMA_MEMORY_USAGE_GPU_TO_CPU:
+                prefer_host_cached  = true;
+                prefer_host_visible = true;
+                break;
+            case VMA_MEMORY_USAGE_CPU_ONLY:
+            case VMA_MEMORY_USAGE_CPU_TO_GPU:
+                prefer_host_visible = true;
+                break;
+            case VMA_MEMORY_USAGE_GPU_LAZILY_ALLOCATED:
+                prefer_lazy = true;
+                break;
+            default:
+                break;
+        }
+    };
+
+    auto group_infos_iter = aliasing_group_resource_infos_.find(aliasing_group);
+    if (group_infos_iter != aliasing_group_resource_infos_.end())
+    {
+        for (const auto& resource_info : group_infos_iter->second)
+        {
+            merge_usage(resource_info);
+        }
+    }
+
+    if (prefer_host_cached)
+    {
+        return AdjustMemoryUsage(VMA_MEMORY_USAGE_GPU_TO_CPU, replay_requirements);
+    }
+
+    if (prefer_host_visible)
+    {
+        return AdjustMemoryUsage(VMA_MEMORY_USAGE_CPU_TO_GPU, replay_requirements);
+    }
+
+    if (prefer_lazy)
+    {
+        return AdjustMemoryUsage(VMA_MEMORY_USAGE_GPU_LAZILY_ALLOCATED, replay_requirements);
+    }
+
+    if (found_group_member)
+    {
+        return AdjustMemoryUsage(VMA_MEMORY_USAGE_GPU_ONLY, replay_requirements);
+    }
+
+    return VMA_MEMORY_USAGE_UNKNOWN;
+}
+
 void VulkanRebindAllocator::ReportBindIncompatibility(const ResourceData* allocator_resource_datas,
                                                       uint32_t            resource_count)
 {
@@ -3229,7 +3321,7 @@ VkResult VulkanRebindAllocator::AllocateMemoryForAliasedObjects(const ResourceAl
     bool prefers_dedicated_allocation  = false;
 
     create_info.flags          = 0;
-    create_info.usage          = VMA_MEMORY_USAGE_UNKNOWN;
+    create_info.usage          = GetAliasedGroupMemoryUsage(aliasing_group, memory_alloc_info, replay_req);
     create_info.requiredFlags  = 0;
     create_info.preferredFlags = 0;
     create_info.memoryTypeBits = 0;
@@ -4134,6 +4226,7 @@ void VulkanRebindAllocator::ProcessResourceMemoryRequirements(
 
     resources_aliasing_group_.clear();
     aliasing_group_max_memory_requirements_.clear();
+    aliasing_group_resource_infos_.clear();
 
     if (resources.empty())
     {
@@ -4233,6 +4326,9 @@ void VulkanRebindAllocator::ProcessResourceMemoryRequirements(
 
                 if ((create_info != nullptr) && (create_info->decoded_value != nullptr))
                 {
+                    aliasing_group_resource_infos_[*aliasing_group].push_back(
+                        { VK_OBJECT_TYPE_BUFFER, create_info->decoded_value->usage, std::nullopt });
+
                     VkDeviceBufferMemoryRequirements buffer_requirements{
                         VK_STRUCTURE_TYPE_DEVICE_BUFFER_MEMORY_REQUIREMENTS
                     };
@@ -4279,6 +4375,10 @@ void VulkanRebindAllocator::ProcessResourceMemoryRequirements(
 
                 if ((create_info != nullptr) && (create_info->decoded_value != nullptr))
                 {
+                    aliasing_group_resource_infos_[*aliasing_group].push_back({ VK_OBJECT_TYPE_IMAGE,
+                                                                                create_info->decoded_value->usage,
+                                                                                create_info->decoded_value->tiling });
+
                     VkDeviceImageMemoryRequirements image_requirements{
                         VK_STRUCTURE_TYPE_DEVICE_IMAGE_MEMORY_REQUIREMENTS
                     };
@@ -4325,6 +4425,10 @@ void VulkanRebindAllocator::ProcessResourceMemoryRequirements(
                 if ((create_info != nullptr) && (create_info->decoded_value != nullptr) &&
                     (functions_.get_device_tensor_memory_requirements != nullptr))
                 {
+                    GFXRECON_ASSERT(create_info->decoded_value->pDescription != nullptr);
+                    aliasing_group_resource_infos_[*aliasing_group].push_back(
+                        { VK_OBJECT_TYPE_TENSOR_ARM, create_info->decoded_value->pDescription->usage, std::nullopt });
+
                     VkDeviceTensorMemoryRequirementsARM tensor_requirements{
                         VK_STRUCTURE_TYPE_DEVICE_TENSOR_MEMORY_REQUIREMENTS_ARM
                     };
