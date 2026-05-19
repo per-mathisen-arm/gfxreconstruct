@@ -73,7 +73,8 @@ class Dx12RebindAllocator : public Dx12ResourceAllocator
                                          D3D12_RESOURCE_STATES             InitialState,
                                          _In_opt_ const D3D12_CLEAR_VALUE* pOptimizedClearValue,
                                          REFIID                            riid,
-                                         HandlePointerDecoder<void*>*      ppvResource) override;
+                                         HandlePointerDecoder<void*>*      ppvResource,
+                                         UINT64                            max_aliasing_size) override;
 
     virtual HRESULT CreateReservedResource(_In_ const D3D12_RESOURCE_DESC*   pDesc,
                                            D3D12_RESOURCE_STATES             InitialState,
@@ -97,7 +98,8 @@ class Dx12RebindAllocator : public Dx12ResourceAllocator
                                           D3D12_RESOURCE_STATES             InitialState,
                                           _In_opt_ const D3D12_CLEAR_VALUE* pOptimizedClearValue,
                                           REFIID                            riid,
-                                          HandlePointerDecoder<void*>*      ppvResource) override;
+                                          HandlePointerDecoder<void*>*      ppvResource,
+                                          UINT64                            max_aliasing_size) override;
 
     virtual HRESULT CreateReservedResource1(_In_ const D3D12_RESOURCE_DESC*          pDesc,
                                             D3D12_RESOURCE_STATES                    InitialState,
@@ -124,7 +126,8 @@ class Dx12RebindAllocator : public Dx12ResourceAllocator
                                           UINT32                                                NumCastableFormats,
                                           _In_opt_count_(NumCastableFormats) const DXGI_FORMAT* pCastableFormats,
                                           REFIID                                                riid,
-                                          HandlePointerDecoder<void*>*                          ppvResource) override;
+                                          HandlePointerDecoder<void*>*                          ppvResource,
+                                          UINT64 max_aliasing_size) override;
 
     virtual HRESULT CreateReservedResource2(_In_ const D3D12_RESOURCE_DESC*                       pDesc,
                                             D3D12_BARRIER_LAYOUT                                  InitialLayout,
@@ -204,9 +207,16 @@ class Dx12RebindAllocator : public Dx12ResourceAllocator
 
     virtual void ReportResourceIncompatibility1(const D3D12_RESOURCE_DESC1* resource_desc) override;
 
-    D3D12_RESOURCE_ALLOCATION_INFO GetReplayResourceDescAllocationInfo(const D3D12_RESOURCE_DESC* resource_desc);
+    virtual bool IsAliasingResourcePairs(const format::HandleId resource_before_id,
+                                         const format::HandleId resource_after_id) override;
 
-    D3D12_RESOURCE_ALLOCATION_INFO GetReplayResourceDescAllocationInfo1(const D3D12_RESOURCE_DESC1* resource_desc);
+    D3D12_RESOURCE_ALLOCATION_INFO GetReplayResourceDescAllocationInfo1(const D3D12_RESOURCE_DESC* resource_desc);
+
+    D3D12_RESOURCE_ALLOCATION_INFO GetReplayResourceDescAllocationInfo2(const D3D12_RESOURCE_DESC1* resource_desc);
+
+    D3D12_RESOURCE_ALLOCATION_INFO GetReplayResourceDescAllocationInfo3(const D3D12_RESOURCE_DESC1* resource_desc,
+                                                                        const UINT32       num_castable_formats,
+                                                                        const DXGI_FORMAT* castable_formats);
 
     D3D12_HEAP_PROPERTIES GetReplayCustomHeapProperties(const D3D12_CPU_PAGE_PROPERTY cpu_page_property);
 
@@ -237,7 +247,9 @@ class Dx12RebindAllocator : public Dx12ResourceAllocator
     ComPtr<D3D12MA::Allocator> allocator_;
     bool                       enable_as_committed_; // Cache for GFXRECON_ACCEL_STRUCT_COMMITTED env var
 
-    std::unordered_map<format::HandleId, ComPtr<D3D12MA::Allocation>>     heap_id_aliasing_allocation_;
+    // heap id -> heap offset -> allocation
+    std::unordered_map<format::HandleId, std::unordered_map<UINT64, ComPtr<D3D12MA::Allocation>>>
+                                                                          heap_id_offset_aliasing_allocation_;
     std::unordered_map<format::HandleId, ComPtr<D3D12MA::Allocation>>     resource_id_allocation_;
     std::unordered_map<format::HandleId, ComPtr<D3D12MA::Pool>>           heap_id_custom_pool_;
     std::unordered_map<format::HandleId, D3D12_HEAP_DESC>                 heap_id_desc_;

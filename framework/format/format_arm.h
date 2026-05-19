@@ -53,6 +53,7 @@ inline constexpr format::MetaDataType kFixShadowMemoryCommand                  =
 inline constexpr format::MetaDataType kFillMemoryResourceAddressCommand        = CreateMetaDataTypeARM(4);
 inline constexpr format::MetaDataType kGetDx12AccelerationStructureSizeCommand = CreateMetaDataTypeARM(5);
 inline constexpr format::MetaDataType kMemoryRequirementsCommand               = CreateMetaDataTypeARM(6);
+inline constexpr format::MetaDataType kDx12ResourceAliasingCommand             = CreateMetaDataTypeARM(7);
 
 // Enums used in ARM builds up to r4p1 release that are not reserved upstream
 enum class ConflictingMetaDataTypes : MetaDataTypeUnderlyingType
@@ -112,6 +113,23 @@ struct ResourceMemoryRequirementsCommandHeader
     MetaDataHeader   meta_header;
     format::HandleId device_id;
     uint32_t         resources_count;
+    uint64_t         reserved[4];
+};
+
+struct Dx12ResourceAliasingCommandHeader
+{
+    MetaDataHeader   meta_header;
+    format::ThreadId thread_id;
+    uint64_t         resources_count;
+    uint64_t         reserved[2];
+};
+
+struct Dx12ResourceAliasingInfo
+{
+    format::HandleId resource_id;
+    format::HandleId heap_id;
+    uint64_t         heap_offset;
+    uint64_t         resource_desc[12]; // Here is filled with D3D12_RESOURCE_DESC or D3D12_RESOURCE_DESC1 values.
     uint64_t         reserved[4];
 };
 

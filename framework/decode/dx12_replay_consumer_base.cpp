@@ -794,6 +794,55 @@ void Dx12ReplayConsumerBase::ProcessFillMemoryResourceAddressCommand(
     opt_fillmem_ = true;
 }
 
+void Dx12ReplayConsumerBase::ProcessDx12ResourceAliasingCommand(
+    const format::arm::Dx12ResourceAliasingCommandHeader& command_header, const uint8_t* data)
+{
+    const auto resource_count = static_cast<size_t>(command_header.resources_count);
+    if ((resource_count == 0) || (data == nullptr))
+    {
+        GFXRECON_LOG_WARNING("Ignoring invalid DX12 aliasing metadata block with null payload.");
+        return;
+    }
+
+    uint64_t max_allocation_size = 0;
+    auto*    aliasing_infos      = reinterpret_cast<const format::arm::Dx12ResourceAliasingInfo*>(data);
+    for (size_t i = 0; i < resource_count; ++i)
+    {
+        auto* resource_desc1 = reinterpret_cast<const D3D12_RESOURCE_DESC1*>(aliasing_infos[i].resource_desc);
+        if (resource_desc1->Dimension == D3D12_RESOURCE_DIMENSION_BUFFER)
+        {
+            max_allocation_size = std::max(max_allocation_size, resource_desc1->Width);
+            continue;
+        }
+
+        for (const auto& [id, device] : active_devices_)
+        {
+            graphics::dx12::ID3D12Device8ComPtr device8_ptr = nullptr;
+            auto*                               device_ptr  = reinterpret_cast<IUnknown*>(const_cast<void*>(device));
+            HRESULT                             result      = device_ptr->QueryInterface(IID_PPV_ARGS(&device8_ptr));
+            if (SUCCEEDED(result))
+            {
+                D3D12_RESOURCE_ALLOCATION_INFO1 alloc_info1 = {};
+                auto                            alloc_info  = device8_ptr->GetResourceAllocationInfo2(
+                    0, 1, reinterpret_cast<const D3D12_RESOURCE_DESC1*>(aliasing_infos[i].resource_desc), &alloc_info1);
+                max_allocation_size = std::max(max_allocation_size, alloc_info.SizeInBytes);
+            }
+        }
+    }
+
+    if (max_allocation_size == 0)
+    {
+        GFXRECON_LOG_WARNING(
+            "Failed to determine maximum allocation size for aliased resources. Aliasing metadata will be ignored.");
+        return;
+    }
+
+    for (size_t i = 0; i < resource_count; ++i)
+    {
+        aliasing_resource_sizes_[aliasing_infos[i].resource_id] = max_allocation_size;
+    }
+}
+
 void Dx12ReplayConsumerBase::ProcessInitDx12AccelerationStructureCommand(
     const format::InitDx12AccelerationStructureCommandHeader&             command_header,
     const std::vector<format::InitDx12AccelerationStructureGeometryDesc>& geometry_descs,
@@ -2326,6 +2375,8 @@ HRESULT Dx12ReplayConsumerBase::OverrideCreatePlacedResource(
     auto allocator   = device_info->allocator.get();
     auto heap_id     = pHeap->capture_id;
     GFXRECON_ASSERT((device_info != nullptr) && (allocator != nullptr));
+    uint64_t aliasing_size =
+        (aliasing_resource_sizes_.count(resource_id) > 0) ? aliasing_resource_sizes_[resource_id] : 0;
     auto replay_result = allocator->CreatePlacedResource(heap_id,
                                                          heap,
                                                          HeapOffset,
@@ -2333,7 +2384,8 @@ HRESULT Dx12ReplayConsumerBase::OverrideCreatePlacedResource(
                                                          InitialState,
                                                          pOptimizedClearValue->GetPointer(),
                                                          *riid.decoded_value,
-                                                         ppvResource);
+                                                         ppvResource,
+                                                         aliasing_size);
 
     if (SUCCEEDED(replay_result))
     {
@@ -2554,6 +2606,8 @@ HRESULT Dx12ReplayConsumerBase::OverrideCreatePlacedResource1(
     auto allocator   = device_info->allocator.get();
     auto heap_id     = pHeap->capture_id;
     GFXRECON_ASSERT((device_info != nullptr) && (allocator != nullptr));
+    uint64_t aliasing_size =
+        (aliasing_resource_sizes_.count(resource_id) > 0) ? aliasing_resource_sizes_[resource_id] : 0;
     auto replay_result = allocator->CreatePlacedResource1(heap_id,
                                                           heap,
                                                           HeapOffset,
@@ -2561,7 +2615,8 @@ HRESULT Dx12ReplayConsumerBase::OverrideCreatePlacedResource1(
                                                           InitialState,
                                                           pOptimizedClearValue->GetPointer(),
                                                           *riid.decoded_value,
-                                                          ppvResource);
+                                                          ppvResource,
+                                                          aliasing_size);
 
     if (SUCCEEDED(replay_result))
     {
@@ -2680,6 +2735,8 @@ HRESULT Dx12ReplayConsumerBase::OverrideCreatePlacedResource2(
     auto allocator   = device_info->allocator.get();
     auto heap_id     = pHeap->capture_id;
     GFXRECON_ASSERT((device_info != nullptr) && (allocator != nullptr));
+    uint64_t aliasing_size =
+        (aliasing_resource_sizes_.count(resource_id) > 0) ? aliasing_resource_sizes_[resource_id] : 0;
     auto replay_result = allocator->CreatePlacedResource2(heap_id,
                                                           heap,
                                                           HeapOffset,
@@ -2689,7 +2746,8 @@ HRESULT Dx12ReplayConsumerBase::OverrideCreatePlacedResource2(
                                                           NumCastableFormats,
                                                           pCastableFormats->GetPointer(),
                                                           *riid.decoded_value,
-                                                          ppvResource);
+                                                          ppvResource,
+                                                          aliasing_size);
 
     if (SUCCEEDED(replay_result))
     {
@@ -6835,6 +6893,39 @@ void Dx12ReplayConsumerBase::PreCall_ID3D12GraphicsCommandList_ResourceBarrier(
             if (support_memory_allocator_ && (accel_struct_builder != nullptr))
             {
                 accel_struct_builder->PreCmdResourceBarrier(command_list_ptr, barriers[i].UAV->pResource);
+            }
+        }
+        else if (barriers[i].decoded_value->Type == D3D12_RESOURCE_BARRIER_TYPE_ALIASING)
+        {
+            if (support_memory_allocator_)
+            {
+                auto device_object = GetObjectInfo(extra_info->parent_id);
+                assert(device_object != nullptr);
+                auto device_info = GetExtraInfo<D3D12DeviceInfo>(device_object);
+                assert(device_info != nullptr);
+                auto allocator = device_info->allocator.get();
+                assert(allocator != nullptr);
+
+                auto before_id = barriers[i].Aliasing->pResourceBefore;
+                auto after_id  = barriers[i].Aliasing->pResourceAfter;
+                // If the two resources in the aliasing barrier are not aliasing resource pairs according to the
+                // allocator, then it means that they are not actually aliasing each other. In this case, set both
+                // resource pointers in the barrier to null to avoid potential issues with the replay resource states
+                // being set incorrectly based on the captured resource states.
+                if (!allocator->IsAliasingResourcePairs(before_id, after_id))
+                {
+                    barriers[i].Aliasing->pResourceBefore = format::kNullHandleId;
+                    barriers[i].Aliasing->pResourceAfter  = format::kNullHandleId;
+                }
+                else
+                {
+                    if ((aliasing_resource_sizes_.count(before_id) == 0) ||
+                        (aliasing_resource_sizes_.count(after_id) == 0))
+                    {
+                        barriers[i].Aliasing->pResourceBefore = format::kNullHandleId;
+                        barriers[i].Aliasing->pResourceAfter  = format::kNullHandleId;
+                    }
+                }
             }
         }
     }

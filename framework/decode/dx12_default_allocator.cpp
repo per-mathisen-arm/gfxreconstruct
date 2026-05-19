@@ -177,9 +177,11 @@ HRESULT Dx12DefaultAllocator::CreatePlacedResource(format::HandleId             
                                                    D3D12_RESOURCE_STATES             InitialState,
                                                    _In_opt_ const D3D12_CLEAR_VALUE* pOptimizedClearValue,
                                                    REFIID                            riid,
-                                                   HandlePointerDecoder<void*>*      ppvResource)
+                                                   HandlePointerDecoder<void*>*      ppvResource,
+                                                   UINT64                            max_aliasing_size)
 {
     GFXRECON_UNREFERENCED_PARAMETER(heap_capture_id);
+    GFXRECON_UNREFERENCED_PARAMETER(max_aliasing_size);
 
     HRESULT result = S_FALSE;
     ReportResourceIncompatibility(pDesc);
@@ -234,9 +236,11 @@ HRESULT Dx12DefaultAllocator::CreatePlacedResource1(format::HandleId            
                                                     D3D12_RESOURCE_STATES             InitialState,
                                                     _In_opt_ const D3D12_CLEAR_VALUE* pOptimizedClearValue,
                                                     REFIID                            riid,
-                                                    HandlePointerDecoder<void*>*      ppvResource)
+                                                    HandlePointerDecoder<void*>*      ppvResource,
+                                                    UINT64                            max_aliasing_size)
 {
     GFXRECON_UNREFERENCED_PARAMETER(heap_capture_id);
+    GFXRECON_UNREFERENCED_PARAMETER(max_aliasing_size);
 
     HRESULT result = S_FALSE;
 
@@ -302,9 +306,11 @@ HRESULT Dx12DefaultAllocator::CreatePlacedResource2(format::HandleId            
                                                     _In_opt_count_(NumCastableFormats)
                                                         const DXGI_FORMAT*       pCastableFormats,
                                                     REFIID                       riid,
-                                                    HandlePointerDecoder<void*>* ppvResource)
+                                                    HandlePointerDecoder<void*>* ppvResource,
+                                                    UINT64                       max_aliasing_size)
 {
     GFXRECON_UNREFERENCED_PARAMETER(heap_capture_id);
+    GFXRECON_UNREFERENCED_PARAMETER(max_aliasing_size);
 
     HRESULT result = S_FALSE;
 

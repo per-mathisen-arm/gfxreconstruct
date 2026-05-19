@@ -270,6 +270,10 @@ class ApiDecoder
     virtual void
     DispatchResourceMemoryRequirements(const format::arm::ResourceMemoryRequirementsCommandHeader& command_header,
                                        const uint8_t*                                              parameter_buffer){};
+
+    virtual void
+    DispatchDx12ResourceAliasingCommand(const format::arm::Dx12ResourceAliasingCommandHeader& command_header,
+                                        const uint8_t*                                        data){};
 };
 
 GFXRECON_END_NAMESPACE(decode)

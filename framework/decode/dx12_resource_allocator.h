@@ -69,7 +69,8 @@ class Dx12ResourceAllocator
                                          D3D12_RESOURCE_STATES             InitialState,
                                          _In_opt_ const D3D12_CLEAR_VALUE* pOptimizedClearValue,
                                          REFIID                            riid,
-                                         HandlePointerDecoder<void*>*      ppvResource) = 0;
+                                         HandlePointerDecoder<void*>*      ppvResource,
+                                         UINT64                            max_aliasing_size) = 0;
 
     virtual HRESULT CreateReservedResource(_In_ const D3D12_RESOURCE_DESC*   pDesc,
                                            D3D12_RESOURCE_STATES             InitialState,
@@ -93,7 +94,8 @@ class Dx12ResourceAllocator
                                           D3D12_RESOURCE_STATES             InitialState,
                                           _In_opt_ const D3D12_CLEAR_VALUE* pOptimizedClearValue,
                                           REFIID                            riid,
-                                          HandlePointerDecoder<void*>*      ppvResource) = 0;
+                                          HandlePointerDecoder<void*>*      ppvResource,
+                                          UINT64                            max_aliasing_size) = 0;
 
     virtual HRESULT CreateReservedResource1(_In_ const D3D12_RESOURCE_DESC*          pDesc,
                                             D3D12_RESOURCE_STATES                    InitialState,
@@ -120,7 +122,8 @@ class Dx12ResourceAllocator
                                           UINT32                                                NumCastableFormats,
                                           _In_opt_count_(NumCastableFormats) const DXGI_FORMAT* pCastableFormats,
                                           REFIID                                                riid,
-                                          HandlePointerDecoder<void*>*                          ppvResource) = 0;
+                                          HandlePointerDecoder<void*>*                          ppvResource,
+                                          UINT64                                                max_aliasing_size) = 0;
 
     virtual HRESULT CreateReservedResource2(_In_ const D3D12_RESOURCE_DESC*                       pDesc,
                                             D3D12_BARRIER_LAYOUT                                  InitialLayout,
@@ -199,6 +202,9 @@ class Dx12ResourceAllocator
     virtual void ReportResourceIncompatibility(const D3D12_RESOURCE_DESC* resource_desc) = 0;
 
     virtual void ReportResourceIncompatibility1(const D3D12_RESOURCE_DESC1* resource_desc) = 0;
+
+    virtual bool IsAliasingResourcePairs(const format::HandleId resource_before_id,
+                                         const format::HandleId resource_after_id) = 0;
 };
 
 GFXRECON_END_NAMESPACE(decode)

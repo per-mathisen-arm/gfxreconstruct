@@ -1917,6 +1917,40 @@ ParsedBlock& BlockParser::ParseMetaData(BlockBuffer& block_buffer)
                                  "Failed to read resource memory requirements meta-data block header");
         }
     }
+    else if (meta_data_type == format::arm::MetaDataType::kDx12ResourceAliasingCommand)
+    {
+        format::arm::Dx12ResourceAliasingCommandHeader header{};
+        header.meta_header.block_header = block_header;
+        header.meta_header.meta_data_id = meta_data_id;
+        success                         = success && block_buffer.Read(header.thread_id);
+        success                         = success && block_buffer.Read(header.resources_count);
+        success                         = success && block_buffer.Read(header.reserved[0]);
+        success                         = success && block_buffer.Read(header.reserved[1]);
+
+        size_t data_size = header.resources_count * sizeof(format::arm::Dx12ResourceAliasingInfo);
+
+        if (success)
+        {
+            const char*         label       = "dx12 resource aliasing meta-data block";
+            ParameterReadResult read_result = ReadParameterBuffer(label, block_buffer, data_size);
+
+            if (read_result.success)
+            {
+                auto* payload = Emplace<Dx12ResourceAliasingArgs>(
+                    meta_data_id, data_size, header, reinterpret_cast<const uint8_t*>(read_result.buffer.data()));
+                return MakeCompressibleParsedBlock(block_buffer, read_result, payload);
+            }
+            else
+            {
+                HandleBlockReadError(kErrorReadingBlockData, "Failed to read dx12 resource aliasing meta-data block");
+            }
+        }
+        else
+        {
+            HandleBlockReadError(kErrorReadingBlockHeader,
+                                 "Failed to read dx12 resource aliasing meta-data block header");
+        }
+    }
     else
     {
         if (meta_data_type >= format::MetaDataType::kBeginExperimentalReservedRange ||

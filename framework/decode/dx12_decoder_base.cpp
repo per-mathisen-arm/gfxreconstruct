@@ -355,6 +355,15 @@ void Dx12DecoderBase::DispatchFillMemoryResourceAddressCommand(
     }
 }
 
+void Dx12DecoderBase::DispatchDx12ResourceAliasingCommand(
+    const format::arm::Dx12ResourceAliasingCommandHeader& command_header, const uint8_t* data)
+{
+    for (auto consumer : consumers_)
+    {
+        consumer->ProcessDx12ResourceAliasingCommand(command_header, data);
+    }
+}
+
 void Dx12DecoderBase::DispatchSetEnvironmentVariablesCommand(const format::SetEnvironmentVariablesCommand& header,
                                                              const char*                                   env_string)
 {

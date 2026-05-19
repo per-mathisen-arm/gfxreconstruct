@@ -257,6 +257,10 @@ class Dx12DecoderBase : public ApiDecoder
     DispatchFillMemoryResourceAddressCommand(const format::arm::FillMemoryResourceAddressCommandHeader& command_header,
                                              const uint8_t*                                             data) override;
 
+    virtual void
+    DispatchDx12ResourceAliasingCommand(const format::arm::Dx12ResourceAliasingCommandHeader& command_header,
+                                        const uint8_t*                                        data) override;
+
     void DispatchSetOpaqueDescriptorDataCommand(format::ThreadId thread_id,
                                                 format::HandleId device_id,
                                                 format::HandleId object_id,

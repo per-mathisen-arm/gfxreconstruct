@@ -535,6 +535,26 @@ class MetadataJsonConsumer : public Base
         WriteBlockEnd();
     }
 
+    virtual void
+    ProcessDx12ResourceAliasingCommand(const format::arm::Dx12ResourceAliasingCommandHeader& command_header,
+                                       const uint8_t*                                        data) override
+    {
+        auto& jdata = WriteMetaCommandStart("Dx12ResourceAliasingCommand");
+        HandleToJson(jdata["thread_id"], command_header.thread_id);
+        jdata["resources_count"] = command_header.resources_count;
+
+        const auto resource_count = static_cast<size_t>(command_header.resources_count);
+        auto*      aliasing_infos = reinterpret_cast<const format::arm::Dx12ResourceAliasingInfo*>(data);
+        for (size_t i = 0; i < resource_count; ++i)
+        {
+            auto& jresource = jdata["resources"][i];
+            HandleToJson(jresource["resource_id"], aliasing_infos[i].resource_id);
+            HandleToJson(jresource["heap_id"], aliasing_infos[i].heap_id);
+            jresource["heap_offset"] = aliasing_infos[i].heap_offset;
+        }
+        WriteBlockEnd();
+    }
+
     /// @}
 };
 

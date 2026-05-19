@@ -58,11 +58,14 @@ void Dx12RebindAllocator::Destroy()
     }
     resource_id_allocation_.clear();
 
-    for (auto& alloc : heap_id_aliasing_allocation_)
+    for (auto& [heap_id, offset_map] : heap_id_offset_aliasing_allocation_)
     {
-        alloc.second.Reset();
+        for (auto& [offset, alloc] : offset_map)
+        {
+            alloc.Reset();
+        }
     }
-    heap_id_aliasing_allocation_.clear();
+    heap_id_offset_aliasing_allocation_.clear();
 
     for (auto& pool : heap_id_custom_pool_)
     {
@@ -119,8 +122,8 @@ void Dx12RebindAllocator::SetReplayResourceCompatibility(const format::HandleId 
                                                          D3D12_RESOURCE_DESC1*     resource_desc,
                                                          D3D12MA::ALLOCATION_DESC& allocation_desc)
 {
-    assert(heap != nullptr);
-    GetReplayResourceDescAllocationInfo1(resource_desc);
+    assert(resource_desc != nullptr);
+    const_cast<D3D12_RESOURCE_DESC1*>(resource_desc)->Alignment = 0;
 
     assert(heap != nullptr);
     allocation_desc.Flags = D3D12MA::ALLOCATION_FLAGS::ALLOCATION_FLAG_NONE;
@@ -194,7 +197,7 @@ void Dx12RebindAllocator::SetReplayResourceCompatibility(const format::HandleId 
 }
 
 D3D12_RESOURCE_ALLOCATION_INFO
-Dx12RebindAllocator::GetReplayResourceDescAllocationInfo(const D3D12_RESOURCE_DESC* resource_desc)
+Dx12RebindAllocator::GetReplayResourceDescAllocationInfo1(const D3D12_RESOURCE_DESC* resource_desc)
 {
     D3D12_RESOURCE_ALLOCATION_INFO  alloc_info  = {};
     D3D12_RESOURCE_ALLOCATION_INFO1 alloc_info1 = {};
@@ -229,7 +232,7 @@ Dx12RebindAllocator::GetReplayResourceDescAllocationInfo(const D3D12_RESOURCE_DE
 }
 
 D3D12_RESOURCE_ALLOCATION_INFO
-Dx12RebindAllocator::GetReplayResourceDescAllocationInfo1(const D3D12_RESOURCE_DESC1* resource_desc)
+Dx12RebindAllocator::GetReplayResourceDescAllocationInfo2(const D3D12_RESOURCE_DESC1* resource_desc)
 {
     D3D12_RESOURCE_ALLOCATION_INFO  alloc_info  = {};
     D3D12_RESOURCE_ALLOCATION_INFO1 alloc_info1 = {};
@@ -274,6 +277,62 @@ Dx12RebindAllocator::GetReplayResourceDescAllocationInfo1(const D3D12_RESOURCE_D
     return alloc_info;
 }
 
+D3D12_RESOURCE_ALLOCATION_INFO
+Dx12RebindAllocator::GetReplayResourceDescAllocationInfo3(const D3D12_RESOURCE_DESC1* resource_desc,
+                                                          const UINT32                num_castable_formats,
+                                                          const DXGI_FORMAT*          castable_formats)
+{
+    D3D12_RESOURCE_ALLOCATION_INFO  alloc_info  = {};
+    D3D12_RESOURCE_ALLOCATION_INFO1 alloc_info1 = {};
+
+    if (device_ != nullptr)
+    {
+        graphics::dx12::ID3D12Device4ComPtr device4;
+        device_->QueryInterface(IID_PPV_ARGS(&device4));
+
+        graphics::dx12::ID3D12Device8ComPtr device8;
+        device_->QueryInterface(IID_PPV_ARGS(&device8));
+
+        graphics::dx12::ID3D12Device12ComPtr device12;
+        device_->QueryInterface(IID_PPV_ARGS(&device12));
+
+        if ((device12 != nullptr) && (num_castable_formats > 0) && (castable_formats != nullptr))
+        {
+            alloc_info = device12->GetResourceAllocationInfo3(
+                0, 1, resource_desc, &num_castable_formats, &castable_formats, &alloc_info1);
+        }
+        else if (device8 != nullptr)
+        {
+            alloc_info = device8->GetResourceAllocationInfo2(0, 1, resource_desc, &alloc_info1);
+        }
+        else if (device4 != nullptr)
+        {
+            D3D12_RESOURCE_DESC* desc =
+                reinterpret_cast<D3D12_RESOURCE_DESC*>(const_cast<D3D12_RESOURCE_DESC1*>(resource_desc));
+            alloc_info = device4->GetResourceAllocationInfo1(0, 1, desc, &alloc_info1);
+        }
+        else
+        {
+            D3D12_RESOURCE_DESC* desc =
+                reinterpret_cast<D3D12_RESOURCE_DESC*>(const_cast<D3D12_RESOURCE_DESC1*>(resource_desc));
+            alloc_info = device_->GetResourceAllocationInfo(0, 1, desc);
+        }
+
+        // Alignment is set to 0, the runtime will set it to the correct value
+        const_cast<D3D12_RESOURCE_DESC1*>(resource_desc)->Alignment = 0;
+
+        if (resource_desc->Dimension == D3D12_RESOURCE_DIMENSION_BUFFER)
+        {
+            if (alloc_info.SizeInBytes && alloc_info.SizeInBytes != resource_desc->Width)
+            {
+                const_cast<D3D12_RESOURCE_DESC1*>(resource_desc)->Width = alloc_info.SizeInBytes;
+            }
+        }
+    }
+
+    return alloc_info;
+}
+
 ULONG Dx12RebindAllocator::Release(IUnknown* object, format::HandleId object_id)
 {
     // The order of release is Resource->allocation->custom pool
@@ -283,10 +342,9 @@ ULONG Dx12RebindAllocator::Release(IUnknown* object, format::HandleId object_id)
         resource_id_allocation_.erase(object_id);
     }
 
-    if (heap_id_aliasing_allocation_.find(object_id) != heap_id_aliasing_allocation_.end())
+    if (heap_id_offset_aliasing_allocation_.count(object_id))
     {
-        heap_id_aliasing_allocation_[object_id] = nullptr;
-        heap_id_aliasing_allocation_.erase(object_id);
+        heap_id_offset_aliasing_allocation_.erase(object_id);
     }
 
     if (heap_id_custom_pool_.find(object_id) != heap_id_custom_pool_.end())
@@ -399,7 +457,7 @@ HRESULT Dx12RebindAllocator::CreateCommittedResource(_In_ const D3D12_HEAP_PROPE
 
     // don't create resources non-resident
     HeapFlags &= ~D3D12_HEAP_FLAG_CREATE_NOT_RESIDENT;
-    GetReplayResourceDescAllocationInfo(pDesc);
+    GetReplayResourceDescAllocationInfo1(pDesc);
 
     if (pHeapProperties->Type == D3D12_HEAP_TYPE_CUSTOM)
     {
@@ -450,7 +508,8 @@ HRESULT Dx12RebindAllocator::CreatePlacedResource(format::HandleId              
                                                   D3D12_RESOURCE_STATES             InitialState,
                                                   _In_opt_ const D3D12_CLEAR_VALUE* pOptimizedClearValue,
                                                   REFIID                            riid,
-                                                  HandlePointerDecoder<void*>*      ppvResource)
+                                                  HandlePointerDecoder<void*>*      ppvResource,
+                                                  UINT64                            max_aliasing_size)
 {
     HRESULT                     result     = S_FALSE;
     ComPtr<D3D12MA::Allocation> allocation = nullptr;
@@ -462,17 +521,15 @@ HRESULT Dx12RebindAllocator::CreatePlacedResource(format::HandleId              
     if (allocator_ != nullptr)
     {
         bool should_use_committed =
-            enable_as_committed_ &&
-            (((InitialState & D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE) != 0) ||
-             ((resource_desc->Flags & D3D12_RESOURCE_FLAG_RAYTRACING_ACCELERATION_STRUCTURE) != 0));
+            enable_as_committed_ && ((InitialState & D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE) != 0);
+        bool use_aliasing_path = (max_aliasing_size > 0) && !should_use_committed;
 
         if (should_use_committed)
         {
             alloc_desc.Flags = D3D12MA::ALLOCATION_FLAGS::ALLOCATION_FLAG_COMMITTED;
         }
 
-        // If the HeapOffset is 0 and it is not a multi-sample resource, an aliasing resource needs be created.
-        if ((HeapOffset != 0) || (pDesc->SampleDesc.Count > 1) || should_use_committed)
+        if ((pDesc->SampleDesc.Count > 1) || should_use_committed || !use_aliasing_path)
         {
             result = allocator_->CreateResource(&alloc_desc,
                                                 pDesc,
@@ -484,60 +541,59 @@ HRESULT Dx12RebindAllocator::CreatePlacedResource(format::HandleId              
         }
         else
         {
-            bool                 recreated_allocation = false;
-            D3D12MA::Allocation* aliasing_alloc       = nullptr;
-
-            if (heap_id_aliasing_allocation_.find(heap_capture_id) == heap_id_aliasing_allocation_.end())
+            D3D12MA::Allocation*           aliasing_alloc    = nullptr;
+            D3D12_RESOURCE_ALLOCATION_INFO alloc_info        = { 0, 0 };
+            UINT64                         aliasing_offset   = 0;
+            UINT64                         allocation_offset = HeapOffset;
+            if (pDesc->Dimension == D3D12_RESOURCE_DIMENSION_BUFFER)
             {
-                recreated_allocation = true;
+                allocation_offset = 0;
+                aliasing_offset   = HeapOffset;
             }
-            else
+
+            auto& offset_map = heap_id_offset_aliasing_allocation_[heap_capture_id];
+            if (offset_map.find(allocation_offset) == offset_map.end())
             {
-                D3D12_RESOURCE_ALLOCATION_INFO replay_alloc_info = GetReplayResourceDescAllocationInfo(pDesc);
-                if (replay_alloc_info.SizeInBytes != 0 && replay_alloc_info.SizeInBytes != UINT64_MAX)
+                auto replay_alloc_info = GetReplayResourceDescAllocationInfo1(pDesc);
+                max_aliasing_size      = std::max(max_aliasing_size, replay_alloc_info.SizeInBytes);
+                max_aliasing_size =
+                    util::platform::AlignValue<D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT>(max_aliasing_size);
+                alloc_info.Alignment   = replay_alloc_info.Alignment;
+                alloc_info.SizeInBytes = max_aliasing_size;
+
+                if (pDesc->Dimension == D3D12_RESOURCE_DIMENSION_BUFFER)
                 {
-                    if (heap_id_aliasing_allocation_[heap_capture_id].Get()->GetSize() < replay_alloc_info.SizeInBytes)
+                    auto heap_iter = heap_id_desc_.find(heap_capture_id);
+                    if (heap_iter != heap_id_desc_.end())
                     {
-                        recreated_allocation = true;
+                        max_aliasing_size      = std::max(max_aliasing_size, heap_iter->second.SizeInBytes);
+                        alloc_info.SizeInBytes = max_aliasing_size;
                     }
-                }
-            }
-
-            if (recreated_allocation)
-            {
-                D3D12_RESOURCE_ALLOCATION_INFO alloc_info = {};
-                alloc_info.Alignment                      = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
-
-                D3D12_RESOURCE_ALLOCATION_INFO replay_alloc_info = GetReplayResourceDescAllocationInfo(pDesc);
-                if (replay_alloc_info.SizeInBytes != 0 && replay_alloc_info.SizeInBytes != UINT64_MAX)
-                {
-                    alloc_info.SizeInBytes = replay_alloc_info.SizeInBytes;
-                    alloc_info.Alignment   = replay_alloc_info.Alignment;
-                }
-                else
-                {
-                    alloc_info.SizeInBytes = heap_id_desc_[heap_capture_id].SizeInBytes;
+                    else
+                    {
+                        GFXRECON_LOG_ERROR("Failed to find heap description for heap capture id %" PRIu64,
+                                           heap_capture_id);
+                    }
                 }
 
                 result = allocator_->AllocateMemory(&alloc_desc, &alloc_info, &allocation);
                 if (SUCCEEDED(result))
                 {
-                    // This may release old allocation and save new allocation
-                    heap_id_aliasing_allocation_.insert_or_assign(heap_capture_id, allocation);
-                    aliasing_alloc = allocation.Get();
+                    offset_map[allocation_offset] = allocation;
+                    aliasing_alloc                = allocation.Get();
                 }
             }
             else
             {
                 result         = S_OK;
-                aliasing_alloc = heap_id_aliasing_allocation_[heap_capture_id].Get();
+                aliasing_alloc = offset_map[allocation_offset].Get();
                 allocation     = aliasing_alloc;
             }
 
             if (SUCCEEDED(result))
             {
                 result = allocator_->CreateAliasingResource(aliasing_alloc,
-                                                            0,
+                                                            aliasing_offset,
                                                             pDesc,
                                                             InitialState,
                                                             pOptimizedClearValue,
@@ -566,7 +622,7 @@ HRESULT Dx12RebindAllocator::CreateReservedResource(_In_ const D3D12_RESOURCE_DE
 
     if (device_ != nullptr)
     {
-        GetReplayResourceDescAllocationInfo(pDesc);
+        GetReplayResourceDescAllocationInfo1(pDesc);
         result = device_->CreateReservedResource(
             pDesc, InitialState, pOptimizedClearValue, riid, ppvResource->GetHandlePointer());
     }
@@ -588,7 +644,7 @@ HRESULT Dx12RebindAllocator::CreateCommittedResource1(_In_ const D3D12_HEAP_PROP
 
     // don't create resources non-resident
     HeapFlags &= ~D3D12_HEAP_FLAG_CREATE_NOT_RESIDENT;
-    GetReplayResourceDescAllocationInfo(pDesc);
+    GetReplayResourceDescAllocationInfo1(pDesc);
 
     if (pHeapProperties->Type == D3D12_HEAP_TYPE_CUSTOM || pProtectedSession != nullptr)
     {
@@ -654,7 +710,8 @@ HRESULT Dx12RebindAllocator::CreatePlacedResource1(format::HandleId             
                                                    D3D12_RESOURCE_STATES             InitialState,
                                                    _In_opt_ const D3D12_CLEAR_VALUE* pOptimizedClearValue,
                                                    REFIID                            riid,
-                                                   HandlePointerDecoder<void*>*      ppvResource)
+                                                   HandlePointerDecoder<void*>*      ppvResource,
+                                                   UINT64                            max_aliasing_size)
 {
     HRESULT                     result     = S_FALSE;
     ComPtr<D3D12MA::Allocation> allocation = nullptr;
@@ -666,16 +723,15 @@ HRESULT Dx12RebindAllocator::CreatePlacedResource1(format::HandleId             
     if (allocator_ != nullptr)
     {
         bool should_use_committed =
-            enable_as_committed_ &&
-            (((InitialState & D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE) != 0) ||
-             ((resource_desc->Flags & D3D12_RESOURCE_FLAG_RAYTRACING_ACCELERATION_STRUCTURE) != 0));
+            enable_as_committed_ && ((InitialState & D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE) != 0);
+        bool use_aliasing_path = (max_aliasing_size > 0) && !should_use_committed;
 
         if (should_use_committed)
         {
             alloc_desc.Flags = D3D12MA::ALLOCATION_FLAGS::ALLOCATION_FLAG_COMMITTED;
         }
-        // If the HeapOffset is 0 and it is not a multi-sample resource, an aliasing resource needs be created.
-        if ((HeapOffset != 0) || (pDesc->SampleDesc.Count > 1) || should_use_committed)
+
+        if ((pDesc->SampleDesc.Count > 1) || should_use_committed || !use_aliasing_path)
         {
             result = allocator_->CreateResource2(&alloc_desc,
                                                  pDesc,
@@ -687,60 +743,59 @@ HRESULT Dx12RebindAllocator::CreatePlacedResource1(format::HandleId             
         }
         else
         {
-            bool                 recreated_allocation = false;
-            D3D12MA::Allocation* aliasing_alloc       = nullptr;
-
-            if (heap_id_aliasing_allocation_.find(heap_capture_id) == heap_id_aliasing_allocation_.end())
+            D3D12MA::Allocation*           aliasing_alloc    = nullptr;
+            D3D12_RESOURCE_ALLOCATION_INFO alloc_info        = { 0, 0 };
+            UINT64                         aliasing_offset   = 0;
+            UINT64                         allocation_offset = HeapOffset;
+            if (pDesc->Dimension == D3D12_RESOURCE_DIMENSION_BUFFER)
             {
-                recreated_allocation = true;
+                allocation_offset = 0;
+                aliasing_offset   = HeapOffset;
             }
-            else
+
+            auto& offset_map = heap_id_offset_aliasing_allocation_[heap_capture_id];
+            if (offset_map.find(allocation_offset) == offset_map.end())
             {
-                D3D12_RESOURCE_ALLOCATION_INFO replay_alloc_info = GetReplayResourceDescAllocationInfo1(pDesc);
-                if (replay_alloc_info.SizeInBytes != 0 && replay_alloc_info.SizeInBytes != UINT64_MAX)
+                auto replay_alloc_info = GetReplayResourceDescAllocationInfo2(pDesc);
+                max_aliasing_size      = std::max(max_aliasing_size, replay_alloc_info.SizeInBytes);
+                max_aliasing_size =
+                    util::platform::AlignValue<D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT>(max_aliasing_size);
+                alloc_info.Alignment   = replay_alloc_info.Alignment;
+                alloc_info.SizeInBytes = max_aliasing_size;
+
+                if (pDesc->Dimension == D3D12_RESOURCE_DIMENSION_BUFFER)
                 {
-                    if (heap_id_aliasing_allocation_[heap_capture_id].Get()->GetSize() < replay_alloc_info.SizeInBytes)
+                    auto heap_iter = heap_id_desc_.find(heap_capture_id);
+                    if (heap_iter != heap_id_desc_.end())
                     {
-                        recreated_allocation = true;
+                        max_aliasing_size      = std::max(max_aliasing_size, heap_iter->second.SizeInBytes);
+                        alloc_info.SizeInBytes = max_aliasing_size;
                     }
-                }
-            }
-
-            if (recreated_allocation)
-            {
-                D3D12_RESOURCE_ALLOCATION_INFO alloc_info = {};
-                alloc_info.Alignment                      = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
-
-                D3D12_RESOURCE_ALLOCATION_INFO replay_alloc_info = GetReplayResourceDescAllocationInfo1(pDesc);
-                if (replay_alloc_info.SizeInBytes != 0 && replay_alloc_info.SizeInBytes != UINT64_MAX)
-                {
-                    alloc_info.SizeInBytes = replay_alloc_info.SizeInBytes;
-                    alloc_info.Alignment   = replay_alloc_info.Alignment;
-                }
-                else
-                {
-                    alloc_info.SizeInBytes = heap_id_desc_[heap_capture_id].SizeInBytes;
+                    else
+                    {
+                        GFXRECON_LOG_ERROR("Failed to find heap description for heap capture id %" PRIu64,
+                                           heap_capture_id);
+                    }
                 }
 
                 result = allocator_->AllocateMemory(&alloc_desc, &alloc_info, &allocation);
                 if (SUCCEEDED(result))
                 {
-                    // This may release old allocation and save new allocation
-                    heap_id_aliasing_allocation_.insert_or_assign(heap_capture_id, allocation);
-                    aliasing_alloc = allocation.Get();
+                    offset_map[allocation_offset] = allocation;
+                    aliasing_alloc                = allocation.Get();
                 }
             }
             else
             {
                 result         = S_OK;
-                aliasing_alloc = heap_id_aliasing_allocation_[heap_capture_id].Get();
+                aliasing_alloc = offset_map[allocation_offset].Get();
                 allocation     = aliasing_alloc;
             }
 
             if (SUCCEEDED(result))
             {
                 result = allocator_->CreateAliasingResource1(aliasing_alloc,
-                                                             0,
+                                                             aliasing_offset,
                                                              pDesc,
                                                              InitialState,
                                                              pOptimizedClearValue,
@@ -770,7 +825,7 @@ HRESULT Dx12RebindAllocator::CreateReservedResource1(_In_ const D3D12_RESOURCE_D
 
     if (device_ != nullptr)
     {
-        GetReplayResourceDescAllocationInfo(pDesc);
+        GetReplayResourceDescAllocationInfo1(pDesc);
 
         graphics::dx12::ID3D12Device4ComPtr device4;
         device_->QueryInterface(IID_PPV_ARGS(&device4));
@@ -797,7 +852,7 @@ HRESULT Dx12RebindAllocator::CreateCommittedResource2(_In_ const D3D12_HEAP_PROP
 
     // don't create resources non-resident
     HeapFlags &= ~D3D12_HEAP_FLAG_CREATE_NOT_RESIDENT;
-    GetReplayResourceDescAllocationInfo1(pDesc);
+    GetReplayResourceDescAllocationInfo2(pDesc);
 
     if (pHeapProperties->Type == D3D12_HEAP_TYPE_CUSTOM || pProtectedSession != nullptr)
     {
@@ -866,7 +921,8 @@ HRESULT Dx12RebindAllocator::CreatePlacedResource2(format::HandleId             
                                                    _In_opt_count_(NumCastableFormats)
                                                        const DXGI_FORMAT*       pCastableFormats,
                                                    REFIID                       riid,
-                                                   HandlePointerDecoder<void*>* ppvResource)
+                                                   HandlePointerDecoder<void*>* ppvResource,
+                                                   UINT64                       max_aliasing_size)
 {
     HRESULT                     result     = S_FALSE;
     ComPtr<D3D12MA::Allocation> allocation = nullptr;
@@ -879,13 +935,14 @@ HRESULT Dx12RebindAllocator::CreatePlacedResource2(format::HandleId             
     {
         bool should_use_committed =
             enable_as_committed_ && (resource_desc->Flags & D3D12_RESOURCE_FLAG_RAYTRACING_ACCELERATION_STRUCTURE) != 0;
+        bool use_aliasing_path = (max_aliasing_size > 0) && !should_use_committed;
 
         if (should_use_committed)
         {
             alloc_desc.Flags = D3D12MA::ALLOCATION_FLAGS::ALLOCATION_FLAG_COMMITTED;
         }
-        // If the HeapOffset is 0 and it is not a multi-sample resource, an aliasing resource needs be created.
-        if ((HeapOffset != 0) || (pDesc->SampleDesc.Count > 1) || should_use_committed)
+
+        if ((pDesc->SampleDesc.Count > 1) || should_use_committed || !use_aliasing_path)
         {
             result = allocator_->CreateResource3(&alloc_desc,
                                                  pDesc,
@@ -899,60 +956,61 @@ HRESULT Dx12RebindAllocator::CreatePlacedResource2(format::HandleId             
         }
         else
         {
-            bool                 recreated_allocation = false;
-            D3D12MA::Allocation* aliasing_alloc       = nullptr;
-
-            if (heap_id_aliasing_allocation_.find(heap_capture_id) == heap_id_aliasing_allocation_.end())
+            D3D12MA::Allocation*           aliasing_alloc    = nullptr;
+            D3D12_RESOURCE_ALLOCATION_INFO alloc_info        = { 0, 0 };
+            UINT64                         aliasing_offset   = 0;
+            UINT64                         allocation_offset = HeapOffset;
+            if (pDesc->Dimension == D3D12_RESOURCE_DIMENSION_BUFFER)
             {
-                recreated_allocation = true;
+                allocation_offset = 0;
+                aliasing_offset   = HeapOffset;
             }
-            else
+
+            auto& offset_map = heap_id_offset_aliasing_allocation_[heap_capture_id];
+            if (offset_map.find(allocation_offset) == offset_map.end())
             {
-                D3D12_RESOURCE_ALLOCATION_INFO replay_alloc_info = GetReplayResourceDescAllocationInfo1(pDesc);
-                if (replay_alloc_info.SizeInBytes != 0 && replay_alloc_info.SizeInBytes != UINT64_MAX)
+                auto replay_alloc_info =
+                    GetReplayResourceDescAllocationInfo3(pDesc, NumCastableFormats, pCastableFormats);
+                alloc_info.Alignment = replay_alloc_info.Alignment;
+                max_aliasing_size    = std::max(max_aliasing_size, replay_alloc_info.SizeInBytes);
+                max_aliasing_size =
+                    util::platform::AlignValue<D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT>(max_aliasing_size);
+                alloc_info.Alignment   = replay_alloc_info.Alignment;
+                alloc_info.SizeInBytes = max_aliasing_size;
+
+                if (pDesc->Dimension == D3D12_RESOURCE_DIMENSION_BUFFER)
                 {
-                    if (heap_id_aliasing_allocation_[heap_capture_id].Get()->GetSize() < replay_alloc_info.SizeInBytes)
+                    auto heap_iter = heap_id_desc_.find(heap_capture_id);
+                    if (heap_iter != heap_id_desc_.end())
                     {
-                        recreated_allocation = true;
+                        max_aliasing_size      = std::max(max_aliasing_size, heap_iter->second.SizeInBytes);
+                        alloc_info.SizeInBytes = max_aliasing_size;
                     }
-                }
-            }
-
-            if (recreated_allocation)
-            {
-                D3D12_RESOURCE_ALLOCATION_INFO alloc_info = {};
-                alloc_info.Alignment                      = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
-
-                D3D12_RESOURCE_ALLOCATION_INFO replay_alloc_info = GetReplayResourceDescAllocationInfo1(pDesc);
-                if (replay_alloc_info.SizeInBytes != 0 && replay_alloc_info.SizeInBytes != UINT64_MAX)
-                {
-                    alloc_info.SizeInBytes = replay_alloc_info.SizeInBytes;
-                    alloc_info.Alignment   = replay_alloc_info.Alignment;
-                }
-                else
-                {
-                    alloc_info.SizeInBytes = heap_id_desc_[heap_capture_id].SizeInBytes;
+                    else
+                    {
+                        GFXRECON_LOG_ERROR("Failed to find heap description for heap capture id %" PRIu64,
+                                           heap_capture_id);
+                    }
                 }
 
                 result = allocator_->AllocateMemory(&alloc_desc, &alloc_info, &allocation);
                 if (SUCCEEDED(result))
                 {
-                    // This may release old allocation and save new allocation
-                    heap_id_aliasing_allocation_.insert_or_assign(heap_capture_id, allocation);
-                    aliasing_alloc = allocation.Get();
+                    offset_map[allocation_offset] = allocation;
+                    aliasing_alloc                = allocation.Get();
                 }
             }
             else
             {
                 result         = S_OK;
-                aliasing_alloc = heap_id_aliasing_allocation_[heap_capture_id].Get();
+                aliasing_alloc = offset_map[allocation_offset].Get();
                 allocation     = aliasing_alloc;
             }
 
             if (SUCCEEDED(result))
             {
                 result = allocator_->CreateAliasingResource2(aliasing_alloc,
-                                                             0,
+                                                             aliasing_offset,
                                                              pDesc,
                                                              InitialLayout,
                                                              pOptimizedClearValue,
@@ -987,7 +1045,7 @@ HRESULT Dx12RebindAllocator::CreateReservedResource2(_In_ const D3D12_RESOURCE_D
 
     if (device_ != nullptr)
     {
-        GetReplayResourceDescAllocationInfo(pDesc);
+        GetReplayResourceDescAllocationInfo1(pDesc);
 
         graphics::dx12::ID3D12Device10ComPtr device10;
         device_->QueryInterface(IID_PPV_ARGS(&device10));
@@ -1023,7 +1081,7 @@ HRESULT Dx12RebindAllocator::CreateCommittedResource3(_In_ const D3D12_HEAP_PROP
 
     // don't create resources non-resident
     HeapFlags &= ~D3D12_HEAP_FLAG_CREATE_NOT_RESIDENT;
-    GetReplayResourceDescAllocationInfo1(pDesc);
+    GetReplayResourceDescAllocationInfo3(pDesc, NumCastableFormats, pCastableFormats);
 
     if (pHeapProperties->Type == D3D12_HEAP_TYPE_CUSTOM || pProtectedSession != nullptr)
     {
@@ -1823,6 +1881,44 @@ void Dx12RebindAllocator::ReportResourceIncompatibility(const D3D12_RESOURCE_DES
 void Dx12RebindAllocator::ReportResourceIncompatibility1(const D3D12_RESOURCE_DESC1* resource_desc)
 {
     return;
+}
+
+bool Dx12RebindAllocator::IsAliasingResourcePairs(const format::HandleId resource_before_id,
+                                                  const format::HandleId resource_after_id)
+{
+    auto before_alloc = resource_id_allocation_.find(resource_before_id);
+    auto after_alloc  = resource_id_allocation_.find(resource_after_id);
+    if ((before_alloc != resource_id_allocation_.end()) && (after_alloc != resource_id_allocation_.end()))
+    {
+        if ((before_alloc->second->GetHeap() == nullptr) || (after_alloc->second->GetHeap() == nullptr))
+        {
+            return false;
+        }
+
+        if (before_alloc->second->GetHeap() != after_alloc->second->GetHeap())
+        {
+            return false;
+        }
+
+        auto before_offset = before_alloc->second->GetOffset();
+        auto before_end    = before_alloc->second->GetOffset() + before_alloc->second->GetSize();
+        auto after_offset  = after_alloc->second->GetOffset();
+        auto after_end     = after_alloc->second->GetOffset() + after_alloc->second->GetSize();
+        if (before_offset == after_offset)
+        {
+            return true;
+        }
+        else if ((before_offset < after_end) && (after_offset < before_end))
+        {
+            return true;
+        }
+        else if ((after_offset < before_end) && (before_offset < after_end))
+        {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 GFXRECON_END_NAMESPACE(decode)

@@ -142,6 +142,10 @@ class Dx12ReplayConsumerBase : public Dx12Consumer
     ProcessFillMemoryResourceAddressCommand(const format::arm::FillMemoryResourceAddressCommandHeader& command_header,
                                             const uint8_t*                                             data) override;
 
+    virtual void
+    ProcessDx12ResourceAliasingCommand(const format::arm::Dx12ResourceAliasingCommandHeader& command_header,
+                                       const uint8_t*                                        data) override;
+
     virtual void Process_ID3D12Device_CheckFeatureSupport(format::HandleId object_id,
                                                           HRESULT          original_result,
                                                           D3D12_FEATURE    feature,
@@ -1544,6 +1548,7 @@ class Dx12ReplayConsumerBase : public Dx12Consumer
 #endif
 
     FillMemoryResourceAddressInfo                            fill_memory_resource_address_info_;
+    std::unordered_map<format::HandleId, uint64_t>           aliasing_resource_sizes_;
     std::unordered_map<format::HandleId, uint64_t>           resource_buffer_widths_;
     std::optional<std::pair<uint64_t, std::vector<uint8_t>>> latest_root_signature_blob_datas_;
     // map dx12 acceleration structure builders for each device

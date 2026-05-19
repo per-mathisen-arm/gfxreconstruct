@@ -658,6 +658,18 @@ struct ResourceMemoryRequirementsArgs
     auto GetTuple() const { return std::tie(command_header, data); }
 };
 
+struct Dx12ResourceAliasingArgs
+{
+    format::MetaDataId meta_data_id;
+
+    size_t data_size;
+
+    format::arm::Dx12ResourceAliasingCommandHeader command_header;
+    const uint8_t*                                 data;
+
+    auto GetTuple() const { return std::tie(command_header, data); }
+};
+
 // --- DispatchTraits specializations  ---
 template <typename T>
 struct DispatchTraits;
@@ -955,6 +967,12 @@ struct DispatchTraits<ResourceMemoryRequirementsArgs> : DispatchFlagTraits<Resou
     static constexpr auto kDecoderMethod = &ApiDecoder::DispatchResourceMemoryRequirements;
 };
 
+template <>
+struct DispatchTraits<Dx12ResourceAliasingArgs> : DispatchFlagTraits<Dx12ResourceAliasingArgs>
+{
+    static constexpr auto kDecoderMethod = &ApiDecoder::DispatchDx12ResourceAliasingCommand;
+};
+
 // --- Variant of all payloads by reference, storage in allocator
 using DispatchArgs = std::variant<std::monostate,
                                   FunctionCallArgs*,
@@ -1004,7 +1022,8 @@ using DispatchArgs = std::variant<std::monostate,
                                   FillMemoryResourceAddressArgs*,
                                   AnnotationArgs*,
                                   SetOpaqueDescriptorDataArgs*,
-                                  ResourceMemoryRequirementsArgs*>;
+                                  ResourceMemoryRequirementsArgs*,
+                                  Dx12ResourceAliasingArgs*>;
 
 template <typename Args>
 inline size_t GetDispatchArgsDataSize(Args& args)

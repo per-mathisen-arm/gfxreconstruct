@@ -176,6 +176,11 @@ class MetadataConsumerBase
                                       const std::vector<format::arm::ResourceMemoryRequirementsInfo>& resources)
     {}
 
+    virtual void
+    ProcessDx12ResourceAliasingCommand(const format::arm::Dx12ResourceAliasingCommandHeader& command_header,
+                                       const uint8_t*                                        data)
+    {}
+
   protected:
     uint64_t block_index_ = 0;
 };

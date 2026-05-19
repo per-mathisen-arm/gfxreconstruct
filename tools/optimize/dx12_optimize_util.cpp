@@ -29,6 +29,7 @@
 #include "dx12_file_optimizer_arm.h"
 #include "dx12_raytracing_modifier.h"
 #include "dx12_redundancy_modifier.h"
+#include "dx12_resource_aliasing_modifier.h"
 #include "decode/dx12_object_info.h"
 #include "generated/generated_dx12_replay_consumer.h"
 #include "decode/dx12_resource_value_tracker.h"
@@ -481,6 +482,7 @@ GetDx12OptimizationData(const std::string& input_filename, const decode::Dx12Opt
 
         auto redundancy_modifier_consumer = std::make_unique<gfxrecon::decode::Dx12RedundancyModifier>();
         auto raytracing_modifier_consumer = std::make_unique<gfxrecon::decode::Dx12RayTracingModifier>();
+        auto resource_aliasing_modifier_consumer = std::make_unique<gfxrecon::decode::Dx12ResourceAliasingModifier>();
 
         if (!options.no_default)
         {
@@ -495,6 +497,7 @@ GetDx12OptimizationData(const std::string& input_filename, const decode::Dx12Opt
 
             decoder.AddConsumer(redundancy_modifier_consumer.get());
             decoder.AddConsumer(raytracing_modifier_consumer.get());
+            decoder.AddConsumer(resource_aliasing_modifier_consumer.get());
         }
         else
         {
@@ -523,6 +526,10 @@ GetDx12OptimizationData(const std::string& input_filename, const decode::Dx12Opt
         if (raytracing_modifier_consumer->CanOptimize() && !options.no_default)
         {
             result->modifiers.push_back(std::move(raytracing_modifier_consumer));
+        }
+        if (resource_aliasing_modifier_consumer->CanOptimize() && !options.no_default)
+        {
+            result->modifiers.push_back(std::move(resource_aliasing_modifier_consumer));
         }
     }
     return result;
