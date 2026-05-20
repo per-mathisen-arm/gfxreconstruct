@@ -58,8 +58,15 @@ First, these components must be identified:
   - `d3d12.dll`
   - `dxgi.dll`
   - `d3d12_capture.dll`
+  - `DXGIDebug.dll`
+  - `d3d11on12_capture.dll`
 
-These capture libraries must be placed beside the application executable. For example, if we have the following application:
+These capture libraries (`d3d12.dll`, `dxgi.dll`, and `d3d12_capture.dll`) must be placed beside the application executable.
+
+If we need to capture the DXGI debug API sequence, this capture library (`DXGIDebug.dll`) need be placed beside the application executable.
+If we need to capture the D3D11On12 API sequence, this capture library (`d3d11on12_capture.dll`) need be placed beside the application executable.
+
+For example, if we have the following application:
 
 ```bash
 C:\AppPath\d3d12_app.exe
@@ -72,6 +79,13 @@ C:\AppPath\d3d12_app.exe
 C:\AppPath\d3d12.dll
 C:\AppPath\dxgi.dll
 C:\AppPath\d3d12_capture.dll
+```
+
+We can choose to populate its folder as follows:
+
+```bash
+C:\AppPath\DXGIDebug.dll
+C:\AppPath\d3d11on12_capture.dll
 ```
 
 It is important to remove these capture libraries once capture is complete. Otherwise, subsequent runs of the application will also be captured.
@@ -190,7 +204,7 @@ The GFXReconstruct Replay tool, `gfxrecon-replay`, can be used to replay files c
 
 GFXReconstruct leverages the Agility SDK runtime in order to replay. This means that GFXReconstruct's D3D12 support inherits the same Windows OS version requirements that are imposed by the Agility SDK. Please see the official Agility SDK documentation for the most up-to-date requirements.
 
-A folder named `D3D12` that contains the required Agility SDK runtime must exist in the same folder as `gfxrecon-replay.exe`. When building GFXReconstruct, the `D3D12` folder will be created in the `gfxrecon-replay` output build folder. If `gfxrecon-replay.exe` is copied to another folder, the `D3D12` folder must be copied along with it.
+A folder named `D3D12` that contains the required Agility SDK runtime must exist in the same folder as `gfxrecon-replay.exe`. When building GFXReconstruct, the `D3D12` folder will be created in the `gfxrecon-replay` output build folder. If `gfxrecon-replay.exe` is copied to another folder, the `D3D12` folder and `dxcompiler.dll` must be copied along with it.
 
 ### Command Line Arguments
 
@@ -208,9 +222,7 @@ Usage:
                         [--screenshot-interval <N>]
                         [--sfa | --skip-failed-allocations] [--replace-shaders <dir>]
                         [--opcd | --omit-pipeline-cache-data] [--wsi <platform>]
-                        [--use-cached-psos] [--surface-index <N>]
-                        [--remove-unsupported] [--validate]
-                        [--onhb | --omit-null-hardware-buffers]
+                        [--use-cached-psos] [--validate]
                         [-m <mode> | --memory-translation <mode>]
                         [--fw <width,height> | --force-windowed <width,height>]
                         [--fwo <x,y> | --force-windowed-origin <x,y>]
@@ -434,7 +446,18 @@ The `gfxrecon-optimize` tool produces new capture files with improved replay per
 
 Before attempting to optimize a capture file, please ensure it is able to replay first.
 
-Like `gfxrecon-replay`, `gfxrecon-optimize` also requires the `D3D12` folder to exist beside it. As mentioned previously, this folder is where GFXReconstruct references the Agility SDK runtime.
+Like `gfxrecon-replay`, `gfxrecon-optimize` also requires the `D3D12` folder and `dxcompiler.dll` to exist beside it. As mentioned previously, this folder is where GFXReconstruct references the Agility SDK runtime.
+
+#### Arm-internal Offline Optimization
+
+DX12 gfxr needs to be postprocessed after capture to ensure portable replay with -m rebind option. Optimizer will automatically adjust the trace injecting additional meta-commands containing data that can be later consumed by replayer.
+
+```text
+gfxrecon-optimize.exe input-trace.gfxr optimized-trace.gfxr
+```
+
+For the arm-internal gfxrecon-optimize.exe with arguments, options, and defaults, see gfxrecon-optimize.exe -h.
+
 
 There are two optimizations implemented for D3D12:
 
