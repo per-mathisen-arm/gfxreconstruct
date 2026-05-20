@@ -1864,7 +1864,7 @@ void VulkanReplayDumpResourcesBase::OverrideCmdEndRenderingKHR(const ApiCallInfo
     OverrideCmdEndRendering(call_info, func, original_command_buffer);
 }
 
-VkResult VulkanReplayDumpResourcesBase::QueueSubmit(const std::vector<VkSubmitInfo>&   submit_infos,
+VkResult VulkanReplayDumpResourcesBase::QueueSubmit(std::span<const VkSubmitInfo>      submit_infos,
                                                     const graphics::VulkanDeviceTable& device_table,
                                                     const VulkanQueueInfo*             queue_info,
                                                     VkFence                            fence,
@@ -1928,6 +1928,19 @@ VkResult VulkanReplayDumpResourcesBase::QueueSubmit(const std::vector<VkSubmitIn
                     // Transfer context does not use a clone command buffer. We submit the original one.
                     submit_cbs.push_back(command_buffer);
                     has_transfer_or_dispatch = true;
+                }
+                else
+                {
+                    // Look for transfer contexts from secondaries
+                    for (auto& [bcb_qs_pair, transf_context] : transfer_contexts_)
+                    {
+                        if (bcb_qs_pair.second == qs_index)
+                        {
+                            transfer_contexts.push_back(transf_context);
+                            submit_cbs.push_back(command_buffer);
+                            has_transfer_or_dispatch = true;
+                        }
+                    }
                 }
 
                 // Handle Dispatch/TraceRays commands
