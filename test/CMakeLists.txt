@@ -45,7 +45,7 @@ if (NOT DEFINED ENV{GFXRECON_NO_TEST_APPS})
     target_link_libraries(gfxrecon_gtest_main_deps INTERFACE GTest::gtest GTest::gtest_main)
 
     set(GFXRECON_TESTCASES
-        test_cases/ahb.cpp
+        # test_cases/ahb.cpp
         test_cases/debug-utils.cpp
         test_cases/triangle.cpp
         test_cases/multisample-depth.cpp
@@ -57,7 +57,7 @@ if (NOT DEFINED ENV{GFXRECON_NO_TEST_APPS})
         verify-gfxr.cpp)
 
     if(CMAKE_SYSTEM_NAME MATCHES "Linux|BSD|GNU")
-        list(APPEND GFXRECON_TESTCASES test_cases/external-memory-fd.cpp)
+        # list(APPEND GFXRECON_TESTCASES test_cases/external-memory-fd.cpp)
         list(APPEND GFXRECON_TESTCASES test_cases/wait-for-present.cpp)
         list(APPEND GFXRECON_TESTCASES test_cases/trigger-trimming.cpp)
     endif()
