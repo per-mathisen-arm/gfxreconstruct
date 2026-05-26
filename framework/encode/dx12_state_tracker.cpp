@@ -1166,6 +1166,15 @@ bool Dx12StateTracker::IsAccelerationStructureResource(format::HandleId id)
             {
                 result = true;
             }
+            else
+            {
+                auto resource = resource_wrapper->GetWrappedObjectAs<ID3D12Resource>();
+                if (resource != nullptr)
+                {
+                    const auto resource_desc = resource->GetDesc();
+                    result = ((resource_desc.Flags & D3D12_RESOURCE_FLAG_RAYTRACING_ACCELERATION_STRUCTURE) != 0);
+                }
+            }
         }
     }
 

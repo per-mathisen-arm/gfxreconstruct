@@ -126,12 +126,12 @@ void Dx12JsonConsumerBase::ProcessGetDx12AccelerationStructureSizeCommand(
     writer_->SetCurrentBlockIndex(block_index_);
     auto& jdata = writer_->WriteMetaCommandStart("GetDx12AccelerationStructureSizeCommand");
 
-    jdata["thread_id"]                      = command_header.thread_id;
-    jdata["device_id"]                      = command_header.device_id;
-    jdata["resource_id"]                    = command_header.resource_id;
-    jdata["acceleration_structure_address"] = command_header.acceleration_structure_address;
-    jdata["num_instance_descs"]             = command_header.num_instance_descs;
-    jdata["data_size"]                      = command_header.data_size;
+    jdata["thread_id"]   = command_header.thread_id;
+    jdata["device_id"]   = command_header.device_id;
+    jdata["resource_id"] = command_header.resource_id;
+    FieldToJsonAsHex(jdata["acceleration_structure_address"], command_header.acceleration_structure_address);
+    jdata["num_instance_descs"] = command_header.num_instance_descs;
+    jdata["data_size"]          = command_header.data_size;
     FieldToJson(jdata["input_descs"], input_descs);
 
     writer_->WriteBlockEnd();

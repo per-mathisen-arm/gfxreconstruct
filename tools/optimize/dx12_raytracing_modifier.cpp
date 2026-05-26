@@ -65,8 +65,10 @@ void Dx12RayTracingModifier::Process_ID3D12Resource_GetGPUVirtualAddress(const A
         max_gpu_va_ = std::max(max_gpu_va_, return_value + iter->second.desc.Width);
 
         gpu_virtual_address_resource_[return_value] = iter->second;
-        if ((iter->second.initial_state & D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE) ==
-            D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE)
+        if (((iter->second.initial_state & D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE) ==
+             D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE) ||
+            ((iter->second.desc.Flags & D3D12_RESOURCE_FLAG_RAYTRACING_ACCELERATION_STRUCTURE) ==
+             D3D12_RESOURCE_FLAG_RAYTRACING_ACCELERATION_STRUCTURE))
         {
             accel_struct_address_resource_[return_value] = iter->second;
         }
@@ -1887,18 +1889,18 @@ void Dx12RayTracingModifier::FindAccelerationStructureResourceFromGPUAddress(con
         return;
     }
 
-    if ((resource_iter->second.initial_state & D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE) !=
-        D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE)
-    {
-        return;
-    }
-
     if (address % D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BYTE_ALIGNMENT != 0)
     {
         return;
     }
 
-    accel_struct_address_resource_[address] = resource_iter->second;
+    if (((resource_iter->second.initial_state & D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE) ==
+         D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE) ||
+        ((resource_iter->second.desc.Flags & D3D12_RESOURCE_FLAG_RAYTRACING_ACCELERATION_STRUCTURE) ==
+         D3D12_RESOURCE_FLAG_RAYTRACING_ACCELERATION_STRUCTURE))
+    {
+        accel_struct_address_resource_[address] = resource_iter->second;
+    }
 }
 
 format::HandleId Dx12RayTracingModifier::FindBaseResourceFromGPUAddress(const D3D12_GPU_VIRTUAL_ADDRESS address)

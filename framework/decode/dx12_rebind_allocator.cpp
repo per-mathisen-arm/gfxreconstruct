@@ -462,7 +462,9 @@ HRESULT Dx12RebindAllocator::CreatePlacedResource(format::HandleId              
     if (allocator_ != nullptr)
     {
         bool should_use_committed =
-            enable_as_committed_ && ((InitialState & D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE) != 0);
+            enable_as_committed_ &&
+            (((InitialState & D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE) != 0) ||
+             ((resource_desc->Flags & D3D12_RESOURCE_FLAG_RAYTRACING_ACCELERATION_STRUCTURE) != 0));
 
         if (should_use_committed)
         {
@@ -664,7 +666,9 @@ HRESULT Dx12RebindAllocator::CreatePlacedResource1(format::HandleId             
     if (allocator_ != nullptr)
     {
         bool should_use_committed =
-            enable_as_committed_ && ((InitialState & D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE) != 0);
+            enable_as_committed_ &&
+            (((InitialState & D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE) != 0) ||
+             ((resource_desc->Flags & D3D12_RESOURCE_FLAG_RAYTRACING_ACCELERATION_STRUCTURE) != 0));
 
         if (should_use_committed)
         {

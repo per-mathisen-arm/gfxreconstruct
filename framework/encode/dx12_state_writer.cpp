@@ -821,8 +821,10 @@ void Dx12StateWriter::WriteResourceCreationState(
             // TODO: Add support for multi-sampled resources.
             GFXRECON_LOG_WARNING_ONCE("Skipping resource data capture for multi-sampled resource(s).");
         }
-        else if ((resource_info->initial_state & D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE) ==
-                 D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE)
+        else if (((resource_info->initial_state & D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE) ==
+                  D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE) ||
+                 ((resource_desc.Flags & D3D12_RESOURCE_FLAG_RAYTRACING_ACCELERATION_STRUCTURE) ==
+                  D3D12_RESOURCE_FLAG_RAYTRACING_ACCELERATION_STRUCTURE))
         {
             // Skip the capture of any ray tracing resource's data. Acceleration structures will be rebuilt from inputs
             // during replay. See WriteAccelerationStructuresState.
