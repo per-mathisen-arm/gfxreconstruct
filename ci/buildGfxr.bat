@@ -19,31 +19,14 @@
 @REM FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 @REM DEALINGS IN THE SOFTWARE.
 
-if not defined TEST_BRANCH (
-    if exist test.ref (
-        set /p TEST_BRANCH=<test.ref
-    ) else (
-        set TEST_BRANCH=master
-    )
-)
+@echo off
 
-set /a clonetestloop=0
-:clone_tests
-git clone --verbose %TEST_REPO% VulkanTests
-if %errorlevel% equ 0 goto :clone_tests_done
-if exist VulkanTests/ rmdir /s /q VulkanTests
-set /a clonetestloop+=1
-if %clonetestloop% gtr 3 (
-    echo tried to clone %TEST_REPO% too many times, giving up
-    exit 1
-)
-waitfor forever /t 60 2>nul
-goto :clone_tests
-:clone_tests_done
-cd VulkanTests
-git config --add remote.origin.fetch "+refs/pull/*/head:refs/remotes/origin/pr/*" & :: Allows git to pull from hashes in forks of the repo that are submitted as PRs
-git fetch origin
-git checkout %TEST_BRANCH% || exit /b
-git submodule update --init --recursive
-git describe --tags --always
-cd ..
+cmake --version
+python --version
+
+rem Windows needs to explicitly exit on failure, as cmd.exe won't do so automatically
+echo creating Python virtual environment in %WORKSPACE%\python-venv...
+python -m venv "%WORKSPACE%\python-venv"
+"%WORKSPACE%\python-venv\Scripts\python" -m pip install --no-cache-dir -r VulkanTests\requirements.txt > "%WORKSPACE%\python-venv.txt" 2>&1 || exit /b
+
+"%WORKSPACE%\python-venv\Scripts\python" VulkanTests\gfxrecontest.py --no-test --compiler vs2022 --build-mode %BUILD_MODE% --bits %BITS% --result-dir "%RESULTS_DIR%-build"

@@ -19,30 +19,11 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-rm -rf ci-gfxr-suites
+cmake --version
+python3 --version
 
-if [ -z "${TEST_SUITE_BRANCH:-}" ]; then
-  if [ -f "test_suite.ref" ]; then
-    IFS= read -r TEST_SUITE_BRANCH < test_suite.ref
-  else
-    TEST_SUITE_BRANCH="master"
-  fi
-  export TEST_SUITE_BRANCH
-fi
+echo creating Python virtual environment in "$WORKSPACE/python-venv"...
+python3 -m venv "$WORKSPACE/python-venv"
+"$WORKSPACE/python-venv/bin/python3" -m pip install --no-cache-dir -r VulkanTests/requirements.txt > "$WORKSPACE/python-venv.txt" 2>&1
 
-git init ci-gfxr-suites
-cd ci-gfxr-suites
-git remote add origin $TEST_SUITE_REPO
-git config --add remote.origin.fetch "+refs/pull/*/head:refs/remotes/origin/pr/*" # Allows git to pull from hashes in forks of the repo that are submitted as PRs
-
-git config remote.origin.promisor true
-git config remote.origin.partialclonefilter "blob:none"
-git sparse-checkout init --cone
-git sparse-checkout set $GFXRECON_TRACE_SUBDIR
-
-git fetch --depth 1 --filter=blob:none --verbose origin $TEST_SUITE_BRANCH
-
-git checkout FETCH_HEAD
-git describe --tags --always
-ls .
-cd ..
+"$WORKSPACE/python-venv/bin/python3" VulkanTests/gfxrecontest.py --no-test --build-mode "$BUILD_MODE" --bits "$BITS" --result-dir "$RESULTS_DIR-build"

@@ -1195,7 +1195,8 @@ void DispatchTraceRaysDumpingContext::ReleaseIndirectParams()
     }
 }
 
-VkResult DispatchTraceRaysDumpingContext::DumpDispatchTraceRays()
+VkResult DispatchTraceRaysDumpingContext::DumpDispatchTraceRays(Index submit_info_index,
+                                                                Index submit_info_cmd_buf_index)
 {
     VkResult res = FetchIndirectParams();
     if (res != VK_SUCCESS)
@@ -1204,11 +1205,35 @@ VkResult DispatchTraceRaysDumpingContext::DumpDispatchTraceRays()
         return res;
     }
 
+    uint32_t index = 0;
     for (const auto& [disp_index, disp_params] : dispatch_params_)
     {
         GFXRECON_LOG_INFO("Dumping mutable resources for dispatch index %" PRIu64, disp_index);
 
-        res = DumpMutableResources(disp_index, true);
+        SecondaryIdentifiers secondary_indices;
+        if (disp_params->command_buffer_level == DumpResourcesCommandBufferLevel::kSecondary)
+        {
+            // This map is updated in UpdateSecondaries accordingly
+            const auto entry = disp_params->secondary_identifiers.find(index++);
+            GFXRECON_ASSERT(entry != disp_params->secondary_identifiers.end());
+            if (entry != disp_params->secondary_identifiers.end())
+            {
+                secondary_indices = entry->second;
+                GFXRECON_ASSERT(secondary_indices.execute_cmds_index != UNDEFINED_INDEX);
+                GFXRECON_ASSERT(secondary_indices.execute_cmds_cmd_buf_index != UNDEFINED_INDEX);
+            }
+        }
+
+        const DumpedResourceBase dumped_resource_base(DumpResourcesPipelineStage::kCompute,
+                                                      bcb_index_,
+                                                      disp_index,
+                                                      qs_index_,
+                                                      submit_info_index,
+                                                      submit_info_cmd_buf_index,
+                                                      secondary_indices.execute_cmds_index,
+                                                      secondary_indices.execute_cmds_cmd_buf_index);
+
+        res = DumpMutableResources(dumped_resource_base, true);
         if (res != VK_SUCCESS)
         {
             GFXRECON_LOG_ERROR("Dumping compute mutable resources failed (%s).", util::ToString<VkResult>(res).c_str())
@@ -1217,7 +1242,7 @@ VkResult DispatchTraceRaysDumpingContext::DumpDispatchTraceRays()
 
         if (options_.dump_all_descriptors)
         {
-            res = DumpDescriptors(disp_index, true);
+            res = DumpDescriptors(dumped_resource_base, true);
             if (res != VK_SUCCESS)
             {
                 GFXRECON_LOG_ERROR("Dumping immutable resources failed (%s).", util::ToString<VkResult>(res).c_str())
@@ -1230,11 +1255,35 @@ VkResult DispatchTraceRaysDumpingContext::DumpDispatchTraceRays()
         delegate_.DumpDrawCallInfo(draw_call_info);
     }
 
+    index = 0;
     for (const auto& [tr_index, tr_params] : trace_rays_params_)
     {
         GFXRECON_LOG_INFO("Dumping mutable resources for trace rays index %" PRIu64, tr_index);
 
-        res = DumpMutableResources(tr_index, false);
+        SecondaryIdentifiers secondary_indices;
+        if (tr_params->command_buffer_level == DumpResourcesCommandBufferLevel::kSecondary)
+        {
+            // This map is updated in UpdateSecondaries accordingly
+            const auto entry = tr_params->secondary_identifiers.find(index++);
+            GFXRECON_ASSERT(entry != tr_params->secondary_identifiers.end());
+            if (entry != tr_params->secondary_identifiers.end())
+            {
+                secondary_indices = entry->second;
+                GFXRECON_ASSERT(secondary_indices.execute_cmds_index != UNDEFINED_INDEX);
+                GFXRECON_ASSERT(secondary_indices.execute_cmds_cmd_buf_index != UNDEFINED_INDEX);
+            }
+        }
+
+        const DumpedResourceBase dumped_resource_base(DumpResourcesPipelineStage::kRayTracing,
+                                                      bcb_index_,
+                                                      tr_index,
+                                                      qs_index_,
+                                                      submit_info_index,
+                                                      submit_info_cmd_buf_index,
+                                                      secondary_indices.execute_cmds_index,
+                                                      secondary_indices.execute_cmds_cmd_buf_index);
+
+        res = DumpMutableResources(dumped_resource_base, false);
         if (res != VK_SUCCESS)
         {
             GFXRECON_LOG_ERROR("Dumping ray tracing mutable resources failed. (%s)",
@@ -1244,7 +1293,7 @@ VkResult DispatchTraceRaysDumpingContext::DumpDispatchTraceRays()
 
         if (options_.dump_all_descriptors)
         {
-            res = DumpDescriptors(tr_index, false);
+            res = DumpDescriptors(dumped_resource_base, false);
             if (res != VK_SUCCESS)
             {
                 GFXRECON_LOG_ERROR("Dumping immutable resources failed (%s).", util::ToString<VkResult>(res).c_str())
@@ -1268,10 +1317,12 @@ VkResult DispatchTraceRaysDumpingContext::DumpDispatchTraceRays()
     return VK_SUCCESS;
 }
 
-VkResult DispatchTraceRaysDumpingContext::DumpMutableResources(uint64_t cmd_index, bool is_dispatch)
+VkResult DispatchTraceRaysDumpingContext::DumpMutableResources(const DumpedResourceBase& dumped_resource_base,
+                                                               bool                      is_dispatch)
 {
-    auto dis_params = dispatch_params_.find(cmd_index);
-    auto tr_params  = trace_rays_params_.find(cmd_index);
+    const Index cmd_index  = dumped_resource_base.cmd_index;
+    auto        dis_params = dispatch_params_.find(cmd_index);
+    auto        tr_params  = trace_rays_params_.find(cmd_index);
 
     if (is_dispatch && (dis_params == dispatch_params_.end()))
     {
@@ -1366,10 +1417,8 @@ VkResult DispatchTraceRaysDumpingContext::DumpMutableResources(uint64_t cmd_inde
                     CanDumpImage(instance_table_, device_info->parent, &cloned_image.new_image_info);
 
                 auto& new_dumped_desc = dumped_resources.dumped_descriptors.emplace_back(
+                    dumped_resource_base,
                     DumpResourceType::kDispatchTraceRaysImage,
-                    bcb_index_,
-                    cmd_index,
-                    qs_index_,
                     cloned_image.stages,
                     cloned_image.desc_type,
                     desc_tuple,
@@ -1467,19 +1516,16 @@ VkResult DispatchTraceRaysDumpingContext::DumpMutableResources(uint64_t cmd_inde
 
                 GFXRECON_ASSERT(cloned_buffer.new_buffer_info.handle != VK_NULL_HANDLE);
 
-                auto& new_dumped_desc = dumped_resources.dumped_descriptors.emplace_back(
-                    DumpResourceType::kDispatchTraceRaysBuffer,
-                    bcb_index_,
-                    cmd_index,
-                    qs_index_,
-                    cloned_buffer.stages,
-                    cloned_buffer.desc_type,
-                    desc_tuple,
-                    cloned_buffer.new_buffer_info.handle,
-                    cloned_buffer.new_buffer_info.capture_id,
-                    0,
-                    cloned_buffer.cloned_size,
-                    is_dispatch ? DumpResourcesPipelineStage::kCompute : DumpResourcesPipelineStage::kRayTracing);
+                auto& new_dumped_desc =
+                    dumped_resources.dumped_descriptors.emplace_back(dumped_resource_base,
+                                                                     DumpResourceType::kDispatchTraceRaysBuffer,
+                                                                     cloned_buffer.stages,
+                                                                     cloned_buffer.desc_type,
+                                                                     desc_tuple,
+                                                                     cloned_buffer.new_buffer_info.handle,
+                                                                     cloned_buffer.new_buffer_info.capture_id,
+                                                                     0,
+                                                                     cloned_buffer.cloned_size);
 
                 // Dump the "after" resource
                 VulkanDelegateDumpResourceContext res_info = res_info_base;
@@ -1563,8 +1609,10 @@ VkResult DispatchTraceRaysDumpingContext::DumpMutableResources(uint64_t cmd_inde
     return VK_SUCCESS;
 }
 
-VkResult DispatchTraceRaysDumpingContext::DumpDescriptors(uint64_t cmd_index, bool is_dispatch)
+VkResult DispatchTraceRaysDumpingContext::DumpDescriptors(const DumpedResourceBase& dumped_resource_base,
+                                                          bool                      is_dispatch)
 {
+    const Index        cmd_index          = dumped_resource_base.cmd_index;
     DumpedDescriptors& dumped_descriptors = is_dispatch ? dispatch_dumped_descriptors_ : trace_rays_dumped_descriptors_;
     GFXRECON_ASSERT((dispatch_params_.find(cmd_index) != dispatch_params_.end()) ||
                     (trace_rays_params_.find(cmd_index) != trace_rays_params_.end()));
@@ -1641,10 +1689,8 @@ VkResult DispatchTraceRaysDumpingContext::DumpDescriptors(uint64_t cmd_index, bo
                     const ImageDumpResult can_dump_image = CanDumpImage(instance_table_, device_info->parent, img_info);
 
                     auto& new_dumped_desc = dumped_resources.dumped_descriptors.emplace_back(
+                        dumped_resource_base,
                         DumpResourceType::kDispatchTraceRaysImageDescriptor,
-                        bcb_index_,
-                        cmd_index,
-                        qs_index_,
                         desc_binding.stage_flags,
                         desc_binding.desc_type,
                         desc_tuple,
@@ -1716,10 +1762,8 @@ VkResult DispatchTraceRaysDumpingContext::DumpDescriptors(uint64_t cmd_index, bo
                 const VkDeviceSize size   = range == VK_WHOLE_SIZE ? buffer_info->replay_size - offset : range;
 
                 auto& new_dumped_desc = dumped_resources.dumped_descriptors.emplace_back(
+                    dumped_resource_base,
                     DumpResourceType::kDispatchTraceRaysBufferDescriptor,
-                    bcb_index_,
-                    cmd_index,
-                    qs_index_,
                     desc_binding.stage_flags,
                     desc_binding.desc_type,
                     desc_tuple,
@@ -1785,10 +1829,8 @@ VkResult DispatchTraceRaysDumpingContext::DumpDescriptors(uint64_t cmd_index, bo
                 const VkDeviceSize size   = range == VK_WHOLE_SIZE ? buffer_info->replay_size - offset : range;
 
                 auto& new_dumped_desc = dumped_resources.dumped_descriptors.emplace_back(
+                    dumped_resource_base,
                     DumpResourceType::kDispatchTraceRaysBufferDescriptor,
-                    bcb_index_,
-                    cmd_index,
-                    qs_index_,
                     desc_binding.stage_flags,
                     desc_binding.desc_type,
                     desc_tuple,
@@ -1840,10 +1882,8 @@ VkResult DispatchTraceRaysDumpingContext::DumpDescriptors(uint64_t cmd_index, bo
             {
                 GFXRECON_ASSERT(!desc_tuple.array_index);
                 auto& new_dumped_desc = dumped_resources.dumped_descriptors.emplace_back(
+                    dumped_resource_base,
                     DumpResourceType::kDispatchTraceRaysInlineUniformBufferDescriptor,
-                    bcb_index_,
-                    cmd_index,
-                    qs_index_,
                     desc_binding.stage_flags,
                     desc_binding.desc_type,
                     desc_tuple,
@@ -1871,10 +1911,8 @@ VkResult DispatchTraceRaysDumpingContext::DumpDescriptors(uint64_t cmd_index, bo
 
                 GFXRECON_ASSERT(as_info->type == VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR);
                 auto& new_dumped_desc = dumped_resources.dumped_descriptors.emplace_back(
+                    dumped_resource_base,
                     DumpResourceType::kAccelerationStructure,
-                    bcb_index_,
-                    cmd_index,
-                    qs_index_,
                     desc_binding.stage_flags,
                     desc_binding.desc_type,
                     desc_tuple,
@@ -2212,7 +2250,9 @@ void DispatchTraceRaysDumpingContext::InsertNewDispatchParameters(uint64_t index
                                                                   uint32_t groupCountZ)
 {
     auto new_entry = dispatch_params_.insert(
-        { index, std::make_shared<DispatchParams>(DispatchTypes::kDispatch, groupCountX, groupCountY, groupCountZ) });
+        { index,
+          std::make_shared<DispatchParams>(
+              DispatchTypes::kDispatch, command_buffer_level_, index, groupCountX, groupCountY, groupCountZ) });
     assert(new_entry.second);
 
     SnapshotDispatchState(*new_entry.first->second);
@@ -2223,7 +2263,9 @@ void DispatchTraceRaysDumpingContext::InsertNewDispatchParameters(uint64_t      
                                                                   VkDeviceSize            offset)
 {
     auto new_entry = dispatch_params_.insert(
-        { index, std::make_shared<DispatchParams>(DispatchTypes::kDispatchIndirect, buffer_info, offset) });
+        { index,
+          std::make_shared<DispatchParams>(
+              DispatchTypes::kDispatchIndirect, command_buffer_level_, index, buffer_info, offset) });
     GFXRECON_ASSERT(new_entry.second);
 
     SnapshotDispatchState(*new_entry.first->second);
@@ -2240,7 +2282,9 @@ void DispatchTraceRaysDumpingContext::InsertNewTraceRaysParameters(
     uint32_t                               depth)
 {
     auto new_entry = trace_rays_params_.insert(
-        { index, std::make_shared<TraceRaysParams>(TraceRaysTypes::kTraceRays, width, height, depth) });
+        { index,
+          std::make_shared<TraceRaysParams>(
+              TraceRaysTypes::kTraceRays, command_buffer_level_, index, width, height, depth) });
     GFXRECON_ASSERT(new_entry.second);
 
     SnapshotTraceRaysState(*new_entry.first->second);
@@ -2255,7 +2299,9 @@ void DispatchTraceRaysDumpingContext::InsertNewTraceRaysIndirectParameters(
     VkDeviceAddress                        indirectDeviceAddress)
 {
     auto new_entry = trace_rays_params_.insert(
-        { index, std::make_shared<TraceRaysParams>(TraceRaysTypes::kTraceRaysIndirect, indirectDeviceAddress) });
+        { index,
+          std::make_shared<TraceRaysParams>(
+              TraceRaysTypes::kTraceRaysIndirect, command_buffer_level_, index, indirectDeviceAddress) });
     GFXRECON_ASSERT(new_entry.second);
 
     SnapshotTraceRaysState(*new_entry.first->second);
@@ -2265,7 +2311,9 @@ void DispatchTraceRaysDumpingContext::InsertNewTraceRaysIndirect2Parameters(uint
                                                                             VkDeviceAddress indirectDeviceAddress)
 {
     auto new_entry = trace_rays_params_.insert(
-        { index, std::make_shared<TraceRaysParams>(TraceRaysTypes::kTraceRaysIndirect2, indirectDeviceAddress) });
+        { index,
+          std::make_shared<TraceRaysParams>(
+              TraceRaysTypes::kTraceRaysIndirect2, command_buffer_level_, index, indirectDeviceAddress) });
     GFXRECON_ASSERT(new_entry.second);
 
     SnapshotTraceRaysState(*new_entry.first->second);
@@ -2290,43 +2338,67 @@ bool DispatchTraceRaysDumpingContext::ShouldHandleExecuteCommands(uint64_t index
     return secondaries_.find(index) != secondaries_.end();
 }
 
-void DispatchTraceRaysDumpingContext::UpdateSecondaries()
+void DispatchTraceRaysDumpingContext::UpdateSecondaries(DispatchTraceRaysDumpingContext& secondary_context,
+                                                        Index                            execute_cmd_index,
+                                                        Index                            command_buffer_execute_index)
 {
     // The purpose of this function is to transfer rendering context from a primary to its secondaries.
     // This function must be called only for primary command buffer contexes, even if a secondary has secondaries.
     GFXRECON_ASSERT(command_buffer_level_ == DumpResourcesCommandBufferLevel::kPrimary);
 
-    for (auto& execute_commands : secondaries_)
-    {
-        for (auto& secondary_context : execute_commands.second)
-        {
-            secondary_context->SecondaryUpdateContextFromPrimary(bound_descriptor_sets_compute_,
-                                                                 bound_descriptor_sets_ray_tracing_);
-        }
-    }
+    secondary_context.SecondaryUpdateContextFromPrimary(bound_descriptor_sets_compute_,
+                                                        bound_descriptor_sets_ray_tracing_);
 
     // Move secondary dispatch and trace rays parameters to primary.
     // When DumpDispatchTraceRays is called it's better to have all parameters available in the primary which is
     // submitted.
-    for (auto& execute_commands : secondaries_)
+    const DispatchParameters& secondary_disp_params = secondary_context.GetDispatchParameters();
+    for (const auto& [secondary_index, secondary_params] : secondary_disp_params)
     {
-        for (auto& secondary_context : execute_commands.second)
+        auto entry = dispatch_params_.find(secondary_index);
+        if (entry == dispatch_params_.end())
         {
-            const DispatchParameters& secondary_disp_params = secondary_context->GetDispatchParameters();
-            for (const auto& secondary_disp_param : secondary_disp_params)
-            {
-                const auto new_entry =
-                    dispatch_params_.insert(std::make_pair(secondary_disp_param.first, secondary_disp_param.second));
-                GFXRECON_ASSERT(new_entry.second);
-            }
+            auto [new_entry, success] = dispatch_params_.insert(std::make_pair(secondary_index, secondary_params));
+            GFXRECON_ASSERT(success);
 
-            const TraceRaysParameters& secondary_tr_params = secondary_context->GetTraceRaysParameters();
-            for (const auto& secondary_tr_param : secondary_tr_params)
-            {
-                const auto new_entry =
-                    trace_rays_params_.insert(std::make_pair(secondary_tr_param.first, secondary_tr_param.second));
-                GFXRECON_ASSERT(new_entry.second);
-            }
+            new_entry->second->secondary_identifiers.emplace(
+                std::piecewise_construct,
+                std::forward_as_tuple(current_dispatch_index_),
+                std::forward_as_tuple(execute_cmd_index, command_buffer_execute_index));
+        }
+        else
+        {
+            // This case will happen when a secondary command buffer is executed multiple times from the same primary
+            GFXRECON_ASSERT(!entry->second->secondary_identifiers.empty());
+            entry->second->secondary_identifiers.emplace(
+                std::piecewise_construct,
+                std::forward_as_tuple(current_dispatch_index_),
+                std::forward_as_tuple(execute_cmd_index, command_buffer_execute_index));
+        }
+    }
+
+    const TraceRaysParameters& secondary_tr_params = secondary_context.GetTraceRaysParameters();
+    for (const auto& [secondary_index, secondary_params] : secondary_tr_params)
+    {
+        auto entry = trace_rays_params_.find(secondary_index);
+        if (entry == trace_rays_params_.end())
+        {
+            auto [new_entry, success] = trace_rays_params_.insert(std::make_pair(secondary_index, secondary_params));
+            GFXRECON_ASSERT(success);
+
+            new_entry->second->secondary_identifiers.emplace(
+                std::piecewise_construct,
+                std::forward_as_tuple(current_trace_rays_index_),
+                std::forward_as_tuple(execute_cmd_index, command_buffer_execute_index));
+        }
+        else
+        {
+            // This case will happen when a secondary command buffer is executed multiple times from the same primary
+            GFXRECON_ASSERT(!entry->second->secondary_identifiers.empty());
+            entry->second->secondary_identifiers.emplace(
+                std::piecewise_construct,
+                std::forward_as_tuple(current_trace_rays_index_),
+                std::forward_as_tuple(execute_cmd_index, command_buffer_execute_index));
         }
     }
 }

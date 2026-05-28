@@ -184,6 +184,8 @@ const char kDumpResourcesDirArgument[]  = "--dump-resources-dir";
 const char kFrameWarmUpSpirv[]          = "--frame-warm-up-spirv";
 const char kFrameWarmUpLoad[]           = "--frame-warm-up-load";
 const char kSerializeQueueSubmissions[] = "--serialize-queue-submissions";
+const char kReplayEventPluginPath[]     = "--replay-event-plugin-path";
+const char kReplayEventPluginParams[]   = "--replay-event-plugin-params";
 
 enum class WsiPlatform
 {
@@ -1502,6 +1504,9 @@ GetVulkanReplayOptions(const gfxrecon::util::ArgumentParser&           arg_parse
 
     GetFrameWarmUpOptions(arg_parser, replay_options.frame_warm_up_spirv_path, replay_options.frame_warm_up_load);
     GetWaitBeforeFrame(arg_parser, replay_options.wait_before_frame);
+
+    replay_options.replay_event_plugin_path   = arg_parser.GetArgumentValue(kReplayEventPluginPath);
+    replay_options.replay_event_plugin_params = arg_parser.GetArgumentValue(kReplayEventPluginParams);
 
     return replay_options;
 }
