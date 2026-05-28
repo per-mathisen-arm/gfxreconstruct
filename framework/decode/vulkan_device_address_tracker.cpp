@@ -129,7 +129,19 @@ void VulkanDeviceAddressTracker::RemoveAccelerationStructure(
             auto aliases = buffer_info->acceleration_structures.find(acceleration_structure_info->capture_address);
             if (aliases != buffer_info->acceleration_structures.end())
             {
-                buffer_info->acceleration_structures.erase(aliases);
+                aliases->second.erase(acceleration_structure_info->capture_id);
+                if (aliases->second.empty())
+                {
+                    buffer_info->acceleration_structures.erase(aliases);
+                }
+            }
+            else
+            {
+                GFXRECON_LOG_ERROR("Device address tracking error.\n\tbuffer %" PRIu64
+                                   "does not contain acceleration structure %" PRIu64
+                                   "but it was created with this buffer as storage",
+                                   buffer_info->capture_id,
+                                   acceleration_structure_info->capture_id);
             }
         }
     }

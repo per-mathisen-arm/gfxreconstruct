@@ -140,16 +140,16 @@ VkResult VulkanAccelerationStructureBuilder::OnCreateAccelerationStructure(
         modified_create_info.size   = build_sizes.accelerationStructureSize;
         modified_create_info.offset = 0;
 
-        if (auto [begin, end] = replaced_buffers_.equal_range(buffer_info->capture_id);
-            begin != replaced_buffers_.end())
+        if (auto buffer_bucket = replaced_buffers_.find(buffer_info->capture_id);
+            buffer_bucket != replaced_buffers_.end())
         {
-            for (auto it = begin; it != end; ++it)
+            for (const auto& replacement : buffer_bucket->second)
             {
-                if (it->second->info_.capture_address == acceleration_structure_info->capture_address &&
-                    it->second->info_.replay_size >= build_sizes.accelerationStructureSize)
+                if (replacement->info_.capture_address == acceleration_structure_info->capture_address &&
+                    replacement->info_.replay_size >= build_sizes.accelerationStructureSize)
                 {
-                    modified_create_info.buffer = it->second->info_.handle;
-                    target_storage_buffer       = &it->second->info_;
+                    modified_create_info.buffer = replacement->info_.handle;
+                    target_storage_buffer       = &replacement->info_;
                     reallocate                  = false;
                     break;
                 }
@@ -165,19 +165,16 @@ VkResult VulkanAccelerationStructureBuilder::OnCreateAccelerationStructure(
 
     if (reallocate)
     {
-        auto it = replaced_buffers_.emplace(
-            buffer_info->capture_id,
-            internal_buffer_manager_.CreateBuffer(build_sizes.accelerationStructureSize,
-                                                  VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
-                                                      VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-                                                  buffer_info->memory_property_flags));
+        auto& replacements    = replaced_buffers_[buffer_info->capture_id];
+        auto& new_replacement = replacements.emplace_back(internal_buffer_manager_.CreateBuffer(
+            build_sizes.accelerationStructureSize, buffer_info->usage, buffer_info->memory_property_flags));
 
-        it->second->info_.capture_address = buffer_info->capture_address;
-        it->second->info_.capture_size    = buffer_info->capture_size;
+        new_replacement->info_.capture_address = acceleration_structure_info->capture_address;
+        new_replacement->info_.capture_size    = buffer_info->capture_size;
 
-        modified_create_info.buffer = it->second->info_.handle;
-        device_address_tracker_.TrackBuffer(&it->second->info_);
-        target_storage_buffer = &it->second->info_;
+        modified_create_info.buffer = new_replacement->info_.handle;
+        device_address_tracker_.TrackBuffer(&new_replacement->info_);
+        target_storage_buffer = &new_replacement->info_;
     }
 
     // Last minute validation: storage buffer should be bigger than or equal to the acceleration structure size + offset
@@ -256,12 +253,12 @@ void VulkanAccelerationStructureBuilder::ProcessVulkanWriteAccelerationStructure
 
 void VulkanAccelerationStructureBuilder::OnDestroyBuffer(const VulkanBufferInfo* buffer_info)
 {
-    auto [begin, end] = replaced_buffers_.equal_range(buffer_info->capture_id);
-    if (begin != replaced_buffers_.end())
+    auto buffer_bucket = replaced_buffers_.find(buffer_info->capture_id);
+    if (buffer_bucket != replaced_buffers_.end())
     {
-        for (auto it = begin; it != end; ++it)
+        for (auto& replacement : buffer_bucket->second)
         {
-            device_address_tracker_.RemoveBuffer(&it->second->info_);
+            device_address_tracker_.RemoveBuffer(&replacement->info_);
         }
     }
     replaced_buffers_.erase(buffer_info->capture_id);

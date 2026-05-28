@@ -26,19 +26,14 @@
 
 #include "decode/vulkan_object_info.h"
 #include "decode/vulkan_resource_allocator.h"
-#include "decode/descriptor_update_template_decoder.h"
-#include "decode/vulkan_object_info_table.h"
 #include "decode/vulkan_device_address_tracker.h"
 #include "decode/vulkan_internal_buffer_manager.h"
 #include "format/format.h"
 #include "util/defines.h"
 
 #include <memory>
-#include <string>
 #include <vector>
 #include <unordered_map>
-#include <map>
-#include <set>
 
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(decode)
@@ -203,7 +198,7 @@ class VulkanAccelerationStructureBuilder
 
     std::unordered_map<format::HandleId, VkAccelerationStructureKHR> compaction_child_to_parent_dependency_;
 
-    std::unordered_multimap<format::HandleId, std::unique_ptr<VulkanInternalBufferManager::BufferInfoWrapper>>
+    std::unordered_map<format::HandleId, std::vector<std::unique_ptr<VulkanInternalBufferManager::BufferInfoWrapper>>>
         replaced_buffers_;
 
     VkAccelerationStructureBuildSizesInfoKHR max_build_sizes_{};
