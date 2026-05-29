@@ -70,9 +70,11 @@
 #include "Vulkan-Utility-Libraries/vk_format_utils.h"
 
 #include <algorithm>
+#include <chrono>
 #include <stdexcept>
 #include <limits>
 #include <numeric>
+#include <thread>
 #include <unordered_set>
 #include <future>
 
@@ -99,7 +101,7 @@ const std::unordered_set<std::string> kSurfaceExtensions = {
 const std::unordered_set<std::string> kTrimStateSetupDeviceExtensions = { VK_EXT_SHADER_STENCIL_EXPORT_EXTENSION_NAME };
 
 const std::unordered_set<std::string> kFunctionsAllowedToReturnDifferentCodeThanCapture = {
-    "vkSetDebugUtilsObjectNameEXT", "vkSetDebugUtilsObjectTagEXT", "vkGetQueryPoolResults", "vkGetEventStatus"
+    "vkSetDebugUtilsObjectNameEXT", "vkSetDebugUtilsObjectTagEXT"
 };
 
 // LUT containing an allow-list of differing Vulkan return-types (mapping: capture -> replay)
@@ -4927,6 +4929,32 @@ void VulkanReplayConsumerBase::OverrideCmdCopyBuffer(PFN_vkCmdCopyBuffer        
     func(in_commandBuffer, in_srcBuffer, in_dstBuffer, regionCount, in_pRegions);
 }
 
+VkResult VulkanReplayConsumerBase::OverrideGetEventStatus(PFN_vkGetEventStatus    func,
+                                                          VkResult                original_result,
+                                                          const VulkanDeviceInfo* device_info,
+                                                          const VulkanEventInfo*  event_info)
+{
+    GFXRECON_ASSERT(device_info != nullptr && event_info != nullptr);
+
+    VkDevice device = device_info->handle;
+    VkEvent  event  = event_info->handle;
+
+    VkResult result = func(device, event);
+
+    util::MarkingLayersUtil::instance().BeginInjected(device_info);
+
+    // If the query was successful at capture time, it MUST be successful at replay time, to avoid sync issues
+    while (original_result == VK_EVENT_SET && result == VK_EVENT_RESET)
+    {
+        std::this_thread::sleep_for(std::chrono::microseconds(100)); // Avoid true busy waiting
+        result = func(device, event);
+    }
+
+    util::MarkingLayersUtil::instance().EndInjected(device_info);
+
+    return result;
+}
+
 VkResult VulkanReplayConsumerBase::OverrideGetQueryPoolResults(PFN_vkGetQueryPoolResults  func,
                                                                VkResult                   original_result,
                                                                const VulkanDeviceInfo*    device_info,
@@ -4944,6 +4972,12 @@ VkResult VulkanReplayConsumerBase::OverrideGetQueryPoolResults(PFN_vkGetQueryPoo
 
     VkDevice    device     = device_info->handle;
     VkQueryPool query_pool = query_pool_info->handle;
+
+    // If the query was successful at capture time, it MUST be successful at replay time, to avoid sync issues
+    if (original_result == VK_SUCCESS)
+    {
+        flags |= VK_QUERY_RESULT_WAIT_BIT;
+    }
 
     const VkResult result =
         func(device, query_pool, firstQuery, queryCount, dataSize, pData->GetOutputPointer(), stride, flags);
