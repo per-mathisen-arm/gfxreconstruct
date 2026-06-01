@@ -158,7 +158,7 @@ struct VulkanReplayOptions : public ReplayOptions
     bool                    capture{ false };
     bool                    blackhole{ false };
     bool                    omit_pipeline_cache_data{ false };
-    bool                    use_colorspace_fallback{ false };
+    bool                    use_colorspace_fallback{ true };
     bool                    disable_subpass_fusion{ false };
     bool                    use_ext_frame_boundary{ false };
     util::SwapchainOption   swapchain_option{ util::SwapchainOption::kVirtual };
