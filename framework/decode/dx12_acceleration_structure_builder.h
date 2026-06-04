@@ -24,6 +24,7 @@
 #ifndef GFXRECON_DECODE_DX12_ACCELERATION_STRUCTURE_BUILDER_H
 #define GFXRECON_DECODE_DX12_ACCELERATION_STRUCTURE_BUILDER_H
 
+#include "decode/custom_dx12_struct_decoders.h"
 #include "graphics/dx12_gpu_va_map.h"
 #include "graphics/dx12_util.h"
 #include "format/format.h"
@@ -44,10 +45,11 @@ class Dx12AccelerationStructureBuilder
 
     virtual ~Dx12AccelerationStructureBuilder() {}
 
-    void Build(const graphics::Dx12GpuVaMap&                                         gpu_va_map,
-               const format::InitDx12AccelerationStructureCommandHeader&             command_header,
-               const std::vector<format::InitDx12AccelerationStructureGeometryDesc>& init_geometry_descs,
-               const uint8_t*                                                        build_inputs_data);
+    void Build(const graphics::Dx12GpuVaMap&                                                       gpu_va_map,
+               const format::InitDx12AccelerationStructureCommandHeader&                           command_header,
+               const std::vector<format::InitDx12AccelerationStructureGeometryDesc>&               init_geometry_descs,
+               StructPointerDecoder<Decoded_D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS>* build_inputs,
+               const uint8_t*                                                                      build_inputs_data);
 
     void SetPrebuildInfo(const format::HandleId  capture_accel_struct_id,
                          const uint64_t          capture_accel_struct_address,
@@ -82,12 +84,19 @@ class Dx12AccelerationStructureBuilder
     ID3D12Device5* GetDevice5() { return device5_; }
 
   private:
-    void SetupBuild(const graphics::Dx12GpuVaMap&                                         gpu_va_map,
-                    const format::InitDx12AccelerationStructureCommandHeader&             command_header,
-                    const std::vector<format::InitDx12AccelerationStructureGeometryDesc>& init_geometry_descs,
-                    const uint8_t*                                                        build_inputs_data,
-                    D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC&                   build_desc,
-                    bool                                                                  use_temp_dest_buffer);
+    void SetupBuildDeprecated(const graphics::Dx12GpuVaMap&                                         gpu_va_map,
+                              const format::InitDx12AccelerationStructureCommandHeader&             command_header,
+                              const std::vector<format::InitDx12AccelerationStructureGeometryDesc>& init_geometry_descs,
+                              const uint8_t*                                                        build_inputs_data,
+                              D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC&                   build_desc,
+                              bool use_temp_dest_buffer);
+
+    void SetupBuild2(const graphics::Dx12GpuVaMap&                                                       gpu_va_map,
+                     const format::InitDx12AccelerationStructureCommandHeader&                           command_header,
+                     StructPointerDecoder<Decoded_D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS>* build_inputs,
+                     const uint8_t*                                      build_inputs_data,
+                     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC& build_desc,
+                     bool                                                use_temp_dest_buffer);
 
     void ExecuteBuild(const graphics::Dx12GpuVaMap&                       gpu_va_map,
                       D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC& build_desc);

@@ -88,9 +88,10 @@ void Dx12JsonConsumerBase::ProcessInitSubresourceCommand(const format::InitSubre
 /// captures as part of establishing the GPU memory state at the start of the trimmed
 /// range.
 void Dx12JsonConsumerBase::ProcessInitDx12AccelerationStructureCommand(
-    const format::InitDx12AccelerationStructureCommandHeader&             command_header,
-    const std::vector<format::InitDx12AccelerationStructureGeometryDesc>& geometry_descs,
-    const uint8_t*                                                        build_inputs_data)
+    const format::InitDx12AccelerationStructureCommandHeader&                           command_header,
+    const std::vector<format::InitDx12AccelerationStructureGeometryDesc>&               geometry_descs,
+    StructPointerDecoder<Decoded_D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS>* build_inputs,
+    const uint8_t*                                                                      build_inputs_data)
 {
     using util::FieldToJson;
 
@@ -107,15 +108,23 @@ void Dx12JsonConsumerBase::ProcessInitDx12AccelerationStructureCommand(
     jdata["inputs_type"] = static_cast<D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE>(command_header.inputs_type);
     jdata["inputs_flags"] =
         static_cast<D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS_t>(command_header.inputs_flags);
-    jdata["inputs_num_instance_descs"] = command_header.inputs_num_instance_descs;
-    jdata["inputs_num_geometry_descs"] = command_header.inputs_num_geometry_descs;
-    jdata["inputs_data_size"]          = command_header.data_size;
+    jdata["inputs_num_instance_descs"]  = command_header.inputs_num_instance_descs;
+    jdata["inputs_geometry_descs_size"] = command_header.inputs_geometry_descs_size;
+    jdata["inputs_data_size"]           = command_header.data_size;
     RepresentBinaryFile(*(this->writer_),
                         jdata[format::kNameData],
                         "initdx12accelerationstructurecommand.bin",
                         command_header.data_size,
                         build_inputs_data);
-    FieldToJson(jdata["geometry_descs"], geometry_descs.data(), geometry_descs.size());
+    if (geometry_descs.size() > 0)
+    {
+        FieldToJson(jdata["geometry_descs"], geometry_descs.data(), geometry_descs.size());
+    }
+    if ((build_inputs != nullptr) && (build_inputs->GetPointer() != nullptr))
+    {
+        FieldToJson(jdata["build_inputs"], build_inputs);
+    }
+
     writer_->WriteBlockEnd();
 }
 

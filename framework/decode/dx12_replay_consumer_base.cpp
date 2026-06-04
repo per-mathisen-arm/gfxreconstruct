@@ -844,9 +844,10 @@ void Dx12ReplayConsumerBase::ProcessDx12ResourceAliasingCommand(
 }
 
 void Dx12ReplayConsumerBase::ProcessInitDx12AccelerationStructureCommand(
-    const format::InitDx12AccelerationStructureCommandHeader&             command_header,
-    const std::vector<format::InitDx12AccelerationStructureGeometryDesc>& geometry_descs,
-    const uint8_t*                                                        build_inputs_data)
+    const format::InitDx12AccelerationStructureCommandHeader&                           command_header,
+    const std::vector<format::InitDx12AccelerationStructureGeometryDesc>&               geometry_descs,
+    StructPointerDecoder<Decoded_D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS>* build_inputs,
+    const uint8_t*                                                                      build_inputs_data)
 {
     format::HandleId dest_resource_id = format::kNullHandleId;
     gpu_va_map_.Map(command_header.dest_acceleration_structure_data, &dest_resource_id);
@@ -870,7 +871,7 @@ void Dx12ReplayConsumerBase::ProcessInitDx12AccelerationStructureCommand(
 
     accel_struct_builder = acceleration_structure_builders_.at(device).get();
 
-    accel_struct_builder->Build(gpu_va_map_, command_header, geometry_descs, build_inputs_data);
+    accel_struct_builder->Build(gpu_va_map_, command_header, geometry_descs, build_inputs, build_inputs_data);
 
     dxr_workload_ = true;
 }
@@ -885,7 +886,6 @@ void Dx12ReplayConsumerBase::ProcessGetDx12AccelerationStructureSizeCommand(
         return;
     }
 
-    // In order for GetAccelerationStructureInputsBufferEntries to correctly process inputs buffer entries, a
     // non-zero GPU VA must be set for values that will be used.
     const D3D12_GPU_VIRTUAL_ADDRESS kDefaultGpuVa = 1;
 

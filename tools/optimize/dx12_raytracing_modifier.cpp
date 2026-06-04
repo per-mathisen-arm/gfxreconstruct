@@ -941,9 +941,10 @@ void Dx12RayTracingModifier::Process_BuildRaytracingAccelerationStructure(
 }
 
 void Dx12RayTracingModifier::ProcessInitDx12AccelerationStructureCommand(
-    const format::InitDx12AccelerationStructureCommandHeader&             command_header,
-    const std::vector<format::InitDx12AccelerationStructureGeometryDesc>& geometry_descs,
-    const uint8_t*                                                        build_inputs_data)
+    const format::InitDx12AccelerationStructureCommandHeader&                           command_header,
+    const std::vector<format::InitDx12AccelerationStructureGeometryDesc>&               geometry_descs,
+    StructPointerDecoder<Decoded_D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS>* build_inputs,
+    const uint8_t*                                                                      build_inputs_data)
 {
     if (IsModificationPass())
     {
@@ -978,66 +979,74 @@ void Dx12RayTracingModifier::ProcessInitDx12AccelerationStructureCommand(
         build_desc.Inputs.Type = static_cast<D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE>(command_header.inputs_type);
         build_desc.Inputs.Flags =
             static_cast<D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS>(command_header.inputs_flags);
-        build_desc.Inputs.DescsLayout     = D3D12_ELEMENTS_LAYOUT_ARRAY;
-        build_desc.Inputs.InstanceDescs   = 0;
-        build_desc.Inputs.pGeometryDescs  = nullptr;
-        build_desc.Inputs.ppGeometryDescs = nullptr;
 
-        if (build_desc.Inputs.Type == D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL)
+        if ((build_inputs != nullptr) && (build_inputs->GetPointer() != nullptr))
         {
-            build_geometry_descs.resize(command_header.inputs_num_geometry_descs);
-
-            build_desc.Inputs.NumDescs = command_header.inputs_num_geometry_descs;
-            GFXRECON_ASSERT(command_header.inputs_num_geometry_descs == geometry_descs.size());
-            for (UINT i = 0; i < geometry_descs.size(); ++i)
-            {
-                const auto&                     init_geom_desc = geometry_descs[i];
-                D3D12_RAYTRACING_GEOMETRY_DESC& geom_desc      = build_geometry_descs[i];
-
-                geom_desc.Type  = static_cast<D3D12_RAYTRACING_GEOMETRY_TYPE>(init_geom_desc.geometry_type);
-                geom_desc.Flags = static_cast<D3D12_RAYTRACING_GEOMETRY_FLAGS>(init_geom_desc.geometry_flags);
-                if (geom_desc.Type == D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES)
-                {
-                    auto& tris_desc        = geom_desc.Triangles;
-                    tris_desc.Transform3x4 = 0;
-                    tris_desc.IndexFormat  = static_cast<DXGI_FORMAT>(init_geom_desc.triangles_index_format);
-                    tris_desc.VertexFormat = static_cast<DXGI_FORMAT>(init_geom_desc.triangles_vertex_format);
-                    tris_desc.IndexCount   = init_geom_desc.triangles_index_count;
-                    tris_desc.VertexCount  = init_geom_desc.triangles_vertex_count;
-                    tris_desc.IndexBuffer  = 0;
-                    tris_desc.VertexBuffer.StartAddress  = 0;
-                    tris_desc.VertexBuffer.StrideInBytes = init_geom_desc.triangles_vertex_stride;
-                }
-                else if (geom_desc.Type == D3D12_RAYTRACING_GEOMETRY_TYPE_PROCEDURAL_PRIMITIVE_AABBS)
-                {
-                    geom_desc.AABBs.AABBCount           = init_geom_desc.aabbs_count;
-                    geom_desc.AABBs.AABBs.StartAddress  = 0;
-                    geom_desc.AABBs.AABBs.StrideInBytes = init_geom_desc.aabbs_stride;
-                }
-                else if (geom_desc.Type == D3D12_RAYTRACING_GEOMETRY_TYPE_OMM_TRIANGLES)
-                {
-                    GFXRECON_LOG_ERROR("OMM_TRIANGLES geometry type is not supported.");
-                }
-                else
-                {
-                    GFXRECON_ASSERT(false && "Invalid D3D12_RAYTRACING_GEOMETRY_TYPE.");
-                }
-            }
-
-            build_desc.Inputs.pGeometryDescs = build_geometry_descs.data();
-        }
-        else if (build_desc.Inputs.Type == D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL)
-        {
-            build_desc.Inputs.NumDescs      = command_header.inputs_num_instance_descs;
-            build_desc.Inputs.InstanceDescs = 0;
-        }
-        else if (build_desc.Inputs.Type == D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_OPACITY_MICROMAP_ARRAY)
-        {
-            GFXRECON_LOG_ERROR("Raytracing acceleration structure with OMM array type isn't supported yet.");
+            build_desc.Inputs = *(build_inputs->GetPointer());
         }
         else
         {
-            GFXRECON_ASSERT(false && "Invalid D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE.");
+            build_desc.Inputs.DescsLayout     = D3D12_ELEMENTS_LAYOUT_ARRAY;
+            build_desc.Inputs.InstanceDescs   = 0;
+            build_desc.Inputs.pGeometryDescs  = nullptr;
+            build_desc.Inputs.ppGeometryDescs = nullptr;
+
+            if (build_desc.Inputs.Type == D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL)
+            {
+                build_geometry_descs.resize(command_header.inputs_geometry_descs_size);
+
+                build_desc.Inputs.NumDescs = command_header.inputs_geometry_descs_size;
+                GFXRECON_ASSERT(command_header.inputs_geometry_descs_size == geometry_descs.size());
+                for (UINT i = 0; i < geometry_descs.size(); ++i)
+                {
+                    const auto&                     init_geom_desc = geometry_descs[i];
+                    D3D12_RAYTRACING_GEOMETRY_DESC& geom_desc      = build_geometry_descs[i];
+
+                    geom_desc.Type  = static_cast<D3D12_RAYTRACING_GEOMETRY_TYPE>(init_geom_desc.geometry_type);
+                    geom_desc.Flags = static_cast<D3D12_RAYTRACING_GEOMETRY_FLAGS>(init_geom_desc.geometry_flags);
+                    if (geom_desc.Type == D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES)
+                    {
+                        auto& tris_desc        = geom_desc.Triangles;
+                        tris_desc.Transform3x4 = 0;
+                        tris_desc.IndexFormat  = static_cast<DXGI_FORMAT>(init_geom_desc.triangles_index_format);
+                        tris_desc.VertexFormat = static_cast<DXGI_FORMAT>(init_geom_desc.triangles_vertex_format);
+                        tris_desc.IndexCount   = init_geom_desc.triangles_index_count;
+                        tris_desc.VertexCount  = init_geom_desc.triangles_vertex_count;
+                        tris_desc.IndexBuffer  = 0;
+                        tris_desc.VertexBuffer.StartAddress  = 0;
+                        tris_desc.VertexBuffer.StrideInBytes = init_geom_desc.triangles_vertex_stride;
+                    }
+                    else if (geom_desc.Type == D3D12_RAYTRACING_GEOMETRY_TYPE_PROCEDURAL_PRIMITIVE_AABBS)
+                    {
+                        geom_desc.AABBs.AABBCount           = init_geom_desc.aabbs_count;
+                        geom_desc.AABBs.AABBs.StartAddress  = 0;
+                        geom_desc.AABBs.AABBs.StrideInBytes = init_geom_desc.aabbs_stride;
+                    }
+                    else if (geom_desc.Type == D3D12_RAYTRACING_GEOMETRY_TYPE_OMM_TRIANGLES)
+                    {
+                        GFXRECON_LOG_ERROR("OMM_TRIANGLES geometry type is not supported.");
+                    }
+                    else
+                    {
+                        GFXRECON_ASSERT(false && "Invalid D3D12_RAYTRACING_GEOMETRY_TYPE.");
+                    }
+                }
+
+                build_desc.Inputs.pGeometryDescs = build_geometry_descs.data();
+            }
+            else if (build_desc.Inputs.Type == D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL)
+            {
+                build_desc.Inputs.NumDescs      = command_header.inputs_num_instance_descs;
+                build_desc.Inputs.InstanceDescs = 0;
+            }
+            else if (build_desc.Inputs.Type == D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_OPACITY_MICROMAP_ARRAY)
+            {
+                GFXRECON_LOG_ERROR("Raytracing acceleration structure with OMM array type isn't supported yet.");
+            }
+            else
+            {
+                GFXRECON_ASSERT(false && "Invalid D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE.");
+            }
         }
 
         Process_BuildRaytracingAccelerationStructure(call_info, object_id, &build_desc, 0, nullptr);

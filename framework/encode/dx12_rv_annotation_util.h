@@ -30,12 +30,8 @@
 #include <memory>
 #include <vector>
 
-#if defined(WIN32)
+#if defined(D3D12_SUPPORT)
 #include <d3d12.h>
-#endif
-
-#if !defined(D3D12_RAYTRACING_OPACITY_MICROMAP_ARRAY_DESC)
-struct D3D12_RAYTRACING_OPACITY_MICROMAP_ARRAY_DESC;
 #endif
 
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
@@ -50,7 +46,7 @@ class RvAnnotationUtil
     static constexpr uint16_t kDescriptorMask = 0x5DEF;
     static constexpr uint64_t kShaderIDMask   = 0x57BD37BD12345678ull;
 
-#if defined(WIN32)
+#if defined(D3D12_SUPPORT)
     static void AddRvAnnotation(D3D12_GPU_VIRTUAL_ADDRESS* result);
 
     static void AddRvAnnotation(D3D12_GPU_DESCRIPTOR_HANDLE* result);
