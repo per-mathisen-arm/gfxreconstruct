@@ -235,13 +235,18 @@
                     "key": "memory_tracking_mode",
                     "env": "GFXRECON_MEMORY_TRACKING_MODE",
                     "label": "Memory Tracking Mode",
-                    "description": "Specifies the memory tracking mode to use for detecting modifications to mapped Vulkan memory objects. Available options are: page_guard, assisted, and unassisted.",
+                    "description": "Specifies the memory tracking mode to use for detecting modifications to mapped Vulkan memory objects. Available options are: page_guard, smart, assisted, and unassisted.",
                     "type": "ENUM",
                     "flags": [
                         {
                             "key": "page_guard",
                             "label": "page_guard",
                             "description": "Tracks modifications to individual memory pages, which are written to the capture file on calls to vkFlushMappedMemoryRanges, vkUnmapMemory, and vkQueueSubmit. Tracking modifications requires allocating shadow memory for all mapped memory."
+                        },
+                        {
+                            "key": "smart",
+                            "label": "smart",
+                            "description": "Tracks submitted resource usage and writes changed mapped memory ranges."
                         },
                         {
                             "key": "assisted",
