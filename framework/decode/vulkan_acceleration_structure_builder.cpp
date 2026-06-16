@@ -168,7 +168,10 @@ VkResult VulkanAccelerationStructureBuilder::OnCreateAccelerationStructure(
     {
         auto& replacements    = replaced_buffers_[buffer_info->capture_id];
         auto& new_replacement = replacements.emplace_back(internal_buffer_manager_.CreateBuffer(
-            build_sizes.accelerationStructureSize, buffer_info->usage, buffer_info->memory_property_flags));
+            build_sizes.accelerationStructureSize,
+            buffer_info->usage | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
+                VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+            buffer_info->memory_property_flags));
 
         new_replacement->info_.capture_address = acceleration_structure_info->capture_address;
         new_replacement->info_.capture_size    = buffer_info->capture_size;
