@@ -88,6 +88,42 @@ class VulkanRebindAllocatorTestAccess
         }
     }
 
+    static void SetMemoryProperties(VulkanRebindAllocator&                  allocator,
+                                    const VkPhysicalDeviceMemoryProperties& capture_memory_properties,
+                                    const VkPhysicalDeviceMemoryProperties& replay_memory_properties)
+    {
+        allocator.capture_memory_properties_ = capture_memory_properties;
+        allocator.replay_memory_properties_  = replay_memory_properties;
+    }
+
+    static VmaMemoryUsage GetImageMemoryUsage(VulkanRebindAllocator&      allocator,
+                                              VkImageUsageFlags           image_usage,
+                                              VkImageTiling               tiling,
+                                              VkMemoryPropertyFlags       capture_properties,
+                                              const VkMemoryRequirements& replay_requirements)
+    {
+        return allocator.GetImageMemoryUsage(image_usage, tiling, capture_properties, replay_requirements);
+    }
+
+    static VmaMemoryUsage AdjustMemoryUsage(VulkanRebindAllocator&      allocator,
+                                            VmaMemoryUsage              desired_usage,
+                                            const VkMemoryRequirements& replay_requirements)
+    {
+        return allocator.AdjustMemoryUsage(desired_usage, replay_requirements);
+    }
+
+    static VkResult AllocateMemoryForImage(VulkanRebindAllocator&                  allocator,
+                                           VkImage                                 image,
+                                           VkDeviceSize                            memory_offset,
+                                           const VkPhysicalDeviceMemoryProperties& device_memory_properties,
+                                           ResourceAllocInfo&                      resource_alloc_info,
+                                           MemoryAllocInfo&                        memory_alloc_info,
+                                           VmaMemoryInfo**                         vma_mem_info)
+    {
+        return allocator.AllocateMemoryForImage(
+            image, memory_offset, device_memory_properties, resource_alloc_info, memory_alloc_info, vma_mem_info);
+    }
+
     static std::vector<StagingResources>& GetStagingResources(VulkanRebindAllocator& allocator)
     {
         return allocator.staging_resources_;
@@ -148,6 +184,10 @@ class MockVulkanFunctions
 class MockVmaBackend : public gfxrecon::decode::VulkanRebindAllocatorTestAccess::VmaBackend
 {
   public:
+    MOCK_METHOD(void,
+                GetImageMemoryRequirements,
+                (VmaAllocator, VkImage, VkMemoryRequirements&, bool&, bool&),
+                (override));
     MOCK_METHOD(VkResult,
                 CreateBuffer,
                 (VmaAllocator,
@@ -156,6 +196,10 @@ class MockVmaBackend : public gfxrecon::decode::VulkanRebindAllocatorTestAccess:
                  VkBuffer*,
                  VmaAllocation*,
                  VmaAllocationInfo*),
+                (override));
+    MOCK_METHOD(VkResult,
+                AllocateMemoryForImage,
+                (VmaAllocator, VkImage, const VmaAllocationCreateInfo*, VmaAllocation*, VmaAllocationInfo*),
                 (override));
     MOCK_METHOD(VkResult, MapMemory, (VmaAllocator, VmaAllocation, void**), (override));
     MOCK_METHOD(void, FlushAllocation, (VmaAllocator, VmaAllocation, VkDeviceSize, VkDeviceSize), (override));
@@ -263,6 +307,81 @@ inline Matcher<const VkSubmitInfo*> SubmitInfoWaitingOn(VkSemaphore wait_semapho
                (submit_info->pWaitDstStageMask[0] == VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
     });
 }
+
+inline VkPhysicalDeviceMemoryProperties MakeMemoryProperties(std::initializer_list<VkMemoryPropertyFlags> flags)
+{
+    VkPhysicalDeviceMemoryProperties properties{};
+    properties.memoryTypeCount = static_cast<uint32_t>(flags.size());
+    properties.memoryHeapCount = std::max<uint32_t>(1, properties.memoryTypeCount);
+
+    uint32_t index = 0;
+    for (auto property_flags : flags)
+    {
+        properties.memoryTypes[index].propertyFlags = property_flags;
+        properties.memoryTypes[index].heapIndex     = index;
+        properties.memoryHeaps[index].size          = 4096;
+        ++index;
+    }
+
+    return properties;
+}
+
+inline VkMemoryRequirements
+MakeMemoryRequirements(uint32_t memory_type_bits, VkDeviceSize size = 64, VkDeviceSize alignment = 16)
+{
+    VkMemoryRequirements requirements{};
+    requirements.size           = size;
+    requirements.alignment      = alignment;
+    requirements.memoryTypeBits = memory_type_bits;
+    return requirements;
+}
+
+inline uint32_t MakeMemoryTypeBits(std::initializer_list<uint32_t> memory_type_indices)
+{
+    uint32_t memory_type_bits = 0;
+    for (uint32_t index : memory_type_indices)
+    {
+        memory_type_bits |= (1u << index);
+    }
+    return memory_type_bits;
+}
+
+inline VkMemoryRequirements MakeMemoryRequirements(std::initializer_list<uint32_t> memory_type_indices,
+                                                   VkDeviceSize                    size      = 64,
+                                                   VkDeviceSize                    alignment = 16)
+{
+    return MakeMemoryRequirements(MakeMemoryTypeBits(memory_type_indices), size, alignment);
+}
+
+constexpr uint32_t kHostVisibleTypeIndex = 0;
+constexpr uint32_t kDeviceLocalTypeIndex = 1;
+constexpr uint32_t kLazyTypeIndex        = 2;
+
+struct ImageMemorySelectionFixture
+{
+    using ResourceAllocInfo = gfxrecon::decode::VulkanRebindAllocatorTestAccess::ResourceAllocInfo;
+    using MemoryAllocInfo   = gfxrecon::decode::VulkanRebindAllocatorTestAccess::MemoryAllocInfo;
+    using VmaMemoryInfo     = gfxrecon::decode::VulkanRebindAllocatorTestAccess::VmaMemoryInfo;
+
+    StrictMock<MockVmaBackend>              mock_vma_backend;
+    gfxrecon::decode::VulkanRebindAllocator allocator;
+    VkPhysicalDeviceMemoryProperties        capture_memory_properties =
+        MakeMemoryProperties({ VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT });
+    VkPhysicalDeviceMemoryProperties replay_memory_properties =
+        MakeMemoryProperties({ VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+                               VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                               VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT });
+
+    ImageMemorySelectionFixture()
+    {
+        VulkanResourceAllocator::Functions functions{};
+        // A fake allocator handle is sufficient because the backend intercepts the VMA calls exercised by these tests.
+        gfxrecon::decode::VulkanRebindAllocatorTestAccess::SetState(
+            allocator, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, functions, &mock_vma_backend);
+        gfxrecon::decode::VulkanRebindAllocatorTestAccess::SetMemoryProperties(
+            allocator, capture_memory_properties, replay_memory_properties);
+    }
+};
 
 struct WriteBoundResourceStagingFixture
 {
@@ -419,6 +538,10 @@ GFXRECON_END_NAMESPACE(decode)
 GFXRECON_END_NAMESPACE(gfxrecon)
 
 using namespace gfxrecon::decode::rebind_allocator_test;
+
+constexpr VkImageUsageFlags kLinearMixedUseImageUsage =
+    VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
+    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
 
 TEST_CASE("WriteBoundResourceStaging skips image staging writes with non-zero destination offsets", "[decode][rebind]")
 {
@@ -653,4 +776,341 @@ TEST_CASE("WriteBoundResourceStaging submits image staging work even when no des
 
     REQUIRE(std::equal(fixture.write_data.begin(), fixture.write_data.end(), fixture.staging_memory.begin()));
     REQUIRE(fixture.staging_resources().size() == 1);
+}
+
+TEST_CASE("GetImageMemoryUsage selects expected usage classes for representative image inputs", "[decode][rebind]")
+{
+    struct TestCase
+    {
+        const char*           name;
+        VkImageUsageFlags     image_usage;
+        VkImageTiling         tiling;
+        VkMemoryPropertyFlags capture_properties;
+        VkMemoryRequirements  replay_requirements;
+        VmaMemoryUsage        expected_usage;
+    };
+
+    // Keep the selector coverage table-driven so later policy changes can update expectations in one place.
+    const std::vector<TestCase> test_cases = {
+        { "optimal tiling defaults to gpu-only",
+          VK_IMAGE_USAGE_SAMPLED_BIT,
+          VK_IMAGE_TILING_OPTIMAL,
+          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+          MakeMemoryRequirements({ kDeviceLocalTypeIndex }),
+          VMA_MEMORY_USAGE_GPU_ONLY },
+        { "linear transfer src prefers cpu-only staging",
+          VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+          VK_IMAGE_TILING_LINEAR,
+          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+          MakeMemoryRequirements({ kHostVisibleTypeIndex }),
+          VMA_MEMORY_USAGE_CPU_ONLY },
+        { "linear transfer dst prefers gpu-to-cpu readback",
+          VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+          VK_IMAGE_TILING_LINEAR,
+          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+          MakeMemoryRequirements({ kHostVisibleTypeIndex }),
+          VMA_MEMORY_USAGE_GPU_TO_CPU },
+        { "linear mixed usage falls back to cpu-to-gpu",
+          VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+          VK_IMAGE_TILING_LINEAR,
+          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+          MakeMemoryRequirements({ kHostVisibleTypeIndex }),
+          VMA_MEMORY_USAGE_CPU_TO_GPU },
+        { "host cached capture memory keeps the image in gpu-to-cpu usage",
+          VK_IMAGE_USAGE_SAMPLED_BIT,
+          VK_IMAGE_TILING_OPTIMAL,
+          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
+          MakeMemoryRequirements({ kHostVisibleTypeIndex }),
+          VMA_MEMORY_USAGE_GPU_TO_CPU },
+        { "non-device-local capture memory demotes gpu-only to cpu-to-gpu",
+          VK_IMAGE_USAGE_SAMPLED_BIT,
+          VK_IMAGE_TILING_OPTIMAL,
+          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+          MakeMemoryRequirements({ kHostVisibleTypeIndex }),
+          VMA_MEMORY_USAGE_CPU_TO_GPU },
+        { "device-local capture memory can promote a linear upload image back to gpu-only",
+          VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+          VK_IMAGE_TILING_LINEAR,
+          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+          MakeMemoryRequirements({ kDeviceLocalTypeIndex }),
+          VMA_MEMORY_USAGE_GPU_ONLY },
+        { "transient lazily allocated images request lazy device memory",
+          VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT,
+          VK_IMAGE_TILING_OPTIMAL,
+          VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT,
+          MakeMemoryRequirements({ kLazyTypeIndex }),
+          VMA_MEMORY_USAGE_GPU_LAZILY_ALLOCATED },
+        { "amd property bits are ignored when selecting host-cached usage",
+          VK_IMAGE_USAGE_SAMPLED_BIT,
+          VK_IMAGE_TILING_OPTIMAL,
+          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT |
+              VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD | VK_MEMORY_PROPERTY_DEVICE_UNCACHED_BIT_AMD,
+          MakeMemoryRequirements({ kHostVisibleTypeIndex }),
+          VMA_MEMORY_USAGE_GPU_TO_CPU },
+        { "optimal sampled images on device-local host-visible memory stay gpu-only",
+          VK_IMAGE_USAGE_SAMPLED_BIT,
+          VK_IMAGE_TILING_OPTIMAL,
+          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+              VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+          MakeMemoryRequirements({ kHostVisibleTypeIndex, kDeviceLocalTypeIndex }),
+          VMA_MEMORY_USAGE_GPU_ONLY },
+        { "linear mixed-use images on device-local host-visible memory stay cpu-to-gpu",
+          kLinearMixedUseImageUsage,
+          VK_IMAGE_TILING_LINEAR,
+          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+              VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+          MakeMemoryRequirements({ kHostVisibleTypeIndex, kDeviceLocalTypeIndex }),
+          VMA_MEMORY_USAGE_CPU_TO_GPU },
+    };
+
+    ImageMemorySelectionFixture fixture;
+
+    for (const auto& test_case : test_cases)
+    {
+        INFO(test_case.name);
+
+        const auto usage =
+            gfxrecon::decode::VulkanRebindAllocatorTestAccess::GetImageMemoryUsage(fixture.allocator,
+                                                                                   test_case.image_usage,
+                                                                                   test_case.tiling,
+                                                                                   test_case.capture_properties,
+                                                                                   test_case.replay_requirements);
+
+        REQUIRE(usage == test_case.expected_usage);
+    }
+}
+
+TEST_CASE("AdjustMemoryUsage falls back when replay memory types cannot satisfy the requested class",
+          "[decode][rebind]")
+{
+    ImageMemorySelectionFixture fixture;
+
+    SECTION("gpu-only falls back to host visible when no device-local type is allowed")
+    {
+        const auto usage = gfxrecon::decode::VulkanRebindAllocatorTestAccess::AdjustMemoryUsage(
+            fixture.allocator, VMA_MEMORY_USAGE_GPU_ONLY, MakeMemoryRequirements({ kHostVisibleTypeIndex }));
+        REQUIRE(usage == VMA_MEMORY_USAGE_CPU_TO_GPU);
+    }
+
+    SECTION("host-visible usage falls back to gpu-only when host-visible memory is unavailable")
+    {
+        const auto usage = gfxrecon::decode::VulkanRebindAllocatorTestAccess::AdjustMemoryUsage(
+            fixture.allocator, VMA_MEMORY_USAGE_CPU_TO_GPU, MakeMemoryRequirements({ kDeviceLocalTypeIndex }));
+        REQUIRE(usage == VMA_MEMORY_USAGE_GPU_ONLY);
+    }
+
+    SECTION("lazy usage survives only when a lazily allocated replay type is available")
+    {
+        const auto usage = gfxrecon::decode::VulkanRebindAllocatorTestAccess::AdjustMemoryUsage(
+            fixture.allocator, VMA_MEMORY_USAGE_GPU_LAZILY_ALLOCATED, MakeMemoryRequirements({ kLazyTypeIndex }));
+        REQUIRE(usage == VMA_MEMORY_USAGE_GPU_LAZILY_ALLOCATED);
+    }
+
+    SECTION("lazy usage falls back to gpu-only when no lazy replay type is allowed")
+    {
+        const auto usage = gfxrecon::decode::VulkanRebindAllocatorTestAccess::AdjustMemoryUsage(
+            fixture.allocator,
+            VMA_MEMORY_USAGE_GPU_LAZILY_ALLOCATED,
+            MakeMemoryRequirements({ kDeviceLocalTypeIndex }));
+        REQUIRE(usage == VMA_MEMORY_USAGE_GPU_ONLY);
+    }
+}
+
+TEST_CASE("AllocateMemoryForImage forwards the selected VMA usage and tracks the resulting allocation",
+          "[decode][rebind]")
+{
+    ImageMemorySelectionFixture                    fixture;
+    ImageMemorySelectionFixture::ResourceAllocInfo resource_alloc_info =
+        gfxrecon::decode::VulkanRebindAllocatorTestAccess::MakeResourceAllocInfo(VK_OBJECT_TYPE_IMAGE);
+    ImageMemorySelectionFixture::MemoryAllocInfo memory_alloc_info{};
+    ImageMemorySelectionFixture::VmaMemoryInfo*  vma_mem_info = nullptr;
+    const auto                                   image        = MakeHandle<VkImage>(0x2100);
+    const auto              allocation = reinterpret_cast<VmaAllocation>(static_cast<uintptr_t>(0x5002));
+    const auto              replay_req = MakeMemoryRequirements({ kHostVisibleTypeIndex }, 128, 32);
+    VmaAllocationCreateInfo captured_create_info{};
+
+    resource_alloc_info.usage            = VK_IMAGE_USAGE_SAMPLED_BIT;
+    resource_alloc_info.tiling           = VK_IMAGE_TILING_OPTIMAL;
+    resource_alloc_info.capture_mem_reqs = { MakeMemoryRequirements({ kHostVisibleTypeIndex }, 96, 32) };
+    memory_alloc_info.original_index     = 0;
+
+    EXPECT_CALL(fixture.mock_vma_backend, GetImageMemoryRequirements(_, image, _, _, _))
+        .WillOnce(Invoke([&](VmaAllocator,
+                             VkImage,
+                             VkMemoryRequirements& out_requirements,
+                             bool&                 requires_dedicated,
+                             bool&                 prefers_dedicated) {
+            out_requirements   = replay_req;
+            requires_dedicated = true;
+            prefers_dedicated  = false;
+        }));
+    EXPECT_CALL(fixture.mock_vma_backend, AllocateMemoryForImage(_, image, _, _, _))
+        .WillOnce(Invoke([&](VmaAllocator,
+                             VkImage,
+                             const VmaAllocationCreateInfo* create_info,
+                             VmaAllocation*                 out_allocation,
+                             VmaAllocationInfo*             out_allocation_info) {
+            captured_create_info              = *create_info;
+            *out_allocation                   = allocation;
+            out_allocation_info->memoryType   = 0;
+            out_allocation_info->offset       = 0;
+            out_allocation_info->size         = replay_req.size;
+            out_allocation_info->deviceMemory = MakeHandle<VkDeviceMemory>(0x4100);
+            return VK_SUCCESS;
+        }));
+
+    // This locks down the exact VMA request shape so future policy changes can update the tests intentionally.
+    const auto result =
+        gfxrecon::decode::VulkanRebindAllocatorTestAccess::AllocateMemoryForImage(fixture.allocator,
+                                                                                  image,
+                                                                                  24,
+                                                                                  fixture.capture_memory_properties,
+                                                                                  resource_alloc_info,
+                                                                                  memory_alloc_info,
+                                                                                  &vma_mem_info);
+
+    REQUIRE(result == VK_SUCCESS);
+    REQUIRE(vma_mem_info != nullptr);
+    REQUIRE(captured_create_info.usage == VMA_MEMORY_USAGE_CPU_TO_GPU);
+    REQUIRE(captured_create_info.flags == 0);
+    REQUIRE(captured_create_info.requiredFlags == 0);
+    REQUIRE(captured_create_info.preferredFlags == 0);
+    REQUIRE(captured_create_info.memoryTypeBits == 0);
+    REQUIRE(captured_create_info.pool == VmaPool{});
+    REQUIRE(memory_alloc_info.vma_mem_infos.size() == 1);
+    REQUIRE(vma_mem_info->capture_mem_req.size == 96);
+    REQUIRE(vma_mem_info->replay_mem_req.size == replay_req.size);
+    REQUIRE(vma_mem_info->offset_from_original_device_memory == 24);
+    REQUIRE(vma_mem_info->requires_dedicated_allocation);
+    REQUIRE_FALSE(vma_mem_info->prefers_dedicated_allocation);
+    REQUIRE(vma_mem_info->allocation == allocation);
+}
+
+TEST_CASE("AllocateMemoryForImage reuses a compatible cached VMA allocation before asking the backend",
+          "[decode][rebind]")
+{
+    ImageMemorySelectionFixture                    fixture;
+    ImageMemorySelectionFixture::ResourceAllocInfo resource_alloc_info =
+        gfxrecon::decode::VulkanRebindAllocatorTestAccess::MakeResourceAllocInfo(VK_OBJECT_TYPE_IMAGE);
+    ImageMemorySelectionFixture::MemoryAllocInfo memory_alloc_info{};
+    ImageMemorySelectionFixture::VmaMemoryInfo*  vma_mem_info = nullptr;
+    const auto                                   image        = MakeHandle<VkImage>(0x2101);
+    const auto replay_req = MakeMemoryRequirements({ kHostVisibleTypeIndex }, 128, 32);
+
+    resource_alloc_info.usage            = VK_IMAGE_USAGE_SAMPLED_BIT;
+    resource_alloc_info.tiling           = VK_IMAGE_TILING_OPTIMAL;
+    resource_alloc_info.capture_mem_reqs = { MakeMemoryRequirements({ kHostVisibleTypeIndex }, 96, 32) };
+    memory_alloc_info.original_index     = 0;
+
+    auto cached_memory_info                            = std::make_unique<ImageMemorySelectionFixture::VmaMemoryInfo>();
+    cached_memory_info->memory_info                    = &memory_alloc_info;
+    cached_memory_info->capture_mem_req                = resource_alloc_info.capture_mem_reqs[0];
+    cached_memory_info->replay_mem_req                 = replay_req;
+    cached_memory_info->alc_create_info.flags          = 0;
+    cached_memory_info->alc_create_info.usage          = VMA_MEMORY_USAGE_CPU_TO_GPU;
+    cached_memory_info->alc_create_info.requiredFlags  = 0;
+    cached_memory_info->alc_create_info.preferredFlags = 0;
+    cached_memory_info->alc_create_info.memoryTypeBits = 0;
+    cached_memory_info->alc_create_info.pool           = VK_NULL_HANDLE;
+    cached_memory_info->allocation_info.offset         = 0;
+    cached_memory_info->offset_from_original_device_memory = 24;
+
+    ImageMemorySelectionFixture::VmaMemoryInfo* cached_memory_info_ptr = cached_memory_info.get();
+    memory_alloc_info.vma_mem_infos.emplace_back(std::move(cached_memory_info));
+
+    EXPECT_CALL(fixture.mock_vma_backend, GetImageMemoryRequirements(_, image, _, _, _))
+        .WillOnce(Invoke([&](VmaAllocator,
+                             VkImage,
+                             VkMemoryRequirements& out_requirements,
+                             bool&                 requires_dedicated,
+                             bool&                 prefers_dedicated) {
+            out_requirements   = replay_req;
+            requires_dedicated = false;
+            prefers_dedicated  = false;
+        }));
+    EXPECT_CALL(fixture.mock_vma_backend, AllocateMemoryForImage(_, _, _, _, _)).Times(0);
+
+    // Reuse matters because later policy changes should not accidentally regress alias-free image allocation churn.
+    const auto result =
+        gfxrecon::decode::VulkanRebindAllocatorTestAccess::AllocateMemoryForImage(fixture.allocator,
+                                                                                  image,
+                                                                                  24,
+                                                                                  fixture.capture_memory_properties,
+                                                                                  resource_alloc_info,
+                                                                                  memory_alloc_info,
+                                                                                  &vma_mem_info);
+
+    REQUIRE(result == VK_SUCCESS);
+    REQUIRE(vma_mem_info == cached_memory_info_ptr);
+    REQUIRE(memory_alloc_info.vma_mem_infos.size() == 1);
+}
+
+TEST_CASE("AllocateMemoryForImage keeps trace-like device-local host-visible optimal images on gpu-only memory",
+          "[decode][rebind]")
+{
+    ImageMemorySelectionFixture                    fixture;
+    ImageMemorySelectionFixture::ResourceAllocInfo resource_alloc_info =
+        gfxrecon::decode::VulkanRebindAllocatorTestAccess::MakeResourceAllocInfo(VK_OBJECT_TYPE_IMAGE);
+    ImageMemorySelectionFixture::MemoryAllocInfo memory_alloc_info{};
+    ImageMemorySelectionFixture::VmaMemoryInfo*  vma_mem_info = nullptr;
+    const auto                                   image        = MakeHandle<VkImage>(0x2102);
+    const auto allocation = reinterpret_cast<VmaAllocation>(static_cast<uintptr_t>(0x5003));
+    const auto replay_req = MakeMemoryRequirements({ kHostVisibleTypeIndex, kDeviceLocalTypeIndex }, 256, 64);
+    VmaAllocationCreateInfo captured_create_info{};
+
+    fixture.capture_memory_properties =
+        MakeMemoryProperties({ VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                                   VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                               VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                                   VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
+                               VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT });
+    fixture.replay_memory_properties = fixture.capture_memory_properties;
+    gfxrecon::decode::VulkanRebindAllocatorTestAccess::SetMemoryProperties(
+        fixture.allocator, fixture.capture_memory_properties, fixture.replay_memory_properties);
+
+    resource_alloc_info.usage            = VK_IMAGE_USAGE_SAMPLED_BIT;
+    resource_alloc_info.tiling           = VK_IMAGE_TILING_OPTIMAL;
+    resource_alloc_info.capture_mem_reqs = { MakeMemoryRequirements(
+        { kHostVisibleTypeIndex, kDeviceLocalTypeIndex }, 192, 64) };
+    memory_alloc_info.original_index     = 0;
+
+    EXPECT_CALL(fixture.mock_vma_backend, GetImageMemoryRequirements(_, image, _, _, _))
+        .WillOnce(Invoke([&](VmaAllocator,
+                             VkImage,
+                             VkMemoryRequirements& out_requirements,
+                             bool&                 requires_dedicated,
+                             bool&                 prefers_dedicated) {
+            out_requirements   = replay_req;
+            requires_dedicated = false;
+            prefers_dedicated  = false;
+        }));
+    EXPECT_CALL(fixture.mock_vma_backend, AllocateMemoryForImage(_, image, _, _, _))
+        .WillOnce(Invoke([&](VmaAllocator,
+                             VkImage,
+                             const VmaAllocationCreateInfo* create_info,
+                             VmaAllocation*                 out_allocation,
+                             VmaAllocationInfo*             out_allocation_info) {
+            captured_create_info              = *create_info;
+            *out_allocation                   = allocation;
+            out_allocation_info->memoryType   = 0;
+            out_allocation_info->offset       = 0;
+            out_allocation_info->size         = replay_req.size;
+            out_allocation_info->deviceMemory = MakeHandle<VkDeviceMemory>(0x4101);
+            return VK_SUCCESS;
+        }));
+
+    // This locks down the policy choice that optimal images on hybrid device-local/host-visible memory
+    // still request GPU_ONLY from VMA.
+    const auto result =
+        gfxrecon::decode::VulkanRebindAllocatorTestAccess::AllocateMemoryForImage(fixture.allocator,
+                                                                                  image,
+                                                                                  32,
+                                                                                  fixture.capture_memory_properties,
+                                                                                  resource_alloc_info,
+                                                                                  memory_alloc_info,
+                                                                                  &vma_mem_info);
+
+    REQUIRE(result == VK_SUCCESS);
+    REQUIRE(vma_mem_info != nullptr);
+    REQUIRE(captured_create_info.usage == VMA_MEMORY_USAGE_GPU_ONLY);
 }

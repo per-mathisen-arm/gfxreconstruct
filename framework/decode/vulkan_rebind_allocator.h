@@ -500,12 +500,25 @@ class VulkanRebindAllocator : public VulkanResourceAllocator
       public:
         virtual ~VmaBackend() = default;
 
+        // Wrap image allocation entry points so unit tests can observe the selection inputs without touching VMA.
+        virtual void GetImageMemoryRequirements(VmaAllocator          allocator,
+                                                VkImage               image,
+                                                VkMemoryRequirements& memory_requirements,
+                                                bool&                 requires_dedicated_allocation,
+                                                bool&                 prefers_dedicated_allocation) = 0;
+
         virtual VkResult CreateBuffer(VmaAllocator                   allocator,
                                       const VkBufferCreateInfo*      create_info,
                                       const VmaAllocationCreateInfo* allocation_create_info,
                                       VkBuffer*                      buffer,
                                       VmaAllocation*                 allocation,
                                       VmaAllocationInfo*             allocation_info) = 0;
+
+        virtual VkResult AllocateMemoryForImage(VmaAllocator                   allocator,
+                                                VkImage                        image,
+                                                const VmaAllocationCreateInfo* allocation_create_info,
+                                                VmaAllocation*                 allocation,
+                                                VmaAllocationInfo*             allocation_info) = 0;
 
         virtual VkResult MapMemory(VmaAllocator allocator, VmaAllocation allocation, void** mapped_pointer) = 0;
 
@@ -854,10 +867,10 @@ class VulkanRebindAllocator : public VulkanResourceAllocator
     uint32_t                         staging_queue_family_{};
 
     // Maps a captured resource handle id to its aliasing group identifier.
-    std::unordered_map<format::HandleId, uint8_t>     resources_aliasing_group_{};
-    std::unordered_map<uint8_t, VkMemoryRequirements> aliasing_group_max_memory_requirements_{};
+    std::unordered_map<format::HandleId, uint8_t>                       resources_aliasing_group_{};
+    std::unordered_map<uint8_t, VkMemoryRequirements>                   aliasing_group_max_memory_requirements_{};
     std::unordered_map<uint8_t, std::vector<AliasingGroupResourceInfo>> aliasing_group_resource_infos_{};
-    std::vector<StagingResources>                     staging_resources_{};
+    std::vector<StagingResources>                                       staging_resources_{};
 
     // external per-block mutexes replacing VmaDeviceMemoryBlock::m_MapAndBindMutex (now private in VMA 3.3.0).
     // use VkDeviceMemory-handles as key to cover all allocations sharing the same block.
@@ -867,12 +880,24 @@ class VulkanRebindAllocator : public VulkanResourceAllocator
     class DefaultVmaBackend final : public VmaBackend
     {
       public:
+        void GetImageMemoryRequirements(VmaAllocator          allocator,
+                                        VkImage               image,
+                                        VkMemoryRequirements& memory_requirements,
+                                        bool&                 requires_dedicated_allocation,
+                                        bool&                 prefers_dedicated_allocation) override;
+
         VkResult CreateBuffer(VmaAllocator                   allocator,
                               const VkBufferCreateInfo*      create_info,
                               const VmaAllocationCreateInfo* allocation_create_info,
                               VkBuffer*                      buffer,
                               VmaAllocation*                 allocation,
                               VmaAllocationInfo*             allocation_info) override;
+
+        VkResult AllocateMemoryForImage(VmaAllocator                   allocator,
+                                        VkImage                        image,
+                                        const VmaAllocationCreateInfo* allocation_create_info,
+                                        VmaAllocation*                 allocation,
+                                        VmaAllocationInfo*             allocation_info) override;
 
         VkResult MapMemory(VmaAllocator allocator, VmaAllocation allocation, void** mapped_pointer) override;
 

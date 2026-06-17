@@ -95,6 +95,16 @@ VulkanRebindAllocator::VulkanRebindAllocator() :
     capture_device_type_(VK_PHYSICAL_DEVICE_TYPE_OTHER), capture_memory_properties_{}, replay_memory_properties_{}
 {}
 
+void VulkanRebindAllocator::DefaultVmaBackend::GetImageMemoryRequirements(VmaAllocator          allocator,
+                                                                          VkImage               image,
+                                                                          VkMemoryRequirements& memory_requirements,
+                                                                          bool& requires_dedicated_allocation,
+                                                                          bool& prefers_dedicated_allocation)
+{
+    allocator->GetImageMemoryRequirements(
+        image, memory_requirements, requires_dedicated_allocation, prefers_dedicated_allocation);
+}
+
 VkResult VulkanRebindAllocator::DefaultVmaBackend::CreateBuffer(VmaAllocator                   allocator,
                                                                 const VkBufferCreateInfo*      create_info,
                                                                 const VmaAllocationCreateInfo* allocation_create_info,
@@ -103,6 +113,16 @@ VkResult VulkanRebindAllocator::DefaultVmaBackend::CreateBuffer(VmaAllocator    
                                                                 VmaAllocationInfo*             allocation_info)
 {
     return vmaCreateBuffer(allocator, create_info, allocation_create_info, buffer, allocation, allocation_info);
+}
+
+VkResult
+VulkanRebindAllocator::DefaultVmaBackend::AllocateMemoryForImage(VmaAllocator                   allocator,
+                                                                 VkImage                        image,
+                                                                 const VmaAllocationCreateInfo* allocation_create_info,
+                                                                 VmaAllocation*                 allocation,
+                                                                 VmaAllocationInfo*             allocation_info)
+{
+    return vmaAllocateMemoryForImage(allocator, image, allocation_create_info, allocation, allocation_info);
 }
 
 VkResult VulkanRebindAllocator::DefaultVmaBackend::MapMemory(VmaAllocator  allocator,
@@ -1015,8 +1035,9 @@ VkResult VulkanRebindAllocator::AllocateMemoryForImage(VkImage                  
     VkMemoryRequirements replay_req                    = {};
     bool                 requires_dedicated_allocation = false;
     bool                 prefers_dedicated_allocation  = false;
-    allocator_->GetImageMemoryRequirements(
-        image, replay_req, requires_dedicated_allocation, prefers_dedicated_allocation);
+    // Route the replay requirement query through the backend so unit tests can validate this policy in isolation.
+    vma_backend_->GetImageMemoryRequirements(
+        allocator_, image, replay_req, requires_dedicated_allocation, prefers_dedicated_allocation);
 
     VmaAllocationCreateInfo create_info{};
     create_info.flags = 0;
@@ -1052,8 +1073,8 @@ VkResult VulkanRebindAllocator::AllocateMemoryForImage(VkImage                  
     mem_info.alc_create_info                    = create_info;
     mem_info.offset_from_original_device_memory = memory_offset;
 
-    auto result =
-        vmaAllocateMemoryForImage(allocator_, image, &create_info, &mem_info.allocation, &mem_info.allocation_info);
+    auto result = vma_backend_->AllocateMemoryForImage(
+        allocator_, image, &create_info, &mem_info.allocation, &mem_info.allocation_info);
 
     if (result >= 0)
     {
