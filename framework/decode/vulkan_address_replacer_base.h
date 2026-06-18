@@ -146,6 +146,10 @@ class VulkanAddressReplacerBase
     virtual void ProcessGeneratedCommandsInfoEXT(VkGeneratedCommandsInfoEXT*               pGeneratedCommandsInfo,
                                                  const decode::VulkanDeviceAddressTracker& address_tracker)
     {}
+
+    virtual void ProcessSpecializationInfo(VkSpecializationInfo*             info,
+                                           const VulkanDeviceAddressTracker& address_tracker)
+    {}
 };
 GFXRECON_END_NAMESPACE(decode)
 GFXRECON_END_NAMESPACE(gfxrecon)

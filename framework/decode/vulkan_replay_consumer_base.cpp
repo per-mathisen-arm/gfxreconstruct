@@ -11019,6 +11019,24 @@ VkResult VulkanReplayConsumerBase::OverrideCreateRayTracingPipelinesKHR(
                                                          &pPipelines->GetPointer()[createInfoCount]);
     }
 
+    // Replace potential device addresses in specialization constants
+
+    if (UseAddressReplacement(device_info))
+    {
+        auto& address_replacer = GetDeviceAddressReplacer(device_info);
+        auto& address_tracker  = GetDeviceAddressTracker(device_info);
+
+        for (uint32_t i = 0; i < createInfoCount; ++i)
+        {
+            for (uint32_t j = 0; j < in_pCreateInfos[i].stageCount; ++j)
+            {
+                address_replacer.ProcessSpecializationInfo(
+                    const_cast<VkSpecializationInfo*>(in_pCreateInfos[i].pStages[j].pSpecializationInfo),
+                    address_tracker);
+            }
+        }
+    }
+
     // NOTE: as of early 2025, rayTracingPipelineShaderGroupHandleCaptureReplay is not widely supported.
     // e.g. newest nvidia desktop-drivers do not support this feature
     if (device_info->property_feature_info.feature_rayTracingPipelineShaderGroupHandleCaptureReplay &&
@@ -11383,6 +11401,24 @@ VkResult VulkanReplayConsumerBase::OverrideCreateRayTracingPipelinesNV(
 
     VkPipelineCache pipelineCache = (pipeline_cache_info == nullptr) ? VK_NULL_HANDLE : pipeline_cache_info->handle;
     VkPipelineCache overridePipelineCache = pipelineCache;
+
+    // Replace potential device addresses in specialization constants
+
+    if (UseAddressReplacement(device_info))
+    {
+        auto& address_replacer = GetDeviceAddressReplacer(device_info);
+        auto& address_tracker  = GetDeviceAddressTracker(device_info);
+
+        for (uint32_t i = 0; i < createInfoCount; ++i)
+        {
+            for (uint32_t j = 0; j < in_pCreateInfos[i].stageCount; ++j)
+            {
+                address_replacer.ProcessSpecializationInfo(
+                    const_cast<VkSpecializationInfo*>(in_pCreateInfos[i].pStages[j].pSpecializationInfo),
+                    address_tracker);
+            }
+        }
+    }
 
     // If there is no pipeline cache and we want to create a new one
 
@@ -13898,6 +13934,24 @@ VkResult VulkanReplayConsumerBase::OverrideCreateGraphicsPipelines(
         maybe_replaced_create_infos = replaced_create_infos;
     }
 
+    // Replace potential device addresses in specialization constants
+
+    if (UseAddressReplacement(device_info))
+    {
+        auto& address_replacer = GetDeviceAddressReplacer(device_info);
+        auto& address_tracker  = GetDeviceAddressTracker(device_info);
+
+        for (uint32_t i = 0; i < create_info_count; ++i)
+        {
+            for (uint32_t j = 0; j < in_p_create_infos[i].stageCount; ++j)
+            {
+                address_replacer.ProcessSpecializationInfo(
+                    const_cast<VkSpecializationInfo*>(in_p_create_infos[i].pStages[j].pSpecializationInfo),
+                    address_tracker);
+            }
+        }
+    }
+
     VkResult replay_result = func(in_device,
                                   pipeline_cache,
                                   create_info_count,
@@ -13962,6 +14016,20 @@ VkResult VulkanReplayConsumerBase::OverrideCreateComputePipelines(
     {
         cache_pipeline_id = *pPipelines->GetPointer();
         pipeline_cache    = CreateNewPipelineCache(device_info, cache_pipeline_id);
+    }
+
+    // Replace potential device addresses in specialization constants
+
+    if (UseAddressReplacement(device_info))
+    {
+        auto& address_replacer = GetDeviceAddressReplacer(device_info);
+        auto& address_tracker  = GetDeviceAddressTracker(device_info);
+
+        for (uint32_t i = 0; i < create_info_count; ++i)
+        {
+            address_replacer.ProcessSpecializationInfo(
+                const_cast<VkSpecializationInfo*>(in_p_create_infos[i].stage.pSpecializationInfo), address_tracker);
+        }
     }
 
     VkResult replay_result =
@@ -14079,6 +14147,20 @@ VkResult VulkanReplayConsumerBase::OverrideCreateShadersEXT(
         replaced_file_code = ReplaceShaders(create_info_count, replaced_create_infos, pShaders->GetPointer());
 
         maybe_replaced_create_infos = replaced_create_infos;
+    }
+
+    // Replace potential device addresses in specialization constants
+
+    if (UseAddressReplacement(device_info))
+    {
+        auto& address_replacer = GetDeviceAddressReplacer(device_info);
+        auto& address_tracker  = GetDeviceAddressTracker(device_info);
+
+        for (uint32_t i = 0; i < create_info_count; ++i)
+        {
+            address_replacer.ProcessSpecializationInfo(
+                const_cast<VkSpecializationInfo*>(in_p_create_infos[i].pSpecializationInfo), address_tracker);
+        }
     }
 
     VkResult replay_result =
@@ -15525,14 +15607,10 @@ VkResult VulkanReplayConsumerBase::OverrideCreateDataGraphPipelinesARM(
     for (uint32_t i = 0; i < createInfoCount; ++i)
     {
         const auto& create_info = create_infos[i];
+
         const auto* optical_flow_info =
             graphics::vulkan_struct_get_pnext<VkDataGraphPipelineOpticalFlowCreateInfoARM>(&create_info);
-        if (optical_flow_info == nullptr)
-        {
-            continue;
-        }
-
-        if (!any_optical_flow_support ||
+        if (optical_flow_info != nullptr && !any_optical_flow_support ||
             std::none_of(replay_optical_flow_infos.begin(),
                          replay_optical_flow_infos.end(),
                          [&](const VulkanReplayDeviceInfo::DataGraphOpticalFlowInfo& info) {
@@ -15542,6 +15620,22 @@ VkResult VulkanReplayConsumerBase::OverrideCreateDataGraphPipelinesARM(
             static constexpr const char* kErrorMessage =
                 "vkCreateDataGraphPipelinesARM optical flow pipeline failed compatibility check. Replay may fail.";
             GFXRECON_LOG_ERROR("%s", kErrorMessage);
+        }
+
+        // Replace potential device addresses in specialization constants
+
+        if (UseAddressReplacement(device_info))
+        {
+            auto* shader_module_info =
+                graphics::vulkan_struct_get_pnext<VkDataGraphPipelineShaderModuleCreateInfoARM>(&create_info);
+            if (shader_module_info != nullptr)
+            {
+                auto& address_replacer = GetDeviceAddressReplacer(device_info);
+                auto& address_tracker  = GetDeviceAddressTracker(device_info);
+
+                address_replacer.ProcessSpecializationInfo(
+                    const_cast<VkSpecializationInfo*>(shader_module_info->pSpecializationInfo), address_tracker);
+            }
         }
     }
 

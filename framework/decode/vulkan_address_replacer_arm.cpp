@@ -280,6 +280,21 @@ void VulkanAddressReplacerARM::ProcessGeneratedCommandsInfoEXT(
     }
 }
 
+void VulkanAddressReplacerARM::ProcessSpecializationInfo(VkSpecializationInfo*             info,
+                                                         const VulkanDeviceAddressTracker& address_tracker)
+{
+    if (info == nullptr || info->pData == nullptr || info->dataSize < sizeof(VkDeviceAddress))
+    {
+        return;
+    }
+
+    uint8_t* data = const_cast<uint8_t*>(reinterpret_cast<const uint8_t*>(info->pData));
+    for (size_t offset = 0; (offset + sizeof(VkDeviceAddress)) <= info->dataSize; ++offset)
+    {
+        address_remap(*reinterpret_cast<VkDeviceAddress*>(data + offset), address_tracker);
+    }
+}
+
 void swap(VulkanAddressReplacerARM& lhs, VulkanAddressReplacerARM& rhs) noexcept
 {
     std::swap(lhs.device_table_, rhs.device_table_);

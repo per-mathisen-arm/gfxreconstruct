@@ -116,6 +116,8 @@ class VulkanAddressReplacerARM : public VulkanAddressReplacerBase
     void ProcessGeneratedCommandsInfoEXT(VkGeneratedCommandsInfoEXT*               pGeneratedCommandsInfo,
                                          const decode::VulkanDeviceAddressTracker& address_tracker);
 
+    void ProcessSpecializationInfo(VkSpecializationInfo* info, const VulkanDeviceAddressTracker& address_tracker);
+
     friend void swap(VulkanAddressReplacerARM& lhs, VulkanAddressReplacerARM& rhs) noexcept;
 
   private:
