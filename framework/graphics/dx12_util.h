@@ -48,6 +48,7 @@
 #include <vector>
 #include <unordered_map>
 #include <map>
+#include <functional>
 
 #if defined(GFXRECON_DXC_SUPPORT)
 #include <d3d12shader.h>
@@ -205,12 +206,11 @@ HRESULT MapSubresource(ID3D12Resource*    resource,
 // Waits for the given queue to complete all pending tasks.
 HRESULT WaitForQueue(ID3D12CommandQueue* queue, ID3D12Fence* fence = nullptr, uint64_t fence_value = 0);
 
-// Utility function to analyze DRED output.
-// This function is meant to be called when device gets removed, to get extended debug information.
-// For it to work, gfxrecon-replay must be launched with: --debug-device-lost
-void        AnalyzeDeviceRemoved(ID3D12Device* device);
-std::string BreadcrumbOpToString(D3D12_AUTO_BREADCRUMB_OP op);
-void        PrintAllocationNode(const D3D12_DRED_ALLOCATION_NODE* node, std::string type);
+// Analyze D3D12 Device Removed Extended Data after a device removal: logs a concise fault summary and
+// writes the full report to gfxrecon_dred.json. Requires replay launched with --debug-device-lost.
+// resolve_capture_id maps a replay-side ID3D12 object pointer to its capture handle id (matching the
+// "handle" fields in a gfxrecon JSONL export); may be empty. Defined in dx12_dred_analyzer.cpp.
+void AnalyzeDeviceRemoved(ID3D12Device* device, const std::function<uint64_t(const void*)>& resolve_capture_id = {});
 
 ID3D12ResourceComPtr CreateBufferResource(ID3D12Device*         device,
                                           uint64_t              size,

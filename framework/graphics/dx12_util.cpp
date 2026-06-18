@@ -27,7 +27,6 @@
 
 #include "util/image_writer.h"
 #include "util/logging.h"
-#include "generated/generated_dx12_enum_to_string.h"
 #include <algorithm>
 
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
@@ -438,100 +437,6 @@ HRESULT WaitForQueue(ID3D12CommandQueue* queue, ID3D12Fence* fence, uint64_t fen
         temp_fence->Release();
     }
     return result;
-}
-
-void AnalyzeDeviceRemoved(ID3D12Device* device)
-{
-    ID3D12DeviceRemovedExtendedData1ComPtr dred = nullptr;
-    HRESULT                                hr   = device->QueryInterface(IID_PPV_ARGS(&dred));
-
-    D3D12_DRED_AUTO_BREADCRUMBS_OUTPUT1 dred_auto_breadcrumb_output = {};
-    hr = dred->GetAutoBreadcrumbsOutput1(&dred_auto_breadcrumb_output);
-    if (SUCCEEDED(hr))
-    {
-        const D3D12_AUTO_BREADCRUMB_NODE1* node       = dred_auto_breadcrumb_output.pHeadAutoBreadcrumbNode;
-        int                                node_index = 0;
-        while (node)
-        {
-            GFXRECON_LOG_INFO("=== Breadcrumb Node #%d ===", node_index);
-            GFXRECON_LOG_INFO("CommandList: %p (%s)",
-                              node->pCommandList,
-                              node->pCommandListDebugNameA ? node->pCommandListDebugNameA : "<unnamed>");
-            GFXRECON_LOG_INFO("CommandQueue: %p (%s)",
-                              node->pCommandQueue,
-                              node->pCommandQueueDebugNameA ? node->pCommandQueueDebugNameA : "<unnamed>");
-            GFXRECON_LOG_INFO("BreadcrumbCount: %u", node->BreadcrumbCount);
-            if (node->pLastBreadcrumbValue)
-                GFXRECON_LOG_INFO("LastBreadcrumbValue: %u", *node->pLastBreadcrumbValue);
-
-            if (node->pCommandHistory && node->BreadcrumbCount > 0)
-            {
-                GFXRECON_LOG_INFO("CommandHistory:");
-                for (UINT i = 0; i < node->BreadcrumbCount; ++i)
-                {
-                    GFXRECON_LOG_INFO("  [%u] %s (%d)",
-                                      i,
-                                      BreadcrumbOpToString(node->pCommandHistory[i]).c_str(),
-                                      node->pCommandHistory[i]);
-                }
-            }
-
-            if (node->BreadcrumbContextsCount && node->pBreadcrumbContexts)
-            {
-                GFXRECON_LOG_INFO("BreadcrumbContexts:");
-                for (UINT i = 0; i < node->BreadcrumbContextsCount; ++i)
-                {
-                    GFXRECON_LOG_INFO("  [%u] BreadcrumbIndex: %u, ContextString: %ls",
-                                      i,
-                                      node->pBreadcrumbContexts[i].BreadcrumbIndex,
-                                      node->pBreadcrumbContexts[i].pContextString
-                                          ? node->pBreadcrumbContexts[i].pContextString
-                                          : L"<null>");
-                }
-            }
-
-            node = node->pNext;
-            ++node_index;
-        }
-    }
-
-    D3D12_DRED_PAGE_FAULT_OUTPUT pageFault = {};
-    hr                                     = dred->GetPageFaultAllocationOutput(&pageFault);
-    if (SUCCEEDED(hr))
-    {
-        GFXRECON_LOG_INFO("=== Page Fault Info ===");
-        GFXRECON_LOG_INFO("Page fault at GPU VA: 0x%llx", pageFault.PageFaultVA);
-
-        PrintAllocationNode(pageFault.pHeadExistingAllocationNode, "Existing");
-        PrintAllocationNode(pageFault.pHeadRecentFreedAllocationNode, "Recent Freed");
-    }
-}
-
-std::string BreadcrumbOpToString(D3D12_AUTO_BREADCRUMB_OP op)
-{
-    std::string full   = gfxrecon::util::ToString(op);
-    std::string prefix = "D3D12_AUTO_BREADCRUMB_OP_";
-    auto        pos    = full.find(prefix);
-    if (pos != std::string::npos)
-        return full.substr(pos + prefix.length());
-    else
-        return full;
-}
-
-void PrintAllocationNode(const D3D12_DRED_ALLOCATION_NODE* node, std::string type)
-{
-    int count = 0;
-    while (node)
-    {
-        GFXRECON_LOG_INFO("[%s Allocation #%d] AllocationType: %d, ObjectNameA: %s, ObjectNameW: %ls",
-                          type,
-                          count,
-                          node->AllocationType,
-                          node->ObjectNameA ? node->ObjectNameA : "<unnamed>",
-                          node->ObjectNameW ? node->ObjectNameW : L"<unnamed>");
-        node = node->pNext;
-        ++count;
-    }
 }
 
 ID3D12ResourceComPtr CreateBufferResource(ID3D12Device*         device,

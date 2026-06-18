@@ -36,6 +36,22 @@ void Dx12ReplayConsumerArmFeatures::CheckReplayResult(const char* call_name,
 {
     if ((consumer_->options_.enable_debug_device_lost) && (replay_result == DXGI_ERROR_DEVICE_REMOVED))
     {
+        // Build a replay-pointer -> capture-id reverse lookup so DRED breadcrumb nodes (which only carry raw
+        // ID3D12 object pointers) can be reported with the capture handle ids that match the trace (the same
+        // ids exposed as "handle" fields in a gfxrecon JSONL export).
+        std::unordered_map<const void*, uint64_t> object_to_capture_id;
+        for (const auto& [object_id, info] : consumer_->GetObjectInfoTable())
+        {
+            if (info.object != nullptr)
+            {
+                object_to_capture_id[info.object] = object_id;
+            }
+        }
+        auto resolve_capture_id = [&object_to_capture_id](const void* object) -> uint64_t {
+            auto it = object_to_capture_id.find(object);
+            return (it != object_to_capture_id.end()) ? it->second : 0;
+        };
+
         for (const auto& [id, device] : consumer_->active_devices_)
         {
             auto device_ptr = reinterpret_cast<ID3D12Device*>(const_cast<void*>(device));
@@ -43,7 +59,7 @@ void Dx12ReplayConsumerArmFeatures::CheckReplayResult(const char* call_name,
             HRESULT reason = device_ptr->GetDeviceRemovedReason();
             if (reason != S_OK)
             {
-                gfxrecon::graphics::dx12::AnalyzeDeviceRemoved(device_ptr);
+                gfxrecon::graphics::dx12::AnalyzeDeviceRemoved(device_ptr, resolve_capture_id);
             }
         }
     }
