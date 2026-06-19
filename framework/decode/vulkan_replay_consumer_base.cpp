@@ -6373,9 +6373,9 @@ VkResult VulkanReplayConsumerBase::OverrideAllocateMemory(
 
         while (prev_node != nullptr && prev_node->pNext != nullptr)
         {
-            VkBaseOutStructure* current_struct = reinterpret_cast<VkBaseOutStructure*>(prev_struct->pNext);
             const Decoded_VkBaseOutStructure* current_node =
                 reinterpret_cast<const Decoded_VkBaseOutStructure*>(prev_node->pNext->GetMetaStructPointer());
+            VkBaseOutStructure* current_struct = reinterpret_cast<VkBaseOutStructure*>(current_node->decoded_value);
 
             if (current_struct->sType == VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO)
             {
