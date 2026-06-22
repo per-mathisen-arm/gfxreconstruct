@@ -515,6 +515,10 @@ int main(int argc, const char** argv)
             {
                 throw std::runtime_error("Option --set-replay-options cannot be used with any other option. Exiting.");
             }
+            if (remove_device_instance || keep_device_instance || remove_thread || remove_device)
+            {
+                throw std::runtime_error("Option --set-replay-options cannot be used with any other option. Exiting.");
+            }
         }
 
         if (remove_device_instance && keep_device_instance)
