@@ -18,7 +18,7 @@
                    android:value="true"/>
         <activity android:name=".ReplayActivity"
                   android:exported="true"
-                  android:configChanges="orientation|screenSize|keyboard|keyboardHidden|screenLayout"
+                  android:configChanges="orientation|screenSize|smallestScreenSize|keyboard|keyboardHidden|screenLayout"
                   android:screenOrientation="unspecified">
             <meta-data android:name="android.app.lib_name"
                        android:value="gfxrecon-replay" />
