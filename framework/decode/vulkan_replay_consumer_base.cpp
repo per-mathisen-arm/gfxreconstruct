@@ -15610,12 +15610,13 @@ VkResult VulkanReplayConsumerBase::OverrideCreateDataGraphPipelinesARM(
 
         const auto* optical_flow_info =
             graphics::vulkan_struct_get_pnext<VkDataGraphPipelineOpticalFlowCreateInfoARM>(&create_info);
-        if (optical_flow_info != nullptr && !any_optical_flow_support ||
-            std::none_of(replay_optical_flow_infos.begin(),
-                         replay_optical_flow_infos.end(),
-                         [&](const VulkanReplayDeviceInfo::DataGraphOpticalFlowInfo& info) {
-                             return SupportsDataGraphOpticalFlowPipeline(info, *optical_flow_info);
-                         }))
+        if ((optical_flow_info != nullptr) &&
+            (!any_optical_flow_support ||
+             std::none_of(replay_optical_flow_infos.begin(),
+                          replay_optical_flow_infos.end(),
+                          [&](const VulkanReplayDeviceInfo::DataGraphOpticalFlowInfo& info) {
+                              return SupportsDataGraphOpticalFlowPipeline(info, *optical_flow_info);
+                          })))
         {
             static constexpr const char* kErrorMessage =
                 "vkCreateDataGraphPipelinesARM optical flow pipeline failed compatibility check. Replay may fail.";
