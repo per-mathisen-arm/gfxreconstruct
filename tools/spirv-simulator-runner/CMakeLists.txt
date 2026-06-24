@@ -26,8 +26,16 @@ add_executable(gfxrecon-spirv-simulator "")
 target_sources(gfxrecon-spirv-simulator
                PRIVATE
                    ${CMAKE_CURRENT_LIST_DIR}/simulator_test.cpp
+                   ${CMAKE_CURRENT_LIST_DIR}/../optimize/file_optimizer.h
+                   ${CMAKE_CURRENT_LIST_DIR}/../optimize/file_optimizer.cpp
+                   ${CMAKE_CURRENT_LIST_DIR}/../optimize/vulkan_file_optimizer.h
+                   ${CMAKE_CURRENT_LIST_DIR}/../optimize/vulkan_file_optimizer.cpp
                    ${CMAKE_CURRENT_LIST_DIR}/../optimize/vulkan_spirv_tracker_modifier.h
                    ${CMAKE_CURRENT_LIST_DIR}/../optimize/vulkan_spirv_tracker_modifier.cpp
+                   ${CMAKE_CURRENT_LIST_DIR}/../optimize/vulkan_spirv_tracker_fixup_location_builder.h
+                   ${CMAKE_CURRENT_LIST_DIR}/../optimize/vulkan_spirv_tracker_fixup_location_builder.cpp
+                   ${CMAKE_CURRENT_LIST_DIR}/../optimize/vulkan_spirv_tracker_provenance_tracker.h
+                   ${CMAKE_CURRENT_LIST_DIR}/../optimize/vulkan_spirv_tracker_provenance_tracker.cpp
                    ${CMAKE_CURRENT_LIST_DIR}/../platform_debug_helper.cpp
                    $<$<BOOL:WIN32>:${PROJECT_SOURCE_DIR}/version.rc>
               )

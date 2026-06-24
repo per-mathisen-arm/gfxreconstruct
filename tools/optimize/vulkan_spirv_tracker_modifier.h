@@ -24,8 +24,10 @@
 #define GFXRECON_TOOLS_OPTIMIZE_VULKAN_SPIRV_TRACK_MODIFIER_H
 
 #include <cstdint>
+#include <filesystem>
 #include <unordered_map>
 #include <map>
+#include <optional>
 #include <unordered_set>
 #include <deque>
 #include <variant>
@@ -33,23 +35,37 @@
 
 #include "decode/api_decoder.h"
 #include "format/format.h"
+#include "vulkan_spirv_tracker_fixup_location_builder.h"
+#include "vulkan_spirv_tracker_provenance_tracker.h"
+#include "vulkan_spirv_tracker_types.h"
 #include "util/defines.h"
 #include "encode/parameter_buffer.h"
 #include "util/vulkan_modifier_base.h"
 #include "framework/spirv_simulator.hpp"
+#include "framework/memory_flag_tracker.hpp"
 
 #include <list>
 
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(decode)
 
+struct VulkanSpirvTrackerOptions
+{
+    bool                                 verbose                     = false;
+    bool                                 error_on_buffers_incomplete = false;
+    std::optional<std::filesystem::path> fixup_json_path             = std::nullopt;
+};
+
 // Performs the track of spirv simulator input and output.
 class VulkanSpirvTrackModifier : public util::VulkanModifierBase
 {
   public:
-    VulkanSpirvTrackModifier(bool verbose = false, bool error_on_buffers_incomplete = false);
+    explicit VulkanSpirvTrackModifier(const VulkanSpirvTrackerOptions& options = VulkanSpirvTrackerOptions());
 
     virtual bool CanOptimize() override;
+
+    void FinalizeAnalysis();
+    void PrepareForModificationPass();
 
     virtual void
     ProcessFillMemoryCommand(uint64_t memory_id, uint64_t offset, uint64_t size, const uint8_t* data) override;
@@ -479,6 +495,7 @@ class VulkanSpirvTrackModifier : public util::VulkanModifierBase
     };
     struct CommandBufferInfo : public ObjectInfo
     {
+        format::HandleId       device_id = 0;
         CommandBufferLifeCycle state;
     };
 
@@ -643,20 +660,32 @@ class VulkanSpirvTrackModifier : public util::VulkanModifierBase
 
     struct BufferWriteEvent
     {
-        SourceType                sourceType;
+        SourceType                sourceType = SourceType::Unknow;
         format::HandleId          buffer;
         format::HandleId          srcBuffer;
         std::vector<uint8_t>      srcPointer;
         std::vector<VkBufferCopy> regions;
+        // Trace call index for execute-time provenance paths. UINT64_MAX means
+        // this recorded write does not participate in provenance updates.
+        uint64_t call_index = UINT64_MAX;
+
+        BufferWriteEvent(SourceType in_source_type, format::HandleId in_buffer, format::HandleId in_src_buffer = 0) :
+            sourceType(in_source_type), buffer(in_buffer), srcBuffer(in_src_buffer)
+        {}
     };
 
-    struct AccelerationStructureBuildInfo
+    // One recorded BuildAS action for a single info_index within one vkCmdBuildAccelerationStructuresKHR call.
+    // Recording time only resolves which accelerationStructureReference slots will be consumed;
+    // slot values are read and verified later at execute time.
+    struct BuildAccelerationStructureAction
     {
-        // per geometry
-        std::vector<std::pair<format::HandleId, uint64_t>> instance_buffers;
-        std::vector<uint32_t>                              primitive_counts;
-        std::vector<uint32_t>                              primitive_offsets;
+        uint64_t                      call_index;
+        uint32_t                      info_index;
+        format::HandleId              dst_as;
+        std::vector<BufferUseSiteKey> candidate_use_sites;
     };
+
+    using ActionCommand = std::variant<BufferWriteEvent, BuildAccelerationStructureAction>;
 
     struct PushConstantData
     {
@@ -665,6 +694,8 @@ class VulkanSpirvTrackModifier : public util::VulkanModifierBase
         VkShaderStageFlags   stageFlags;
         format::HandleId     layout;
         std::vector<uint8_t> pValues;
+        // Stable trace call index of the originating vkCmdPushConstants.
+        uint64_t call_index;
     };
 
     struct DescriptorSetMap
@@ -722,15 +753,14 @@ class VulkanSpirvTrackModifier : public util::VulkanModifierBase
         // ordered descriptor state commands. Preserve original recording order.
         std::vector<DescriptorStateCommand> descriptor_state_commands;
 
-        std::vector<BufferWriteEvent> buffer_write_list;
+        // Ordered action list used to replay write/build commands in original
+        // recording order during execute-time replay.
+        std::vector<ActionCommand> action_command_list;
 
         ////////////////////////////////////
         // index of bound descriptor buffers -> valid or not
         // invalidate the offset once rebinding the descriptor buffer
         std::unordered_map<uint32_t, bool> descriptor_offset_valid;
-
-        // acceleration structure handle -> AS build info
-        std::unordered_map<format::HandleId, AccelerationStructureBuildInfo> build_acceleration_structure;
     };
 
     enum class DescriptorBackendMode
@@ -806,6 +836,53 @@ class VulkanSpirvTrackModifier : public util::VulkanModifierBase
         bool ready     = false;
     };
 
+    // One overlap between a FillMemoryCommand payload slice and a bound buffer slice.
+    struct FillMemoryBufferOverlap
+    {
+        format::HandleId buffer;
+        VkDeviceSize     offset_in_buffer;
+        uint64_t         offset_in_data;
+        uint64_t         size;
+    };
+
+    // Fully normalized descriptor payload block returned by the descriptor-set path
+    // before the payload pointer is handed to the simulator.
+    struct ResolvedDescriptorPayloadBlock
+    {
+        void*            binding_ptr;
+        format::HandleId buffer;
+        VkDeviceSize     block_base_offset_in_buffer;
+        VkDeviceSize     block_size;
+    };
+
+    // Host-side block metadata recorded while wiring concrete descriptor payload
+    // blocks into sim_data.bindings for one dispatch/draw execution.
+    struct DispatchBlockInfo
+    {
+        format::HandleId buffer;
+        VkDeviceSize     block_base_offset_in_buffer;
+        VkDeviceSize     block_size;
+    };
+
+    // map key is host-side base pointer of a concrete descriptor payload block wired into sim_data.bindings.
+    // Used to map simulator-reported source_ptr back to buffer-relative block metadata during use-site normalization.
+    using DispatchBlockInfos = std::unordered_map<const void*, DispatchBlockInfo>;
+
+    struct DispatchPushConstantBlockInfo
+    {
+        format::HandleId command_buffer                      = format::kNullHandleId;
+        const void*      block_ptr                           = nullptr;
+        VkDeviceSize     block_base_offset_in_push_constants = 0;
+        VkDeviceSize     block_size                          = 0;
+    };
+
+    struct UnsupportedDispatchBufferAddressUseSite
+    {
+        SPIRVSimulator::PhysicalAddressData           simulator_use_site;
+        UnsupportedDispatchBufferAddressUseSiteReason reason =
+            UnsupportedDispatchBufferAddressUseSiteReason::UnsupportedBitComponentCount;
+    };
+
   private:
     // handle id -> obj info
     std::unordered_map<format::HandleId, BufferInfo>                buffer_entries_;
@@ -833,6 +910,9 @@ class VulkanSpirvTrackModifier : public util::VulkanModifierBase
     // command buffer handle -> executing state of command buffer
     std::unordered_map<format::HandleId, CommandBufferState> command_buffer_state;
 
+    // Pass-local allocator state for traced FillMemoryCommand serial ids.
+    uint64_t next_fill_memory_serial_id_ = 0;
+
     uint64_t global_submit_index = 0;
 
     // global unique submit index -> submit info
@@ -840,15 +920,83 @@ class VulkanSpirvTrackModifier : public util::VulkanModifierBase
     std::unordered_map<format::HandleId, SemaphoreState> semaphore_state;
     std::deque<uint64_t>                                 ready_submits; // submit index
 
+    ProvenanceTracker provenance_tracker_;
+
+    // BuildAS use-sites whose current slot value was validated successfully;
+    // rejected candidate use-sites are kept for diagnostics.
+    std::vector<VerifiedBuildAsUseSite> verified_build_as_use_sites_;
+    std::vector<RejectedBuildAsUseSite> rejected_build_as_use_sites_;
+
+    // Verified BuildAS use-sites that were resolved to one root source;
+    // unresolved entries are kept when no single root source covers the queried range.
+    std::vector<ResolvedBuildAsUseSite>   resolved_build_as_use_sites_;
+    std::vector<UnresolvedBuildAsUseSite> unresolved_build_as_use_sites_;
+
+    std::vector<UnsupportedDispatchBufferAddressUseSite> unsupported_dispatch_buffer_address_use_sites_;
+    std::vector<VerifiedDispatchBufferAddressUseSite>    verified_dispatch_buffer_address_use_sites_;
+    std::vector<RejectedDispatchBufferAddressUseSite>    rejected_dispatch_buffer_address_use_sites_;
+    std::vector<ResolvedDispatchBufferAddressUseSite>    resolved_dispatch_buffer_address_use_sites_;
+    std::vector<UnresolvedDispatchBufferAddressUseSite>  unresolved_dispatch_buffer_address_use_sites_;
+
+    FixupLocationBuilder fixup_location_builder_;
+
+    // FinalizeAnalysis() runs once per modifier instance after analysis completes.
+    bool analysis_finalized_ = false;
+
+    SPIRVSimulator::MemoryFlagTracker mem_flag_tracker;
+
     // for internal debug
-    uint64_t global_draw_index = 0;
-    bool     m_verbose         = false;
-    uint64_t m_flags           = 0;
+    uint64_t                  global_draw_index = 0;
+    VulkanSpirvTrackerOptions options_{};
+    bool                      m_verbose = false;
+    uint64_t                  m_flags   = 0;
 
   private:
     void ApplyActionCommands(const CommandBufferRecording& recording);
     void ApplyDescriptorStateCommands(format::HandleId commandBuffer, const CommandBufferRecording& recording);
     bool IsPipelineLayoutCompatibleForSet(format::HandleId lhs, format::HandleId rhs, uint32_t set) const;
+
+    // Convert one FillMemoryCommand into buffer-relative overlap slices.
+    std::vector<FillMemoryBufferOverlap>
+    CollectFillMemoryBufferOverlaps(uint64_t memory_id, uint64_t fill_offset, uint64_t fill_size) const;
+
+    void ApplyBufferWriteAction(const BufferWriteEvent& event);
+    void ApplyBuildAccelerationStructureAction(const BuildAccelerationStructureAction& action);
+
+    void
+    ApplyDispatchPhysicalAddressResults(const SPIRVSimulator::SimulationResults&            results,
+                                        const DispatchBlockInfos&                           block_infos,
+                                        const std::optional<DispatchPushConstantBlockInfo>& push_constant_block_info);
+
+    bool NormalizeDispatchUseSite(const SPIRVSimulator::PhysicalAddressData&          simulator_use_site,
+                                  const DispatchBlockInfos&                           block_infos,
+                                  const std::optional<DispatchPushConstantBlockInfo>& push_constant_block_info,
+                                  DispatchUseSiteKey&                                 out_use_site,
+                                  UnsupportedDispatchBufferAddressUseSiteReason&      reason) const;
+
+    bool VerifyDispatchBufferDeviceAddress(VkDeviceAddress                     raw_pointer_value,
+                                           format::HandleId&                   out_referenced_buffer,
+                                           VkDeviceAddress&                    out_referenced_buffer_base_address,
+                                           VkDeviceSize&                       out_referenced_buffer_size,
+                                           RejectedDeviceAddressUseSiteReason& reject_reason) const;
+
+    bool VerifyLiveAccelerationStructureDeviceAddress(VkDeviceAddress                     address,
+                                                      VkAccelerationStructureTypeKHR      expected_type,
+                                                      uint64_t                            build_call_index,
+                                                      format::HandleId&                   referenced_as,
+                                                      VkDeviceAddress&                    referenced_as_base_address,
+                                                      VkDeviceSize&                       referenced_as_size,
+                                                      RejectedDeviceAddressUseSiteReason& reject_reason) const;
+    // Dispatch use-site multiplexer over buffer-backed and push-constant-backed sources.
+    bool ResolveDispatchUseSiteToRoot(const DispatchUseSiteKey&             use_site,
+                                      ResolvedRootRange&                    out,
+                                      UnresolvedDeviceAddressUseSiteReason& reason) const;
+    // Bridge all resolved device-address use-sites to the shared pure-data
+    // inputs consumed later by the fixup-location builder.
+    std::vector<DeviceAddressFixupInput> BuildFixupInputs() const;
+
+    void WriteFixDeviceAddressCmd(format::HandleId                                relation_id,
+                                  const std::vector<format::AddressLocationInfo>& address_locations);
 
     using BufferAddressMap = std::unordered_map<VkDeviceAddress, format::HandleId>;
 

@@ -23,21 +23,119 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <algorithm>
+#include <cstdlib>
 #include <iostream>
 
 #include "vulkan_spirv_tracker_modifier.h"
 #include "format/format.h"
 #include "util/defines.h"
 #include "util/memory_output_stream.h"
+#include "util/json_util.h"
 #include "encode/parameter_buffer.h"
 #include "encode/struct_pointer_encoder.h"
 
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(decode)
 
-VulkanSpirvTrackModifier::VulkanSpirvTrackModifier(bool verbose, bool error_on_buffers_incomplete) : m_verbose(verbose)
+namespace
 {
-    if (error_on_buffers_incomplete)
+
+constexpr char kRewritePlanJsonEnvVar[] = "GFXRECON_VULKAN_SPIRV_TRACKER_REWRITE_PLAN_JSON";
+
+void InitializeRewritePlanJsonOptions(const std::string& output_path, bool verbose)
+{
+    const std::filesystem::path json_path(output_path);
+
+    util::JsonOptions::root_dir         = json_path.parent_path().string();
+    util::JsonOptions::data_sub_dir     = "";
+    util::JsonOptions::format           = util::JsonFormat::JSON;
+    util::JsonOptions::dump_binaries    = false;
+    util::JsonOptions::expand_flags     = false;
+    util::JsonOptions::hex_handles      = false;
+    util::JsonOptions::verbose          = verbose;
+    util::JsonOptions::checksum         = false;
+    util::JsonOptions::checksum_trigger = 0;
+}
+
+const char* UnsupportedDispatchBufferAddressUseSiteReasonToString(UnsupportedDispatchBufferAddressUseSiteReason reason)
+{
+    switch (reason)
+    {
+        case UnsupportedDispatchBufferAddressUseSiteReason::UnsupportedBitComponentCount:
+            return "UnsupportedBitComponentCount";
+        case UnsupportedDispatchBufferAddressUseSiteReason::UnsupportedBitLocation:
+            return "UnsupportedBitLocation";
+        case UnsupportedDispatchBufferAddressUseSiteReason::UnsupportedBitAlignment:
+            return "UnsupportedBitAlignment";
+        case UnsupportedDispatchBufferAddressUseSiteReason::UnsupportedBitWidth:
+            return "UnsupportedBitWidth";
+        case UnsupportedDispatchBufferAddressUseSiteReason::UnsupportedStorageClass:
+            return "UnsupportedStorageClass";
+        case UnsupportedDispatchBufferAddressUseSiteReason::MissingBlockInfo:
+            return "MissingBlockInfo";
+        case UnsupportedDispatchBufferAddressUseSiteReason::BlockRangeOutOfBounds:
+            return "BlockRangeOutOfBounds";
+        case UnsupportedDispatchBufferAddressUseSiteReason::MissingPushConstantBlockInfo:
+            return "MissingPushConstantBlockInfo";
+        case UnsupportedDispatchBufferAddressUseSiteReason::PushConstantRangeOutOfBounds:
+            return "PushConstantRangeOutOfBounds";
+        default:
+            return "Unknown";
+    }
+}
+
+const char* RejectedDeviceAddressUseSiteReasonToString(RejectedDeviceAddressUseSiteReason reason)
+{
+    switch (reason)
+    {
+        case RejectedDeviceAddressUseSiteReason::ZeroValue:
+            return "ZeroValue";
+        case RejectedDeviceAddressUseSiteReason::UnknownDeviceAddress:
+            return "UnknownDeviceAddress";
+        case RejectedDeviceAddressUseSiteReason::NotLiveAtUseTime:
+            return "NotLiveAtUseTime";
+        default:
+            return "Unknown";
+    }
+}
+
+const char* UnresolvedDeviceAddressUseSiteReasonToString(UnresolvedDeviceAddressUseSiteReason reason)
+{
+    switch (reason)
+    {
+        case UnresolvedDeviceAddressUseSiteReason::MissingBufferProvenance:
+            return "MissingBufferProvenance";
+        case UnresolvedDeviceAddressUseSiteReason::MissingPushConstantProvenance:
+            return "MissingPushConstantProvenance";
+        case UnresolvedDeviceAddressUseSiteReason::UncoveredRange:
+            return "UncoveredRange";
+        case UnresolvedDeviceAddressUseSiteReason::CrossSpanBoundary:
+            return "CrossSpanBoundary";
+        case UnresolvedDeviceAddressUseSiteReason::UnsupportedRootType:
+            return "UnsupportedRootType";
+        default:
+            return "Unknown";
+    }
+}
+
+} // namespace
+
+VulkanSpirvTrackModifier::VulkanSpirvTrackModifier(const VulkanSpirvTrackerOptions& options) :
+    options_(options), m_verbose(options.verbose)
+{
+    // analysis outputs are pass-local state: start empty for each modifier run
+    verified_build_as_use_sites_.clear();
+    rejected_build_as_use_sites_.clear();
+    resolved_build_as_use_sites_.clear();
+    unresolved_build_as_use_sites_.clear();
+    unsupported_dispatch_buffer_address_use_sites_.clear();
+    verified_dispatch_buffer_address_use_sites_.clear();
+    rejected_dispatch_buffer_address_use_sites_.clear();
+    resolved_dispatch_buffer_address_use_sites_.clear();
+    unresolved_dispatch_buffer_address_use_sites_.clear();
+    provenance_tracker_.Reset();
+
+    if (options.error_on_buffers_incomplete)
     {
         m_flags |= ERROR_RAISE_ON_BUFFERS_INCOMPLETE;
     }
@@ -45,7 +143,159 @@ VulkanSpirvTrackModifier::VulkanSpirvTrackModifier(bool verbose, bool error_on_b
 
 bool VulkanSpirvTrackModifier::CanOptimize()
 {
-    return true;
+    return fixup_location_builder_.HasFixups();
+}
+
+void VulkanSpirvTrackModifier::FinalizeAnalysis()
+{
+    // Guard against running finalize more than once for the same modifier instance.
+    if (analysis_finalized_)
+    {
+        return;
+    }
+
+    // TODO: Optionally write the analysis results to JSON.
+
+    // Build shared pure-data fixup inputs from all resolved device-address use-sites.
+    const auto all_fixup_inputs = BuildFixupInputs();
+
+    // Hand all_fixup_inputs to fixup_location_builder_ so it can build root-source-local fixup locations.
+    fixup_location_builder_.Build(all_fixup_inputs);
+
+    if (options_.fixup_json_path.has_value())
+    {
+        InitializeRewritePlanJsonOptions(options_.fixup_json_path->string(), m_verbose);
+        fixup_location_builder_.WriteRewritePlanJson(options_.fixup_json_path->string());
+    }
+    else if (const char* rewrite_plan_json_path = std::getenv(kRewritePlanJsonEnvVar);
+             (rewrite_plan_json_path != nullptr) && (rewrite_plan_json_path[0] != '\0'))
+    {
+        InitializeRewritePlanJsonOptions(rewrite_plan_json_path, m_verbose);
+        fixup_location_builder_.WriteRewritePlanJson(rewrite_plan_json_path);
+    }
+
+    // Leave the modifier ready for modification-pass metadata emission.
+    analysis_finalized_ = true;
+}
+
+void VulkanSpirvTrackModifier::PrepareForModificationPass()
+{
+    // Reuse the same FillMemory serial numbering scheme in both passes so the
+    // modification pass can query fixups with the same source ids built during analysis.
+    next_fill_memory_serial_id_ = 0;
+}
+
+void VulkanSpirvTrackModifier::WriteFixDeviceAddressCmd(
+    format::HandleId relation_id, const std::vector<format::AddressLocationInfo>& address_locations)
+{
+    if (address_locations.empty())
+    {
+        return;
+    }
+
+    auto new_call       = CreatePreCall();
+    new_call->type      = NewCallDataType::MetaDataCall;
+    new_call->call_id   = gfxrecon::format::ApiCallId::ApiCall_Unknown;
+    new_call->thread_id = 1;
+
+    format::FixDeviceAddressCommandHeader fix_cmd = {};
+
+    fix_cmd.meta_header.block_header.type = format::BlockType::kMetaDataBlock;
+    fix_cmd.meta_header.block_header.size =
+        format::GetMetaDataBlockBaseSize(fix_cmd) + (address_locations.size() * sizeof(format::AddressLocationInfo));
+    fix_cmd.meta_header.meta_data_id =
+        format::MakeMetaDataId(format::ApiFamilyId::ApiFamily_Vulkan, format::MetaDataType::kFixDeviceAddressCommand);
+    fix_cmd.relation_id      = relation_id;
+    fix_cmd.num_of_locations = address_locations.size();
+
+    new_call->parameter_buffer.Write(&fix_cmd, sizeof(format::FixDeviceAddressCommandHeader));
+    new_call->parameter_buffer.Write(address_locations.data(),
+                                     address_locations.size() * sizeof(format::AddressLocationInfo));
+}
+
+std::vector<DeviceAddressFixupInput> VulkanSpirvTrackModifier::BuildFixupInputs() const
+{
+    std::vector<DeviceAddressFixupInput> inputs;
+    inputs.reserve(resolved_build_as_use_sites_.size() + resolved_dispatch_buffer_address_use_sites_.size());
+
+    for (const auto& resolved : resolved_build_as_use_sites_)
+    {
+        const auto& verified = resolved.verified_use_site;
+        inputs.push_back({ verified.referenced_as,
+                           verified.referenced_as_size,
+                           verified.referenced_as_base_address,
+                           verified.value,
+                           resolved.resolved_root });
+    }
+
+    for (const auto& resolved : resolved_dispatch_buffer_address_use_sites_)
+    {
+        const auto& verified = resolved.verified_use_site;
+        inputs.push_back({ verified.referenced_buffer,
+                           verified.referenced_buffer_size,
+                           verified.referenced_buffer_base_address,
+                           verified.value,
+                           resolved.resolved_root });
+    }
+
+    return inputs;
+}
+
+std::vector<VulkanSpirvTrackModifier::FillMemoryBufferOverlap>
+VulkanSpirvTrackModifier::CollectFillMemoryBufferOverlaps(uint64_t memory_id,
+                                                          uint64_t fill_offset,
+                                                          uint64_t fill_size) const
+{
+    std::vector<FillMemoryBufferOverlap> overlaps;
+
+    const auto memory_entry_iter = memory_binding_entries_.find(memory_id);
+    if (memory_entry_iter == memory_binding_entries_.end())
+    {
+        return overlaps;
+    }
+
+    const DeviceMemoryInfo& mem_info = memory_entry_iter->second;
+
+    // FillMemoryCommand offsets are relative to the mapped pointer, so convert
+    // the write range into the underlying memory-object coordinate space first.
+    const uint64_t fill_begin_mem = mem_info.mapping.offset + fill_offset;
+    const uint64_t fill_end_mem   = fill_begin_mem + fill_size;
+
+    for (const MemoryBindingRecord& binding : mem_info.memory_binding_records_)
+    {
+        if (!binding.isBuffer)
+        {
+            continue;
+        }
+
+        const auto buffer_iter = buffer_entries_.find(binding.handle);
+        if (buffer_iter == buffer_entries_.end())
+        {
+            continue;
+        }
+
+        const BufferInfo& buffer_info    = buffer_iter->second;
+        const uint64_t    bind_begin_mem = binding.offset;
+        const uint64_t    bind_end_mem   = bind_begin_mem + buffer_info.size;
+        const uint64_t    overlap_begin  = std::max(fill_begin_mem, bind_begin_mem);
+        const uint64_t    overlap_end    = std::min(fill_end_mem, bind_end_mem);
+
+        // non overlap
+        if (overlap_begin >= overlap_end)
+        {
+            continue;
+        }
+
+        // Re-express the overlap in the two coordinates the later steps need:
+        // buffer-relative offset for the destination bytes, and fill-relative
+        // offset for the source payload bytes.
+        overlaps.push_back(FillMemoryBufferOverlap{ binding.handle,
+                                                    static_cast<VkDeviceSize>(overlap_begin - bind_begin_mem),
+                                                    overlap_begin - fill_begin_mem,
+                                                    overlap_end - overlap_begin });
+    }
+
+    return overlaps;
 }
 
 void VulkanSpirvTrackModifier::ProcessFillMemoryCommand(uint64_t       memory_id,
@@ -53,65 +303,37 @@ void VulkanSpirvTrackModifier::ProcessFillMemoryCommand(uint64_t       memory_id
                                                         uint64_t       size,
                                                         const uint8_t* data)
 {
+    // Pass-local stable identity for this traced FillMemoryCommand.
+    const uint64_t fill_serial_id = next_fill_memory_serial_id_++;
+
     if (IsModificationPass())
     {
+        // Rebuild the same FillMemory serial numbering in the modification pass
+        // so this command can query the fixups finalized during analysis.
+        const FixupLocations* fixups =
+            fixup_location_builder_.GetFixupLocations(ProvenanceRootType::FillMemory, fill_serial_id);
+        if ((fixups != nullptr) && !fixups->address_locations.empty())
+        {
+            WriteFixDeviceAddressCmd(memory_id, fixups->address_locations);
+        }
         return;
     }
 
-    const auto memory_entry_iter = memory_binding_entries_.find(memory_id);
+    const auto overlaps = CollectFillMemoryBufferOverlaps(memory_id, offset, size);
 
-    // retrieve data from filled memory for each bound buffers in the memory.
-    // the data is provided to simulator input_data's bindings later
-
-    if (memory_entry_iter != memory_binding_entries_.end())
+    for (const auto& overlap : overlaps)
     {
-        const DeviceMemoryInfo& mem_info = memory_entry_iter->second;
-        for (const MemoryBindingRecord& binding : mem_info.memory_binding_records_)
-        {
-            if (!binding.isBuffer || buffer_entries_.find(binding.handle) == buffer_entries_.end())
-            {
-                continue;
-            }
+        // First update the canonical shadow bytes for the affected buffer slice.
+        auto& buffer = buffer_entries_.at(overlap.buffer);
+        std::memcpy(buffer.data.data() + overlap.offset_in_buffer, data + overlap.offset_in_data, overlap.size);
 
-            VkDeviceSize buffer_offset_from_mapped_ptr = binding.offset - mem_info.mapping.offset;
-            VkDeviceSize buffer_end_from_mapped_ptr =
-                buffer_offset_from_mapped_ptr + buffer_entries_[binding.handle].size;
-            uint64_t copy_size = 0;
-
-            // case 1: the bound buffer starts from this memory block
-            if ((buffer_offset_from_mapped_ptr >= offset) && (buffer_offset_from_mapped_ptr < (offset + size)))
-            {
-                // case 1.1: whole buffer in the memory range
-                if (buffer_end_from_mapped_ptr < (offset + size))
-                {
-                    copy_size = buffer_entries_[binding.handle].size;
-                }
-                else // case 1.2: buffer exceeding memory range if it's bigger than page size and updated incontiguously
-                {
-                    copy_size = size - (buffer_offset_from_mapped_ptr - offset);
-                }
-                std::memcpy(buffer_entries_[binding.handle].data.data(),
-                            data + (buffer_offset_from_mapped_ptr - offset),
-                            copy_size);
-            }
-            // case 2: buffer starts from previous memory range
-            else if (buffer_offset_from_mapped_ptr < offset && buffer_end_from_mapped_ptr > offset)
-            {
-                if (buffer_end_from_mapped_ptr <= (offset + size))
-                {
-                    // case 2.1: buffer ends in this memory range
-                    copy_size = buffer_end_from_mapped_ptr - offset;
-                }
-                else
-                {
-                    // case 2.2: buffer exceeding the memory range
-                    copy_size = size;
-                }
-                std::memcpy(buffer_entries_[binding.handle].data.data() + (offset - buffer_offset_from_mapped_ptr),
-                            data,
-                            copy_size);
-            }
-        }
+        // Flatten the same write into provenance state so the current bytes and their current origin stay in sync.
+        RootWriteToBufferRange write = { overlap.buffer,
+                                         overlap.offset_in_buffer,
+                                         overlap.size,
+                                         ProvenanceRootType::FillMemory,
+                                         ProvenanceRootKey{ fill_serial_id, overlap.offset_in_data } };
+        provenance_tracker_.FlattenBufferProvenanceForRootWrite(write);
     }
 }
 
@@ -1001,6 +1223,7 @@ void VulkanSpirvTrackModifier::Process_vkAllocateCommandBuffers(
         GFXRECON_ASSERT(command_buffer_entries_.find(handle) == command_buffer_entries_.end());
 
         command_buffer_entries_[handle].handle            = handle;
+        command_buffer_entries_[handle].device_id         = device;
         command_buffer_entries_[handle].creation_index    = call_info.index;
         command_buffer_entries_[handle].destruction_index = UINT64_MAX;
         command_buffer_entries_[handle].state             = CommandBufferLifeCycle::Inital;
@@ -1021,11 +1244,17 @@ void VulkanSpirvTrackModifier::Process_vkFreeCommandBuffers(const ApiCallInfo&  
     for (uint32_t i = 0; i < commandBufferCount; i++)
     {
         format::HandleId handle = pCommandBuffers->GetPointer()[i];
-        command_buffer_entries_.erase(handle);
+        auto             entry  = command_buffer_entries_.find(handle);
+        if (entry != command_buffer_entries_.end())
+        {
+            entry->second.destruction_index = call_info.index;
+            entry->second.state             = CommandBufferLifeCycle::Invalid;
+        }
 
         command_buffer_recording.erase(handle);
         command_buffer_submit_recordings.erase(handle);
         command_buffer_state.erase(handle);
+        provenance_tracker_.ErasePushConstantProvenance(handle);
     }
 }
 
@@ -1039,7 +1268,8 @@ void VulkanSpirvTrackModifier::Process_vkResetCommandBuffer(const ApiCallInfo&  
         return;
     }
 
-    if (command_buffer_entries_.find(commandBuffer) == command_buffer_entries_.end())
+    if (command_buffer_entries_.find(commandBuffer) == command_buffer_entries_.end() ||
+        command_buffer_entries_[commandBuffer].state == CommandBufferLifeCycle::Invalid)
     {
         return;
     }
@@ -1056,6 +1286,7 @@ void VulkanSpirvTrackModifier::Process_vkResetCommandBuffer(const ApiCallInfo&  
     command_buffer_recording.erase(commandBuffer);
     command_buffer_submit_recordings.erase(commandBuffer);
     command_buffer_state.erase(commandBuffer);
+    provenance_tracker_.ErasePushConstantProvenance(commandBuffer);
 }
 
 void VulkanSpirvTrackModifier::Process_vkBeginCommandBuffer(
@@ -1069,7 +1300,8 @@ void VulkanSpirvTrackModifier::Process_vkBeginCommandBuffer(
         return;
     }
 
-    if (command_buffer_entries_.find(commandBuffer) == command_buffer_entries_.end())
+    if (command_buffer_entries_.find(commandBuffer) == command_buffer_entries_.end() ||
+        command_buffer_entries_[commandBuffer].state == CommandBufferLifeCycle::Invalid)
     {
         return;
     }
@@ -1099,7 +1331,8 @@ void VulkanSpirvTrackModifier::Process_vkBeginCommandBuffer(
     command_buffer_recording[commandBuffer].bind_point     = VK_PIPELINE_BIND_POINT_MAX_ENUM;
 
     command_buffer_state[commandBuffer].command_buffer = commandBuffer;
-    command_buffer_state[commandBuffer].push_constant.resize(256); // MAX_PUSHCONSTANT_SIZE
+    command_buffer_state[commandBuffer].push_constant.assign(256, 0); // MAX_PUSHCONSTANT_SIZE
+    provenance_tracker_.ClearPushConstantProvenance(commandBuffer);
 }
 
 void VulkanSpirvTrackModifier::Process_vkEndCommandBuffer(const ApiCallInfo& call_info,
@@ -1110,7 +1343,8 @@ void VulkanSpirvTrackModifier::Process_vkEndCommandBuffer(const ApiCallInfo& cal
     {
         return;
     }
-    if (command_buffer_entries_.find(commandBuffer) == command_buffer_entries_.end())
+    if (command_buffer_entries_.find(commandBuffer) == command_buffer_entries_.end() ||
+        command_buffer_entries_[commandBuffer].state == CommandBufferLifeCycle::Invalid)
     {
         return;
     }
@@ -1420,6 +1654,18 @@ void VulkanSpirvTrackModifier::Process_vkCmdPushConstants(const ApiCallInfo&    
 {
     if (IsModificationPass())
     {
+        const FixupLocations* fixups =
+            fixup_location_builder_.GetFixupLocations(ProvenanceRootType::PushConstants, call_info.index);
+        if ((fixups != nullptr) && !fixups->address_locations.empty())
+        {
+            const auto command_buffer_iter = command_buffer_entries_.find(commandBuffer);
+            GFXRECON_ASSERT(command_buffer_iter != command_buffer_entries_.end());
+            if (command_buffer_iter != command_buffer_entries_.end())
+            {
+                // Modification pass only needs the owning device id for metadata emission here.
+                WriteFixDeviceAddressCmd(command_buffer_iter->second.device_id, fixups->address_locations);
+            }
+        }
         return;
     }
 
@@ -1433,7 +1679,7 @@ void VulkanSpirvTrackModifier::Process_vkCmdPushConstants(const ApiCallInfo&    
     std::memcpy(values.data(), pValues->GetPointer(), size);
 
     command_buffer_recording[commandBuffer].push_constants.push_back(
-        { offset, size, stageFlags, layout, std::move(values) });
+        { offset, size, stageFlags, layout, std::move(values), call_info.index });
 }
 
 void VulkanSpirvTrackModifier::Process_vkCmdFillBuffer(const ApiCallInfo& call_info,
@@ -1454,13 +1700,15 @@ void VulkanSpirvTrackModifier::Process_vkCmdFillBuffer(const ApiCallInfo& call_i
         return;
     }
 
-    uint8_t* data_ptr = reinterpret_cast<uint8_t*>(&data);
-    command_buffer_recording[commandBuffer].buffer_write_list.emplace_back(SourceType::Fill, dstBuffer);
-    command_buffer_recording[commandBuffer].buffer_write_list.back().srcPointer = { data_ptr,
-                                                                                    data_ptr + sizeof(uint32_t) };
-    command_buffer_recording[commandBuffer].buffer_write_list.back().regions.emplace_back(0, dstOffset, size);
+    CommandBufferRecording& recording = command_buffer_recording[commandBuffer];
 
-    command_buffer_recording[commandBuffer].in_operation = true;
+    uint8_t*         data_ptr = reinterpret_cast<uint8_t*>(&data);
+    BufferWriteEvent event(SourceType::Fill, dstBuffer);
+    event.srcPointer = { data_ptr, data_ptr + sizeof(uint32_t) };
+    event.regions.emplace_back(0, dstOffset, size);
+
+    recording.action_command_list.emplace_back(std::move(event));
+    recording.in_operation = true;
 }
 
 void VulkanSpirvTrackModifier::Process_vkCmdUpdateBuffer(const ApiCallInfo&       call_info,
@@ -1472,6 +1720,18 @@ void VulkanSpirvTrackModifier::Process_vkCmdUpdateBuffer(const ApiCallInfo&     
 {
     if (IsModificationPass())
     {
+        const FixupLocations* fixups =
+            fixup_location_builder_.GetFixupLocations(ProvenanceRootType::UpdateBuffer, call_info.index);
+        if ((fixups != nullptr) && !fixups->address_locations.empty())
+        {
+            const auto command_buffer_iter = command_buffer_entries_.find(commandBuffer);
+            GFXRECON_ASSERT(command_buffer_iter != command_buffer_entries_.end());
+            if (command_buffer_iter != command_buffer_entries_.end())
+            {
+                // Modification pass only needs the owning device id for metadata emission here.
+                WriteFixDeviceAddressCmd(command_buffer_iter->second.device_id, fixups->address_locations);
+            }
+        }
         return;
     }
 
@@ -1481,14 +1741,15 @@ void VulkanSpirvTrackModifier::Process_vkCmdUpdateBuffer(const ApiCallInfo&     
         return;
     }
 
-    command_buffer_recording[commandBuffer].buffer_write_list.emplace_back(SourceType::Update, dstBuffer);
+    CommandBufferRecording& recording = command_buffer_recording[commandBuffer];
 
-    command_buffer_recording[commandBuffer].buffer_write_list.back().srcPointer = { pData->GetPointer(),
-                                                                                    pData->GetPointer() + dataSize };
+    BufferWriteEvent event(SourceType::Update, dstBuffer);
+    event.srcPointer = { pData->GetPointer(), pData->GetPointer() + dataSize };
+    event.regions.emplace_back(0, dstOffset, dataSize);
+    event.call_index = call_info.index;
 
-    command_buffer_recording[commandBuffer].buffer_write_list.back().regions.emplace_back(0, dstOffset, dataSize);
-
-    command_buffer_recording[commandBuffer].in_operation = true;
+    recording.action_command_list.emplace_back(std::move(event));
+    recording.in_operation = true;
 }
 
 void VulkanSpirvTrackModifier::Process_vkCmdCopyBuffer(const ApiCallInfo&                          call_info,
@@ -1509,17 +1770,17 @@ void VulkanSpirvTrackModifier::Process_vkCmdCopyBuffer(const ApiCallInfo&       
         return;
     }
 
-    const VkBufferCopy* regions = pRegions->GetPointer();
+    CommandBufferRecording& recording = command_buffer_recording[commandBuffer];
+    const VkBufferCopy*     regions   = pRegions->GetPointer();
 
-    command_buffer_recording[commandBuffer].buffer_write_list.emplace_back(
-        SourceType::CopyBuffer, dstBuffer, srcBuffer);
-
+    BufferWriteEvent event(SourceType::CopyBuffer, dstBuffer, srcBuffer);
     for (uint32_t i = 0; i < regionCount; i++)
     {
-        command_buffer_recording[commandBuffer].buffer_write_list.back().regions.emplace_back(regions[i]);
+        event.regions.emplace_back(regions[i]);
     }
 
-    command_buffer_recording[commandBuffer].in_operation = true;
+    recording.action_command_list.emplace_back(std::move(event));
+    recording.in_operation = true;
 }
 
 void VulkanSpirvTrackModifier::Process_vkCmdCopyBuffer2(
@@ -1538,19 +1799,18 @@ void VulkanSpirvTrackModifier::Process_vkCmdCopyBuffer2(
         return;
     }
 
-    const auto* meta_copy_info = pCopyBufferInfo->GetMetaStructPointer();
-    const auto* copy2          = meta_copy_info->pRegions->GetPointer();
+    CommandBufferRecording& recording      = command_buffer_recording[commandBuffer];
+    const auto*             meta_copy_info = pCopyBufferInfo->GetMetaStructPointer();
+    const auto*             copy2          = meta_copy_info->pRegions->GetPointer();
 
-    command_buffer_recording[commandBuffer].buffer_write_list.emplace_back(
-        SourceType::CopyBuffer, meta_copy_info->dstBuffer, meta_copy_info->srcBuffer);
-
+    BufferWriteEvent event(SourceType::CopyBuffer, meta_copy_info->dstBuffer, meta_copy_info->srcBuffer);
     for (uint32_t i = 0; i < meta_copy_info->decoded_value->regionCount; i++)
     {
-        command_buffer_recording[commandBuffer].buffer_write_list.back().regions.emplace_back(
-            copy2[i].srcOffset, copy2[i].dstOffset, copy2[i].size);
+        event.regions.emplace_back(copy2[i].srcOffset, copy2[i].dstOffset, copy2[i].size);
     }
 
-    command_buffer_recording[commandBuffer].in_operation = true;
+    recording.action_command_list.emplace_back(std::move(event));
+    recording.in_operation = true;
 }
 
 void VulkanSpirvTrackModifier::Process_vkCmdCopyBuffer2KHR(
@@ -1569,19 +1829,18 @@ void VulkanSpirvTrackModifier::Process_vkCmdCopyBuffer2KHR(
         return;
     }
 
-    const auto* meta_copy_info = pCopyBufferInfo->GetMetaStructPointer();
-    const auto* copy2          = meta_copy_info->pRegions->GetPointer();
+    CommandBufferRecording& recording      = command_buffer_recording[commandBuffer];
+    const auto*             meta_copy_info = pCopyBufferInfo->GetMetaStructPointer();
+    const auto*             copy2          = meta_copy_info->pRegions->GetPointer();
 
-    command_buffer_recording[commandBuffer].buffer_write_list.emplace_back(
-        SourceType::CopyBuffer, meta_copy_info->dstBuffer, meta_copy_info->srcBuffer);
-
+    BufferWriteEvent event(SourceType::CopyBuffer, meta_copy_info->dstBuffer, meta_copy_info->srcBuffer);
     for (uint32_t i = 0; i < meta_copy_info->decoded_value->regionCount; i++)
     {
-        command_buffer_recording[commandBuffer].buffer_write_list.back().regions.emplace_back(
-            copy2[i].srcOffset, copy2[i].dstOffset, copy2[i].size);
+        event.regions.emplace_back(copy2[i].srcOffset, copy2[i].dstOffset, copy2[i].size);
     }
 
-    command_buffer_recording[commandBuffer].in_operation = true;
+    recording.action_command_list.emplace_back(std::move(event));
+    recording.in_operation = true;
 }
 
 void VulkanSpirvTrackModifier::Process_vkCmdBuildAccelerationStructuresKHR(
@@ -1605,28 +1864,22 @@ void VulkanSpirvTrackModifier::Process_vkCmdBuildAccelerationStructuresKHR(
 
     for (uint32_t info_index = 0; info_index < infoCount; info_index++)
     {
-        const auto& build_range_info         = ppBuildRangeInfos->GetPointer()[info_index];
+        const auto* build_range_info         = ppBuildRangeInfos->GetPointer()[info_index];
         const auto& build_geometry_meta_info = pInfos->GetMetaStructPointer()[info_index];
         const auto& build_geometry_info      = pInfos->GetPointer()[info_index];
 
-        format::HandleId dst_as = build_geometry_meta_info.dstAccelerationStructure;
-        format::HandleId src_as = build_geometry_meta_info.srcAccelerationStructure;
+        BuildAccelerationStructureAction build_action = {
+            call_info.index, info_index, build_geometry_meta_info.dstAccelerationStructure, {}
+        };
 
-        const auto* geometries_meta = build_geometry_meta_info.pGeometries->GetMetaStructPointer();
-        const auto* geometries      = build_geometry_meta_info.pGeometries->GetPointer();
+        const auto* geometries = build_geometry_meta_info.pGeometries->GetPointer();
 
         // TODO: support ppGeometries
-        GFXRECON_ASSERT(geometries_meta != nullptr && geometries != nullptr);
+        GFXRECON_ASSERT(geometries != nullptr);
 
         for (uint32_t geometry_index = 0; geometry_index < build_geometry_info.geometryCount; geometry_index++)
         {
-            const Decoded_VkAccelerationStructureGeometryKHR& geometry_meta = geometries_meta[geometry_index];
-            const VkAccelerationStructureGeometryKHR&         geometry      = geometries[geometry_index];
-
-            recording.build_acceleration_structure[dst_as].primitive_counts.push_back(
-                build_range_info[geometry_index].primitiveCount);
-            recording.build_acceleration_structure[dst_as].primitive_offsets.push_back(
-                build_range_info[geometry_index].primitiveOffset);
+            const VkAccelerationStructureGeometryKHR& geometry = geometries[geometry_index];
 
             switch (geometry.geometryType)
             {
@@ -1643,26 +1896,38 @@ void VulkanSpirvTrackModifier::Process_vkCmdBuildAccelerationStructuresKHR(
                 case VK_GEOMETRY_TYPE_INSTANCES_KHR:
                 {
                     GFXRECON_ASSERT(build_geometry_info.type == VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR);
-                    VkDeviceAddress address = geometry.geometry.instances.data.deviceAddress;
-                    auto            entry   = std::find_if(
-                        buffer_device_addresses_.begin(), buffer_device_addresses_.end(), [address, this](auto& entry) {
-                            auto it = buffer_entries_.find(entry.second);
-                            if (it == buffer_entries_.end())
-                            {
-                                return false;
-                            }
-                            const auto& buffer_info = it->second;
-                            return (address >= entry.first) && (address < entry.first + buffer_info.size);
-                        });
-                    if (entry != buffer_device_addresses_.end())
+                    if (geometry.geometry.instances.arrayOfPointers == VK_TRUE)
                     {
-                        recording.build_acceleration_structure[dst_as].instance_buffers.push_back(
-                            std::pair<format::HandleId, uint64_t>{ entry->second, address - entry->first });
+                        GFXRECON_LOG_INFO("call %llu CmdBuildAccelerationStructures: arrayOfPointers == VK_TRUE is not "
+                                          "supported yet.",
+                                          call_info.index);
+                        break;
                     }
-                    if (geometry.geometry.instances.arrayOfPointers == false)
+
+                    VkDeviceAddress address = geometry.geometry.instances.data.deviceAddress;
+                    auto            entry   = findEntryFromBufferDeviceAddress(address);
+                    if (entry == buffer_device_addresses_.end())
                     {
-                        const BufferInfo& buffer_info = buffer_entries_.at(buffer_device_addresses_[address]);
-                        // VkAccelerationStructureInstanceKHR
+                        GFXRECON_LOG_INFO("call %llu CmdBuildAccelerationStructures: non instance buffer match address "
+                                          "%llu for tlas.",
+                                          call_info.index,
+                                          address);
+                        break;
+                    }
+
+                    const uint64_t base_offset_in_buffer = address - entry->first;
+                    const uint32_t primitive_count       = build_range_info[geometry_index].primitiveCount;
+                    const uint32_t primitive_offset      = build_range_info[geometry_index].primitiveOffset;
+
+                    // Expand each accelerationStructureReference slot consumed by
+                    // this TLAS geometry into a buffer-local use-site candidate.
+                    for (uint32_t i = 0; i < primitive_count; ++i)
+                    {
+                        uint64_t slot_offset =
+                            base_offset_in_buffer + primitive_offset +
+                            static_cast<uint64_t>(i) * sizeof(VkAccelerationStructureInstanceKHR) +
+                            offsetof(VkAccelerationStructureInstanceKHR, accelerationStructureReference);
+                        build_action.candidate_use_sites.push_back({ entry->second, slot_offset });
                     }
                     break;
                 }
@@ -1673,9 +1938,11 @@ void VulkanSpirvTrackModifier::Process_vkCmdBuildAccelerationStructuresKHR(
                 }
             }
         }
+
+        recording.action_command_list.emplace_back(std::move(build_action));
     }
 
-    command_buffer_recording[commandBuffer].in_operation = true;
+    recording.in_operation = true;
 }
 
 void VulkanSpirvTrackModifier::Process_vkCmdDispatch(const ApiCallInfo& call_info,
@@ -2047,56 +2314,202 @@ void VulkanSpirvTrackModifier::resetRecording(format::HandleId commandBuffer)
     command_buffer_recording[commandBuffer].push_constants.clear();
     command_buffer_recording[commandBuffer].pipelines.clear();
     command_buffer_recording[commandBuffer].descriptor_state_commands.clear();
-    command_buffer_recording[commandBuffer].buffer_write_list.clear();
+    command_buffer_recording[commandBuffer].action_command_list.clear();
 }
 
 void VulkanSpirvTrackModifier::ApplyActionCommands(const CommandBufferRecording& recording)
 {
-    // execute command: update/copy buffer, build
-    for (const BufferWriteEvent& event : recording.buffer_write_list)
+    // Replay write and BuildAS actions in original recording order so later
+    // execute-time verification observes the correct buffer contents.
+    for (const ActionCommand& action : recording.action_command_list)
     {
-        BufferInfo& dst_info = buffer_entries_.at(event.buffer);
-        switch (event.sourceType)
+        if (const auto* event = std::get_if<BufferWriteEvent>(&action))
         {
-            case SourceType::CopyBuffer:
-            {
-                const BufferInfo& src_info = buffer_entries_.at(event.srcBuffer);
-                for (const auto& region : event.regions)
-                {
-                    GFXRECON_ASSERT(dst_info.size >= region.dstOffset + region.size);
-                    GFXRECON_ASSERT(src_info.size >= region.srcOffset + region.size);
-                    std::memcpy(
-                        dst_info.data.data() + region.dstOffset, src_info.data.data() + region.srcOffset, region.size);
-                }
-                break;
-            }
-            case SourceType::Update:
-            {
-                VkDeviceSize offset = event.regions[0].dstOffset;
-                VkDeviceSize size   = event.regions[0].size;
-                GFXRECON_ASSERT(dst_info.size >= offset + size);
-                std::memcpy(dst_info.data.data() + offset, event.srcPointer.data() + event.regions[0].srcOffset, size);
-                break;
-            }
-            case SourceType::Fill:
-            {
-                VkDeviceSize offset  = event.regions[0].dstOffset;
-                VkDeviceSize size    = event.regions[0].size;
-                uint8_t*     dst_ptr = dst_info.data.data() + offset;
-                if (size == VK_WHOLE_SIZE)
-                {
-                    size = dst_info.size - offset;
-                }
-                for (uint32_t i = 0; i < size / 4; i++)
-                {
-                    std::memcpy(dst_ptr + i * 4, event.srcPointer.data(), sizeof(uint32_t));
-                }
-                break;
-            }
-            default:
-                break;
+            ApplyBufferWriteAction(*event);
+        }
+        else if (const auto* build_action = std::get_if<BuildAccelerationStructureAction>(&action))
+        {
+            ApplyBuildAccelerationStructureAction(*build_action);
         }
     }
+}
+
+void VulkanSpirvTrackModifier::ApplyBufferWriteAction(const BufferWriteEvent& event)
+{
+    BufferInfo& dst_info = buffer_entries_.at(event.buffer);
+    switch (event.sourceType)
+    {
+        case SourceType::CopyBuffer:
+        {
+            const BufferInfo& src_info = buffer_entries_.at(event.srcBuffer);
+            for (const auto& region : event.regions)
+            {
+                GFXRECON_ASSERT(dst_info.size >= region.dstOffset + region.size);
+                GFXRECON_ASSERT(src_info.size >= region.srcOffset + region.size);
+                std::memcpy(
+                    dst_info.data.data() + region.dstOffset, src_info.data.data() + region.srcOffset, region.size);
+            }
+
+            // Normalize this copy command into propagated root writes
+            auto writes =
+                provenance_tracker_.BuildRootWritesFromCopyRegions(event.srcBuffer, event.buffer, event.regions);
+            for (const auto& write : writes)
+            {
+                // flatten each root write into the destination buffer provenance state
+                provenance_tracker_.FlattenBufferProvenanceForRootWrite(write);
+            }
+            break;
+        }
+        case SourceType::Update:
+        {
+            VkDeviceSize offset = event.regions[0].dstOffset;
+            VkDeviceSize size   = event.regions[0].size;
+            GFXRECON_ASSERT(dst_info.size >= offset + size);
+            std::memcpy(dst_info.data.data() + offset, event.srcPointer.data() + event.regions[0].srcOffset, size);
+
+            // CmdUpdateBuffer is itself a root source, so flatten the same
+            // byte range into provenance state at its execute-time write point.
+            RootWriteToBufferRange write = {
+                event.buffer, offset, size, ProvenanceRootType::UpdateBuffer, ProvenanceRootKey{ event.call_index, 0 }
+            };
+            provenance_tracker_.FlattenBufferProvenanceForRootWrite(write);
+            break;
+        }
+        case SourceType::Fill:
+        {
+            VkDeviceSize offset  = event.regions[0].dstOffset;
+            VkDeviceSize size    = event.regions[0].size;
+            uint8_t*     dst_ptr = dst_info.data.data() + offset;
+            if (size == VK_WHOLE_SIZE)
+            {
+                size = dst_info.size - offset;
+            }
+            for (uint32_t i = 0; i < size / 4; i++)
+            {
+                std::memcpy(dst_ptr + i * 4, event.srcPointer.data(), sizeof(uint32_t));
+            }
+
+            // vkCmdFillBuffer overwrites bytes with an immediate pattern, not a rewriteable root payload.
+            // Drop any old provenance covering the filled range so later resolves do not point back to stale roots.
+            provenance_tracker_.ClearBufferProvenanceRange(event.buffer, offset, size);
+            break;
+        }
+        default:
+            break;
+    }
+}
+
+void VulkanSpirvTrackModifier::ApplyBuildAccelerationStructureAction(const BuildAccelerationStructureAction& action)
+{
+    std::vector<VerifiedBuildAsUseSite> local_verified_use_sites;
+    local_verified_use_sites.reserve(action.candidate_use_sites.size());
+
+    for (const BufferUseSiteKey& candidate : action.candidate_use_sites)
+    {
+        VkDeviceAddress value       = 0;
+        const auto      buffer_iter = buffer_entries_.find(candidate.buffer);
+        if (buffer_iter == buffer_entries_.end() ||
+            candidate.offset_in_buffer + sizeof(VkDeviceAddress) > buffer_iter->second.size)
+        {
+            RejectedBuildAsUseSite rejected = { action.call_index,
+                                                action.info_index,
+                                                action.dst_as,
+                                                candidate,
+                                                value,
+                                                RejectedDeviceAddressUseSiteReason::UnknownDeviceAddress };
+            rejected_build_as_use_sites_.push_back(rejected);
+            if (m_verbose)
+            {
+                GFXRECON_LOG_DEBUG("Phase2 rejected BuildAS use-site: call=%llu info=%u dst_as=%llu buffer=%llu "
+                                   "offset=%llu value=0x%llx reason=%s",
+                                   rejected.build_call_index,
+                                   rejected.info_index,
+                                   rejected.dst_as,
+                                   rejected.use_site.buffer,
+                                   rejected.use_site.offset_in_buffer,
+                                   static_cast<unsigned long long>(rejected.value),
+                                   RejectedDeviceAddressUseSiteReasonToString(rejected.reason));
+            }
+            continue;
+        }
+
+        // Read the current accelerationStructureReference value from the
+        // execute-time buffer shadow state at this candidate slot location.
+        const BufferInfo& instance_buffer = buffer_iter->second;
+        std::memcpy(&value, instance_buffer.data.data() + candidate.offset_in_buffer, sizeof(VkDeviceAddress));
+
+        // verify if the value of current candidate is a live BLAS device address.
+        format::HandleId                   referenced_as              = 0;
+        VkDeviceAddress                    referenced_as_base_address = 0;
+        VkDeviceSize                       referenced_as_size         = 0;
+        RejectedDeviceAddressUseSiteReason reject_reason = RejectedDeviceAddressUseSiteReason::UnknownDeviceAddress;
+        if (VerifyLiveAccelerationStructureDeviceAddress(value,
+                                                         VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR,
+                                                         action.call_index,
+                                                         referenced_as,
+                                                         referenced_as_base_address,
+                                                         referenced_as_size,
+                                                         reject_reason))
+        {
+            VerifiedBuildAsUseSite verified = {
+                action.call_index, action.info_index,          action.dst_as,     candidate, value,
+                referenced_as,     referenced_as_base_address, referenced_as_size
+            };
+            local_verified_use_sites.push_back(verified);
+        }
+        else
+        {
+            RejectedBuildAsUseSite rejected = { action.call_index, action.info_index, action.dst_as, candidate, value,
+                                                reject_reason };
+            rejected_build_as_use_sites_.push_back(rejected);
+            if (m_verbose)
+            {
+                GFXRECON_LOG_DEBUG("Phase2 rejected BuildAS use-site: call=%llu info=%u dst_as=%llu buffer=%llu "
+                                   "offset=%llu value=0x%llx reason=%s",
+                                   rejected.build_call_index,
+                                   rejected.info_index,
+                                   rejected.dst_as,
+                                   rejected.use_site.buffer,
+                                   rejected.use_site.offset_in_buffer,
+                                   static_cast<unsigned long long>(rejected.value),
+                                   RejectedDeviceAddressUseSiteReasonToString(rejected.reason));
+            }
+        }
+    }
+
+    // resolve only the verified use-sites produced by this action.
+    for (const VerifiedBuildAsUseSite& verified : local_verified_use_sites)
+    {
+        ResolvedRootRange                    resolved_root = {};
+        UnresolvedDeviceAddressUseSiteReason unresolved_reason =
+            UnresolvedDeviceAddressUseSiteReason::MissingBufferProvenance;
+        if (provenance_tracker_.ResolveBufferRangeToRoot(verified.use_site.buffer,
+                                                         verified.use_site.offset_in_buffer,
+                                                         sizeof(VkDeviceAddress),
+                                                         resolved_root,
+                                                         unresolved_reason))
+        {
+            resolved_build_as_use_sites_.push_back({ verified, resolved_root });
+        }
+        else
+        {
+            unresolved_build_as_use_sites_.push_back({ verified, unresolved_reason });
+            if (m_verbose)
+            {
+                GFXRECON_LOG_DEBUG(
+                    "unresolved BuildAS use-site: call=%llu info=%u dst_as=%llu inst_buffer=%llu offset=%llu reason=%s",
+                    verified.build_call_index,
+                    verified.info_index,
+                    verified.dst_as,
+                    verified.use_site.buffer,
+                    verified.use_site.offset_in_buffer,
+                    UnresolvedDeviceAddressUseSiteReasonToString(unresolved_reason));
+            }
+        }
+    }
+
+    verified_build_as_use_sites_.insert(
+        verified_build_as_use_sites_.end(), local_verified_use_sites.begin(), local_verified_use_sites.end());
 }
 
 bool VulkanSpirvTrackModifier::IsPipelineLayoutCompatibleForSet(format::HandleId lhs,
@@ -2414,6 +2827,12 @@ void VulkanSpirvTrackModifier::executeCommandBuffer(format::HandleId commandBuff
             std::memcpy(current_command_buffer_state.push_constant.data() + pushconstant.offset,
                         pushconstant.pValues.data(),
                         pushconstant.size);
+
+            // Mirror the same byte write into tracker-owned push-constant provenance: the
+            // CommandBufferState::push_constant range[pushconstant.offset, pushconstant.offset + pushconstant.size)
+            // now comes from this vkCmdPushConstants call's pValues [0, pushconstant.size).
+            provenance_tracker_.FlattenPushConstantProvenanceForWrite(
+                commandBuffer, pushconstant.offset, pushconstant.size, ProvenanceRootKey{ pushconstant.call_index, 0 });
         }
 
         for (const auto& pipeline_iter : recording.pipelines)
@@ -2466,30 +2885,66 @@ void VulkanSpirvTrackModifier::executeDispatchDraw(format::HandleId commandBuffe
     // The current simulator integration does not distinguish these cases at the sim_data.bindings boundary.
     // A nullptr is treated as "payload unavailable" and is intentionally conservative for the current data-flow
     // behavior.
-    auto resolve_bound_buffer_descriptor_pointer = [&](uint32_t               set,
-                                                       const DescriptorArray& descriptor_array,
-                                                       uint32_t               array_index,
-                                                       const DescriptorEntry& desc_entry,
-                                                       uint32_t               dynamic_offset_base) -> void* {
+    auto resolve_bound_buffer_descriptor_block = [&](uint32_t               set,
+                                                     const DescriptorArray& descriptor_array,
+                                                     uint32_t               array_index,
+                                                     const DescriptorEntry& desc_entry,
+                                                     uint32_t dynamic_offset_base) -> ResolvedDescriptorPayloadBlock {
+        ResolvedDescriptorPayloadBlock resolved_block = { nullptr, format::kNullHandleId, 0, 0 };
+
         const VkDescriptorType active_type = get_active_descriptor_type(descriptor_array, desc_entry);
         if (!is_static_buffer_descriptor_type(active_type) && !is_dynamic_buffer_descriptor_type(active_type))
         {
-            return nullptr;
+            return resolved_block;
+        }
+        if (desc_entry.buffer.handle == format::kNullHandleId)
+        {
+            return resolved_block;
         }
 
         const auto buffer_iter = buffer_entries_.find(desc_entry.buffer.handle);
         if (buffer_iter == buffer_entries_.end())
         {
-            return nullptr;
+            return resolved_block;
         }
 
-        uint8_t* binding_ptr = buffer_iter->second.data.data() + desc_entry.buffer.offset;
+        auto&        buffer_info             = buffer_iter->second;
+        VkDeviceSize resolved_dynamic_offset = 0;
         if (is_dynamic_buffer_descriptor_type(descriptor_array.type))
         {
-            binding_ptr += bind_point_state.dynamic_offsets_perSet.at(set).at(dynamic_offset_base + array_index);
+            const auto dynamic_offset_iter = bind_point_state.dynamic_offsets_perSet.find(set);
+            if (dynamic_offset_iter == bind_point_state.dynamic_offsets_perSet.end() ||
+                dynamic_offset_base + array_index >= dynamic_offset_iter->second.size())
+            {
+                return resolved_block;
+            }
+            resolved_dynamic_offset = dynamic_offset_iter->second[dynamic_offset_base + array_index];
         }
 
-        return binding_ptr;
+        if (desc_entry.buffer.offset > buffer_info.size ||
+            resolved_dynamic_offset > (buffer_info.size - desc_entry.buffer.offset))
+        {
+            return resolved_block;
+        }
+
+        resolved_block.block_base_offset_in_buffer = desc_entry.buffer.offset + resolved_dynamic_offset;
+        if (resolved_block.block_base_offset_in_buffer >= buffer_info.size)
+        {
+            return resolved_block;
+        }
+
+        const VkDeviceSize remaining_size = buffer_info.size - resolved_block.block_base_offset_in_buffer;
+        resolved_block.block_size         = (desc_entry.buffer.range == VK_WHOLE_SIZE)
+                                                ? remaining_size
+                                                : std::min<VkDeviceSize>(desc_entry.buffer.range, remaining_size);
+        if (resolved_block.block_size == 0)
+        {
+            return resolved_block;
+        }
+
+        resolved_block.binding_ptr = buffer_info.data.data() + resolved_block.block_base_offset_in_buffer;
+        resolved_block.buffer      = desc_entry.buffer.handle;
+        return resolved_block;
     };
 
     std::string str = "Not support bindPoint";
@@ -2514,7 +2969,9 @@ void VulkanSpirvTrackModifier::executeDispatchDraw(format::HandleId commandBuffe
                IsPipelineLayoutCompatibleForSet(bound_layout, bind_point_state.pipeline_layout, set);
     };
 
-    SPIRVSimulator::SimulationData                                                 sim_data;
+    SPIRVSimulator::SimulationData sim_data;
+    DispatchBlockInfos             block_infos;
+
     std::unordered_map<uint64_t, std::unordered_map<uint64_t, std::vector<void*>>> sim_binding_pointer_tables;
 
     if (bind_point_state.descriptor_backend_mode == DescriptorBackendMode::DescriptorSet)
@@ -2551,14 +3008,20 @@ void VulkanSpirvTrackModifier::executeDispatchDraw(format::HandleId commandBuffe
 
                     if (alloc_descriptor_count == 1)
                     {
-                        void*      binding_ptr     = nullptr;
-                        const auto desc_entry_iter = descriptor_array.descriptor_entries.find(0);
+                        ResolvedDescriptorPayloadBlock resolved_block;
+                        const auto                     desc_entry_iter = descriptor_array.descriptor_entries.find(0);
                         if (desc_entry_iter != descriptor_array.descriptor_entries.end())
                         {
-                            binding_ptr = resolve_bound_buffer_descriptor_pointer(
+                            resolved_block = resolve_bound_buffer_descriptor_block(
                                 set, descriptor_array, 0, desc_entry_iter->second, dynamic_offset_base);
                         }
-                        sim_data.bindings[set][binding] = binding_ptr;
+                        sim_data.bindings[set][binding] = resolved_block.binding_ptr;
+                        if (resolved_block.binding_ptr != nullptr && resolved_block.block_size != 0)
+                        {
+                            block_infos[resolved_block.binding_ptr] = { resolved_block.buffer,
+                                                                        resolved_block.block_base_offset_in_buffer,
+                                                                        resolved_block.block_size };
+                        }
                     }
                     else if (alloc_descriptor_count > 1)
                     {
@@ -2571,8 +3034,17 @@ void VulkanSpirvTrackModifier::executeDispatchDraw(format::HandleId commandBuffe
                                 continue;
                             }
 
-                            pointer_array[entry_iter.first] = resolve_bound_buffer_descriptor_pointer(
+                            ResolvedDescriptorPayloadBlock resolved_block = resolve_bound_buffer_descriptor_block(
                                 set, descriptor_array, entry_iter.first, entry_iter.second, dynamic_offset_base);
+                            pointer_array[entry_iter.first] = resolved_block.binding_ptr;
+                            if (resolved_block.binding_ptr != nullptr && resolved_block.block_size != 0)
+                            {
+                                block_infos[resolved_block.binding_ptr] = {
+                                    resolved_block.buffer,
+                                    resolved_block.block_base_offset_in_buffer,
+                                    resolved_block.block_size,
+                                };
+                            }
                         }
                         sim_data.bindings[set][binding] = pointer_array.data();
                     }
@@ -2639,8 +3111,15 @@ void VulkanSpirvTrackModifier::executeDispatchDraw(format::HandleId commandBuffe
     // physical_address_buffers
     for (const auto& it : buffer_device_addresses_)
     {
-        sim_data.physical_address_buffers[it.first] = { buffer_entries_[it.second].size,
-                                                        buffer_entries_[it.second].data.data() };
+        const auto& buffer_info      = buffer_entries_.at(it.second);
+        const auto* host_ptr         = buffer_info.data.data();
+        auto*       mutable_host_ptr = const_cast<uint8_t*>(host_ptr);
+        sim_data.physical_address_buffers[it.first] =
+            std::make_pair(buffer_info.size, static_cast<void*>(mutable_host_ptr));
+        if (host_ptr != nullptr && buffer_info.size != 0)
+        {
+            block_infos[host_ptr] = { it.second, 0, buffer_info.size };
+        }
     }
 
     for (const ShaderStage& stage : pipeline_info.stages)
@@ -2662,15 +3141,26 @@ void VulkanSpirvTrackModifier::executeDispatchDraw(format::HandleId commandBuffe
         }
 
         // push constant
-        sim_data.push_constants = nullptr;
+        sim_data.push_constants                                               = nullptr;
+        std::optional<DispatchPushConstantBlockInfo> push_constant_block_info = std::nullopt;
         if (pipeline_layout_iter != pipeline_layout_entries_.end())
         {
             const auto& pipeline_layout_info = pipeline_layout_entries_.at(bind_point_state.pipeline_layout);
-            if (pipeline_layout_info.mergedRangePerStage.find(stage.stageFlagBit) !=
-                pipeline_layout_info.mergedRangePerStage.end())
+            const auto  merged_range_iter    = pipeline_layout_info.mergedRangePerStage.find(stage.stageFlagBit);
+            if (merged_range_iter != pipeline_layout_info.mergedRangePerStage.end())
             {
-                sim_data.push_constants = command_buffer_state[commandBuffer].push_constant.data() +
-                                          pipeline_layout_info.mergedRangePerStage.at(stage.stageFlagBit).offset;
+                const auto& merged_range = merged_range_iter->second;
+                sim_data.push_constants =
+                    command_buffer_state[commandBuffer].push_constant.data() + merged_range.offset;
+                if (merged_range.size != 0)
+                {
+                    push_constant_block_info = DispatchPushConstantBlockInfo{
+                        commandBuffer,
+                        sim_data.push_constants,
+                        merged_range.offset,
+                        merged_range.size,
+                    };
+                }
             }
         }
 
@@ -2681,10 +3171,92 @@ void VulkanSpirvTrackModifier::executeDispatchDraw(format::HandleId commandBuffe
                           util::ToString<VkShaderStageFlagBits>(stage.stageFlagBit).c_str());
         SPIRVSimulator::SimulationResults sim_results;
         SPIRVSimulator::SPIRVSimulator    simulator(
-            module_info.pCode, &sim_data, &sim_results, nullptr, m_verbose, m_flags);
+            module_info.pCode, &mem_flag_tracker, &sim_data, &sim_results, nullptr, m_verbose, m_flags);
         simulator.Run();
+        ApplyDispatchPhysicalAddressResults(sim_results, block_infos, push_constant_block_info);
         outputSimulator(sim_results);
     }
+}
+
+void VulkanSpirvTrackModifier::ApplyDispatchPhysicalAddressResults(
+    const SPIRVSimulator::SimulationResults&            results,
+    const DispatchBlockInfos&                           block_infos,
+    const std::optional<DispatchPushConstantBlockInfo>& push_constant_block_info)
+{
+    std::vector<VerifiedDispatchBufferAddressUseSite> local_verified_use_sites;
+    local_verified_use_sites.reserve(results.physical_address_data.size());
+
+    for (const auto& simulator_use_site : results.physical_address_data)
+    {
+        DispatchUseSiteKey                            use_site = {};
+        UnsupportedDispatchBufferAddressUseSiteReason unsupported_reason =
+            UnsupportedDispatchBufferAddressUseSiteReason::UnsupportedBitComponentCount;
+        if (!NormalizeDispatchUseSite(
+                simulator_use_site, block_infos, push_constant_block_info, use_site, unsupported_reason))
+        {
+            unsupported_dispatch_buffer_address_use_sites_.push_back({ simulator_use_site, unsupported_reason });
+            if (m_verbose)
+            {
+                GFXRECON_LOG_DEBUG("unsupported dispatch use-site: value=0x%llx reason=%s",
+                                   static_cast<unsigned long long>(simulator_use_site.raw_pointer_value),
+                                   UnsupportedDispatchBufferAddressUseSiteReasonToString(unsupported_reason));
+            }
+            continue;
+        }
+
+        // verify if the value of raw physical pointer is a buffer device address.
+        format::HandleId                   referenced_buffer              = format::kNullHandleId;
+        VkDeviceAddress                    referenced_buffer_base_address = 0;
+        VkDeviceSize                       referenced_buffer_size         = 0;
+        RejectedDeviceAddressUseSiteReason reject_reason = RejectedDeviceAddressUseSiteReason::UnknownDeviceAddress;
+        if (!VerifyDispatchBufferDeviceAddress(simulator_use_site.raw_pointer_value,
+                                               referenced_buffer,
+                                               referenced_buffer_base_address,
+                                               referenced_buffer_size,
+                                               reject_reason))
+        {
+            rejected_dispatch_buffer_address_use_sites_.push_back(
+                { use_site, simulator_use_site.raw_pointer_value, reject_reason });
+            if (m_verbose)
+            {
+                GFXRECON_LOG_DEBUG("rejected dispatch use-site: value=0x%llx reason=%s",
+                                   static_cast<unsigned long long>(simulator_use_site.raw_pointer_value),
+                                   RejectedDeviceAddressUseSiteReasonToString(reject_reason));
+            }
+            continue;
+        }
+
+        local_verified_use_sites.push_back({ use_site,
+                                             simulator_use_site.raw_pointer_value,
+                                             referenced_buffer,
+                                             referenced_buffer_base_address,
+                                             referenced_buffer_size });
+    }
+
+    for (const auto& verified : local_verified_use_sites)
+    {
+        ResolvedRootRange                    resolved_root     = {};
+        UnresolvedDeviceAddressUseSiteReason unresolved_reason = UnresolvedDeviceAddressUseSiteReason::UncoveredRange;
+
+        if (ResolveDispatchUseSiteToRoot(verified.use_site, resolved_root, unresolved_reason))
+        {
+            resolved_dispatch_buffer_address_use_sites_.push_back({ verified, resolved_root });
+        }
+        else
+        {
+            unresolved_dispatch_buffer_address_use_sites_.push_back({ verified, unresolved_reason });
+            if (m_verbose)
+            {
+                GFXRECON_LOG_DEBUG("unresolved dispatch use-site: value=0x%llx reason=%s",
+                                   static_cast<unsigned long long>(verified.value),
+                                   UnresolvedDeviceAddressUseSiteReasonToString(unresolved_reason));
+            }
+        }
+    }
+
+    verified_dispatch_buffer_address_use_sites_.insert(verified_dispatch_buffer_address_use_sites_.end(),
+                                                       local_verified_use_sites.begin(),
+                                                       local_verified_use_sites.end());
 }
 
 void VulkanSpirvTrackModifier::outputSimulator(const SPIRVSimulator::SimulationResults& results)
@@ -2725,6 +3297,223 @@ void VulkanSpirvTrackModifier::outputSimulator(const SPIRVSimulator::SimulationR
         }
     }
     std::cout << "\n" << std::endl;
+}
+
+bool VulkanSpirvTrackModifier::NormalizeDispatchUseSite(
+    const SPIRVSimulator::PhysicalAddressData&          simulator_use_site,
+    const DispatchBlockInfos&                           block_infos,
+    const std::optional<DispatchPushConstantBlockInfo>& push_constant_block_info,
+    DispatchUseSiteKey&                                 out_use_site,
+    UnsupportedDispatchBufferAddressUseSiteReason&      reason) const
+{
+    if (simulator_use_site.bit_components.size() != 1)
+    {
+        reason = UnsupportedDispatchBufferAddressUseSiteReason::UnsupportedBitComponentCount;
+        return false;
+    }
+
+    const SPIRVSimulator::DataSourceBits& bit_component = simulator_use_site.bit_components[0];
+    if (bit_component.location != SPIRVSimulator::BitLocation::StorageClass)
+    {
+        reason = UnsupportedDispatchBufferAddressUseSiteReason::UnsupportedBitLocation;
+        return false;
+    }
+
+    if ((bit_component.bit_offset % 8) != 0 || bit_component.val_bit_offset != 0)
+    {
+        reason = UnsupportedDispatchBufferAddressUseSiteReason::UnsupportedBitAlignment;
+        return false;
+    }
+
+    if (bit_component.bitcount != (sizeof(VkDeviceAddress) * 8))
+    {
+        reason = UnsupportedDispatchBufferAddressUseSiteReason::UnsupportedBitWidth;
+        return false;
+    }
+
+    const uint64_t byte_offset_in_block = bit_component.byte_offset + (bit_component.bit_offset / 8);
+    const uint64_t query_size           = sizeof(VkDeviceAddress);
+
+    switch (bit_component.storage_class)
+    {
+        case spv::StorageClass::StorageClassUniform:
+        case spv::StorageClass::StorageClassUniformConstant:
+        case spv::StorageClass::StorageClassStorageBuffer:
+        case spv::StorageClass::StorageClassPhysicalStorageBuffer:
+        {
+            const auto block_iter = block_infos.find(bit_component.source_ptr);
+            if (block_iter == block_infos.end())
+            {
+                reason = UnsupportedDispatchBufferAddressUseSiteReason::MissingBlockInfo;
+                return false;
+            }
+
+            const DispatchBlockInfo& block_info = block_iter->second;
+            if (byte_offset_in_block > block_info.block_size ||
+                query_size > (block_info.block_size - byte_offset_in_block))
+            {
+                reason = UnsupportedDispatchBufferAddressUseSiteReason::BlockRangeOutOfBounds;
+                return false;
+            }
+
+            out_use_site =
+                BufferUseSiteKey{ block_info.buffer, block_info.block_base_offset_in_buffer + byte_offset_in_block };
+            return true;
+        }
+        case spv::StorageClass::StorageClassPushConstant:
+        {
+            if (!push_constant_block_info.has_value() || push_constant_block_info->block_ptr == nullptr ||
+                push_constant_block_info->command_buffer == format::kNullHandleId ||
+                push_constant_block_info->block_ptr != bit_component.source_ptr)
+            {
+                reason = UnsupportedDispatchBufferAddressUseSiteReason::MissingPushConstantBlockInfo;
+                return false;
+            }
+
+            if (byte_offset_in_block > push_constant_block_info->block_size ||
+                query_size > (push_constant_block_info->block_size - byte_offset_in_block))
+            {
+                reason = UnsupportedDispatchBufferAddressUseSiteReason::PushConstantRangeOutOfBounds;
+                return false;
+            }
+
+            out_use_site = DispatchPushConstantUseSiteKey{
+                push_constant_block_info->command_buffer,
+                push_constant_block_info->block_base_offset_in_push_constants + byte_offset_in_block,
+            };
+            return true;
+        }
+        default:
+            reason = UnsupportedDispatchBufferAddressUseSiteReason::UnsupportedStorageClass;
+            return false;
+    }
+}
+
+bool VulkanSpirvTrackModifier::VerifyDispatchBufferDeviceAddress(
+    VkDeviceAddress                     raw_pointer_value,
+    format::HandleId&                   out_referenced_buffer,
+    VkDeviceAddress&                    out_referenced_buffer_base_address,
+    VkDeviceSize&                       out_referenced_buffer_size,
+    RejectedDeviceAddressUseSiteReason& reject_reason) const
+{
+    out_referenced_buffer              = format::kNullHandleId;
+    out_referenced_buffer_base_address = 0;
+    out_referenced_buffer_size         = 0;
+
+    if (raw_pointer_value == 0)
+    {
+        reject_reason = RejectedDeviceAddressUseSiteReason::ZeroValue;
+        return false;
+    }
+
+    const auto address_iter = findEntryFromBufferDeviceAddress(raw_pointer_value);
+    if (address_iter == buffer_device_addresses_.end())
+    {
+        reject_reason = RejectedDeviceAddressUseSiteReason::UnknownDeviceAddress;
+        return false;
+    }
+
+    const auto buffer_iter = buffer_entries_.find(address_iter->second);
+    if (buffer_iter == buffer_entries_.end())
+    {
+        reject_reason = RejectedDeviceAddressUseSiteReason::UnknownDeviceAddress;
+        return false;
+    }
+
+    out_referenced_buffer              = address_iter->second;
+    out_referenced_buffer_base_address = address_iter->first;
+    out_referenced_buffer_size         = buffer_iter->second.size;
+    return true;
+}
+
+bool VulkanSpirvTrackModifier::VerifyLiveAccelerationStructureDeviceAddress(
+    VkDeviceAddress                     address,
+    VkAccelerationStructureTypeKHR      expected_type,
+    uint64_t                            build_call_index,
+    format::HandleId&                   referenced_as,
+    VkDeviceAddress&                    referenced_as_base_address,
+    VkDeviceSize&                       referenced_as_size,
+    RejectedDeviceAddressUseSiteReason& reject_reason) const
+{
+    referenced_as              = 0;
+    referenced_as_base_address = 0;
+    referenced_as_size         = 0;
+    if (address == 0)
+    {
+        reject_reason = RejectedDeviceAddressUseSiteReason::ZeroValue;
+        return false;
+    }
+
+    const auto address_iter = acceleration_structure_device_addresses_.find(address);
+    if (address_iter == acceleration_structure_device_addresses_.end())
+    {
+        reject_reason = RejectedDeviceAddressUseSiteReason::UnknownDeviceAddress;
+        return false;
+    }
+
+    for (format::HandleId candidate_as : address_iter->second)
+    {
+        const auto as_iter = acceleration_structure_entries_.find(candidate_as);
+        if (as_iter == acceleration_structure_entries_.end())
+        {
+            continue;
+        }
+
+        const auto& as_info = as_iter->second;
+        if (as_info.type != expected_type)
+        {
+            continue;
+        }
+
+        if (!(as_info.creation_index <= build_call_index && build_call_index < as_info.destruction_index))
+        {
+            continue;
+        }
+
+        // AS device addresses are only considered live while the backing buffer is also live.
+        const auto buffer_iter = buffer_entries_.find(as_info.buf_handle);
+        if (buffer_iter == buffer_entries_.end())
+        {
+            continue;
+        }
+
+        const auto& buffer_info = buffer_iter->second;
+        if (!(buffer_info.creation_index <= build_call_index && build_call_index < buffer_info.destruction_index))
+        {
+            continue;
+        }
+
+        referenced_as              = candidate_as;
+        referenced_as_base_address = as_info.device_address;
+        referenced_as_size         = as_info.size;
+        return true;
+    }
+
+    reject_reason = RejectedDeviceAddressUseSiteReason::NotLiveAtUseTime;
+    return false;
+}
+
+bool VulkanSpirvTrackModifier::ResolveDispatchUseSiteToRoot(const DispatchUseSiteKey&             use_site,
+                                                            ResolvedRootRange&                    out,
+                                                            UnresolvedDeviceAddressUseSiteReason& reason) const
+{
+    if (const auto* buffer_use_site = std::get_if<BufferUseSiteKey>(&use_site))
+    {
+        return provenance_tracker_.ResolveBufferRangeToRoot(
+            buffer_use_site->buffer, buffer_use_site->offset_in_buffer, sizeof(VkDeviceAddress), out, reason);
+    }
+
+    if (const auto* push_constant_use_site = std::get_if<DispatchPushConstantUseSiteKey>(&use_site))
+    {
+        return provenance_tracker_.ResolvePushConstantRangeToRoot(push_constant_use_site->command_buffer,
+                                                                  push_constant_use_site->offset_in_push_constants,
+                                                                  sizeof(VkDeviceAddress),
+                                                                  out,
+                                                                  reason);
+    }
+
+    reason = UnresolvedDeviceAddressUseSiteReason::UncoveredRange;
+    return false;
 }
 
 GFXRECON_END_NAMESPACE(decode)
