@@ -313,7 +313,7 @@ VulkanRayTracingModifier::GetAccelerationStructureDeviceAddressesInFillMemory(co
             {
                 continue;
             }
-            if (entry->second.creation_index > block_index_)
+            if (entry->second.creation_index > block_index_ || entry->second.destruction_index < block_index_)
             {
                 continue;
             }

@@ -174,7 +174,7 @@ VkResult VulkanAccelerationStructureBuilder::OnCreateAccelerationStructure(
             buffer_info->memory_property_flags));
 
         new_replacement->info_.capture_address = acceleration_structure_info->capture_address;
-        new_replacement->info_.capture_size    = buffer_info->capture_size;
+        new_replacement->info_.capture_size    = create_info->size;
 
         modified_create_info.buffer = new_replacement->info_.handle;
         device_address_tracker_.TrackBuffer(&new_replacement->info_);

@@ -859,7 +859,6 @@ void VulkanReplayConsumerBase::ProcessFixDeviceAddressCommand(const format::FixD
         }
         else
         {
-            // Second, if not find acceleration structure device address, then find buffer device address
             result = buffer_address_remap(address);
         }
 
