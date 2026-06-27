@@ -76,7 +76,9 @@ void Dx12StateWriter::WriteState(const Dx12StateTable& state_table, uint64_t fra
     StandardCreateWrite<ID3D12DeviceRemovedExtendedDataSettings_Wrapper>(state_table);
 
     // DXGI objects
-    StandardCreateWrite<IDXGIFactory_Wrapper>(state_table);
+    // Root factories have no dependency and are written first; factories obtained via IDXGIObject::GetParent
+    // depend on their source adapter, so they are written after the adapters/outputs below.
+    WriteDxgiFactoryState(state_table, false);
     StandardCreateWrite<IDXGISurface_Wrapper>(state_table);
     StandardCreateWrite<IDXGIFactoryMedia_Wrapper>(state_table);
     StandardCreateWrite<IDXGIDecodeSwapChain_Wrapper>(state_table);
@@ -87,6 +89,7 @@ void Dx12StateWriter::WriteState(const Dx12StateTable& state_table, uint64_t fra
     StandardCreateWrite<IDXGIOutput_Wrapper>(state_table);
     StandardCreateWrite<IDXGIOutputDuplication_Wrapper>(state_table);
     StandardCreateWrite<IDXGIResource_Wrapper>(state_table);
+    WriteDxgiFactoryState(state_table, true);
 
 #ifdef GFXRECON_AGS_SUPPORT
     // AGS calls
@@ -1583,6 +1586,34 @@ bool Dx12StateWriter::CheckResourceObject(const ID3D12ResourceInfo* resource_inf
         default:
             return true;
     }
+}
+
+void Dx12StateWriter::WriteDxgiFactoryState(const Dx12StateTable& state_table, bool get_parent_derived)
+{
+    std::set<util::MemoryOutputStream*> processed;
+    state_table.VisitWrappers([&](const IDXGIFactory_Wrapper* wrapper) {
+        GFXRECON_ASSERT(wrapper != nullptr);
+        GFXRECON_ASSERT(wrapper->GetObjectInfo() != nullptr);
+        GFXRECON_ASSERT(wrapper->GetObjectInfo()->create_parameters != nullptr);
+
+        auto wrapper_info = wrapper->GetObjectInfo();
+
+        // A factory whose create call is GetParent was derived from another object (its source adapter); only the
+        // matching pass writes it, so the two passes split the factories around the adapters they may depend on.
+        const bool from_get_parent = (wrapper_info->create_call_id == format::ApiCallId::ApiCall_IDXGIObject_GetParent);
+        if (from_get_parent != get_parent_derived)
+        {
+            return;
+        }
+
+        // Filter duplicate entries for calls that create multiple objects, where objects created by the same call
+        // all reference the same parameter buffer.
+        if (processed.find(wrapper_info->create_parameters.get()) == processed.end())
+        {
+            StandardCreateWrite(wrapper);
+            processed.insert(wrapper_info->create_parameters.get());
+        }
+    });
 }
 
 void Dx12StateWriter::WriteSwapChainState(const Dx12StateTable& state_table)

@@ -191,6 +191,12 @@ class Dx12StateWriter
 
     void WriteSwapChainState(const Dx12StateTable& state_table);
 
+    // Writes IDXGIFactory creations as one of two ordered passes. A factory obtained via IDXGIObject::GetParent on
+    // an adapter depends on that adapter, so it must be written after the adapter; root factories created via
+    // CreateDXGIFactory* have no such dependency. get_parent_derived selects which set to write: false emits the
+    // root factories (before adapters), true emits the GetParent-derived factories (after adapters).
+    void WriteDxgiFactoryState(const Dx12StateTable& state_table, bool get_parent_derived);
+
     void WriteEnableDebugLayer();
 
     void WriteEnableDRED();
