@@ -78,14 +78,14 @@ class VulkanAddressReplacerARM : public VulkanAddressReplacerBase
      * @param address_tracker       const reference to a VulkanDeviceAddressTracker, used for mapping device-addresses
      * @param group_handle_map      a map from capture- to replay-time group-handles
      */
-    void ProcessCmdTraceRays(
-        const VulkanCommandBufferInfo*                                                              command_buffer_info,
-        VkStridedDeviceAddressRegionKHR*                                                            raygen_sbt,
-        VkStridedDeviceAddressRegionKHR*                                                            miss_sbt,
-        VkStridedDeviceAddressRegionKHR*                                                            hit_sbt,
-        VkStridedDeviceAddressRegionKHR*                                                            callable_sbt,
-        const decode::VulkanDeviceAddressTracker&                                                   address_tracker,
-        const std::unordered_map<graphics::shader_group_handle_t, graphics::shader_group_handle_t>& group_handle_map);
+    void ProcessCmdTraceRays(const VulkanCommandBufferInfo*            command_buffer_info,
+                             VkStridedDeviceAddressRegionKHR*          raygen_sbt,
+                             VkStridedDeviceAddressRegionKHR*          miss_sbt,
+                             VkStridedDeviceAddressRegionKHR*          hit_sbt,
+                             VkStridedDeviceAddressRegionKHR*          callable_sbt,
+                             const decode::VulkanDeviceAddressTracker& address_tracker,
+                             const std::unordered_map<graphics::shader_group_handle_t, graphics::shader_group_handle_t>&
+                                 group_handle_map) override;
 
     /**
      * @brief   ProcessCmdBuildAccelerationStructuresKHR will check
@@ -102,21 +102,22 @@ class VulkanAddressReplacerARM : public VulkanAddressReplacerBase
                                                   VkAccelerationStructureBuildGeometryInfoKHR* build_geometry_infos,
                                                   VkAccelerationStructureBuildRangeInfoKHR**   build_range_infos,
                                                   const decode::VulkanDeviceAddressTracker&    address_tracker,
-                                                  bool                                         process_scratch_buffers);
+                                                  bool process_scratch_buffers) override;
 
     void ProcessGetDescriptorEXT(const VulkanDeviceInfo*           device_info,
                                  VkDescriptorGetInfoEXT*           descriptorInfo,
-                                 const VulkanDeviceAddressTracker& address_tracker);
+                                 const VulkanDeviceAddressTracker& address_tracker) override;
 
     void ProcessCmdBindDescriptorBuffersEXT(const VulkanCommandBufferInfo*    commandBuffer_info,
                                             uint32_t                          bufferCount,
                                             VkDescriptorBufferBindingInfoEXT* bindingInfos,
-                                            const VulkanDeviceAddressTracker& address_tracker);
+                                            const VulkanDeviceAddressTracker& address_tracker) override;
 
     void ProcessGeneratedCommandsInfoEXT(VkGeneratedCommandsInfoEXT*               pGeneratedCommandsInfo,
-                                         const decode::VulkanDeviceAddressTracker& address_tracker);
+                                         const decode::VulkanDeviceAddressTracker& address_tracker) override;
 
-    void ProcessSpecializationInfo(VkSpecializationInfo* info, const VulkanDeviceAddressTracker& address_tracker);
+    void ProcessSpecializationInfo(VkSpecializationInfo*             info,
+                                   const VulkanDeviceAddressTracker& address_tracker) override;
 
     friend void swap(VulkanAddressReplacerARM& lhs, VulkanAddressReplacerARM& rhs) noexcept;
 
