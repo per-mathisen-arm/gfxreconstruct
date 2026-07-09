@@ -1741,7 +1741,7 @@ void VulkanRayTracingModifier::Process_vkQueueSubmit2(const ApiCallInfo&        
         {
 
             const format::HandleId command_buffer =
-                submit_meta_info.pCommandBufferInfos->GetMetaStructPointer()->commandBuffer;
+                submit_meta_info.pCommandBufferInfos->GetMetaStructPointer()[cmd_buffer_index].commandBuffer;
             should_inspect = should_inspect || HeuristicCheck(command_buffer);
         }
 
@@ -1779,7 +1779,7 @@ void VulkanRayTracingModifier::Process_vkQueueSubmit2KHR(const ApiCallInfo&     
         {
 
             const format::HandleId command_buffer =
-                submit_meta_info.pCommandBufferInfos->GetMetaStructPointer()->commandBuffer;
+                submit_meta_info.pCommandBufferInfos->GetMetaStructPointer()[cmd_buffer_index].commandBuffer;
             should_inspect = should_inspect || HeuristicCheck(command_buffer);
         }
 
