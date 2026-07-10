@@ -536,8 +536,8 @@ VkResult VulkanVirtualSwapchain::TransitionSwapchainImage(VkDevice              
     begin_info.pInheritanceInfo         = nullptr;
 
     auto& copy_cmd_data  = swapchain_resources->copy_cmd_data[copy_queue_family_index_[device]];
-    auto  command_buffer = copy_cmd_data.command_buffers[image_index];
-    auto  copy_fence     = copy_cmd_data.fences[image_index];
+    auto  command_buffer = copy_cmd_data.command_buffers[0];
+    auto  copy_fence     = copy_cmd_data.fences[0];
 
     result = device_table_->WaitForFences(device, 1, &copy_fence, VK_TRUE, ~0UL);
     if (result != VK_SUCCESS)
