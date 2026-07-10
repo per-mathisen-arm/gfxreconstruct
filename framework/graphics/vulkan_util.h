@@ -116,6 +116,11 @@ static DeviceFaultData QueryDeviceFaultData(PFN_vkGetDeviceFaultInfoEXT func, Vk
     return data;
 }
 
+static constexpr uint32_t ScaleToMipLevel(uint32_t dim, uint32_t level)
+{
+    return std::max(1u, dim >> level);
+}
+
 /**
  * @brief   Scales a VkExtent3D to the provided mip map level
  *
@@ -125,26 +130,26 @@ static DeviceFaultData QueryDeviceFaultData(PFN_vkGetDeviceFaultInfoEXT func, Vk
  */
 static constexpr VkExtent3D ScaleToMipLevel(const VkExtent3D& extent, uint32_t level)
 {
-    const VkExtent3D mip_extent = VkExtent3D{ std::max(1u, extent.width >> level),
-                                              std::max(1u, extent.height >> level),
-                                              std::max(1u, extent.depth >> level) };
+    const VkExtent3D mip_extent = VkExtent3D{ ScaleToMipLevel(extent.width, level),
+                                              ScaleToMipLevel(extent.height, level),
+                                              ScaleToMipLevel(extent.depth, level) };
 
     return mip_extent;
 }
 
 /**
- * @brief   Scales a VkExtent3D with the provided scaling factor
+ * @brief   Scales a VkExtent3D with the provided scaling factor. Does not scale depth.
  *
  * @param[in]   extent    The VkExtent3D to scale
  * @param[in]   scale     The scaling factor
  * @return  The scaled VkExtent3D
  */
-static constexpr VkExtent3D ScaleExtent(const VkExtent3D& extent, float scale)
+static constexpr VkExtent3D ScaleExtent3DNoDepth(const VkExtent3D& extent, float scale)
 {
     const VkExtent3D scaled_extent =
         VkExtent3D{ static_cast<uint32_t>(std::max(1.0f, static_cast<float>(extent.width) * scale)),
                     static_cast<uint32_t>(std::max(1.0f, static_cast<float>(extent.height) * scale)),
-                    static_cast<uint32_t>(std::max(1.0f, static_cast<float>(extent.depth) * scale)) };
+                    extent.depth };
 
     return scaled_extent;
 }

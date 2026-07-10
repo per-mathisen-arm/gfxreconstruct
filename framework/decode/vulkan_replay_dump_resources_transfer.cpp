@@ -1313,11 +1313,13 @@ VkResult TransferDumpingContext::DumpTransferCommands(Index submit_info_index, I
                     std::get<DumpedInitImageMetaCommand>(new_dumped_transfer_cmd->dumped_resource);
                 auto& dumped_image_host_data = std::get<VulkanDelegateImageDumpedData>(host_data.dumped_data);
 
-                const VkImageSubresourceRange subresource_range = { static_cast<VkImageAspectFlags>(init_image->aspect),
-                                                                    0,
-                                                                    VK_REMAINING_MIP_LEVELS,
-                                                                    0,
-                                                                    VK_REMAINING_ARRAY_LAYERS };
+                const ImageSubresourceRanges subresource_range = { static_cast<VkImageAspectFlags>(init_image->aspect),
+                                                                   0,
+                                                                   VK_REMAINING_MIP_LEVELS,
+                                                                   0,
+                                                                   VK_REMAINING_ARRAY_LAYERS,
+                                                                   0,
+                                                                   REMAINING_Z_INDICES };
 
                 VkResult res = DumpImage(new_dumped_init_image.dumped_image,
                                          VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
@@ -1445,11 +1447,13 @@ VkResult TransferDumpingContext::DumpTransferCommands(Index submit_info_index, I
                     auto& new_copy_buffer_to_image_image_region_host_data =
                         dumped_regions_host_data.regions_data.emplace_back();
 
-                    const VkImageSubresourceRange subresource_range = { region.region.imageSubresource.aspectMask,
-                                                                        region.region.imageSubresource.mipLevel,
-                                                                        1,
-                                                                        region.region.imageSubresource.baseArrayLayer,
-                                                                        region.region.imageSubresource.layerCount };
+                    const ImageSubresourceRanges subresource_range = { region.region.imageSubresource.aspectMask,
+                                                                       region.region.imageSubresource.mipLevel,
+                                                                       1,
+                                                                       region.region.imageSubresource.baseArrayLayer,
+                                                                       region.region.imageSubresource.layerCount,
+                                                                       0,
+                                                                       REMAINING_Z_INDICES };
 
                     // Dump region's subresources
                     VkResult res = DumpImage(new_dumped_image_region.dumped_image,
@@ -1498,12 +1502,14 @@ VkResult TransferDumpingContext::DumpTransferCommands(Index submit_info_index, I
                         auto& new_copy_buffer_to_image_image_region_host_data =
                             dumped_regions_host_data.regions_data.emplace_back();
 
-                        const VkImageSubresourceRange subresource_range = {
+                        const ImageSubresourceRanges subresource_range = {
                             region.region.imageSubresource.aspectMask,
                             region.region.imageSubresource.mipLevel,
                             1,
                             region.region.imageSubresource.baseArrayLayer,
-                            region.region.imageSubresource.layerCount
+                            region.region.imageSubresource.layerCount,
+                            0,
+                            REMAINING_Z_INDICES
                         };
 
                         // Dump region's subresources
@@ -1565,11 +1571,13 @@ VkResult TransferDumpingContext::DumpTransferCommands(Index submit_info_index, I
 
                     auto& new_copy_image_region_host_data = dumped_regions_host_data.regions_data.emplace_back();
 
-                    const VkImageSubresourceRange subresource_range = { region.region.dstSubresource.aspectMask,
-                                                                        region.region.dstSubresource.mipLevel,
-                                                                        1,
-                                                                        region.region.dstSubresource.baseArrayLayer,
-                                                                        region.region.dstSubresource.layerCount };
+                    const ImageSubresourceRanges subresource_range = { region.region.dstSubresource.aspectMask,
+                                                                       region.region.dstSubresource.mipLevel,
+                                                                       1,
+                                                                       region.region.dstSubresource.baseArrayLayer,
+                                                                       region.region.dstSubresource.layerCount,
+                                                                       0,
+                                                                       REMAINING_Z_INDICES };
 
                     // Dump region's subresources
                     VkResult res = DumpImage(new_dumped_image_region.dumped_image,
@@ -1617,11 +1625,13 @@ VkResult TransferDumpingContext::DumpTransferCommands(Index submit_info_index, I
 
                         auto& new_copy_image_region_host_data = dumped_regions_host_data.regions_data.emplace_back();
 
-                        const VkImageSubresourceRange subresource_range = { region.region.dstSubresource.aspectMask,
-                                                                            region.region.dstSubresource.mipLevel,
-                                                                            1,
-                                                                            region.region.dstSubresource.baseArrayLayer,
-                                                                            region.region.dstSubresource.layerCount };
+                        const ImageSubresourceRanges subresource_range = { region.region.dstSubresource.aspectMask,
+                                                                           region.region.dstSubresource.mipLevel,
+                                                                           1,
+                                                                           region.region.dstSubresource.baseArrayLayer,
+                                                                           region.region.dstSubresource.layerCount,
+                                                                           0,
+                                                                           REMAINING_Z_INDICES };
 
                         // Dump region's subresources
                         VkResult res =
@@ -1757,11 +1767,13 @@ VkResult TransferDumpingContext::DumpTransferCommands(Index submit_info_index, I
 
                     auto& new_blit_image_region_host_data = dumped_regions_host_data.regions_data.emplace_back();
 
-                    const VkImageSubresourceRange subresource_range = { region.region.dstSubresource.aspectMask,
-                                                                        region.region.dstSubresource.mipLevel,
-                                                                        1,
-                                                                        region.region.dstSubresource.baseArrayLayer,
-                                                                        region.region.dstSubresource.layerCount };
+                    const ImageSubresourceRanges subresource_range = { region.region.dstSubresource.aspectMask,
+                                                                       region.region.dstSubresource.mipLevel,
+                                                                       1,
+                                                                       region.region.dstSubresource.baseArrayLayer,
+                                                                       region.region.dstSubresource.layerCount,
+                                                                       0,
+                                                                       REMAINING_Z_INDICES };
 
                     // Dump region's subresources
                     VkResult res = DumpImage(new_dumped_image_region.dumped_image,
@@ -1809,11 +1821,13 @@ VkResult TransferDumpingContext::DumpTransferCommands(Index submit_info_index, I
 
                         auto& new_copy_image_region_host_data = dumped_regions_host_data.regions_data.emplace_back();
 
-                        const VkImageSubresourceRange subresource_range = { region.region.dstSubresource.aspectMask,
-                                                                            region.region.dstSubresource.mipLevel,
-                                                                            1,
-                                                                            region.region.dstSubresource.baseArrayLayer,
-                                                                            region.region.dstSubresource.layerCount };
+                        const ImageSubresourceRanges subresource_range = { region.region.dstSubresource.aspectMask,
+                                                                           region.region.dstSubresource.mipLevel,
+                                                                           1,
+                                                                           region.region.dstSubresource.baseArrayLayer,
+                                                                           region.region.dstSubresource.layerCount,
+                                                                           0,
+                                                                           REMAINING_Z_INDICES };
 
                         // Dump region's subresources
                         VkResult res =
