@@ -1407,7 +1407,7 @@ HRESULT Dx12ReplayConsumerBase::OverridePresent(DxObjectInfo* replay_object_info
 {
     auto replay_object = static_cast<IDXGISwapChain*>(replay_object_info->object);
     PrePresent(replay_object_info, flags);
-    if (original_result != S_OK)
+    if (FAILED(original_result))
     {
         flags |= DXGI_PRESENT_TEST;
     }
