@@ -140,6 +140,17 @@ class VulkanRebindAllocatorTestAccess
         allocator.WriteBoundResourceStaging(
             resource_alloc_info, bound_memory_info, src_offset, dst_offset, data_size, data);
     }
+
+    static void WriteBoundResource(VulkanRebindAllocator& allocator,
+                                   ResourceAllocInfo*     resource_alloc_info,
+                                   VmaMemoryInfo*         bound_memory_info,
+                                   size_t                 src_offset,
+                                   size_t                 dst_offset,
+                                   size_t                 data_size,
+                                   const uint8_t*         data)
+    {
+        allocator.WriteBoundResource(resource_alloc_info, bound_memory_info, src_offset, dst_offset, data_size, data);
+    }
 };
 
 namespace rebind_allocator_test
@@ -554,6 +565,22 @@ TEST_CASE("WriteBoundResourceStaging skips image staging writes with non-zero de
     // This protects replay from recording a buffer-to-image copy that does not describe the requested image offset.
     REQUIRE(fixture.staging_resources().empty());
     REQUIRE(fixture.bound_memory_info.mapped_pointer == fixture.original_memory.data());
+}
+
+TEST_CASE("WriteBoundResource skips writes to optimally-tiled images", "[decode][rebind]")
+{
+    WriteBoundResourceStagingFixture fixture(VK_OBJECT_TYPE_IMAGE, 0x200a, VK_FORMAT_R8G8B8A8_UNORM);
+    fixture.resource_alloc_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+
+    gfxrecon::decode::VulkanRebindAllocatorTestAccess::WriteBoundResource(fixture.allocator,
+                                                                          &fixture.resource_alloc_info,
+                                                                          &fixture.bound_memory_info,
+                                                                          0,
+                                                                          0,
+                                                                          fixture.write_data.size(),
+                                                                          fixture.write_data.data());
+
+    CHECK(fixture.staging_resources().empty());
 }
 
 TEST_CASE("WriteBoundResourceStaging stages buffer writes and submits a buffer copy", "[decode][rebind]")

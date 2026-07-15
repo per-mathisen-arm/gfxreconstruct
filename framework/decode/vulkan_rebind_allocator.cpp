@@ -2100,6 +2100,13 @@ void VulkanRebindAllocator::WriteBoundResource(ResourceAllocInfo* resource_alloc
     GFXRECON_ASSERT(bound_memory_info != nullptr);
     GFXRECON_ASSERT(bound_memory_info->memory_info != nullptr);
 
+    if ((resource_alloc_info->object_type == VK_OBJECT_TYPE_IMAGE) &&
+        (resource_alloc_info->tiling == VK_IMAGE_TILING_OPTIMAL))
+    {
+        GFXRECON_LOG_DEBUG("Skipping mapped memory write to optimally-tiled image");
+        return;
+    }
+
     GFXRECON_CHECK_CONVERSION_DATA_LOSS(size_t, src_offset);
     GFXRECON_CHECK_CONVERSION_DATA_LOSS(size_t, dst_offset);
     GFXRECON_CHECK_CONVERSION_DATA_LOSS(size_t, data_size);
