@@ -84,6 +84,7 @@ class VulkanExportJsonConsumerBodyGenerator(VulkanBaseGenerator, KhronosExportJs
             'vkCmdPushConstants',
             'vkCreatePipelineCache',
             'vkCreateShaderModule',
+            'vkGetQueryPoolResults',
             'vkGetPipelineCacheData',
             'vkCmdUpdateBuffer'
         }

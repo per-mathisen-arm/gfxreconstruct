@@ -648,32 +648,6 @@ void VulkanExportJsonConsumer::Process_vkDestroyQueryPool(
     WriteBlockEnd();
 }
 
-void VulkanExportJsonConsumer::Process_vkGetQueryPoolResults(
-    const ApiCallInfo&                          call_info,
-    VkResult                                    returnValue,
-    format::HandleId                            device,
-    format::HandleId                            queryPool,
-    uint32_t                                    firstQuery,
-    uint32_t                                    queryCount,
-    size_t                                      dataSize,
-    PointerDecoder<uint8_t>*                    pData,
-    VkDeviceSize                                stride,
-    VkQueryResultFlags                          flags)
-{
-    nlohmann::ordered_json& jdata = WriteApiCallStart(call_info, "vkGetQueryPoolResults");
-    jdata[NameReturn()] = returnValue;
-    auto& args = jdata[NameArgs()];
-        HandleToJson(args["device"], device);
-        HandleToJson(args["queryPool"], queryPool);
-        args["firstQuery"] = firstQuery;
-        args["queryCount"] = queryCount;
-        args["dataSize"] = dataSize;
-        FieldToJson(args["pData"], pData);
-        args["stride"] = stride;
-        args["flags"] = VkQueryResultFlags_t{flags};
-    WriteBlockEnd();
-}
-
 void VulkanExportJsonConsumer::Process_vkCreateBuffer(
     const ApiCallInfo&                          call_info,
     VkResult                                    returnValue,

@@ -88,6 +88,17 @@ class VulkanExportJsonConsumerBase : public VulkanConsumer
                                                StructPointerDecoder<Decoded_VkAllocationCallbacks>*     pAllocator,
                                                HandlePointerDecoder<VkPipelineCache>* pPipelineCache) override;
 
+    virtual void Process_vkGetQueryPoolResults(const ApiCallInfo&       call_info,
+                                               VkResult                 returnValue,
+                                               format::HandleId         device,
+                                               format::HandleId         queryPool,
+                                               uint32_t                 firstQuery,
+                                               uint32_t                 queryCount,
+                                               size_t                   dataSize,
+                                               PointerDecoder<uint8_t>* pData,
+                                               VkDeviceSize             stride,
+                                               VkQueryResultFlags       flags) override;
+
     virtual void Process_vkCmdPushConstants(const ApiCallInfo&       call_info,
                                             format::HandleId         commandBuffer,
                                             format::HandleId         layout,

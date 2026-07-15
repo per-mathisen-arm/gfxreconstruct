@@ -80,6 +80,7 @@ class VulkanExportJsonConsumerHeaderGenerator(VulkanConsumerHeaderGenerator):
             'vkCmdPushConstants',
             'vkCreatePipelineCache',
             'vkCreateShaderModule',
+            'vkGetQueryPoolResults',
             'vkGetPipelineCacheData',
             'vkCmdUpdateBuffer'
         }
