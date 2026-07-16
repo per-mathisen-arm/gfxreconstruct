@@ -36,9 +36,8 @@ const char kOptions[] =
     "indices,--dcp,--discard-cached-psos,--use-colorspace-fallback,--use-cached-psos,--dx12-override-object-names,--"
     "dx12-ags-inject-markers,--offscreen-swapchain-frame-boundary,--wait-before-present,--dump-resources-before-draw,"
     "--dump-resources-modifiable-state-only,--pbi-all,--preload-measurement-range,--add-new-pipeline-caches,--"
-    "screenshot-ignore-FrameBoundaryANDROID,--deduplicate-device,--log-timestamps,--capture,--blackhole,--streamline-"
-    "annotate,"
-    "--use-ext-frame-boundary";
+    "screenshot-ignore-FrameBoundaryANDROID,--deduplicate-device,--log-timestamps,--capture,--async-processing,"
+    "--blackhole,--streamline-annotate,--use-ext-frame-boundary";
 const char kArguments[] =
     "--log-level,--log-file,--cpu-mask,--gpu,--gpu-group,--pause-frame,--wsi,--surface-index,-m|--memory-translation,"
     "--replace-shaders,--screenshots,--screenshot-interval,--denied-messages,--allowed-messages,--screenshot-format,--"

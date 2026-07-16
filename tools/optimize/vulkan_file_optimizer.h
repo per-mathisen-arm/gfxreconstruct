@@ -24,7 +24,7 @@
 #ifndef GFXRECON_VULKAN_FILE_OPTIMIZER_H
 #define GFXRECON_VULKAN_FILE_OPTIMIZER_H
 
-#include "decode/file_processor.h"
+#include "decode/file_processor_visitors.h"
 #include "file_optimizer.h"
 #include "util/defines.h"
 #include "generated/generated_vulkan_decoder.h"
@@ -54,10 +54,11 @@ class VulkanFileOptimizer : public FileOptimizer
     bool ModifierDispatch(const Args& args, decode::ParsedBlock& parsed_block, encode::ParameterBuffer& buffer)
     {
         constexpr auto decode_method = decode::DispatchTraits<Args>::kDecoderMethod;
-        if (decode::DecoderSupportsDispatch(decoder_, args))
+        if (decode::file_processor::DecoderSupportsDispatch(decoder_, args))
         {
-            [[maybe_unused]] decode::DecoderAllocGuard<decode::DispatchTraits<Args>::kHasAllocGuard> alloc_guard{};
-            decode::SetDecoderApiCallId(decoder_, args);
+            [[maybe_unused]] decode::file_processor::DecoderAllocGuard<decode::DispatchTraits<Args>::kHasAllocGuard>
+                alloc_guard{};
+            decode::file_processor::SetDecoderApiCallId(decoder_, args);
             auto dispatch_call = [this, decode_method](auto&&... expanded_args) {
                 (decoder_.*decode_method)(std::forward<decltype(expanded_args)>(expanded_args)...);
             };
@@ -171,6 +172,13 @@ class VulkanFileOptimizer : public FileOptimizer
                           encode::ParameterBuffer&      buffer)
     {
         return FileOptimizer::ProcessMetaData(parsed_block);
+    }
+
+    bool ModifierDispatch(const decode::file_processor::ProcessBlocksResult& result,
+                          decode::ParsedBlock&                               parsed_block,
+                          encode::ParameterBuffer&                           buffer)
+    {
+        return result.state == decode::file_processor::ProcessBlockState::kContinue;
     }
 
     void WriteFunctionCall(format::ApiCallId               call_id,
