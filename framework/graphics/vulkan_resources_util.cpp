@@ -382,6 +382,59 @@ bool FindMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties& memory_properti
     return found;
 }
 
+bool FindTensorStagingMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties& memory_properties,
+                                      uint32_t                                memory_type_bits,
+                                      uint32_t*                               found_index,
+                                      VkMemoryPropertyFlags*                  found_flags)
+{
+    constexpr VkMemoryPropertyFlags kHostVisibleCached =
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
+    constexpr VkMemoryPropertyFlags kHostVisibleCoherent =
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+    return FindMemoryTypeIndex(memory_properties, memory_type_bits, kHostVisibleCached, found_index, found_flags) ||
+           FindMemoryTypeIndex(memory_properties, memory_type_bits, kHostVisibleCoherent, found_index, found_flags) ||
+           FindMemoryTypeIndex(
+               memory_properties, memory_type_bits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, found_index, found_flags);
+}
+
+bool TensorFormatHasFeatures(const VkTensorFormatPropertiesARM& tensor_properties,
+                             VkTensorTilingARM                  tiling,
+                             VkFormatFeatureFlags2              required_features)
+{
+    VkFormatFeatureFlags2 available_features = 0;
+    switch (tiling)
+    {
+        case VK_TENSOR_TILING_OPTIMAL_ARM:
+            available_features = tensor_properties.optimalTilingTensorFeatures;
+            break;
+        case VK_TENSOR_TILING_LINEAR_ARM:
+            available_features = tensor_properties.linearTilingTensorFeatures;
+            break;
+        default:
+            return false;
+    }
+
+    return (required_features != 0) && ((available_features & required_features) == required_features);
+}
+
+bool TensorFormatSupportsFeatures(const VulkanInstanceTable*    instance_table,
+                                  VkPhysicalDevice              physical_device,
+                                  const VkTensorDescriptionARM* description,
+                                  VkFormatFeatureFlags2         required_features)
+{
+    if ((instance_table == nullptr) || (physical_device == VK_NULL_HANDLE) || (description == nullptr))
+    {
+        return false;
+    }
+
+    VkTensorFormatPropertiesARM tensor_properties = { VK_STRUCTURE_TYPE_TENSOR_FORMAT_PROPERTIES_ARM };
+    VkFormatProperties2         format_properties = { VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2, &tensor_properties };
+    instance_table->GetPhysicalDeviceFormatProperties2(physical_device, description->format, &format_properties);
+
+    return TensorFormatHasFeatures(tensor_properties, description->tiling, required_features);
+}
+
 // Get the info on target image format. The function returns true if the target format
 // is supported, and returns texel size and other info to the corresponding pointer if the
 // pointer is not nullptr and the image format is supported.
@@ -1223,9 +1276,7 @@ void VulkanResourcesUtil::DestroyStagingBuffer()
 VkResult VulkanResourcesUtil::CreateStagingTensor(const VkTensorDescriptionARM* desc)
 {
     DestroyStagingTensor();
-    VkTensorCreateInfoARM info;
-    info.sType                 = VK_STRUCTURE_TYPE_TENSOR_CREATE_INFO_ARM;
-    info.pNext                 = nullptr;
+    VkTensorCreateInfoARM info = { VK_STRUCTURE_TYPE_TENSOR_CREATE_INFO_ARM };
     info.pDescription          = desc;
     info.sharingMode           = VK_SHARING_MODE_EXCLUSIVE;
     info.queueFamilyIndexCount = 0;
@@ -1233,13 +1284,15 @@ VkResult VulkanResourcesUtil::CreateStagingTensor(const VkTensorDescriptionARM* 
 
     VkResult result = device_table_.CreateTensorARM(device_, &info, nullptr, &staging_tensor_.tensor);
 
-    VkTensorMemoryRequirementsInfoARM mem_req;
-    mem_req.sType  = VK_STRUCTURE_TYPE_TENSOR_MEMORY_REQUIREMENTS_INFO_ARM;
-    mem_req.pNext  = nullptr;
-    mem_req.tensor = staging_tensor_.tensor;
-    VkMemoryRequirements2 mem_req2;
-    mem_req2.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
-    mem_req2.pNext = nullptr;
+    if (result != VK_SUCCESS)
+    {
+        GFXRECON_LOG_ERROR("Failed to create staging tensor for resource memory snapshot");
+        return result;
+    }
+
+    VkTensorMemoryRequirementsInfoARM mem_req = { VK_STRUCTURE_TYPE_TENSOR_MEMORY_REQUIREMENTS_INFO_ARM };
+    mem_req.tensor                            = staging_tensor_.tensor;
+    VkMemoryRequirements2 mem_req2            = { VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2 };
     device_table_.GetTensorMemoryRequirementsARM(device_, &mem_req, &mem_req2);
     VkMemoryRequirements* memory_requirements = &mem_req2.memoryRequirements;
 
@@ -1248,42 +1301,41 @@ VkResult VulkanResourcesUtil::CreateStagingTensor(const VkTensorDescriptionARM* 
     {
         DestroyStagingTensorMemory();
         uint32_t memory_type_index = std::numeric_limits<uint32_t>::max();
-        bool     found             = FindMemoryTypeIndex(*memory_properties_,
-                                         memory_requirements->memoryTypeBits,
-                                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
-                                         &memory_type_index,
-                                         &staging_tensor_.memory_property_flags);
+        bool     found             = FindTensorStagingMemoryTypeIndex(*memory_properties_,
+                                                      memory_requirements->memoryTypeBits,
+                                                      &memory_type_index,
+                                                      &staging_tensor_.memory_property_flags);
         if (!found)
         {
-            // If we are here it is likely that we lack support for HOST_CACHED, fallback to COHERENT
-            found = FindMemoryTypeIndex(*memory_properties_,
-                                        memory_requirements->memoryTypeBits,
-                                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                        &memory_type_index,
-                                        &staging_tensor_.memory_property_flags);
+            GFXRECON_LOG_ERROR("Failed to find host-visible memory for staging tensor");
+            DestroyStagingTensor();
+            return VK_ERROR_FEATURE_NOT_PRESENT;
         }
+
         VkMemoryAllocateInfo alloc_info = { VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO };
         alloc_info.pNext                = nullptr;
         alloc_info.allocationSize       = memory_requirements->size;
         alloc_info.memoryTypeIndex      = memory_type_index;
 
-        result               = device_table_.AllocateMemory(device_, &alloc_info, nullptr, &staging_tensor_.memory);
-        staging_tensor_.size = memory_requirements->size;
+        result = device_table_.AllocateMemory(device_, &alloc_info, nullptr, &staging_tensor_.memory);
+        if (result == VK_SUCCESS)
+        {
+            staging_tensor_.size = memory_requirements->size;
+        }
     }
 
     if (result == VK_SUCCESS)
     {
-        VkBindTensorMemoryInfoARM bind_info;
-        bind_info.sType        = VK_STRUCTURE_TYPE_BIND_TENSOR_MEMORY_INFO_ARM;
-        bind_info.pNext        = nullptr;
-        bind_info.tensor       = staging_tensor_.tensor;
-        bind_info.memory       = staging_tensor_.memory;
-        bind_info.memoryOffset = 0;
-        device_table_.BindTensorMemoryARM(device_, 1, &bind_info);
+        VkBindTensorMemoryInfoARM bind_info = { VK_STRUCTURE_TYPE_BIND_TENSOR_MEMORY_INFO_ARM };
+        bind_info.tensor                    = staging_tensor_.tensor;
+        bind_info.memory                    = staging_tensor_.memory;
+        bind_info.memoryOffset              = 0;
+        result                              = device_table_.BindTensorMemoryARM(device_, 1, &bind_info);
     }
-    else
+
+    if (result != VK_SUCCESS)
     {
-        GFXRECON_LOG_ERROR("Failed to allocate staging tensor memory for resource memory snapshot");
+        GFXRECON_LOG_ERROR("Failed to allocate or bind staging tensor memory for resource memory snapshot");
 
         DestroyStagingTensor();
         DestroyStagingTensorMemory();
@@ -1374,6 +1426,22 @@ VkResult VulkanResourcesUtil::ReadFromTensorResource(VkTensorARM                
                                                      std::vector<uint8_t>&         data)
 {
     GFXRECON_ASSERT(tensor != VK_NULL_HANDLE);
+    GFXRECON_ASSERT(desc != nullptr);
+
+    if (desc == nullptr)
+    {
+        return VK_ERROR_INITIALIZATION_FAILED;
+    }
+
+    constexpr VkFormatFeatureFlags2 required_features =
+        VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT;
+    if (!TensorFormatSupportsFeatures(&instance_table_, physical_device_, desc, required_features))
+    {
+        GFXRECON_LOG_WARNING(
+            "Skipping tensor resource snapshot: format does not support tensor transfer source and destination "
+            "operations for the requested tiling");
+        return VK_ERROR_FEATURE_NOT_PRESENT;
+    }
 
     const VkQueue queue = GetQueue(queue_family_index, 0);
     if (queue == VK_NULL_HANDLE)
@@ -1381,7 +1449,10 @@ VkResult VulkanResourcesUtil::ReadFromTensorResource(VkTensorARM                
         return VK_ERROR_INITIALIZATION_FAILED;
     }
 
-    VkResult result = CreateStagingTensor(desc);
+    VkTensorDescriptionARM staging_description = *desc;
+    staging_description.usage                  = VK_TENSOR_USAGE_TRANSFER_DST_BIT_ARM;
+
+    VkResult result = CreateStagingTensor(&staging_description);
     if (result != VK_SUCCESS)
     {
         return result;
@@ -1394,22 +1465,32 @@ VkResult VulkanResourcesUtil::ReadFromTensorResource(VkTensorARM                
         return VK_ERROR_UNKNOWN;
     }
 
-    VkTensorCopyARM copy_region;
-    copy_region.sType          = VK_STRUCTURE_TYPE_COPY_TENSOR_INFO_ARM;
-    copy_region.pNext          = nullptr;
-    copy_region.dimensionCount = 0;
-    copy_region.pSrcOffset     = nullptr;
-    copy_region.pDstOffset     = nullptr;
-    copy_region.pExtent        = nullptr;
+    VkTensorCopyARM copy_region = { VK_STRUCTURE_TYPE_TENSOR_COPY_ARM };
+    copy_region.dimensionCount  = 0;
+    copy_region.pSrcOffset      = nullptr;
+    copy_region.pDstOffset      = nullptr;
+    copy_region.pExtent         = nullptr;
 
-    VkCopyTensorInfoARM copy_info;
-    copy_info.sType       = VK_STRUCTURE_TYPE_COPY_TENSOR_INFO_ARM;
-    copy_info.pNext       = nullptr;
-    copy_info.srcTensor   = tensor;
-    copy_info.dstTensor   = staging_tensor_.tensor;
-    copy_info.regionCount = 1;
-    copy_info.pRegions    = &copy_region;
+    VkCopyTensorInfoARM copy_info = { VK_STRUCTURE_TYPE_COPY_TENSOR_INFO_ARM };
+    copy_info.srcTensor           = tensor;
+    copy_info.dstTensor           = staging_tensor_.tensor;
+    copy_info.regionCount         = 1;
+    copy_info.pRegions            = &copy_region;
     device_table_.CmdCopyTensorARM(command_buffer, &copy_info);
+
+    VkMemoryBarrier memory_barrier = { VK_STRUCTURE_TYPE_MEMORY_BARRIER };
+    memory_barrier.srcAccessMask   = VK_ACCESS_TRANSFER_WRITE_BIT;
+    memory_barrier.dstAccessMask   = VK_ACCESS_HOST_READ_BIT;
+    device_table_.CmdPipelineBarrier(command_buffer,
+                                     VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                     VK_PIPELINE_STAGE_HOST_BIT,
+                                     0,
+                                     1,
+                                     &memory_barrier,
+                                     0,
+                                     nullptr,
+                                     0,
+                                     nullptr);
 
     result = SubmitCommandBuffer(command_buffer, queue);
     if (result != VK_SUCCESS)

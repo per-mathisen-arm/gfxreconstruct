@@ -28,6 +28,7 @@
 #define CATCH_CONFIG_MAIN
 #include <catch2/catch.hpp>
 
+#include "graphics/vulkan_resources_util.h"
 #include "graphics/vulkan_shader_group_handle.h"
 
 TEST_CASE("vulkan_shader_group_handle - create empty handles", "[]")
@@ -58,4 +59,74 @@ TEST_CASE("vulkan_shader_group_handle - create handles", "[]")
     // check hashing via std::hash
     std::hash<gfxrecon::graphics::shader_group_handle_t> hasher;
     REQUIRE(hasher(one) != hasher(two));
+}
+
+TEST_CASE("tensor format features are selected for the requested tiling", "[tensor]")
+{
+    VkTensorFormatPropertiesARM properties = { VK_STRUCTURE_TYPE_TENSOR_FORMAT_PROPERTIES_ARM };
+    properties.optimalTilingTensorFeatures = VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT;
+    properties.linearTilingTensorFeatures  = VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT;
+
+    REQUIRE(gfxrecon::graphics::TensorFormatHasFeatures(
+        properties, VK_TENSOR_TILING_OPTIMAL_ARM, VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT));
+    REQUIRE_FALSE(gfxrecon::graphics::TensorFormatHasFeatures(
+        properties, VK_TENSOR_TILING_OPTIMAL_ARM, VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT));
+    REQUIRE_FALSE(gfxrecon::graphics::TensorFormatHasFeatures(properties,
+                                                              VK_TENSOR_TILING_OPTIMAL_ARM,
+                                                              VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT |
+                                                                  VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT));
+    REQUIRE(gfxrecon::graphics::TensorFormatHasFeatures(
+        properties, VK_TENSOR_TILING_LINEAR_ARM, VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT));
+    REQUIRE_FALSE(gfxrecon::graphics::TensorFormatHasFeatures(
+        properties, VK_TENSOR_TILING_LINEAR_ARM, VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT));
+    REQUIRE_FALSE(gfxrecon::graphics::TensorFormatHasFeatures(
+        properties, VK_TENSOR_TILING_MAX_ENUM_ARM, VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT));
+    REQUIRE_FALSE(gfxrecon::graphics::TensorFormatHasFeatures(properties, VK_TENSOR_TILING_OPTIMAL_ARM, 0));
+
+    properties.optimalTilingTensorFeatures |= VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT;
+    REQUIRE(gfxrecon::graphics::TensorFormatHasFeatures(properties,
+                                                        VK_TENSOR_TILING_OPTIMAL_ARM,
+                                                        VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT |
+                                                            VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT));
+}
+
+TEST_CASE("tensor staging memory selection falls back to plain host-visible memory", "[tensor]")
+{
+    VkPhysicalDeviceMemoryProperties properties{};
+    properties.memoryTypeCount              = 4;
+    properties.memoryTypes[0].propertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    properties.memoryTypes[1].propertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+    properties.memoryTypes[2].propertyFlags =
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    properties.memoryTypes[3].propertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
+
+    uint32_t              index = VK_MAX_MEMORY_TYPES;
+    VkMemoryPropertyFlags flags = 0;
+
+    SECTION("cached memory is preferred")
+    {
+        REQUIRE(gfxrecon::graphics::FindTensorStagingMemoryTypeIndex(properties, 0xf, &index, &flags));
+        REQUIRE(index == 3);
+        REQUIRE(flags == properties.memoryTypes[3].propertyFlags);
+    }
+
+    SECTION("coherent memory is the second choice")
+    {
+        REQUIRE(
+            gfxrecon::graphics::FindTensorStagingMemoryTypeIndex(properties, (1u << 1) | (1u << 2), &index, &flags));
+        REQUIRE(index == 2);
+        REQUIRE(flags == properties.memoryTypes[2].propertyFlags);
+    }
+
+    SECTION("plain host-visible memory is accepted")
+    {
+        REQUIRE(gfxrecon::graphics::FindTensorStagingMemoryTypeIndex(properties, (1u << 1), &index, &flags));
+        REQUIRE(index == 1);
+        REQUIRE(flags == properties.memoryTypes[1].propertyFlags);
+    }
+
+    SECTION("incompatible memory types are rejected")
+    {
+        REQUIRE_FALSE(gfxrecon::graphics::FindTensorStagingMemoryTypeIndex(properties, (1u << 0), &index, &flags));
+    }
 }

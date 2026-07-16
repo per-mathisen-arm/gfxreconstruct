@@ -41,6 +41,7 @@
 #include "generated/generated_vulkan_enum_to_string.h"
 #include "graphics/vulkan_check_buffer_references.h"
 #include "graphics/vulkan_device_util.h"
+#include "graphics/vulkan_resources_util.h"
 #include "graphics/vulkan_struct_get_pnext.h"
 #include "graphics/vulkan_util.h"
 #include "graphics/vulkan_feature_util.h"
@@ -1077,6 +1078,47 @@ VkResult VulkanCaptureManager::OverrideCreateBuffer(VkDevice                    
             }
         }
     }
+    return result;
+}
+
+VkResult VulkanCaptureManager::OverrideCreateTensorARM(VkDevice                     device,
+                                                       const VkTensorCreateInfoARM* pCreateInfo,
+                                                       const VkAllocationCallbacks* pAllocator,
+                                                       VkTensorARM*                 pTensor)
+{
+    auto* device_wrapper       = vulkan_wrappers::GetWrapper<vulkan_wrappers::DeviceWrapper>(device);
+    auto* device_table         = vulkan_wrappers::GetDeviceTable(device);
+    auto  handle_unwrap_memory = VulkanCaptureManager::Get()->GetHandleUnwrapMemory();
+
+    const VkTensorCreateInfoARM* pCreateInfo_unwrapped =
+        vulkan_wrappers::UnwrapStructPtrHandles(pCreateInfo, handle_unwrap_memory);
+
+    VkTensorCreateInfoARM modified_create_info = *pCreateInfo_unwrapped;
+
+    VkTensorDescriptionARM modified_description;
+    if (IsTrimEnabled() && (device_wrapper != nullptr) && (device_wrapper->physical_device != nullptr) &&
+        (pCreateInfo_unwrapped->pDescription != nullptr) &&
+        graphics::TensorFormatSupportsFeatures(device_wrapper->physical_device->layer_table_ref,
+                                               device_wrapper->physical_device->handle,
+                                               pCreateInfo_unwrapped->pDescription,
+                                               VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT |
+                                                   VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT))
+    {
+        modified_description = *pCreateInfo_unwrapped->pDescription;
+        modified_description.usage |= VK_TENSOR_USAGE_TRANSFER_SRC_BIT_ARM;
+        modified_create_info.pDescription = &modified_description;
+    }
+
+    VkResult result = device_table->CreateTensorARM(device, &modified_create_info, pAllocator, pTensor);
+
+    if ((result >= 0) && (pTensor != nullptr))
+    {
+        vulkan_wrappers::CreateWrappedHandle<vulkan_wrappers::DeviceWrapper,
+                                             vulkan_wrappers::NoParentWrapper,
+                                             vulkan_wrappers::TensorARMWrapper>(
+            device, vulkan_wrappers::NoParentWrapper::kHandleValue, pTensor, GetUniqueId);
+    }
+
     return result;
 }
 

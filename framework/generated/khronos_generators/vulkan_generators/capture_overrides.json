@@ -46,6 +46,7 @@
         "vkAssertMemoryARM": "manager->OverrideAssertMemoryARM",
         "vkCmdUpdateBuffer2ARM": "manager->OverrideCmdUpdateBuffer2ARM",
         "vkCmdUpdateMemory2ARM": "manager->OverrideCmdUpdateMemory2ARM",
-        "vkFlushMappedMemoryRanges": "manager->OverrideFlushMappedMemoryRanges"
+        "vkFlushMappedMemoryRanges": "manager->OverrideFlushMappedMemoryRanges",
+        "vkCreateTensorARM": "manager->OverrideCreateTensorARM"
     }
 }

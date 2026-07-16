@@ -26810,16 +26810,8 @@ VKAPI_ATTR VkResult VKAPI_CALL vkCreateTensorARM(
 
     CustomEncoderPreCall<format::ApiCallId::ApiCall_vkCreateTensorARM>::Dispatch(manager, device, pCreateInfo, pAllocator, pTensor);
 
-    auto handle_unwrap_memory = manager->GetHandleUnwrapMemory();
-    const VkTensorCreateInfoARM* pCreateInfo_unwrapped = vulkan_wrappers::UnwrapStructPtrHandles(pCreateInfo, handle_unwrap_memory);
-
-    VkResult result = vulkan_wrappers::GetDeviceTable(device)->CreateTensorARM(device, pCreateInfo_unwrapped, pAllocator, pTensor);
-
-    if (result >= 0)
-    {
-        vulkan_wrappers::CreateWrappedHandle<vulkan_wrappers::DeviceWrapper, vulkan_wrappers::NoParentWrapper, vulkan_wrappers::TensorARMWrapper>(device, vulkan_wrappers::NoParentWrapper::kHandleValue, pTensor, VulkanCaptureManager::GetUniqueId);
-    }
-    else
+    VkResult result = manager->OverrideCreateTensorARM(device, pCreateInfo, pAllocator, pTensor);
+    if (result < 0)
     {
         omit_output_data = true;
     }
