@@ -124,6 +124,20 @@ class VulkanRebindAllocatorTestAccess
             image, memory_offset, device_memory_properties, resource_alloc_info, memory_alloc_info, vma_mem_info);
     }
 
+    static void RemoveDataGraphSessionMemory(VulkanRebindAllocator&        allocator,
+                                             ResourceAllocInfo&            resource_alloc_info,
+                                             VkDataGraphPipelineSessionARM session)
+    {
+        allocator.RemoveVmaMemoryInfo(resource_alloc_info, VK_HANDLE_TO_UINT64(session));
+    }
+
+    static VkResult InitializeDataGraphSessionMemory(VulkanRebindAllocator&        allocator,
+                                                     VkDataGraphPipelineSessionARM session,
+                                                     ResourceAllocInfo&            resource_alloc_info)
+    {
+        return allocator.InitializeDataGraphPipelineSessionMemory(session, &resource_alloc_info);
+    }
+
     static std::vector<StagingResources>& GetStagingResources(VulkanRebindAllocator& allocator)
     {
         return allocator.staging_resources_;
@@ -158,6 +172,7 @@ namespace rebind_allocator_test
 using ::testing::_;
 using ::testing::Invoke;
 using ::testing::Matcher;
+using ::testing::NotNull;
 using ::testing::Return;
 using ::testing::StrictMock;
 using ::testing::Truly;
@@ -190,6 +205,18 @@ class MockVulkanFunctions
                 (VkDevice, const VkSemaphoreCreateInfo*, const VkAllocationCallbacks*, VkSemaphore*));
     MOCK_METHOD(VkResult, CreateFence, (VkDevice, const VkFenceCreateInfo*, const VkAllocationCallbacks*, VkFence*));
     MOCK_METHOD(VkResult, QueueSubmit, (VkQueue, uint32_t, const VkSubmitInfo*, VkFence));
+    MOCK_METHOD(VkResult,
+                GetDataGraphBindPointRequirements,
+                (VkDevice,
+                 const VkDataGraphPipelineSessionBindPointRequirementsInfoARM*,
+                 uint32_t*,
+                 VkDataGraphPipelineSessionBindPointRequirementARM*));
+    MOCK_METHOD(void,
+                GetDataGraphMemoryRequirements,
+                (VkDevice, const VkDataGraphPipelineSessionMemoryRequirementsInfoARM*, VkMemoryRequirements2*));
+    MOCK_METHOD(VkResult,
+                BindDataGraphSessionMemory,
+                (VkDevice, uint32_t, const VkBindDataGraphPipelineSessionMemoryInfoARM*));
 };
 
 class MockVmaBackend : public gfxrecon::decode::VulkanRebindAllocatorTestAccess::VmaBackend
@@ -213,11 +240,40 @@ class MockVmaBackend : public gfxrecon::decode::VulkanRebindAllocatorTestAccess:
                 (VmaAllocator, VkImage, const VmaAllocationCreateInfo*, VmaAllocation*, VmaAllocationInfo*),
                 (override));
     MOCK_METHOD(VkResult, MapMemory, (VmaAllocator, VmaAllocation, void**), (override));
+    MOCK_METHOD(
+        VkResult,
+        AllocateMemory,
+        (VmaAllocator, const VkMemoryRequirements*, const VmaAllocationCreateInfo*, VmaAllocation*, VmaAllocationInfo*),
+        (override));
+    MOCK_METHOD(void, FreeMemory, (VmaAllocator, VmaAllocation), (override));
     MOCK_METHOD(void, FlushAllocation, (VmaAllocator, VmaAllocation, VkDeviceSize, VkDeviceSize), (override));
     MOCK_METHOD(void, UnmapMemory, (VmaAllocator, VmaAllocation), (override));
 };
 
 thread_local MockVulkanFunctions* g_mock_vulkan_functions = nullptr;
+
+VKAPI_ATTR VkResult VKAPI_CALL
+GetDataGraphBindPointRequirementsThunk(VkDevice                                                      device,
+                                       const VkDataGraphPipelineSessionBindPointRequirementsInfoARM* info,
+                                       uint32_t*                                                     requirement_count,
+                                       VkDataGraphPipelineSessionBindPointRequirementARM*            requirements)
+{
+    return g_mock_vulkan_functions->GetDataGraphBindPointRequirements(device, info, requirement_count, requirements);
+}
+
+VKAPI_ATTR void VKAPI_CALL
+GetDataGraphMemoryRequirementsThunk(VkDevice                                                   device,
+                                    const VkDataGraphPipelineSessionMemoryRequirementsInfoARM* info,
+                                    VkMemoryRequirements2*                                     memory_requirements)
+{
+    g_mock_vulkan_functions->GetDataGraphMemoryRequirements(device, info, memory_requirements);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL BindDataGraphSessionMemoryThunk(
+    VkDevice device, uint32_t bind_info_count, const VkBindDataGraphPipelineSessionMemoryInfoARM* bind_infos)
+{
+    return g_mock_vulkan_functions->BindDataGraphSessionMemory(device, bind_info_count, bind_infos);
+}
 
 VKAPI_ATTR VkResult VKAPI_CALL AllocateCommandBuffersThunk(VkDevice                           device,
                                                            const VkCommandBufferAllocateInfo* allocate_info,
@@ -1140,4 +1196,111 @@ TEST_CASE("AllocateMemoryForImage keeps trace-like device-local host-visible opt
     REQUIRE(result == VK_SUCCESS);
     REQUIRE(vma_mem_info != nullptr);
     REQUIRE(captured_create_info.usage == VMA_MEMORY_USAGE_GPU_ONLY);
+}
+
+TEST_CASE("Data graph rebind synthesizes the replay session binding set", "[decode][rebind][data-graph]")
+{
+    using TestAccess = gfxrecon::decode::VulkanRebindAllocatorTestAccess;
+
+    StrictMock<MockVulkanFunctions>         mock_vulkan_functions;
+    StrictMock<MockVmaBackend>              mock_vma_backend;
+    gfxrecon::decode::VulkanRebindAllocator allocator;
+
+    const VkDevice device      = MakeHandle<VkDevice>(0x1001);
+    const auto     session     = MakeHandle<VkDataGraphPipelineSessionARM>(0x2001);
+    const auto     allocation0 = reinterpret_cast<VmaAllocation>(static_cast<uintptr_t>(0x3001));
+    const auto     allocation1 = reinterpret_cast<VmaAllocation>(static_cast<uintptr_t>(0x3002));
+    const auto     memory0     = MakeHandle<VkDeviceMemory>(0x4001);
+    const auto     memory1     = MakeHandle<VkDeviceMemory>(0x4002);
+
+    gfxrecon::decode::VulkanResourceAllocator::Functions functions{};
+    functions.get_data_graph_pipeline_session_bind_point_requirements = &GetDataGraphBindPointRequirementsThunk;
+    functions.get_data_graph_pipeline_session_memory_requirements     = &GetDataGraphMemoryRequirementsThunk;
+    functions.bind_data_graph_pipeline_session_memory                 = &BindDataGraphSessionMemoryThunk;
+
+    TestAccess::SetState(allocator, device, VK_NULL_HANDLE, VK_NULL_HANDLE, functions, &mock_vma_backend);
+    const auto memory_properties = MakeMemoryProperties({ VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT });
+    TestAccess::SetMemoryProperties(allocator, memory_properties, memory_properties);
+    g_mock_vulkan_functions = &mock_vulkan_functions;
+
+    auto resource_alloc_info = TestAccess::MakeResourceAllocInfo(VK_OBJECT_TYPE_DATA_GRAPH_PIPELINE_SESSION_ARM);
+
+    EXPECT_CALL(mock_vulkan_functions, GetDataGraphBindPointRequirements(device, _, _, nullptr))
+        .WillOnce(Invoke([](VkDevice,
+                            const VkDataGraphPipelineSessionBindPointRequirementsInfoARM*,
+                            uint32_t* requirement_count,
+                            VkDataGraphPipelineSessionBindPointRequirementARM*) {
+            *requirement_count = 1;
+            return VK_SUCCESS;
+        }));
+    EXPECT_CALL(mock_vulkan_functions, GetDataGraphBindPointRequirements(device, _, _, NotNull()))
+        .WillOnce(Invoke([](VkDevice,
+                            const VkDataGraphPipelineSessionBindPointRequirementsInfoARM*,
+                            uint32_t*                                          requirement_count,
+                            VkDataGraphPipelineSessionBindPointRequirementARM* requirements) {
+            REQUIRE(*requirement_count == 1);
+            requirements[0].bindPoint     = VK_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_OPTICAL_FLOW_CACHE_ARM;
+            requirements[0].bindPointType = VK_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_TYPE_MEMORY_ARM;
+            requirements[0].numObjects    = 2;
+            return VK_SUCCESS;
+        }));
+    EXPECT_CALL(mock_vulkan_functions, GetDataGraphMemoryRequirements(device, _, _))
+        .Times(2)
+        .WillRepeatedly(Invoke([](VkDevice,
+                                  const VkDataGraphPipelineSessionMemoryRequirementsInfoARM* info,
+                                  VkMemoryRequirements2*                                     requirements) {
+            REQUIRE(info->bindPoint == VK_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_OPTICAL_FLOW_CACHE_ARM);
+            REQUIRE(info->objectIndex < 2);
+            requirements->memoryRequirements = MakeMemoryRequirements({ 0 }, 128, 32);
+        }));
+
+    uint32_t allocation_index = 0;
+    EXPECT_CALL(mock_vma_backend, AllocateMemory(_, _, _, _, _))
+        .Times(2)
+        .WillRepeatedly(Invoke([&](VmaAllocator,
+                                   const VkMemoryRequirements*,
+                                   const VmaAllocationCreateInfo* create_info,
+                                   VmaAllocation*                 out_allocation,
+                                   VmaAllocationInfo*             allocation_info) {
+            REQUIRE(create_info->memoryTypeBits == 1);
+            const bool first              = (allocation_index++ == 0);
+            *out_allocation               = first ? allocation0 : allocation1;
+            allocation_info->deviceMemory = first ? memory0 : memory1;
+            allocation_info->memoryType   = 0;
+            allocation_info->offset       = first ? 0 : 32;
+            allocation_info->size         = 128;
+            return VK_SUCCESS;
+        }));
+    EXPECT_CALL(mock_vulkan_functions, BindDataGraphSessionMemory(device, 2, _))
+        .WillOnce(Invoke([&](VkDevice, uint32_t, const VkBindDataGraphPipelineSessionMemoryInfoARM* bind_infos) {
+            REQUIRE(bind_infos[0].session == session);
+            REQUIRE(bind_infos[0].bindPoint == VK_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_OPTICAL_FLOW_CACHE_ARM);
+            REQUIRE(bind_infos[0].objectIndex == 0);
+            REQUIRE(bind_infos[0].memory == memory0);
+            REQUIRE(bind_infos[1].objectIndex == 1);
+            REQUIRE(bind_infos[1].memory == memory1);
+            return VK_SUCCESS;
+        }));
+
+    VkBindDataGraphPipelineSessionMemoryInfoARM captured_bind{
+        VK_STRUCTURE_TYPE_BIND_DATA_GRAPH_PIPELINE_SESSION_MEMORY_INFO_ARM
+    };
+    captured_bind.session     = session;
+    captured_bind.bindPoint   = VK_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_TRANSIENT_ARM;
+    captured_bind.objectIndex = 0;
+    captured_bind.memory      = MakeHandle<VkDeviceMemory>(0x9999);
+
+    REQUIRE(TestAccess::InitializeDataGraphSessionMemory(allocator, session, resource_alloc_info) == VK_SUCCESS);
+
+    // Captured bind calls are completely ignored: no arguments are read and output storage is not modified.
+    VkMemoryPropertyFlags memory_property_flags = 0x1234;
+    REQUIRE(allocator.BindDataGraphPipelineSessionMemory(1, &captured_bind, nullptr, nullptr, &memory_property_flags) ==
+            VK_SUCCESS);
+    REQUIRE(memory_property_flags == 0x1234);
+    REQUIRE(allocator.BindDataGraphPipelineSessionMemory(99, nullptr, nullptr, nullptr, nullptr) == VK_SUCCESS);
+
+    EXPECT_CALL(mock_vma_backend, FreeMemory(_, allocation0));
+    EXPECT_CALL(mock_vma_backend, FreeMemory(_, allocation1));
+    TestAccess::RemoveDataGraphSessionMemory(allocator, resource_alloc_info, session);
+    g_mock_vulkan_functions = nullptr;
 }

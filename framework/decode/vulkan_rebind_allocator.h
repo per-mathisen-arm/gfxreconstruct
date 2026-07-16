@@ -520,6 +520,13 @@ class VulkanRebindAllocator : public VulkanResourceAllocator
                                                 VmaAllocation*                 allocation,
                                                 VmaAllocationInfo*             allocation_info) = 0;
 
+        virtual VkResult AllocateMemory(VmaAllocator                   allocator,
+                                        const VkMemoryRequirements*    memory_requirements,
+                                        const VmaAllocationCreateInfo* allocation_create_info,
+                                        VmaAllocation*                 allocation,
+                                        VmaAllocationInfo*             allocation_info) = 0;
+
+        virtual void     FreeMemory(VmaAllocator allocator, VmaAllocation allocation)                       = 0;
         virtual VkResult MapMemory(VmaAllocator allocator, VmaAllocation allocation, void** mapped_pointer) = 0;
 
         virtual void
@@ -795,6 +802,9 @@ class VulkanRebindAllocator : public VulkanResourceAllocator
                                      MemoryAllocInfo&                        memory_alloc_info,
                                      VmaMemoryInfo**                         vma_mem_info);
 
+    VkResult InitializeDataGraphPipelineSessionMemory(VkDataGraphPipelineSessionARM session,
+                                                      ResourceAllocInfo*            resource_alloc_info);
+
     // If it's bind by vma function, like vmaBindBufferMemory2, vmaBindBufferImage2, get the offset from it.
     VkDeviceSize GetRebindOffsetFromVMA(VkDeviceSize original_offset, const VmaMemoryInfo& vma_mem_info);
 
@@ -899,6 +909,13 @@ class VulkanRebindAllocator : public VulkanResourceAllocator
                                         VmaAllocation*                 allocation,
                                         VmaAllocationInfo*             allocation_info) override;
 
+        VkResult AllocateMemory(VmaAllocator                   allocator,
+                                const VkMemoryRequirements*    memory_requirements,
+                                const VmaAllocationCreateInfo* allocation_create_info,
+                                VmaAllocation*                 allocation,
+                                VmaAllocationInfo*             allocation_info) override;
+
+        void     FreeMemory(VmaAllocator allocator, VmaAllocation allocation) override;
         VkResult MapMemory(VmaAllocator allocator, VmaAllocation allocation, void** mapped_pointer) override;
 
         void FlushAllocation(VmaAllocator  allocator,

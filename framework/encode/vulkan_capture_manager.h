@@ -43,6 +43,7 @@
 #include "vulkan/vulkan.h"
 #include "vulkan/vulkan_core.h"
 
+#include <algorithm>
 #include <atomic>
 #include <cassert>
 #include <memory>
@@ -1993,21 +1994,48 @@ class VulkanCaptureManager : public ApiCaptureManager
 
   public:
     void
-    PostProcess_vkBindDataGraphPipelineSessionMemoryARM(VkResult,
+    PostProcess_vkBindDataGraphPipelineSessionMemoryARM(VkResult result,
                                                         VkDevice device,
                                                         uint32_t bindInfoCount,
                                                         const VkBindDataGraphPipelineSessionMemoryInfoARM* pBindInfos)
     {
-        if (!IsCaptureModeTrack())
+        if ((result != VK_SUCCESS) || !IsCaptureModeTrack())
+        {
             return;
+        }
 
-        for (int i = 0; i < bindInfoCount; i++)
+        for (uint32_t i = 0; i < bindInfoCount; i++)
         {
             state_tracker_->TrackDataGraphPipelineSessionMemoryBinding(
                 device, pBindInfos[i].session, pBindInfos[i].memory, pBindInfos[i].memoryOffset);
-            auto wrapper          = GetWrapper<DataGraphPipelineSessionARMWrapper>(pBindInfos[i].session);
-            wrapper->object_index = pBindInfos[i].objectIndex;
-            wrapper->bind_point   = pBindInfos[i].bindPoint;
+
+            auto* wrapper =
+                vulkan_wrappers::GetWrapper<vulkan_wrappers::DataGraphPipelineSessionARMWrapper>(pBindInfos[i].session);
+            GFXRECON_ASSERT(wrapper != nullptr);
+
+            if (wrapper != nullptr)
+            {
+                const format::HandleId memory_id =
+                    vulkan_wrappers::GetWrappedId<vulkan_wrappers::DeviceMemoryWrapper>(pBindInfos[i].memory);
+                auto binding =
+                    std::find_if(wrapper->memory_bindings.begin(),
+                                 wrapper->memory_bindings.end(),
+                                 [&](const vulkan_wrappers::DataGraphPipelineSessionARMWrapper::MemoryBinding& entry) {
+                                     return (entry.bind_point == pBindInfos[i].bindPoint) &&
+                                            (entry.object_index == pBindInfos[i].objectIndex);
+                                 });
+
+                if (binding != wrapper->memory_bindings.end())
+                {
+                    binding->bind_memory_id = memory_id;
+                    binding->bind_offset    = pBindInfos[i].memoryOffset;
+                }
+                else
+                {
+                    wrapper->memory_bindings.push_back(
+                        { pBindInfos[i].bindPoint, pBindInfos[i].objectIndex, memory_id, pBindInfos[i].memoryOffset });
+                }
+            }
         }
     }
 
