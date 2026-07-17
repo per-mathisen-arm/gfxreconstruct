@@ -81,6 +81,10 @@ class VulkanAddressReplacerBase
                                          const decode::VulkanDeviceAddressTracker& address_tracker)
     {}
 
+    virtual void ProcessCmdBindPipeline(VulkanCommandBufferInfo*                  command_buffer_info,
+                                        const decode::VulkanDeviceAddressTracker& address_tracker)
+    {}
+
     virtual void ProcessCmdBindDescriptorSets(VulkanCommandBufferInfo*               command_buffer_info,
                                               VkPipelineBindPoint                    pipelineBindPoint,
                                               uint32_t                               firstSet,

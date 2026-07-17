@@ -1574,11 +1574,17 @@ void VulkanStateTracker::TrackUpdateDescriptorSetWithTemplate(VkDescriptorSet   
                 assert((immutable_image && binding.images != nullptr) ||
                        (!immutable_image && binding.storage_images != nullptr));
 
-                format::HandleId*      dst_sampler_ids = &binding.sampler_ids[current_array_element];
-                format::HandleId*      dst_image_ids   = &binding.handle_ids[current_array_element];
-                VkDescriptorImageInfo* dst_info        = immutable_image ? &binding.images[current_array_element]
-                                                                         : &binding.storage_images[current_array_element];
-                const uint8_t*         src_address     = bytes + current_offset;
+                format::HandleId* dst_sampler_ids = nullptr;
+                if (binding.type == VK_DESCRIPTOR_TYPE_SAMPLER ||
+                    binding.type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+                {
+                    GFXRECON_ASSERT(binding.sampler_ids != nullptr);
+                    dst_sampler_ids = &binding.sampler_ids[current_array_element];
+                }
+                format::HandleId*      dst_image_ids = &binding.handle_ids[current_array_element];
+                VkDescriptorImageInfo* dst_info      = immutable_image ? &binding.images[current_array_element]
+                                                                       : &binding.storage_images[current_array_element];
+                const uint8_t*         src_address   = bytes + current_offset;
 
                 for (uint32_t i = 0; i < current_writes; ++i)
                 {
@@ -1696,8 +1702,6 @@ void VulkanStateTracker::TrackUpdateDescriptorSetWithTemplate(VkDescriptorSet   
             {
                 auto& binding = wrapper->bindings[current_binding];
 
-                assert(binding.uniform_texel_buffer_views != nullptr);
-
                 // Check count for consecutive updates.
                 uint32_t current_writes = std::min(current_count, (binding.count - current_array_element));
 
@@ -1709,6 +1713,9 @@ void VulkanStateTracker::TrackUpdateDescriptorSetWithTemplate(VkDescriptorSet   
                     GFXRECON_LOG_WARNING("%s() Descriptors mismatch: %u != %u", __func__, binding.type, entry.type);
                 }
                 const bool immutable_buffer = binding.type == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
+
+                GFXRECON_ASSERT(immutable_buffer ? binding.uniform_texel_buffer_views != nullptr
+                                                 : binding.storage_texel_buffer_views != nullptr);
 
                 format::HandleId* dst_view_ids = &binding.handle_ids[current_array_element];
                 VkBufferView*  dst_info = immutable_buffer ? &binding.uniform_texel_buffer_views[current_array_element]
