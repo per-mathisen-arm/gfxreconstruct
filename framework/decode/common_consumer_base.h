@@ -32,6 +32,7 @@
 #include "decode/pointer_decoder.h"
 #include "decode/string_decoder.h"
 #include "decode/struct_pointer_decoder.h"
+#include "graphics/fps_info.h"
 #include "util/defines.h"
 
 #include <numeric>
@@ -62,6 +63,8 @@ class CommonConsumerBase : public MetadataConsumerBase, public MarkerConsumerBas
     virtual void PushRecaptureHandleIds(const format::HandleId* id_array, uint64_t id_count) {}
     virtual void ClearRecaptureHandleIds() {}
     virtual bool IsRecapture() { return false; }
+
+    virtual void SetFpsInfo(graphics::FpsInfo* fps_info) {}
 
   protected:
     uint64_t frame_number_{ 0 };
