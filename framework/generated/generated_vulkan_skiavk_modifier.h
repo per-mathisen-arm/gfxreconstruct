@@ -4742,6 +4742,31 @@ class VulkanSkiaModifier : public util::VulkanModifierBase
         const ApiCallInfo&                          call_info,
         format::HandleId                            commandBuffer,
         uint32_t                                    primitiveRestartIndex){ CheckSkiavk(commandBuffer);}
+    virtual void Process_vkCmdUpdateBuffer2ARM(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        StructPointerDecoder<Decoded_VkUpdateBufferInfoARM>* pInfo){ CheckSkiavk(commandBuffer);}
+
+    virtual void Process_vkCmdUpdateMemory2ARM(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        StructPointerDecoder<Decoded_VkUpdateMemoryInfoARM>* pInfo){ CheckSkiavk(commandBuffer);}
+
+    virtual void Process_vkAssertBufferARM(
+        const ApiCallInfo&                          call_info,
+        VkResult                                    returnValue,
+        format::HandleId                            device,
+        StructPointerDecoder<Decoded_VkUpdateBufferInfoARM>* pInfo,
+        PointerDecoder<uint32_t>*                   checksum,
+        StringDecoder*                              comment){ CheckSkiavk(device);}
+
+    virtual void Process_vkAssertMemoryARM(
+        const ApiCallInfo&                          call_info,
+        VkResult                                    returnValue,
+        format::HandleId                            device,
+        StructPointerDecoder<Decoded_VkUpdateMemoryInfoARM>* pInfo,
+        PointerDecoder<uint32_t>*                   checksum,
+        StringDecoder*                              comment){ CheckSkiavk(device);}
     virtual void Process_vkCreateAccelerationStructureKHR(
         const ApiCallInfo&                          call_info,
         VkResult                                    returnValue,

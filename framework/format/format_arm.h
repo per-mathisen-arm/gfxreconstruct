@@ -54,6 +54,7 @@ inline constexpr format::MetaDataType kFillMemoryResourceAddressCommand        =
 inline constexpr format::MetaDataType kGetDx12AccelerationStructureSizeCommand = CreateMetaDataTypeARM(5);
 inline constexpr format::MetaDataType kMemoryRequirementsCommand               = CreateMetaDataTypeARM(6);
 inline constexpr format::MetaDataType kDx12ResourceAliasingCommand             = CreateMetaDataTypeARM(7);
+inline constexpr format::MetaDataType kTraceHelpersDataCommand                 = CreateMetaDataTypeARM(8);
 
 // Enums used in ARM builds up to r4p1 release that are not reserved upstream
 enum class ConflictingMetaDataTypes : MetaDataTypeUnderlyingType

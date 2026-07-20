@@ -12916,6 +12916,65 @@ void MapStructHandles(Decoded_VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT* 
     }
 }
 
+void MapStructHandles(Decoded_VkPhysicalDeviceExplicitHostUpdatesFeaturesARM* wrapper, const CommonObjectInfoTable& object_info_table)
+{
+    if (wrapper != nullptr)
+    {
+        if (wrapper->pNext)
+        {
+            MapPNextStructHandles(wrapper->pNext, object_info_table);
+        }
+    }
+}
+
+void MapStructHandles(Decoded_VkFlushRangesFlagsARM* wrapper, const CommonObjectInfoTable& object_info_table)
+{
+    if (wrapper != nullptr)
+    {
+        if (wrapper->pNext)
+        {
+            MapPNextStructHandles(wrapper->pNext, object_info_table);
+        }
+    }
+}
+
+void MapStructHandles(Decoded_VkMarkedOffsetsARM* wrapper, const CommonObjectInfoTable& object_info_table)
+{
+    if (wrapper != nullptr)
+    {
+        if (wrapper->pNext)
+        {
+            MapPNextStructHandles(wrapper->pNext, object_info_table);
+        }
+    }
+}
+
+void MapStructHandles(Decoded_VkUpdateBufferInfoARM* wrapper, const CommonObjectInfoTable& object_info_table)
+{
+    if ((wrapper != nullptr) && (wrapper->decoded_value != nullptr))
+    {
+        VkUpdateBufferInfoARM* value = wrapper->decoded_value;
+
+        value->dstBuffer = handle_mapping::MapHandle<VulkanBufferInfo>(wrapper->dstBuffer, object_info_table, &CommonObjectInfoTable::GetVkBufferInfo);
+
+        if (wrapper->pNext)
+        {
+            MapPNextStructHandles(wrapper->pNext, object_info_table);
+        }
+    }
+}
+
+void MapStructHandles(Decoded_VkUpdateMemoryInfoARM* wrapper, const CommonObjectInfoTable& object_info_table)
+{
+    if (wrapper != nullptr)
+    {
+        if (wrapper->pNext)
+        {
+            MapPNextStructHandles(wrapper->pNext, object_info_table);
+        }
+    }
+}
+
 void MapStructHandles(Decoded_VkAccelerationStructureGeometryTrianglesDataKHR* wrapper, const CommonObjectInfoTable& object_info_table)
 {
     if (wrapper != nullptr)
@@ -13931,6 +13990,9 @@ void MapPNextStructHandles(PNextNode* pnext, const CommonObjectInfoTable& object
     case VK_STRUCTURE_TYPE_FILTER_CUBIC_IMAGE_VIEW_IMAGE_FORMAT_PROPERTIES_EXT:
         MapStructHandles(reinterpret_cast<Decoded_VkFilterCubicImageViewImageFormatPropertiesEXT*>(wrapper), object_info_table);
         break;
+    case VK_STRUCTURE_TYPE_FLUSH_RANGES_FLAGS_ARM:
+        MapStructHandles(reinterpret_cast<Decoded_VkFlushRangesFlagsARM*>(wrapper), object_info_table);
+        break;
     case VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2:
         MapStructHandles(reinterpret_cast<Decoded_VkFormatProperties2*>(wrapper), object_info_table);
         break;
@@ -14194,6 +14256,9 @@ void MapPNextStructHandles(PNextNode* pnext, const CommonObjectInfoTable& object
         break;
     case VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE:
         MapStructHandles(reinterpret_cast<Decoded_VkMappedMemoryRange*>(wrapper), object_info_table);
+        break;
+    case VK_STRUCTURE_TYPE_MARKED_OFFSETS_ARM:
+        MapStructHandles(reinterpret_cast<Decoded_VkMarkedOffsetsARM*>(wrapper), object_info_table);
         break;
     case VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO:
         MapStructHandles(reinterpret_cast<Decoded_VkMemoryAllocateFlagsInfo*>(wrapper), object_info_table);
@@ -14626,6 +14691,9 @@ void MapPNextStructHandles(PNextNode* pnext, const CommonObjectInfoTable& object
         break;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXCLUSIVE_SCISSOR_FEATURES_NV:
         MapStructHandles(reinterpret_cast<Decoded_VkPhysicalDeviceExclusiveScissorFeaturesNV*>(wrapper), object_info_table);
+        break;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXPLICIT_HOST_UPDATES_FEATURES_ARM:
+        MapStructHandles(reinterpret_cast<Decoded_VkPhysicalDeviceExplicitHostUpdatesFeaturesARM*>(wrapper), object_info_table);
         break;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_2_FEATURES_EXT:
         MapStructHandles(reinterpret_cast<Decoded_VkPhysicalDeviceExtendedDynamicState2FeaturesEXT*>(wrapper), object_info_table);
@@ -16165,6 +16233,12 @@ void MapPNextStructHandles(PNextNode* pnext, const CommonObjectInfoTable& object
         break;
     case VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO:
         MapStructHandles(reinterpret_cast<Decoded_VkTimelineSemaphoreSubmitInfo*>(wrapper), object_info_table);
+        break;
+    case VK_STRUCTURE_TYPE_UPDATE_BUFFER_INFO_ARM:
+        MapStructHandles(reinterpret_cast<Decoded_VkUpdateBufferInfoARM*>(wrapper), object_info_table);
+        break;
+    case VK_STRUCTURE_TYPE_UPDATE_MEMORY_INFO_ARM:
+        MapStructHandles(reinterpret_cast<Decoded_VkUpdateMemoryInfoARM*>(wrapper), object_info_table);
         break;
     case VK_STRUCTURE_TYPE_VALIDATION_CACHE_CREATE_INFO_EXT:
         MapStructHandles(reinterpret_cast<Decoded_VkValidationCacheCreateInfoEXT*>(wrapper), object_info_table);

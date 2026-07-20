@@ -97,6 +97,9 @@ class ApiDecoder
     virtual void DispatchFixShaderGroupHandleCommand(const format::FixShaderGroupHandleCommandHeader&     header,
                                                      const std::vector<format::ShaderHandleLocationInfo>& infos) = 0;
 
+    virtual void DispatchTraceHelpersDataCommand(const format::TraceHelpersDataCommandHeader&      header,
+                                                 const std::vector<format::TraceHelpersDataInfos>& infos) = 0;
+
     virtual void DispatchFixDescriptorDataCommand(const format::FixDescriptorDataCommandHeader&          header,
                                                   const std::vector<format::DescriptorDataLocationInfo>& info) = 0;
 

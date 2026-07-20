@@ -2252,6 +2252,16 @@ void TrackCmdExecuteGeneratedCommandsEXTHandles(vulkan_wrappers::CommandBufferWr
     }
 }
 
+void TrackCmdUpdateBuffer2ARMHandles(vulkan_wrappers::CommandBufferWrapper* wrapper, const VkUpdateBufferInfoARM* pInfo)
+{
+    assert(wrapper != nullptr);
+
+    if (pInfo != nullptr)
+    {
+        if(pInfo->dstBuffer != VK_NULL_HANDLE) wrapper->command_handles[vulkan_state_info::CommandHandleType::BufferHandle].insert(vulkan_wrappers::GetWrappedId<vulkan_wrappers::BufferWrapper>(pInfo->dstBuffer));
+    }
+}
+
 void TrackCmdBuildAccelerationStructuresKHRHandles(vulkan_wrappers::CommandBufferWrapper* wrapper, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos)
 {
     assert(wrapper != nullptr);

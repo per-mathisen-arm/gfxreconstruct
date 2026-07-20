@@ -2144,6 +2144,18 @@ void Process_vkCmdSetPrimitiveRestartIndexEXT(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    primitiveRestartIndex);
 
+void Process_vkCmdUpdateBuffer2ARM(
+    const ApiCallInfo&                          call_info,
+    PFN_vkCmdUpdateBuffer2ARM                   func,
+    VkCommandBuffer                             commandBuffer,
+    const VkUpdateBufferInfoARM*                pInfo);
+
+void Process_vkCmdUpdateMemory2ARM(
+    const ApiCallInfo&                          call_info,
+    PFN_vkCmdUpdateMemory2ARM                   func,
+    VkCommandBuffer                             commandBuffer,
+    const VkUpdateMemoryInfoARM*                pInfo);
+
 void Process_vkCmdBuildAccelerationStructuresKHR(
     const ApiCallInfo&                          call_info,
     PFN_vkCmdBuildAccelerationStructuresKHR     func,

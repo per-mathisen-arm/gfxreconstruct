@@ -145,6 +145,15 @@ void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_VkDeviceOrHostAddr
     FieldToJson(jdata, 0, data);
 }
 
+void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_VkMarkingSubTypeARM* data)
+{
+    if (data && data->decoded_value)
+    {
+        const auto& decoded_value = *data->decoded_value;
+        FieldToJsonAsHex(jdata["reserved"], decoded_value.reserved);
+    }
+}
+
 void FieldToJson(nlohmann::ordered_json&                              jdata,
                  VkPipelineExecutableStatisticFormatKHR               discriminant,
                  const Decoded_VkPipelineExecutableStatisticValueKHR* data)

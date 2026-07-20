@@ -12266,6 +12266,58 @@ struct Decoded_VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT
     PNextNode* pNext{ nullptr };
 };
 
+struct Decoded_VkPhysicalDeviceExplicitHostUpdatesFeaturesARM
+{
+    using struct_type = VkPhysicalDeviceExplicitHostUpdatesFeaturesARM;
+
+    VkPhysicalDeviceExplicitHostUpdatesFeaturesARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+};
+
+struct Decoded_VkFlushRangesFlagsARM
+{
+    using struct_type = VkFlushRangesFlagsARM;
+
+    VkFlushRangesFlagsARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+};
+
+struct Decoded_VkMarkedOffsetsARM
+{
+    using struct_type = VkMarkedOffsetsARM;
+
+    VkMarkedOffsetsARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+    PointerDecoder<VkMarkingTypeARM> pMarkingTypes;
+    StructPointerDecoder<Decoded_VkMarkingSubTypeARM>* pSubTypes{ nullptr };
+    PointerDecoder<VkDeviceSize> pOffsets;
+};
+
+struct Decoded_VkUpdateBufferInfoARM
+{
+    using struct_type = VkUpdateBufferInfoARM;
+
+    VkUpdateBufferInfoARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+    format::HandleId dstBuffer{ format::kNullHandleId };
+    PointerDecoder<uint8_t> pData;
+};
+
+struct Decoded_VkUpdateMemoryInfoARM
+{
+    using struct_type = VkUpdateMemoryInfoARM;
+
+    VkUpdateMemoryInfoARM* decoded_value{ nullptr };
+
+    PNextNode* pNext{ nullptr };
+    StructPointerDecoder<Decoded_VkDeviceAddressRangeKHR>* pDstRange{ nullptr };
+    PointerDecoder<uint8_t> pData;
+};
+
 struct Decoded_VkAccelerationStructureBuildRangeInfoKHR
 {
     using struct_type = VkAccelerationStructureBuildRangeInfoKHR;

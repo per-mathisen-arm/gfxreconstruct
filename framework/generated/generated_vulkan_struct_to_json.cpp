@@ -19487,6 +19487,80 @@ void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_VkPhysicalDevicePr
     }
 }
 
+void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_VkPhysicalDeviceExplicitHostUpdatesFeaturesARM* data)
+{
+    if (data && data->decoded_value)
+    {
+        const VkPhysicalDeviceExplicitHostUpdatesFeaturesARM& decoded_value = *data->decoded_value;
+        const Decoded_VkPhysicalDeviceExplicitHostUpdatesFeaturesARM& meta_struct = *data;
+
+        jdata["sType"] = decoded_value.sType;
+        jdata["explicitHostUpdates"] = static_cast<bool>(decoded_value.explicitHostUpdates);
+        FieldToJson(jdata["pNext"], meta_struct.pNext);
+    }
+}
+
+void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_VkFlushRangesFlagsARM* data)
+{
+    if (data && data->decoded_value)
+    {
+        const VkFlushRangesFlagsARM& decoded_value = *data->decoded_value;
+        const Decoded_VkFlushRangesFlagsARM& meta_struct = *data;
+
+        jdata["sType"] = decoded_value.sType;
+        jdata["flags"] = VkFlushOperationFlagsARM_t{decoded_value.flags};
+        FieldToJson(jdata["pNext"], meta_struct.pNext);
+    }
+}
+
+void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_VkMarkedOffsetsARM* data)
+{
+    if (data && data->decoded_value)
+    {
+        const VkMarkedOffsetsARM& decoded_value = *data->decoded_value;
+        const Decoded_VkMarkedOffsetsARM& meta_struct = *data;
+
+        jdata["sType"] = decoded_value.sType;
+        jdata["count"] = decoded_value.count;
+        FieldToJson(jdata["pMarkingTypes"], meta_struct.pMarkingTypes);
+        FieldToJson(jdata["pSubTypes"], meta_struct.pSubTypes);
+        FieldToJson(jdata["pOffsets"], meta_struct.pOffsets);
+        FieldToJson(jdata["pNext"], meta_struct.pNext);
+    }
+}
+
+void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_VkUpdateBufferInfoARM* data)
+{
+    if (data && data->decoded_value)
+    {
+        const VkUpdateBufferInfoARM& decoded_value = *data->decoded_value;
+        const Decoded_VkUpdateBufferInfoARM& meta_struct = *data;
+
+        jdata["sType"] = decoded_value.sType;
+        HandleToJson(jdata["dstBuffer"], meta_struct.dstBuffer);
+        jdata["dstOffset"] = decoded_value.dstOffset;
+        jdata["dataSize"] = decoded_value.dataSize;
+        FieldToJson(jdata["pData"], meta_struct.pData);
+        FieldToJson(jdata["pNext"], meta_struct.pNext);
+    }
+}
+
+void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_VkUpdateMemoryInfoARM* data)
+{
+    if (data && data->decoded_value)
+    {
+        const VkUpdateMemoryInfoARM& decoded_value = *data->decoded_value;
+        const Decoded_VkUpdateMemoryInfoARM& meta_struct = *data;
+
+        jdata["sType"] = decoded_value.sType;
+        FieldToJson(jdata["pDstRange"], meta_struct.pDstRange);
+        jdata["dstFlags"] = VkAddressCommandFlagsKHR_t{decoded_value.dstFlags};
+        jdata["dataSize"] = decoded_value.dataSize;
+        FieldToJson(jdata["pData"], meta_struct.pData);
+        FieldToJson(jdata["pNext"], meta_struct.pNext);
+    }
+}
+
 void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_VkAccelerationStructureBuildRangeInfoKHR* data)
 {
     if (data && data->decoded_value)
@@ -21647,6 +21721,13 @@ void FieldToJson(nlohmann::ordered_json& jdata, const PNextNode* data)
                 break;
             }
 
+            case VK_STRUCTURE_TYPE_FLUSH_RANGES_FLAGS_ARM:
+            {
+                const auto* pnext = reinterpret_cast<const Decoded_VkFlushRangesFlagsARM*>(data->GetMetaStructPointer());
+                FieldToJson(jdata, pnext);
+                break;
+            }
+
             case VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2:
             {
                 const auto* pnext = reinterpret_cast<const Decoded_VkFormatProperties2*>(data->GetMetaStructPointer());
@@ -22259,6 +22340,13 @@ void FieldToJson(nlohmann::ordered_json& jdata, const PNextNode* data)
             case VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE:
             {
                 const auto* pnext = reinterpret_cast<const Decoded_VkMappedMemoryRange*>(data->GetMetaStructPointer());
+                FieldToJson(jdata, pnext);
+                break;
+            }
+
+            case VK_STRUCTURE_TYPE_MARKED_OFFSETS_ARM:
+            {
+                const auto* pnext = reinterpret_cast<const Decoded_VkMarkedOffsetsARM*>(data->GetMetaStructPointer());
                 FieldToJson(jdata, pnext);
                 break;
             }
@@ -23267,6 +23355,13 @@ void FieldToJson(nlohmann::ordered_json& jdata, const PNextNode* data)
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXCLUSIVE_SCISSOR_FEATURES_NV:
             {
                 const auto* pnext = reinterpret_cast<const Decoded_VkPhysicalDeviceExclusiveScissorFeaturesNV*>(data->GetMetaStructPointer());
+                FieldToJson(jdata, pnext);
+                break;
+            }
+
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXPLICIT_HOST_UPDATES_FEATURES_ARM:
+            {
+                const auto* pnext = reinterpret_cast<const Decoded_VkPhysicalDeviceExplicitHostUpdatesFeaturesARM*>(data->GetMetaStructPointer());
                 FieldToJson(jdata, pnext);
                 break;
             }
@@ -26858,6 +26953,20 @@ void FieldToJson(nlohmann::ordered_json& jdata, const PNextNode* data)
             case VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO:
             {
                 const auto* pnext = reinterpret_cast<const Decoded_VkTimelineSemaphoreSubmitInfo*>(data->GetMetaStructPointer());
+                FieldToJson(jdata, pnext);
+                break;
+            }
+
+            case VK_STRUCTURE_TYPE_UPDATE_BUFFER_INFO_ARM:
+            {
+                const auto* pnext = reinterpret_cast<const Decoded_VkUpdateBufferInfoARM*>(data->GetMetaStructPointer());
+                FieldToJson(jdata, pnext);
+                break;
+            }
+
+            case VK_STRUCTURE_TYPE_UPDATE_MEMORY_INFO_ARM:
+            {
+                const auto* pnext = reinterpret_cast<const Decoded_VkUpdateMemoryInfoARM*>(data->GetMetaStructPointer());
                 FieldToJson(jdata, pnext);
                 break;
             }

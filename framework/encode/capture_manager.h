@@ -555,11 +555,6 @@ class CommonCaptureManager
 
     void WriteCreateHeapAllocationCmd(uint64_t allocation_id, uint64_t allocation_size);
 
-    void WriteFixDeviceAddressCmd(format::ApiFamilyId          api_family,
-                                  format::HandleId             relation_id,
-                                  uint64_t                     num_of_locations,
-                                  format::AddressLocationInfo* locations);
-
     void WriteBeginResourceInitCmd(format::ApiFamilyId api_family,
                                    format::HandleId    device_id,
                                    uint64_t            total_copy_size,

@@ -134,6 +134,7 @@ option(BUILD_WERROR "Build with warnings as errors" ON)
 include("CodeStyle")
 include("Lint")
 include("Test")
+include("ApplyVulkanHeadersPatch")
 include("FindVulkanVersion")
 
 set(OPENXR_SUPPORT_ENABLED FALSE)

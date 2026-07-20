@@ -2213,6 +2213,16 @@ void UnwrapStructHandles(VkDataGraphPipelineSessionNeuralStatisticsCreateInfoARM
 
 void UnwrapStructHandles(VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT* value, HandleUnwrapMemory* unwrap_memory);
 
+void UnwrapStructHandles(VkPhysicalDeviceExplicitHostUpdatesFeaturesARM* value, HandleUnwrapMemory* unwrap_memory);
+
+void UnwrapStructHandles(VkFlushRangesFlagsARM* value, HandleUnwrapMemory* unwrap_memory);
+
+void UnwrapStructHandles(VkMarkedOffsetsARM* value, HandleUnwrapMemory* unwrap_memory);
+
+void UnwrapStructHandles(VkUpdateBufferInfoARM* value, HandleUnwrapMemory* unwrap_memory);
+
+void UnwrapStructHandles(VkUpdateMemoryInfoARM* value, HandleUnwrapMemory* unwrap_memory);
+
 void UnwrapStructHandles(VkAccelerationStructureGeometryTrianglesDataKHR* value, HandleUnwrapMemory* unwrap_memory);
 
 void UnwrapStructHandles(VkAccelerationStructureGeometryAabbsDataKHR* value, HandleUnwrapMemory* unwrap_memory);

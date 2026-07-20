@@ -804,6 +804,10 @@ inline VKAPI_ATTR void VKAPI_CALL vkCmdEndRendering2EXT(VkCommandBuffer, const V
 inline VKAPI_ATTR void VKAPI_CALL vkCmdBeginCustomResolveEXT(VkCommandBuffer, const VkBeginCustomResolveInfoEXT*) { GFXRECON_LOG_WARNING_ONCE("Unsupported function vkCmdBeginCustomResolveEXT was called, resulting in no-op behavior."); }
 inline VKAPI_ATTR void VKAPI_CALL vkCmdSetComputeOccupancyPriorityNV(VkCommandBuffer, const VkComputeOccupancyPriorityParametersNV*) { GFXRECON_LOG_WARNING_ONCE("Unsupported function vkCmdSetComputeOccupancyPriorityNV was called, resulting in no-op behavior."); }
 inline VKAPI_ATTR void VKAPI_CALL vkCmdSetPrimitiveRestartIndexEXT(VkCommandBuffer, uint32_t) { GFXRECON_LOG_WARNING_ONCE("Unsupported function vkCmdSetPrimitiveRestartIndexEXT was called, resulting in no-op behavior."); }
+inline VKAPI_ATTR void VKAPI_CALL vkCmdUpdateBuffer2ARM(VkCommandBuffer, const VkUpdateBufferInfoARM*) { GFXRECON_LOG_WARNING_ONCE("Unsupported function vkCmdUpdateBuffer2ARM was called, resulting in no-op behavior."); }
+inline VKAPI_ATTR void VKAPI_CALL vkCmdUpdateMemory2ARM(VkCommandBuffer, const VkUpdateMemoryInfoARM*) { GFXRECON_LOG_WARNING_ONCE("Unsupported function vkCmdUpdateMemory2ARM was called, resulting in no-op behavior."); }
+inline VKAPI_ATTR VkResult VKAPI_CALL vkAssertBufferARM(VkDevice, const VkUpdateBufferInfoARM*, uint32_t*, const char*) { GFXRECON_LOG_WARNING_ONCE("Unsupported function vkAssertBufferARM was called, resulting in no-op behavior."); return VK_SUCCESS; }
+inline VKAPI_ATTR VkResult VKAPI_CALL vkAssertMemoryARM(VkDevice, const VkUpdateMemoryInfoARM*, uint32_t*, const char*) { GFXRECON_LOG_WARNING_ONCE("Unsupported function vkAssertMemoryARM was called, resulting in no-op behavior."); return VK_SUCCESS; }
 inline VKAPI_ATTR VkResult VKAPI_CALL vkCreateAccelerationStructureKHR(VkDevice, const VkAccelerationStructureCreateInfoKHR*, const VkAllocationCallbacks*, VkAccelerationStructureKHR*) { GFXRECON_LOG_WARNING_ONCE("Unsupported function vkCreateAccelerationStructureKHR was called, resulting in no-op behavior."); return VK_SUCCESS; }
 inline VKAPI_ATTR void VKAPI_CALL vkDestroyAccelerationStructureKHR(VkDevice, VkAccelerationStructureKHR, const VkAllocationCallbacks*) { GFXRECON_LOG_WARNING_ONCE("Unsupported function vkDestroyAccelerationStructureKHR was called, resulting in no-op behavior."); }
 inline VKAPI_ATTR void VKAPI_CALL vkCmdBuildAccelerationStructuresKHR(VkCommandBuffer, uint32_t, const VkAccelerationStructureBuildGeometryInfoKHR*, const VkAccelerationStructureBuildRangeInfoKHR* const*) { GFXRECON_LOG_WARNING_ONCE("Unsupported function vkCmdBuildAccelerationStructuresKHR was called, resulting in no-op behavior."); }
@@ -1579,6 +1583,10 @@ struct VulkanDeviceTable
     PFN_vkCmdBeginCustomResolveEXT CmdBeginCustomResolveEXT{ noop::vkCmdBeginCustomResolveEXT };
     PFN_vkCmdSetComputeOccupancyPriorityNV CmdSetComputeOccupancyPriorityNV{ noop::vkCmdSetComputeOccupancyPriorityNV };
     PFN_vkCmdSetPrimitiveRestartIndexEXT CmdSetPrimitiveRestartIndexEXT{ noop::vkCmdSetPrimitiveRestartIndexEXT };
+    PFN_vkCmdUpdateBuffer2ARM CmdUpdateBuffer2ARM{ noop::vkCmdUpdateBuffer2ARM };
+    PFN_vkCmdUpdateMemory2ARM CmdUpdateMemory2ARM{ noop::vkCmdUpdateMemory2ARM };
+    PFN_vkAssertBufferARM AssertBufferARM{ noop::vkAssertBufferARM };
+    PFN_vkAssertMemoryARM AssertMemoryARM{ noop::vkAssertMemoryARM };
     PFN_vkCreateAccelerationStructureKHR CreateAccelerationStructureKHR{ noop::vkCreateAccelerationStructureKHR };
     PFN_vkDestroyAccelerationStructureKHR DestroyAccelerationStructureKHR{ noop::vkDestroyAccelerationStructureKHR };
     PFN_vkCmdBuildAccelerationStructuresKHR CmdBuildAccelerationStructuresKHR{ noop::vkCmdBuildAccelerationStructuresKHR };
@@ -2360,6 +2368,10 @@ static void LoadVulkanDeviceTable(PFN_vkGetDeviceProcAddr gpa, VkDevice device, 
     LoadVulkanFunction(gpa, device, "vkCmdBeginCustomResolveEXT", &table->CmdBeginCustomResolveEXT);
     LoadVulkanFunction(gpa, device, "vkCmdSetComputeOccupancyPriorityNV", &table->CmdSetComputeOccupancyPriorityNV);
     LoadVulkanFunction(gpa, device, "vkCmdSetPrimitiveRestartIndexEXT", &table->CmdSetPrimitiveRestartIndexEXT);
+    LoadVulkanFunction(gpa, device, "vkCmdUpdateBuffer2ARM", &table->CmdUpdateBuffer2ARM);
+    LoadVulkanFunction(gpa, device, "vkCmdUpdateMemory2ARM", &table->CmdUpdateMemory2ARM);
+    LoadVulkanFunction(gpa, device, "vkAssertBufferARM", &table->AssertBufferARM);
+    LoadVulkanFunction(gpa, device, "vkAssertMemoryARM", &table->AssertMemoryARM);
     LoadVulkanFunction(gpa, device, "vkCreateAccelerationStructureKHR", &table->CreateAccelerationStructureKHR);
     LoadVulkanFunction(gpa, device, "vkDestroyAccelerationStructureKHR", &table->DestroyAccelerationStructureKHR);
     LoadVulkanFunction(gpa, device, "vkCmdBuildAccelerationStructuresKHR", &table->CmdBuildAccelerationStructuresKHR);

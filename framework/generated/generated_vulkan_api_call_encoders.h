@@ -3844,6 +3844,26 @@ VKAPI_ATTR void VKAPI_CALL vkCmdSetPrimitiveRestartIndexEXT(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    primitiveRestartIndex);
 
+VKAPI_ATTR void VKAPI_CALL vkCmdUpdateBuffer2ARM(
+    VkCommandBuffer                             commandBuffer,
+    const VkUpdateBufferInfoARM*                pInfo);
+
+VKAPI_ATTR void VKAPI_CALL vkCmdUpdateMemory2ARM(
+    VkCommandBuffer                             commandBuffer,
+    const VkUpdateMemoryInfoARM*                pInfo);
+
+VKAPI_ATTR VkResult VKAPI_CALL vkAssertBufferARM(
+    VkDevice                                    device,
+    const VkUpdateBufferInfoARM*                pInfo,
+    uint32_t*                                   checksum,
+    const char*                                 comment);
+
+VKAPI_ATTR VkResult VKAPI_CALL vkAssertMemoryARM(
+    VkDevice                                    device,
+    const VkUpdateMemoryInfoARM*                pInfo,
+    uint32_t*                                   checksum,
+    const char*                                 comment);
+
 VKAPI_ATTR VkResult VKAPI_CALL vkCreateAccelerationStructureKHR(
     VkDevice                                    device,
     const VkAccelerationStructureCreateInfoKHR* pCreateInfo,

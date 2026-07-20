@@ -551,7 +551,9 @@ class VulkanCppStructGenerator(VulkanBaseGenerator):
 
                 local_body.append(makeOutStructSet(f'VulkanCppConsumerBase::BuildValue({struct_param}, {lengths[0]})', locals(), isFirstArg, isLastArg, indent))
             else: # arg.array_length_value
-                if self.is_struct(arg.base_type):
+                if self.is_union(arg.base_type):
+                    local_body.append(self.generateTodoFor(arg.name + " (union)", indent))
+                elif self.is_struct(arg.base_type):
                     innerIndent = indent + 4 if not arg.array_capacity else 4
 
                     varName = makeSnakeCaseName(arg.name + "Names")
@@ -663,7 +665,7 @@ class VulkanCppStructGenerator(VulkanBaseGenerator):
             elif arg.base_type == 'char':
                 header, body = self.handleChar(struct_prefix, arg, indent, header, body, isFirstArg, isLastArg)
 
-            elif arg.base_type in ['float', 'int32_t', 'uint32_t', 'VkClearValue', 'VkRect2D'] and arg.is_pointer:
+            elif arg.base_type in ['float', 'int32_t', 'uint32_t', 'VkClearValue', 'VkRect2D', 'VkMarkingSubTypeARM'] and arg.is_pointer:
                 header, body = self.handleBasicPointer(struct_prefix, arg, num_lengths, lengths, indent, header, body, isFirstArg, isLastArg)
 
             elif arg.base_type in vkLUType:
@@ -674,7 +676,7 @@ class VulkanCppStructGenerator(VulkanBaseGenerator):
 
             elif self.is_union(arg.base_type):
                 if not arg.is_pointer:
-                    if arg.base_type in ['VkClearValue', 'VkClearColorValue', 'VkComponentMapping', 'VkOffset2D', 'VkExtent2D']:
+                    if arg.base_type in ['VkClearValue', 'VkClearColorValue', 'VkComponentMapping', 'VkOffset2D', 'VkExtent2D', 'VkMarkingSubTypeARM']:
                         body.append(makeOutStructSet('VulkanCppConsumerBase::BuildValue({arg_name})', locals(), isFirstArg, isLastArg, indent))
                     elif arg.base_type in self.feature_union_members:
                         union_members = self.feature_union_members[arg.base_type]

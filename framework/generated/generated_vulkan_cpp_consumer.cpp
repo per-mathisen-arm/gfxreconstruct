@@ -18055,6 +18055,117 @@ void VulkanCppConsumer::Process_vkCmdSetPrimitiveRestartIndexEXT(
     fprintf(file, "\t}\n");
     Post_APICall(format::ApiCallId::ApiCall_vkCmdSetPrimitiveRestartIndexEXT);
 }
+void VulkanCppConsumer::Process_vkAssertBufferARM(
+    const ApiCallInfo&                          call_info,
+    VkResult                                    returnValue,
+    format::HandleId                            device,
+    StructPointerDecoder<Decoded_VkUpdateBufferInfoARM>* pInfo,
+    PointerDecoder<uint32_t>*                   checksum,
+    StringDecoder*                              comment)
+{
+    FILE* file = GetFrameFile();
+    fprintf(file, "\t{\n");
+    std::stringstream stream_pinfo;
+    std::string pinfo_struct = GenerateStruct_VkUpdateBufferInfoARM(stream_pinfo,
+                                                                    pInfo->GetPointer(),
+                                                                    pInfo->GetMetaStructPointer(),
+                                                                    *this);
+    fprintf(file, "%s", stream_pinfo.str().c_str());
+    std::string checksum_name = "NULL";
+    if (!checksum->IsNull()) {
+        checksum_name = "checksum_" + std::to_string(this->GetNextId());
+        fprintf(file, "\t\tuint32_t %s = %s;\n", checksum_name.c_str(), util::ToString(*checksum->GetPointer()).c_str());
+        checksum_name.insert(0, "&");
+    }
+    pfn_loader_.AddMethodName("vkAssertBufferARM");
+    fprintf(file,
+            "\t\tVK_CALL_CHECK(loaded_vkAssertBufferARM(%s, &%s, %s, %p), %s);\n",
+            this->GetHandle(device).c_str(),
+            pinfo_struct.c_str(),
+            checksum_name.c_str(),
+            comment->GetPointer(),
+            util::ToString<VkResult>(returnValue).c_str());
+    fprintf(file, "\t}\n");
+    Post_APICall(format::ApiCallId::ApiCall_vkAssertBufferARM);
+}
+
+void VulkanCppConsumer::Process_vkAssertMemoryARM(
+    const ApiCallInfo&                          call_info,
+    VkResult                                    returnValue,
+    format::HandleId                            device,
+    StructPointerDecoder<Decoded_VkUpdateMemoryInfoARM>* pInfo,
+    PointerDecoder<uint32_t>*                   checksum,
+    StringDecoder*                              comment)
+{
+    FILE* file = GetFrameFile();
+    fprintf(file, "\t{\n");
+    std::stringstream stream_pinfo;
+    std::string pinfo_struct = GenerateStruct_VkUpdateMemoryInfoARM(stream_pinfo,
+                                                                    pInfo->GetPointer(),
+                                                                    pInfo->GetMetaStructPointer(),
+                                                                    *this);
+    fprintf(file, "%s", stream_pinfo.str().c_str());
+    std::string checksum_name = "NULL";
+    if (!checksum->IsNull()) {
+        checksum_name = "checksum_" + std::to_string(this->GetNextId());
+        fprintf(file, "\t\tuint32_t %s = %s;\n", checksum_name.c_str(), util::ToString(*checksum->GetPointer()).c_str());
+        checksum_name.insert(0, "&");
+    }
+    pfn_loader_.AddMethodName("vkAssertMemoryARM");
+    fprintf(file,
+            "\t\tVK_CALL_CHECK(loaded_vkAssertMemoryARM(%s, &%s, %s, %p), %s);\n",
+            this->GetHandle(device).c_str(),
+            pinfo_struct.c_str(),
+            checksum_name.c_str(),
+            comment->GetPointer(),
+            util::ToString<VkResult>(returnValue).c_str());
+    fprintf(file, "\t}\n");
+    Post_APICall(format::ApiCallId::ApiCall_vkAssertMemoryARM);
+}
+
+void VulkanCppConsumer::Process_vkCmdUpdateBuffer2ARM(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            commandBuffer,
+    StructPointerDecoder<Decoded_VkUpdateBufferInfoARM>* pInfo)
+{
+    FILE* file = GetFrameFile();
+    fprintf(file, "\t{\n");
+    std::stringstream stream_pinfo;
+    std::string pinfo_struct = GenerateStruct_VkUpdateBufferInfoARM(stream_pinfo,
+                                                                    pInfo->GetPointer(),
+                                                                    pInfo->GetMetaStructPointer(),
+                                                                    *this);
+    fprintf(file, "%s", stream_pinfo.str().c_str());
+    pfn_loader_.AddMethodName("vkCmdUpdateBuffer2ARM");
+    fprintf(file,
+            "\t\tloaded_vkCmdUpdateBuffer2ARM(%s, &%s);\n",
+            this->GetHandle(commandBuffer).c_str(),
+            pinfo_struct.c_str());
+    fprintf(file, "\t}\n");
+    Post_APICall(format::ApiCallId::ApiCall_vkCmdUpdateBuffer2ARM);
+}
+
+void VulkanCppConsumer::Process_vkCmdUpdateMemory2ARM(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            commandBuffer,
+    StructPointerDecoder<Decoded_VkUpdateMemoryInfoARM>* pInfo)
+{
+    FILE* file = GetFrameFile();
+    fprintf(file, "\t{\n");
+    std::stringstream stream_pinfo;
+    std::string pinfo_struct = GenerateStruct_VkUpdateMemoryInfoARM(stream_pinfo,
+                                                                    pInfo->GetPointer(),
+                                                                    pInfo->GetMetaStructPointer(),
+                                                                    *this);
+    fprintf(file, "%s", stream_pinfo.str().c_str());
+    pfn_loader_.AddMethodName("vkCmdUpdateMemory2ARM");
+    fprintf(file,
+            "\t\tloaded_vkCmdUpdateMemory2ARM(%s, &%s);\n",
+            this->GetHandle(commandBuffer).c_str(),
+            pinfo_struct.c_str());
+    fprintf(file, "\t}\n");
+    Post_APICall(format::ApiCallId::ApiCall_vkCmdUpdateMemory2ARM);
+}
 void VulkanCppConsumer::Process_vkCmdBuildAccelerationStructuresIndirectKHR(
     const ApiCallInfo&                          call_info,
     format::HandleId                            commandBuffer,

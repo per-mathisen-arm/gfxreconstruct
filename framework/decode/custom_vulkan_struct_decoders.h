@@ -75,6 +75,13 @@ struct Decoded_VkDeviceOrHostAddressConstKHR
     uint64_t                       hostAddress{ 0 };
 };
 
+struct Decoded_VkMarkingSubTypeARM
+{
+    using struct_type = VkMarkingSubTypeARM;
+    VkMarkingSubTypeARM* decoded_value{ nullptr };
+    uint64_t             sub_type{ 0 };
+};
+
 // This union wrapper does not have a DecodeStruct function.  It is decoded by the
 // Decoded_VkAccelerationStructureGeometryKHR DecodeStruct function, based on the value of
 // VkAccelerationStructureGeometryKHR::geometryType.

@@ -1827,6 +1827,16 @@ class VulkanReferencedBlockConsumer : public VulkanReferencedBlockConsumerBase
         format::HandleId                            commandBuffer,
         uint32_t                                    primitiveRestartIndex) override;
 
+    void Process_vkCmdUpdateBuffer2ARM(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        StructPointerDecoder<Decoded_VkUpdateBufferInfoARM>* pInfo) override;
+
+    void Process_vkCmdUpdateMemory2ARM(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        StructPointerDecoder<Decoded_VkUpdateMemoryInfoARM>* pInfo) override;
+
     void Process_vkCmdBuildAccelerationStructuresKHR(
         const ApiCallInfo&                          call_info,
         format::HandleId                            commandBuffer,

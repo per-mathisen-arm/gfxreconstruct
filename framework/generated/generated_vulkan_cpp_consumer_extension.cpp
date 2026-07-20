@@ -7113,6 +7113,36 @@ std::string GenerateExtension(std::ostream& out, const void* struct_info, void* 
 
                 break;
             }
+            case VK_STRUCTURE_TYPE_FLUSH_RANGES_FLAGS_ARM: {
+                auto casted_struct = reinterpret_cast<const VkFlushRangesFlagsARM*>(struct_info);
+                auto decoded_struct = reinterpret_cast<Decoded_VkFlushRangesFlagsARM*>(pnext_meta_data->GetMetaStructPointer());
+                next_var_name = "&" +  GenerateStruct_VkFlushRangesFlagsARM(out,
+                                      casted_struct,
+                                      decoded_struct,
+                                      consumer);
+
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXPLICIT_HOST_UPDATES_FEATURES_ARM: {
+                auto casted_struct = reinterpret_cast<const VkPhysicalDeviceExplicitHostUpdatesFeaturesARM*>(struct_info);
+                auto decoded_struct = reinterpret_cast<Decoded_VkPhysicalDeviceExplicitHostUpdatesFeaturesARM*>(pnext_meta_data->GetMetaStructPointer());
+                next_var_name = "&" +  GenerateStruct_VkPhysicalDeviceExplicitHostUpdatesFeaturesARM(out,
+                                                               casted_struct,
+                                                               decoded_struct,
+                                                               consumer);
+
+                break;
+            }
+            case VK_STRUCTURE_TYPE_MARKED_OFFSETS_ARM: {
+                auto casted_struct = reinterpret_cast<const VkMarkedOffsetsARM*>(struct_info);
+                auto decoded_struct = reinterpret_cast<Decoded_VkMarkedOffsetsARM*>(pnext_meta_data->GetMetaStructPointer());
+                next_var_name = "&" +  GenerateStruct_VkMarkedOffsetsARM(out,
+                                   casted_struct,
+                                   decoded_struct,
+                                   consumer);
+
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR: {
                 auto casted_struct = reinterpret_cast<const VkPhysicalDeviceAccelerationStructureFeaturesKHR*>(struct_info);
                 auto decoded_struct = reinterpret_cast<Decoded_VkPhysicalDeviceAccelerationStructureFeaturesKHR*>(pnext_meta_data->GetMetaStructPointer());

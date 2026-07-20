@@ -1130,6 +1130,11 @@ template <> constexpr VkStructureType GetSType<VkPhysicalDeviceDataGraphNeuralAc
 template <> constexpr VkStructureType GetSType<VkDataGraphPipelineNeuralStatisticsCreateInfoARM>(){ return VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_NEURAL_STATISTICS_CREATE_INFO_ARM; }
 template <> constexpr VkStructureType GetSType<VkDataGraphPipelineSessionNeuralStatisticsCreateInfoARM>(){ return VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SESSION_NEURAL_STATISTICS_CREATE_INFO_ARM; }
 template <> constexpr VkStructureType GetSType<VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT>(){ return VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_RESTART_INDEX_FEATURES_EXT; }
+template <> constexpr VkStructureType GetSType<VkPhysicalDeviceExplicitHostUpdatesFeaturesARM>(){ return VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXPLICIT_HOST_UPDATES_FEATURES_ARM; }
+template <> constexpr VkStructureType GetSType<VkFlushRangesFlagsARM>(){ return VK_STRUCTURE_TYPE_FLUSH_RANGES_FLAGS_ARM; }
+template <> constexpr VkStructureType GetSType<VkMarkedOffsetsARM>(){ return VK_STRUCTURE_TYPE_MARKED_OFFSETS_ARM; }
+template <> constexpr VkStructureType GetSType<VkUpdateBufferInfoARM>(){ return VK_STRUCTURE_TYPE_UPDATE_BUFFER_INFO_ARM; }
+template <> constexpr VkStructureType GetSType<VkUpdateMemoryInfoARM>(){ return VK_STRUCTURE_TYPE_UPDATE_MEMORY_INFO_ARM; }
 template <> constexpr VkStructureType GetSType<VkAccelerationStructureGeometryTrianglesDataKHR>(){ return VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR; }
 template <> constexpr VkStructureType GetSType<VkAccelerationStructureGeometryAabbsDataKHR>(){ return VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR; }
 template <> constexpr VkStructureType GetSType<VkAccelerationStructureGeometryInstancesDataKHR>(){ return VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR; }

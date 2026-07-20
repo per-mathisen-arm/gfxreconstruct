@@ -413,6 +413,21 @@ struct ShaderHandleLocationInfo
     uint8_t          new_handles[kMaxShaderGroupHandleSize];
 };
 
+struct TraceHelpersDataCommandHeader
+{
+    MetaDataHeader   meta_header;
+    format::ThreadId thread_id; // thread_id is here as a placeholder. Currently always set to 0.
+    uint32_t         count;
+};
+
+struct TraceHelpersDataInfos
+{
+    // This replicates the VkMarkedOffsetsARM structure
+    uint64_t markingTypes;
+    uint64_t subTypes;
+    uint64_t offsets;
+};
+
 struct FillMemoryResourceValueCommandHeader
 {
     MetaDataHeader   meta_header;

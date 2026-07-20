@@ -4337,6 +4337,26 @@ size_t vulkan_struct_deep_copy_stype(const void* pNext, uint8_t* out_data)
             offset += vulkan_struct_deep_copy(
                 reinterpret_cast<const VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT*>(pNext), 1, out_ptr);
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXPLICIT_HOST_UPDATES_FEATURES_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkPhysicalDeviceExplicitHostUpdatesFeaturesARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_FLUSH_RANGES_FLAGS_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkFlushRangesFlagsARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_MARKED_OFFSETS_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkMarkedOffsetsARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_UPDATE_BUFFER_INFO_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkUpdateBufferInfoARM*>(pNext), 1, out_ptr);
+            break;
+        case VK_STRUCTURE_TYPE_UPDATE_MEMORY_INFO_ARM:
+            offset += vulkan_struct_deep_copy(
+                reinterpret_cast<const VkUpdateMemoryInfoARM*>(pNext), 1, out_ptr);
+            break;
         case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR:
             offset += vulkan_struct_deep_copy(
                 reinterpret_cast<const VkAccelerationStructureGeometryTrianglesDataKHR*>(pNext), 1, out_ptr);

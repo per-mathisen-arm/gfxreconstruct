@@ -120,6 +120,23 @@ class MetadataJsonConsumer : public Base
         WriteBlockEnd();
     }
 
+    virtual void ProcessTraceHelpersDataCommand(const format::TraceHelpersDataCommandHeader&      header,
+                                                const std::vector<format::TraceHelpersDataInfos>& infos) override
+    {
+        using namespace util;
+        auto& jdata = WriteMetaCommandStart("TraceHelpersDataCommand");
+        HandleToJson(jdata["count"], header.count);
+
+        for (int i = 0; i < header.count; i++)
+        {
+            jdata["infos"][i]["markingTypes"] = infos[i].markingTypes;
+            jdata["infos"][i]["subTypes"]     = infos[i].subTypes;
+            jdata["infos"][i]["offsets"]      = infos[i].offsets;
+        }
+
+        WriteBlockEnd();
+    }
+
     virtual void ProcessFixDescriptorDataCommand(const format::FixDescriptorDataCommandHeader&          header,
                                                  const std::vector<format::DescriptorDataLocationInfo>& infos) override
     {

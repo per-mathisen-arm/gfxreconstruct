@@ -667,6 +667,26 @@ ParsedBlock& BlockParser::ParseMetaData(BlockBuffer& block_buffer)
             HandleBlockReadError(kErrorReadingBlockData, "Failed to read fix shader group handle meta-data block");
         }
     }
+    else if (meta_data_type == format::arm::MetaDataType::kTraceHelpersDataCommand)
+    {
+        format::TraceHelpersDataCommandHeader header;
+
+        success = block_buffer.Read(header.thread_id);
+        success = success && block_buffer.Read(header.count);
+
+        std::vector<format::TraceHelpersDataInfos> infos(header.count);
+        success = success && block_buffer.ReadBytes(infos.data(), header.count * sizeof(format::TraceHelpersDataInfos));
+
+        if (success)
+        {
+            auto* payload = Emplace<TraceHelpersDataArgs>(meta_data_id, header, std::move(infos));
+            return MakeIncompressibleParsedBlock(block_buffer, payload);
+        }
+        else
+        {
+            HandleBlockReadError(kErrorReadingBlockData, "Failed to read trace helpers data command meta-data block");
+        }
+    }
     else if (meta_data_type == format::arm::MetaDataType::kFixDescriptorDataCommand)
     {
         format::FixDescriptorDataCommandHeader header;

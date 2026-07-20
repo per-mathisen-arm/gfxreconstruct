@@ -227,6 +227,17 @@ struct FixShaderGroupHandleArgs
 
     auto GetTuple() const { return std::tie(command_header, locations); }
 };
+
+struct TraceHelpersDataArgs
+{
+    format::MetaDataId meta_data_id; // Needed by DispatchVisitor, but not ApiDecoder
+
+    format::TraceHelpersDataCommandHeader      command_header;
+    std::vector<format::TraceHelpersDataInfos> infos;
+
+    auto GetTuple() const { return std::tie(command_header, infos); }
+};
+
 struct FixDescriptorDataArgs
 {
     format::MetaDataId meta_data_id; // Needed by DispatchVisitor, but not ApiDecoder
@@ -758,6 +769,12 @@ struct DispatchTraits<FixShaderGroupHandleArgs> : DispatchFlagTraits<FixShaderGr
 };
 
 template <>
+struct DispatchTraits<TraceHelpersDataArgs> : DispatchFlagTraits<TraceHelpersDataArgs>
+{
+    static constexpr auto kDecoderMethod = &ApiDecoder::DispatchTraceHelpersDataCommand;
+};
+
+template <>
 struct DispatchTraits<FixDescriptorDataArgs> : DispatchFlagTraits<FixDescriptorDataArgs>
 {
     static constexpr auto kDecoderMethod = &ApiDecoder::DispatchFixDescriptorDataCommand;
@@ -1053,7 +1070,8 @@ using DispatchArgs = std::variant<std::monostate,
                                   AnnotationArgs*,
                                   SetOpaqueDescriptorDataArgs*,
                                   ResourceMemoryRequirementsArgs*,
-                                  Dx12ResourceAliasingArgs*>;
+                                  Dx12ResourceAliasingArgs*,
+                                  TraceHelpersDataArgs*>;
 
 template <typename Args>
 inline size_t GetDispatchArgsDataSize(Args& args)

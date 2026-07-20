@@ -1325,6 +1325,11 @@ void EncodeStruct(ParameterEncoder* encoder, const VkPhysicalDeviceDataGraphNeur
 void EncodeStruct(ParameterEncoder* encoder, const VkDataGraphPipelineNeuralStatisticsCreateInfoARM& value);
 void EncodeStruct(ParameterEncoder* encoder, const VkDataGraphPipelineSessionNeuralStatisticsCreateInfoARM& value);
 void EncodeStruct(ParameterEncoder* encoder, const VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT& value);
+void EncodeStruct(ParameterEncoder* encoder, const VkPhysicalDeviceExplicitHostUpdatesFeaturesARM& value);
+void EncodeStruct(ParameterEncoder* encoder, const VkFlushRangesFlagsARM& value);
+void EncodeStruct(ParameterEncoder* encoder, const VkMarkedOffsetsARM& value);
+void EncodeStruct(ParameterEncoder* encoder, const VkUpdateBufferInfoARM& value);
+void EncodeStruct(ParameterEncoder* encoder, const VkUpdateMemoryInfoARM& value);
 void EncodeStruct(ParameterEncoder* encoder, const VkAccelerationStructureBuildRangeInfoKHR& value);
 void EncodeStruct(ParameterEncoder* encoder, const VkAccelerationStructureGeometryTrianglesDataKHR& value);
 void EncodeStruct(ParameterEncoder* encoder, const VkAccelerationStructureGeometryAabbsDataKHR& value);

@@ -91,6 +91,10 @@ class StatDecoderBase : public ApiDecoder
                                         const std::vector<format::ShaderHandleLocationInfo>& infos) override
     {}
 
+    virtual void DispatchTraceHelpersDataCommand(const format::TraceHelpersDataCommandHeader&      header,
+                                                 const std::vector<format::TraceHelpersDataInfos>& infos) override
+    {}
+
     virtual void DispatchFixDescriptorDataCommand(const format::FixDescriptorDataCommandHeader&          header,
                                                   const std::vector<format::DescriptorDataLocationInfo>& info) override
     {}

@@ -13135,6 +13135,79 @@ void VulkanReplayConsumer::Process_vkCmdSetPrimitiveRestartIndexEXT(
     }
 }
 
+void VulkanReplayConsumer::Process_vkCmdUpdateBuffer2ARM(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            commandBuffer,
+    StructPointerDecoder<Decoded_VkUpdateBufferInfoARM>* pInfo)
+{
+    auto in_commandBuffer = GetObjectInfoTable().GetVkCommandBufferInfo(commandBuffer);
+
+    MapStructHandles(pInfo->GetMetaStructPointer(), GetObjectInfoTable());
+
+    OverrideCmdUpdateBuffer2ARM(GetDeviceTable(in_commandBuffer->handle)->CmdUpdateBuffer2ARM, in_commandBuffer, pInfo);
+
+    if (options_.dumping_resources)
+    {
+        resource_dumper_->Process_vkCmdUpdateBuffer2ARM(call_info, GetDeviceTable(in_commandBuffer->handle)->CmdUpdateBuffer2ARM, in_commandBuffer->handle, pInfo->GetPointer());
+    }
+}
+
+void VulkanReplayConsumer::Process_vkCmdUpdateMemory2ARM(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            commandBuffer,
+    StructPointerDecoder<Decoded_VkUpdateMemoryInfoARM>* pInfo)
+{
+    VkCommandBuffer in_commandBuffer = MapHandle<VulkanCommandBufferInfo>(commandBuffer, &CommonObjectInfoTable::GetVkCommandBufferInfo);
+    const VkUpdateMemoryInfoARM* in_pInfo = pInfo->GetPointer();
+    MapStructHandles(pInfo->GetMetaStructPointer(), GetObjectInfoTable());
+
+    GetDeviceTable(in_commandBuffer)->CmdUpdateMemory2ARM(in_commandBuffer, in_pInfo);
+
+    if (options_.dumping_resources)
+    {
+        resource_dumper_->Process_vkCmdUpdateMemory2ARM(call_info, GetDeviceTable(in_commandBuffer)->CmdUpdateMemory2ARM, in_commandBuffer, in_pInfo);
+    }
+}
+
+void VulkanReplayConsumer::Process_vkAssertBufferARM(
+    const ApiCallInfo&                          call_info,
+    VkResult                                    returnValue,
+    format::HandleId                            device,
+    StructPointerDecoder<Decoded_VkUpdateBufferInfoARM>* pInfo,
+    PointerDecoder<uint32_t>*                   checksum,
+    StringDecoder*                              comment)
+{
+    auto in_device = GetObjectInfoTable().GetVkDeviceInfo(device);
+
+    MapStructHandles(pInfo->GetMetaStructPointer(), GetObjectInfoTable());
+    checksum->IsNull() ? nullptr : checksum->AllocateOutputData(1, static_cast<uint32_t>(0));
+
+    VkResult replay_result = OverrideAssertBufferARM(GetDeviceTable(in_device->handle)->AssertBufferARM, returnValue, in_device, pInfo, checksum, comment);
+    CheckResult("vkAssertBufferARM", returnValue, replay_result, call_info);
+
+    arm_features_->ProcessDeviceFaultData(replay_result, in_device->handle, GetDeviceTable(in_device->handle)->GetDeviceFaultInfoEXT);
+}
+
+void VulkanReplayConsumer::Process_vkAssertMemoryARM(
+    const ApiCallInfo&                          call_info,
+    VkResult                                    returnValue,
+    format::HandleId                            device,
+    StructPointerDecoder<Decoded_VkUpdateMemoryInfoARM>* pInfo,
+    PointerDecoder<uint32_t>*                   checksum,
+    StringDecoder*                              comment)
+{
+    VkDevice in_device = MapHandle<VulkanDeviceInfo>(device, &CommonObjectInfoTable::GetVkDeviceInfo);
+    const VkUpdateMemoryInfoARM* in_pInfo = pInfo->GetPointer();
+    MapStructHandles(pInfo->GetMetaStructPointer(), GetObjectInfoTable());
+    uint32_t* out_checksum = checksum->IsNull() ? nullptr : checksum->AllocateOutputData(1, static_cast<uint32_t>(0));
+    const char* in_comment = comment->GetPointer();
+
+    VkResult replay_result = GetDeviceTable(in_device)->AssertMemoryARM(in_device, in_pInfo, out_checksum, in_comment);
+    CheckResult("vkAssertMemoryARM", returnValue, replay_result, call_info);
+
+    arm_features_->ProcessDeviceFaultData(replay_result, in_device, GetDeviceTable(in_device)->GetDeviceFaultInfoEXT);
+}
+
 void VulkanReplayConsumer::Process_vkCreateAccelerationStructureKHR(
     const ApiCallInfo&                          call_info,
     VkResult                                    returnValue,
@@ -18950,6 +19023,31 @@ void InitializeOutputStructPNextImpl(const VkBaseInStructure* in_pnext, VkBaseOu
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_RESTART_INDEX_FEATURES_EXT:
             {
                 output_struct->pNext = reinterpret_cast<VkBaseOutStructure*>(DecodeAllocator::Allocate<VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT>());
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXPLICIT_HOST_UPDATES_FEATURES_ARM:
+            {
+                output_struct->pNext = reinterpret_cast<VkBaseOutStructure*>(DecodeAllocator::Allocate<VkPhysicalDeviceExplicitHostUpdatesFeaturesARM>());
+                break;
+            }
+            case VK_STRUCTURE_TYPE_FLUSH_RANGES_FLAGS_ARM:
+            {
+                output_struct->pNext = reinterpret_cast<VkBaseOutStructure*>(DecodeAllocator::Allocate<VkFlushRangesFlagsARM>());
+                break;
+            }
+            case VK_STRUCTURE_TYPE_MARKED_OFFSETS_ARM:
+            {
+                output_struct->pNext = reinterpret_cast<VkBaseOutStructure*>(DecodeAllocator::Allocate<VkMarkedOffsetsARM>());
+                break;
+            }
+            case VK_STRUCTURE_TYPE_UPDATE_BUFFER_INFO_ARM:
+            {
+                output_struct->pNext = reinterpret_cast<VkBaseOutStructure*>(DecodeAllocator::Allocate<VkUpdateBufferInfoARM>());
+                break;
+            }
+            case VK_STRUCTURE_TYPE_UPDATE_MEMORY_INFO_ARM:
+            {
+                output_struct->pNext = reinterpret_cast<VkBaseOutStructure*>(DecodeAllocator::Allocate<VkUpdateMemoryInfoARM>());
                 break;
             }
             case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR:

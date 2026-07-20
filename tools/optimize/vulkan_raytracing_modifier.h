@@ -350,6 +350,47 @@ class VulkanRayTracingModifier : public util::VulkanModifierBase
         transfer_ranges_.clear();
     }
 
+    void Process_vkCreateRayTracingPipelinesKHR(
+        const ApiCallInfo&                                               call_info,
+        VkResult                                                         returnValue,
+        format::HandleId                                                 device,
+        format::HandleId                                                 deferredOperation,
+        format::HandleId                                                 pipelineCache,
+        uint32_t                                                         createInfoCount,
+        StructPointerDecoder<Decoded_VkRayTracingPipelineCreateInfoKHR>* pCreateInfos,
+        StructPointerDecoder<Decoded_VkAllocationCallbacks>*             pAllocator,
+        HandlePointerDecoder<VkPipeline>*                                pPipelines) override;
+
+    virtual void
+    Process_vkCreateRayTracingPipelinesNV(const ApiCallInfo& call_info,
+                                          VkResult           returnValue,
+                                          format::HandleId   device,
+                                          format::HandleId   pipelineCache,
+                                          uint32_t           createInfoCount,
+                                          StructPointerDecoder<Decoded_VkRayTracingPipelineCreateInfoNV>* pCreateInfos,
+                                          StructPointerDecoder<Decoded_VkAllocationCallbacks>*            pAllocator,
+                                          HandlePointerDecoder<VkPipeline>* pPipelines) override;
+    virtual void
+    Process_vkCreateGraphicsPipelines(const ApiCallInfo&                                          call_info,
+                                      VkResult                                                    returnValue,
+                                      format::HandleId                                            device,
+                                      format::HandleId                                            pipelineCache,
+                                      uint32_t                                                    createInfoCount,
+                                      StructPointerDecoder<Decoded_VkGraphicsPipelineCreateInfo>* pCreateInfos,
+                                      StructPointerDecoder<Decoded_VkAllocationCallbacks>*        pAllocator,
+                                      HandlePointerDecoder<VkPipeline>*                           pPipelines) override;
+
+    virtual void Process_vkCmdUpdateBuffer2ARM(const ApiCallInfo&                                   call_info,
+                                               format::HandleId                                     commandBuffer,
+                                               StructPointerDecoder<Decoded_VkUpdateBufferInfoARM>* pInfo) override;
+
+    virtual void
+    Process_vkFlushMappedMemoryRanges(const ApiCallInfo&                                 call_info,
+                                      VkResult                                           returnValue,
+                                      format::HandleId                                   device,
+                                      uint32_t                                           memoryRangeCount,
+                                      StructPointerDecoder<Decoded_VkMappedMemoryRange>* pMemoryRanges) override;
+
   private:
     std::vector<format::ShaderHandleLocationInfo> GetShaderGroupHandlesInFillMemory(const void* data, size_t size);
 
@@ -507,6 +548,8 @@ class VulkanRayTracingModifier : public util::VulkanModifierBase
     std::unordered_map<format::HandleId, InitBufferInfo> init_buffer_entries_;
 
     VulkanOptimizationOptions options_;
+
+    bool skip_address_replacement{ false };
 
     bool HeuristicCheck(format::HandleId command_buffer);
 

@@ -2818,6 +2818,26 @@ std::string VulkanCppConsumerBase::BuildValue(const VkClearValue* values, uint32
     return output.str();
 }
 
+std::string VulkanCppConsumerBase::BuildValue(const VkMarkingSubTypeARM value)
+{
+    std::stringstream output;
+    output << "{ (uint64_t) " << value.reserved << " }";
+    return output.str();
+}
+
+std::string VulkanCppConsumerBase::BuildValue(const VkMarkingSubTypeARM* values, uint32_t count)
+{
+    std::stringstream output;
+    output << "{";
+    for (uint32_t idx = 0; idx < count; idx++)
+    {
+        output << VulkanCppConsumerBase::BuildValue(values[idx]) << ", ";
+    }
+    output << "}";
+
+    return output.str();
+}
+
 std::string VulkanCppConsumerBase::BuildValue(const VkComponentMapping components)
 {
     std::stringstream output;

@@ -285,6 +285,8 @@ void TrackCmdPreprocessGeneratedCommandsEXTHandles(vulkan_wrappers::CommandBuffe
 
 void TrackCmdExecuteGeneratedCommandsEXTHandles(vulkan_wrappers::CommandBufferWrapper* wrapper, const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo);
 
+void TrackCmdUpdateBuffer2ARMHandles(vulkan_wrappers::CommandBufferWrapper* wrapper, const VkUpdateBufferInfoARM* pInfo);
+
 void TrackCmdBuildAccelerationStructuresKHRHandles(vulkan_wrappers::CommandBufferWrapper* wrapper, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos);
 
 void TrackCmdBuildAccelerationStructuresIndirectKHRHandles(vulkan_wrappers::CommandBufferWrapper* wrapper, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos);

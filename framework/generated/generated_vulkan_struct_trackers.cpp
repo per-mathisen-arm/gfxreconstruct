@@ -17241,6 +17241,101 @@ VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT* TrackStruct(const VkPhysicalDe
     return unwrapped_struct;
 }
 
+VkPhysicalDeviceExplicitHostUpdatesFeaturesARM* TrackStruct(const VkPhysicalDeviceExplicitHostUpdatesFeaturesARM* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkPhysicalDeviceExplicitHostUpdatesFeaturesARM* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkFlushRangesFlagsARM* TrackStruct(const VkFlushRangesFlagsARM* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkFlushRangesFlagsARM* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkMarkedOffsetsARM* TrackStruct(const VkMarkedOffsetsARM* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkMarkedOffsetsARM* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+    if (unwrapped_struct->pMarkingTypes)
+    {
+        unwrapped_struct->pMarkingTypes = vulkan_wrappers::MakeUnwrapStructs(unwrapped_struct->pMarkingTypes, unwrapped_struct->count, unwrap_memory);
+    }
+    if (unwrapped_struct->pSubTypes)
+    {
+        unwrapped_struct->pSubTypes = vulkan_wrappers::MakeUnwrapStructs(unwrapped_struct->pSubTypes, unwrapped_struct->count, unwrap_memory);
+    }
+    if (unwrapped_struct->pOffsets)
+    {
+        unwrapped_struct->pOffsets = vulkan_wrappers::MakeUnwrapStructs(unwrapped_struct->pOffsets, unwrapped_struct->count, unwrap_memory);
+    }
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkUpdateBufferInfoARM* TrackStruct(const VkUpdateBufferInfoARM* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkUpdateBufferInfoARM* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+    if (unwrapped_struct->pData)
+    {
+        unwrapped_struct->pData = vulkan_wrappers::MakeUnwrapStructs<uint8_t>(reinterpret_cast<const uint8_t*>(unwrapped_struct->pData), static_cast<size_t>(unwrapped_struct->dataSize), unwrap_memory);
+    }
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
+VkUpdateMemoryInfoARM* TrackStruct(const VkUpdateMemoryInfoARM* value, HandleUnwrapMemory* unwrap_memory)
+{
+    if (value == nullptr)
+    {
+        return nullptr;
+    }
+
+    VkUpdateMemoryInfoARM* unwrapped_struct = vulkan_wrappers::MakeUnwrapStructs(value, 1, unwrap_memory);
+
+    if (unwrapped_struct->pData)
+    {
+        unwrapped_struct->pData = vulkan_wrappers::MakeUnwrapStructs<uint8_t>(reinterpret_cast<const uint8_t*>(unwrapped_struct->pData), static_cast<size_t>(unwrapped_struct->dataSize), unwrap_memory);
+    }
+
+    unwrapped_struct->pNext = TrackStruct(unwrapped_struct->pNext, unwrap_memory);
+
+    return unwrapped_struct;
+}
+
 VkAccelerationStructureGeometryTrianglesDataKHR* TrackStruct(const VkAccelerationStructureGeometryTrianglesDataKHR* value, HandleUnwrapMemory* unwrap_memory)
 {
     if (value == nullptr)
@@ -19762,6 +19857,16 @@ void* TrackStruct(const void* value, HandleUnwrapMemory* unwrap_memory)
             return TrackStruct(reinterpret_cast<const VkDataGraphPipelineSessionNeuralStatisticsCreateInfoARM*>(value), unwrap_memory);
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_RESTART_INDEX_FEATURES_EXT:
             return TrackStruct(reinterpret_cast<const VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXPLICIT_HOST_UPDATES_FEATURES_ARM:
+            return TrackStruct(reinterpret_cast<const VkPhysicalDeviceExplicitHostUpdatesFeaturesARM*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_FLUSH_RANGES_FLAGS_ARM:
+            return TrackStruct(reinterpret_cast<const VkFlushRangesFlagsARM*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_MARKED_OFFSETS_ARM:
+            return TrackStruct(reinterpret_cast<const VkMarkedOffsetsARM*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_UPDATE_BUFFER_INFO_ARM:
+            return TrackStruct(reinterpret_cast<const VkUpdateBufferInfoARM*>(value), unwrap_memory);
+        case VK_STRUCTURE_TYPE_UPDATE_MEMORY_INFO_ARM:
+            return TrackStruct(reinterpret_cast<const VkUpdateMemoryInfoARM*>(value), unwrap_memory);
         case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR:
             return TrackStruct(reinterpret_cast<const VkAccelerationStructureGeometryTrianglesDataKHR*>(value), unwrap_memory);
         case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR:

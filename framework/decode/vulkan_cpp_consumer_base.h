@@ -589,6 +589,8 @@ class VulkanCppConsumerBase : public VulkanConsumer
     static std::string BuildValue(const VkClearValue clearValue);
     static std::string BuildValue(const VkClearValue* clearValue);
     static std::string BuildValue(const VkClearValue* values, uint32_t count);
+    static std::string BuildValue(const VkMarkingSubTypeARM value);
+    static std::string BuildValue(const VkMarkingSubTypeARM* values, uint32_t count);
     static std::string BuildValue(const VkComponentMapping components);
     static std::string BuildValue(const VkOffset2D offSet2D);
     static std::string BuildValue(const VkOffset3D offSet3D);

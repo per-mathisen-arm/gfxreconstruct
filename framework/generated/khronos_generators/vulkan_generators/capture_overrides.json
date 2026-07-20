@@ -41,6 +41,11 @@
         "vkCmdWriteMicromapsPropertiesEXT": "manager->OverrideCmdWriteMicromapsPropertiesEXT",
         "vkGetPhysicalDeviceProperties2": "manager->OverrideGetPhysicalDeviceProperties2",
         "vkGetPhysicalDeviceProperties2KHR": "manager->OverrideGetPhysicalDeviceProperties2",
-        "vkAllocateCommandBuffers": "manager->OverrideAllocateCommandBuffers"
+        "vkAllocateCommandBuffers": "manager->OverrideAllocateCommandBuffers",
+        "vkAssertBufferARM": "manager->OverrideAssertBufferARM",
+        "vkAssertMemoryARM": "manager->OverrideAssertMemoryARM",
+        "vkCmdUpdateBuffer2ARM": "manager->OverrideCmdUpdateBuffer2ARM",
+        "vkCmdUpdateMemory2ARM": "manager->OverrideCmdUpdateMemory2ARM",
+        "vkFlushMappedMemoryRanges": "manager->OverrideFlushMappedMemoryRanges"
     }
 }

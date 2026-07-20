@@ -2411,6 +2411,24 @@ void to_json(nlohmann::ordered_json& jdata, const VkFenceImportFlags_t& flags)
     });
 }
 
+void to_json(nlohmann::ordered_json& jdata, const VkFlushOperationFlagsARM_t& flags)
+{
+    if (!JsonOptions::expand_flags)
+    {
+        jdata = to_hex_fixed_width(static_cast<VkFlushOperationFlagsARM>(flags));
+        return;
+    }
+    jdata = ExpandFlags(static_cast<VkFlushOperationFlagsARM>(flags), [](VkFlags flags)
+    {
+        switch (flags)
+        {
+            case VK_FLUSH_OPERATION_INFORMATIVE_BIT_ARM:
+                return std::string("VK_FLUSH_OPERATION_INFORMATIVE_BIT_ARM");
+        }
+        return to_hex_fixed_width(flags);
+    });
+}
+
 void to_json(nlohmann::ordered_json& jdata, const VkFormatFeatureFlags_t& flags)
 {
     if (!JsonOptions::expand_flags)
@@ -8796,6 +8814,21 @@ void to_json(nlohmann::ordered_json& jdata, const VkDeviceAddressBindingTypeEXT&
     }
 }
 
+void to_json(nlohmann::ordered_json& jdata, const VkDeviceAddressTypeARM& value)
+{
+    switch (value) {
+        case VK_DEVICE_ADDRESS_TYPE_BUFFER_ARM:
+            jdata = "VK_DEVICE_ADDRESS_TYPE_BUFFER_ARM";
+            break;
+        case VK_DEVICE_ADDRESS_TYPE_ACCELERATION_STRUCTURE_ARM:
+            jdata = "VK_DEVICE_ADDRESS_TYPE_ACCELERATION_STRUCTURE_ARM";
+            break;
+        default:
+            jdata = gfxrecon::decode::to_hex_fixed_width(value);
+            break;
+    }
+}
+
 void to_json(nlohmann::ordered_json& jdata, const VkDeviceDiagnosticsConfigFlagBitsNV& value)
 {
     switch (value) {
@@ -9644,6 +9677,18 @@ void to_json(nlohmann::ordered_json& jdata, const VkFilter& value)
             break;
         case VK_FILTER_CUBIC_EXT:
             jdata = "VK_FILTER_CUBIC_EXT";
+            break;
+        default:
+            jdata = gfxrecon::decode::to_hex_fixed_width(value);
+            break;
+    }
+}
+
+void to_json(nlohmann::ordered_json& jdata, const VkFlushOperationFlagBitsARM& value)
+{
+    switch (value) {
+        case VK_FLUSH_OPERATION_INFORMATIVE_BIT_ARM:
+            jdata = "VK_FLUSH_OPERATION_INFORMATIVE_BIT_ARM";
             break;
         default:
             jdata = gfxrecon::decode::to_hex_fixed_width(value);
@@ -11786,6 +11831,30 @@ void to_json(nlohmann::ordered_json& jdata, const VkLogicOp& value)
             break;
         case VK_LOGIC_OP_SET:
             jdata = "VK_LOGIC_OP_SET";
+            break;
+        default:
+            jdata = gfxrecon::decode::to_hex_fixed_width(value);
+            break;
+    }
+}
+
+void to_json(nlohmann::ordered_json& jdata, const VkMarkingTypeARM& value)
+{
+    switch (value) {
+        case VK_MARKING_TYPE_DEVICE_ADDRESS_ARM:
+            jdata = "VK_MARKING_TYPE_DEVICE_ADDRESS_ARM";
+            break;
+        case VK_MARKING_TYPE_DESCRIPTOR_SIZE_ARM:
+            jdata = "VK_MARKING_TYPE_DESCRIPTOR_SIZE_ARM";
+            break;
+        case VK_MARKING_TYPE_DESCRIPTOR_OFFSET_ARM:
+            jdata = "VK_MARKING_TYPE_DESCRIPTOR_OFFSET_ARM";
+            break;
+        case VK_MARKING_TYPE_DESCRIPTOR_ARM:
+            jdata = "VK_MARKING_TYPE_DESCRIPTOR_ARM";
+            break;
+        case VK_MARKING_TYPE_SHADER_GROUP_HANDLE_ARM:
+            jdata = "VK_MARKING_TYPE_SHADER_GROUP_HANDLE_ARM";
             break;
         default:
             jdata = gfxrecon::decode::to_hex_fixed_width(value);
@@ -17697,6 +17766,21 @@ void to_json(nlohmann::ordered_json& jdata, const VkStructureType& value)
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_REPLICATED_COMPOSITES_FEATURES_EXT:
             jdata = "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_REPLICATED_COMPOSITES_FEATURES_EXT";
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXPLICIT_HOST_UPDATES_FEATURES_ARM:
+            jdata = "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXPLICIT_HOST_UPDATES_FEATURES_ARM";
+            break;
+        case VK_STRUCTURE_TYPE_FLUSH_RANGES_FLAGS_ARM:
+            jdata = "VK_STRUCTURE_TYPE_FLUSH_RANGES_FLAGS_ARM";
+            break;
+        case VK_STRUCTURE_TYPE_UPDATE_BUFFER_INFO_ARM:
+            jdata = "VK_STRUCTURE_TYPE_UPDATE_BUFFER_INFO_ARM";
+            break;
+        case VK_STRUCTURE_TYPE_MARKED_OFFSETS_ARM:
+            jdata = "VK_STRUCTURE_TYPE_MARKED_OFFSETS_ARM";
+            break;
+        case VK_STRUCTURE_TYPE_UPDATE_MEMORY_INFO_ARM:
+            jdata = "VK_STRUCTURE_TYPE_UPDATE_MEMORY_INFO_ARM";
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT8_FEATURES_EXT:
             jdata = "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT8_FEATURES_EXT";

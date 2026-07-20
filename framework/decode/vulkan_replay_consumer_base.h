@@ -125,6 +125,9 @@ class VulkanReplayConsumerBase : public VulkanConsumer
     ProcessFixShaderGroupHandleCommand(const format::FixShaderGroupHandleCommandHeader&     header,
                                        const std::vector<format::ShaderHandleLocationInfo>& infos) override;
 
+    virtual void ProcessTraceHelpersDataCommand(const format::TraceHelpersDataCommandHeader&      header,
+                                                const std::vector<format::TraceHelpersDataInfos>& infos) override;
+
     virtual void ProcessFixDescriptorDataCommand(const format::FixDescriptorDataCommandHeader&          header,
                                                  const std::vector<format::DescriptorDataLocationInfo>& infos) override;
 
@@ -305,6 +308,10 @@ class VulkanReplayConsumerBase : public VulkanConsumer
     // member functions and variables are referenced
     void ModifyCreateInstanceInfo(const StructPointerDecoder<Decoded_VkInstanceCreateInfo>* pCreateInfo,
                                   CreateInstanceInfoState&                                  create_state);
+
+    void ProcessMarkedOffsetsARM(const VulkanDeviceInfo*   device_info,
+                                 const VkMarkedOffsetsARM* marked_offsets,
+                                 const void*               p_data);
 
     void PostCreateInstanceUpdateState(VkInstance                  replay_instance,
                                        const VkInstanceCreateInfo& modified_create_info,
@@ -1714,6 +1721,17 @@ class VulkanReplayConsumerBase : public VulkanConsumer
                                                 VulkanAccelerationStructureNVInfo*                   acc_str_info,
                                                 StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator);
 
+    VkResult OverrideAssertBufferARM(PFN_vkAssertBufferARM                                      func,
+                                     VkResult                                                   original_result,
+                                     const VulkanDeviceInfo*                                    device_info,
+                                     const StructPointerDecoder<Decoded_VkUpdateBufferInfoARM>* pInfo,
+                                     PointerDecoder<uint32_t>*                                  checksum,
+                                     StringDecoder*                                             comment);
+
+    void OverrideCmdUpdateBuffer2ARM(PFN_vkCmdUpdateBuffer2ARM                            func,
+                                     const VulkanCommandBufferInfo*                       command_buffer_info,
+                                     StructPointerDecoder<Decoded_VkUpdateBufferInfoARM>* p_info);
+
     void OverrideGetAccelerationStructureMemoryRequirementsNV(
         PFN_vkGetAccelerationStructureMemoryRequirementsNV                             func,
         const VulkanDeviceInfo*                                                        device_info,
@@ -2221,6 +2239,7 @@ class VulkanReplayConsumerBase : public VulkanConsumer
     bool           device_fault_supported_;
     bool           device_fault_vendor_data_supported_;
     const uint32_t device_fault_vendor_binary_dump_v1_header_size_;
+    bool           is_trace_helpers_supported_{ false };
 
     // option to override swapchain-image via debug-name
     format::HandleId present_override_image_id_ = format::kNullHandleId;
@@ -2242,6 +2261,8 @@ class VulkanReplayConsumerBase : public VulkanConsumer
     std::vector<format::AddressLocationInfo>      device_memory_address_locations;
     std::vector<format::AddressLocationInfo>      other_address_locations;
     std::vector<format::ShaderHandleLocationInfo> shader_group_handle_locations;
+
+    std::vector<format::TraceHelpersDataInfos> buffered_trace_helper_struct_;
 
     std::unique_ptr<VulkanReplayConsumerArmFeatures> arm_features_;
 

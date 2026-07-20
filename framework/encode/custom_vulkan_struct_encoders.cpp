@@ -88,6 +88,11 @@ void EncodeStruct(ParameterEncoder* encoder, const VkDeviceOrHostAddressKHR& val
     encoder->EncodeUInt64Value(value.deviceAddress);
 }
 
+void EncodeStruct(ParameterEncoder* encoder, const VkMarkingSubTypeARM& value)
+{
+    encoder->EncodeUInt64Value(value.reserved);
+}
+
 void EncodeStruct(ParameterEncoder* encoder, const VkDeviceOrHostAddressConstKHR& value)
 {
     encoder->EncodeUInt64Value(value.deviceAddress);

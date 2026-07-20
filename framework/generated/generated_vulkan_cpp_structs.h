@@ -2574,6 +2574,16 @@ std::string GenerateStruct_VkPhysicalDeviceDataGraphNeuralAcceleratorStatisticsF
 
 std::string GenerateStruct_VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT(std::ostream &out, const VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT* structInfo, Decoded_VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT* metaInfo, VulkanCppConsumerBase &consumer);
 
+std::string GenerateStruct_VkFlushRangesFlagsARM(std::ostream &out, const VkFlushRangesFlagsARM* structInfo, Decoded_VkFlushRangesFlagsARM* metaInfo, VulkanCppConsumerBase &consumer);
+
+std::string GenerateStruct_VkPhysicalDeviceExplicitHostUpdatesFeaturesARM(std::ostream &out, const VkPhysicalDeviceExplicitHostUpdatesFeaturesARM* structInfo, Decoded_VkPhysicalDeviceExplicitHostUpdatesFeaturesARM* metaInfo, VulkanCppConsumerBase &consumer);
+
+std::string GenerateStruct_VkMarkedOffsetsARM(std::ostream &out, const VkMarkedOffsetsARM* structInfo, Decoded_VkMarkedOffsetsARM* metaInfo, VulkanCppConsumerBase &consumer);
+
+std::string GenerateStruct_VkUpdateBufferInfoARM(std::ostream &out, const VkUpdateBufferInfoARM* structInfo, Decoded_VkUpdateBufferInfoARM* metaInfo, VulkanCppConsumerBase &consumer);
+
+std::string GenerateStruct_VkUpdateMemoryInfoARM(std::ostream &out, const VkUpdateMemoryInfoARM* structInfo, Decoded_VkUpdateMemoryInfoARM* metaInfo, VulkanCppConsumerBase &consumer);
+
 std::string GenerateStruct_VkAccelerationStructureBuildGeometryInfoKHR(std::ostream &out, const VkAccelerationStructureBuildGeometryInfoKHR* structInfo, Decoded_VkAccelerationStructureBuildGeometryInfoKHR* metaInfo, VulkanCppConsumerBase &consumer);
 
 std::string GenerateStruct_VkAccelerationStructureBuildRangeInfoKHR(std::ostream &out, const VkAccelerationStructureBuildRangeInfoKHR* structInfo, Decoded_VkAccelerationStructureBuildRangeInfoKHR* metaInfo, VulkanCppConsumerBase &consumer);

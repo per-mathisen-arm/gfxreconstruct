@@ -5908,6 +5908,21 @@ void CheckUnsupportedFeatures(VkPhysicalDevice physicalDevice,
                 }
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXPLICIT_HOST_UPDATES_FEATURES_ARM:
+            {
+                const VkPhysicalDeviceExplicitHostUpdatesFeaturesARM* currentNext = reinterpret_cast<const VkPhysicalDeviceExplicitHostUpdatesFeaturesARM*>(next);
+                VkPhysicalDeviceExplicitHostUpdatesFeaturesARM query = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXPLICIT_HOST_UPDATES_FEATURES_ARM, nullptr };
+                physicalDeviceFeatures2.pNext = &query;
+                GetPhysicalDeviceFeatures2(physicalDevice, &physicalDeviceFeatures2);
+                if ((currentNext->explicitHostUpdates == VK_TRUE) && (query.explicitHostUpdates == VK_FALSE))
+                {
+                    GFXRECON_LOG_WARNING("Feature explicitHostUpdates %s", warn_message);
+                    found_unsupported = true;
+                    const_cast<VkPhysicalDeviceExplicitHostUpdatesFeaturesARM*>(currentNext)->explicitHostUpdates =
+                        remove_unsupported ? VK_FALSE : VK_TRUE;
+                }
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR:
             {
                 const VkPhysicalDeviceAccelerationStructureFeaturesKHR* currentNext = reinterpret_cast<const VkPhysicalDeviceAccelerationStructureFeaturesKHR*>(next);

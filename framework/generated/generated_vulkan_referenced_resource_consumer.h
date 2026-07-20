@@ -699,6 +699,11 @@ class VulkanReferencedResourceConsumer : public VulkanReferencedResourceConsumer
         VkBool32                                    isPreprocessed,
         StructPointerDecoder<Decoded_VkGeneratedCommandsInfoEXT>* pGeneratedCommandsInfo) override;
 
+    void Process_vkCmdUpdateBuffer2ARM(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        StructPointerDecoder<Decoded_VkUpdateBufferInfoARM>* pInfo) override;
+
     void Process_vkCmdBuildAccelerationStructuresKHR(
         const ApiCallInfo&                          call_info,
         format::HandleId                            commandBuffer,

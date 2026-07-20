@@ -2188,6 +2188,20 @@ void VulkanReferencedResourceConsumer::Process_vkCmdExecuteGeneratedCommandsEXT(
     }
 }
 
+void VulkanReferencedResourceConsumer::Process_vkCmdUpdateBuffer2ARM(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            commandBuffer,
+    StructPointerDecoder<Decoded_VkUpdateBufferInfoARM>* pInfo)
+{
+    GFXRECON_ASSERT(pInfo != nullptr);
+
+    if (!pInfo->IsNull() && (pInfo->HasData()))
+    {
+        auto pInfo_ptr = pInfo->GetMetaStructPointer();
+        GetTable().AddResourceToUser(commandBuffer, pInfo_ptr->dstBuffer);
+    }
+}
+
 void VulkanReferencedResourceConsumer::Process_vkCmdBuildAccelerationStructuresKHR(
     const ApiCallInfo&                          call_info,
     format::HandleId                            commandBuffer,

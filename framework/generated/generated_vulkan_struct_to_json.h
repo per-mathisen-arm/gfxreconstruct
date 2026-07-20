@@ -1308,6 +1308,11 @@ void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_VkPhysicalDeviceDa
 void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_VkDataGraphPipelineNeuralStatisticsCreateInfoARM* data);
 void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_VkDataGraphPipelineSessionNeuralStatisticsCreateInfoARM* data);
 void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT* data);
+void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_VkPhysicalDeviceExplicitHostUpdatesFeaturesARM* data);
+void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_VkFlushRangesFlagsARM* data);
+void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_VkMarkedOffsetsARM* data);
+void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_VkUpdateBufferInfoARM* data);
+void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_VkUpdateMemoryInfoARM* data);
 void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_VkAccelerationStructureBuildRangeInfoKHR* data);
 void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_VkAccelerationStructureGeometryTrianglesDataKHR* data);
 void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_VkAccelerationStructureGeometryAabbsDataKHR* data);

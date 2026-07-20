@@ -36,6 +36,7 @@ struct Decoded_VkClearValue;
 struct Decoded_VkPipelineExecutableStatisticValueKHR;
 struct Decoded_VkDeviceOrHostAddressKHR;
 struct Decoded_VkDeviceOrHostAddressConstKHR;
+struct Decoded_VkMarkingSubTypeARM;
 struct Decoded_VkAccelerationStructureGeometryDataKHR;
 struct Decoded_VkAccelerationStructureMotionInstanceNV;
 struct Decoded_VkPerformanceValueDataINTEL;
@@ -48,6 +49,7 @@ size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_VkClearVa
 size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_VkPipelineExecutableStatisticValueKHR* wrapper);
 size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_VkDeviceOrHostAddressKHR* wrapper);
 size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_VkDeviceOrHostAddressConstKHR* wrapper);
+size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_VkMarkingSubTypeARM* wrapper);
 size_t DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_VkAccelerationStructureGeometryDataKHR* wrapper);
 size_t
 DecodeStruct(const uint8_t* buffer, size_t buffer_size, Decoded_VkAccelerationStructureMotionInstanceNV* wrapper);

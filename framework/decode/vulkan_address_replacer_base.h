@@ -84,6 +84,12 @@ class VulkanAddressReplacerBase
     virtual void ProcessCmdBindPipeline(VulkanCommandBufferInfo*                  command_buffer_info,
                                         const decode::VulkanDeviceAddressTracker& address_tracker)
     {}
+    virtual bool ProcessMarkedOffsetARM(VkDeviceSize                              offset,
+                                        const void*                               pData,
+                                        const decode::VulkanDeviceAddressTracker& address_tracker)
+    {
+        return true;
+    }
 
     virtual void ProcessCmdBindDescriptorSets(VulkanCommandBufferInfo*               command_buffer_info,
                                               VkPipelineBindPoint                    pipelineBindPoint,

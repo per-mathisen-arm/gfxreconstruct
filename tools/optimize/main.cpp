@@ -31,6 +31,7 @@
 #include "vulkan_descriptor_buffer_modifier.h"
 #include "resource_memory_requirements_modifier.h"
 #include "vulkan_shader_replacement_modifier.h"
+#include "vulkan_arm_trace_helpers_modifier.h"
 
 #include "../tool_settings.h"
 
@@ -308,6 +309,7 @@ GetVulkanOptimizationData(const std::string& input_filename, const gfxrecon::dec
             std::make_unique<gfxrecon::decode::ResourceMemoryRequirementsModifier>();
         auto descriptor_buffer_modifier_consumer =
             std::make_unique<gfxrecon::decode::VulkanDescriptorBufferModifier>(options);
+        auto trace_helpers_modifier_consumer = std::make_unique<gfxrecon::decode::VulkanArmTraceHelpersModifier>();
 
         auto shader_replacement_modifier_consumer =
             std::make_unique<gfxrecon::decode::VulkanShaderReplacementModifier>(options.replace_shader_dir);
@@ -323,6 +325,7 @@ GetVulkanOptimizationData(const std::string& input_filename, const gfxrecon::dec
         {
             decoder.AddConsumer(shader_replacement_modifier_consumer.get());
         }
+        decoder.AddConsumer(trace_helpers_modifier_consumer.get());
 
         vulkan_skia_modifier_consumer.get()->SetAppName(options.remove_app_name);
         vulkan_skia_modifier_consumer.get()->SetKeepDeviceInstanceMode(options.keep_device_instance);
@@ -363,6 +366,10 @@ GetVulkanOptimizationData(const std::string& input_filename, const gfxrecon::dec
         if (shader_replacement_modifier_consumer->CanOptimize())
         {
             result->modifiers.push_back(std::move(shader_replacement_modifier_consumer));
+        }
+        if (trace_helpers_modifier_consumer->CanOptimize())
+        {
+            result->modifiers.push_back(std::move(trace_helpers_modifier_consumer));
         }
     }
 

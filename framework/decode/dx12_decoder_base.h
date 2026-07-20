@@ -122,6 +122,12 @@ class Dx12DecoderBase : public ApiDecoder
         GFXRECON_ASSERT(false); // Not implemented for DX12
     };
 
+    virtual void DispatchTraceHelpersDataCommand(const format::TraceHelpersDataCommandHeader&      header,
+                                                 const std::vector<format::TraceHelpersDataInfos>& infos) override
+    {
+        GFXRECON_ASSERT(false); // Not implemented for DX12
+    };
+
     virtual void DispatchFixDescriptorDataCommand(const format::FixDescriptorDataCommandHeader&          header,
                                                   const std::vector<format::DescriptorDataLocationInfo>& infos) override
     {

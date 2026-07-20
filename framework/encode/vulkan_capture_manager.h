@@ -331,6 +331,24 @@ class VulkanCaptureManager : public ApiCaptureManager
                                                     const VkAllocationCallbacks*                pAllocator,
                                                     VkAccelerationStructureKHR* pAccelerationStructureKHR);
 
+    VkResult OverrideFlushMappedMemoryRanges(VkDevice                   device,
+                                             uint32_t                   memoryRangeCount,
+                                             const VkMappedMemoryRange* pMemoryRanges);
+
+    void OverrideCmdUpdateBuffer2ARM(VkCommandBuffer commandBuffer, const VkUpdateBufferInfoARM* pInfo);
+
+    void OverrideCmdUpdateMemory2ARM(VkCommandBuffer commandBuffer, const VkUpdateMemoryInfoARM* pInfo);
+
+    VkResult OverrideAssertBufferARM(VkDevice                     device,
+                                     const VkUpdateBufferInfoARM* pInfo,
+                                     uint32_t*                    checksum,
+                                     const char*                  comment);
+
+    VkResult OverrideAssertMemoryARM(VkDevice                     device,
+                                     const VkUpdateMemoryInfoARM* pInfo,
+                                     uint32_t*                    checksum,
+                                     const char*                  comment);
+
     VkResult OverrideCreateMicromapEXT(VkDevice                       device,
                                        const VkMicromapCreateInfoEXT* pCreateInfo,
                                        const VkAllocationCallbacks*   pAllocator,

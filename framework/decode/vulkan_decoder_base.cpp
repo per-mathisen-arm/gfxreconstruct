@@ -108,6 +108,15 @@ void VulkanDecoderBase::DispatchFixShaderGroupHandleCommand(const format::FixSha
     }
 }
 
+void VulkanDecoderBase::DispatchTraceHelpersDataCommand(const format::TraceHelpersDataCommandHeader&      header,
+                                                        const std::vector<format::TraceHelpersDataInfos>& infos)
+{
+    for (auto consumer : consumers_)
+    {
+        consumer->ProcessTraceHelpersDataCommand(header, infos);
+    }
+}
+
 void VulkanDecoderBase::DispatchFixDescriptorDataCommand(const format::FixDescriptorDataCommandHeader&          header,
                                                          const std::vector<format::DescriptorDataLocationInfo>& infos)
 {

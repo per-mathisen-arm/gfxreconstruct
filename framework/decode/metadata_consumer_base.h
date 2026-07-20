@@ -49,6 +49,9 @@ class MetadataConsumerBase
     virtual void ProcessFixShaderGroupHandleCommand(const format::FixShaderGroupHandleCommandHeader&     header,
                                                     const std::vector<format::ShaderHandleLocationInfo>& infos)
     {}
+    virtual void ProcessTraceHelpersDataCommand(const format::TraceHelpersDataCommandHeader&      header,
+                                                const std::vector<format::TraceHelpersDataInfos>& infos)
+    {}
     virtual void ProcessFixDescriptorDataCommand(const format::FixDescriptorDataCommandHeader&          header,
                                                  const std::vector<format::DescriptorDataLocationInfo>& infos)
     {}

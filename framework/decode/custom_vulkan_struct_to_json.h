@@ -52,6 +52,8 @@ void FieldToJson(nlohmann::ordered_json& jdata, int discriminant, const Decoded_
 
 void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_VkDeviceOrHostAddressKHR* data);
 
+void FieldToJson(nlohmann::ordered_json& jdata, const Decoded_VkMarkingSubTypeARM* data);
+
 void FieldToJson(nlohmann::ordered_json&                              jdata,
                  VkPipelineExecutableStatisticFormatKHR               discriminant,
                  const Decoded_VkPipelineExecutableStatisticValueKHR* data);

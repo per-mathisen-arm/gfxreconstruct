@@ -40,6 +40,7 @@
 #include "util/memory_output_stream.h"
 #include "encode/parameter_buffer.h"
 #include "encode/struct_pointer_encoder.h"
+#include "graphics/vulkan_struct_get_pnext.h"
 
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(decode)
@@ -387,6 +388,10 @@ void VulkanRayTracingModifier::WriteFixShaderGroupHandleCmd(format::HandleId    
                                                             uint64_t                          num_of_locations,
                                                             format::ShaderHandleLocationInfo* locations)
 {
+    if (skip_address_replacement == true)
+    {
+        return;
+    }
     auto new_call       = CreatePreCall();
     new_call->type      = NewCallDataType::MetaDataCall;
     new_call->call_id   = gfxrecon::format::ApiCallId::ApiCall_Unknown;
@@ -412,6 +417,10 @@ void VulkanRayTracingModifier::WriteFixDeviceAddressCmd(format::HandleId        
                                                         uint64_t                     num_of_buf_locations,
                                                         format::AddressLocationInfo* buf_locations)
 {
+    if (skip_address_replacement == true)
+    {
+        return;
+    }
     uint64_t num_of_locations = num_of_as_locations + num_of_buf_locations;
     auto     new_call         = CreatePreCall();
     new_call->type            = NewCallDataType::MetaDataCall;
@@ -1293,6 +1302,17 @@ void VulkanRayTracingModifier::Process_vkCreateComputePipelines(
 {
     if (IsModificationPass())
     {
+        auto in_p_create_infos = pCreateInfos->GetPointer();
+        for (uint32_t i = 0; i < createInfoCount; i++)
+        {
+            auto adress_offset_arm =
+                graphics::vulkan_struct_get_pnext<VkMarkedOffsetsARM>(&(in_p_create_infos[i].stage));
+            const VkSpecializationInfo* specialization_info = in_p_create_infos[i].stage.pSpecializationInfo;
+            if ((adress_offset_arm != nullptr) && (specialization_info != nullptr))
+            {
+                skip_address_replacement = true;
+            }
+        }
         return;
     }
 
@@ -1675,6 +1695,15 @@ void VulkanRayTracingModifier::Process_vkCmdPushConstants2(
     VkPushConstantsInfo*         info      = pPushConstantsInfo->GetPointer();
     GFXRECON_ASSERT(meta_info != nullptr && info != nullptr);
 
+    if (!IsModificationPass())
+    {
+        if (auto address_offset_arm = gfxrecon::graphics::vulkan_struct_get_pnext<VkMarkedOffsetsARM>(info);
+            address_offset_arm != nullptr)
+        {
+            skip_address_replacement = true;
+        }
+    }
+
     Process_vkCmdPushConstants(
         call_info, commandBuffer, meta_info->layout, info->stageFlags, info->offset, info->size, &meta_info->pValues);
 }
@@ -1936,6 +1965,140 @@ void VulkanRayTracingModifier::EncodeVkGetAccelerationStructureBuildSizesKHR(for
 
     encoder.EncodeUInt32Array(max_primitive_counts, pBuildInfo.geometryCount);
     encode::EncodeStructPtr(&encoder, &pSizeInfo);
+}
+
+void VulkanRayTracingModifier::Process_vkCreateRayTracingPipelinesNV(
+    const ApiCallInfo&                                              call_info,
+    VkResult                                                        returnValue,
+    format::HandleId                                                device,
+    format::HandleId                                                pipelineCache,
+    uint32_t                                                        createInfoCount,
+    StructPointerDecoder<Decoded_VkRayTracingPipelineCreateInfoNV>* pCreateInfos,
+    StructPointerDecoder<Decoded_VkAllocationCallbacks>*            pAllocator,
+    HandlePointerDecoder<VkPipeline>*                               pPipelines)
+{
+    if (IsModificationPass())
+    {
+        return;
+    }
+
+    auto in_pCreateInfos = pCreateInfos->GetPointer();
+    for (uint32_t i = 0; i < createInfoCount; i++)
+    {
+        for (uint32_t j = 0; j < in_pCreateInfos[i].stageCount; j++)
+        {
+            auto adress_offset_arm =
+                graphics::vulkan_struct_get_pnext<VkMarkedOffsetsARM>(&(in_pCreateInfos[i].pStages[j]));
+            const VkSpecializationInfo* specialization_info = in_pCreateInfos[i].pStages[j].pSpecializationInfo;
+            if ((adress_offset_arm != nullptr) && (specialization_info != nullptr))
+            {
+                skip_address_replacement = true;
+            }
+        }
+    }
+}
+
+void VulkanRayTracingModifier::Process_vkCreateRayTracingPipelinesKHR(
+    const ApiCallInfo&                                               call_info,
+    VkResult                                                         returnValue,
+    format::HandleId                                                 device,
+    format::HandleId                                                 deferredOperation,
+    format::HandleId                                                 pipelineCache,
+    uint32_t                                                         createInfoCount,
+    StructPointerDecoder<Decoded_VkRayTracingPipelineCreateInfoKHR>* pCreateInfos,
+    StructPointerDecoder<Decoded_VkAllocationCallbacks>*             pAllocator,
+    HandlePointerDecoder<VkPipeline>*                                pPipelines)
+{
+    if (IsModificationPass())
+    {
+        return;
+    }
+
+    auto in_pCreateInfos = pCreateInfos->GetPointer();
+    for (uint32_t i = 0; i < createInfoCount; i++)
+    {
+        for (uint32_t j = 0; j < in_pCreateInfos[i].stageCount; j++)
+        {
+            auto adress_offset_arm =
+                graphics::vulkan_struct_get_pnext<VkMarkedOffsetsARM>(&(in_pCreateInfos[i].pStages[j]));
+            const VkSpecializationInfo* specialization_info = in_pCreateInfos[i].pStages[j].pSpecializationInfo;
+            if ((adress_offset_arm != nullptr) && (specialization_info != nullptr))
+            {
+                skip_address_replacement = true;
+            }
+        }
+    }
+}
+
+void VulkanRayTracingModifier::Process_vkCreateGraphicsPipelines(
+    const ApiCallInfo&                                          call_info,
+    VkResult                                                    returnValue,
+    format::HandleId                                            device,
+    format::HandleId                                            pipelineCache,
+    uint32_t                                                    createInfoCount,
+    StructPointerDecoder<Decoded_VkGraphicsPipelineCreateInfo>* pCreateInfos,
+    StructPointerDecoder<Decoded_VkAllocationCallbacks>*        pAllocator,
+    HandlePointerDecoder<VkPipeline>*                           pPipelines)
+{
+    if (IsModificationPass())
+    {
+        return;
+    }
+
+    const VkGraphicsPipelineCreateInfo* in_p_create_infos = pCreateInfos->GetPointer();
+    for (uint32_t i = 0; i < createInfoCount; i++)
+    {
+        for (uint32_t j = 0; j < in_p_create_infos[i].stageCount; j++)
+        {
+            auto adress_offset_arm =
+                graphics::vulkan_struct_get_pnext<VkMarkedOffsetsARM>(&(in_p_create_infos[i].pStages[j]));
+            const VkSpecializationInfo* specialization_info = in_p_create_infos[i].pStages[j].pSpecializationInfo;
+            if ((adress_offset_arm != nullptr) && (specialization_info != nullptr))
+            {
+                skip_address_replacement = true;
+            }
+        }
+    }
+}
+
+void VulkanRayTracingModifier::Process_vkCmdUpdateBuffer2ARM(const ApiCallInfo& call_info,
+                                                             format::HandleId   commandBuffer,
+                                                             StructPointerDecoder<Decoded_VkUpdateBufferInfoARM>* pInfo)
+{
+    if (IsModificationPass())
+    {
+        return;
+    }
+
+    VkUpdateBufferInfoARM* in_pInfo = pInfo->GetPointer();
+    if (auto address_offset_arm = gfxrecon::graphics::vulkan_struct_get_pnext<VkMarkedOffsetsARM>(in_pInfo);
+        address_offset_arm != nullptr)
+    {
+        skip_address_replacement = true;
+    }
+}
+void VulkanRayTracingModifier::Process_vkFlushMappedMemoryRanges(
+    const ApiCallInfo&                                 call_info,
+    VkResult                                           returnValue,
+    format::HandleId                                   device,
+    uint32_t                                           memoryRangeCount,
+    StructPointerDecoder<Decoded_VkMappedMemoryRange>* pMemoryRanges)
+{
+    if (IsModificationPass())
+    {
+        return;
+    }
+
+    auto in_pMemoryRanges = pMemoryRanges->GetPointer();
+    for (uint32_t i = 0; i < memoryRangeCount; i++)
+    {
+        if (auto address_offset_arm =
+                gfxrecon::graphics::vulkan_struct_get_pnext<VkMarkedOffsetsARM>(&(in_pMemoryRanges[i]));
+            address_offset_arm != nullptr)
+        {
+            skip_address_replacement = true;
+        }
+    }
 }
 
 GFXRECON_END_NAMESPACE(decode)

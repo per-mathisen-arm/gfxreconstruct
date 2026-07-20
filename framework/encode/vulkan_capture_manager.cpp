@@ -44,6 +44,7 @@
 #include "graphics/vulkan_struct_get_pnext.h"
 #include "graphics/vulkan_util.h"
 #include "graphics/vulkan_feature_util.h"
+#include "graphics/vulkan_struct_get_pnext.h"
 #include "util/compressor.h"
 #include "util/logging.h"
 #include "util/page_guard_manager.h"
@@ -782,6 +783,44 @@ VkResult VulkanCaptureManager::OverrideCreateDevice(VkPhysicalDevice            
         }
     }
 
+    // Check if VK_ARM_EXPLICIT_HOST_UPDATES need to be faked (querried but not actually supported by the capture
+    // device)
+    VkBaseOutStructure*                             explicit_host_update_features_parent = nullptr;
+    VkPhysicalDeviceExplicitHostUpdatesFeaturesARM* explicit_host_update_features        = nullptr;
+    if (graphics::feature_util::IsSupportedExtension(modified_extensions,
+                                                     VK_ARM_EXPLICIT_HOST_UPDATES_EXTENSION_NAME) &&
+        !graphics::feature_util::IsSupportedExtension(supported_extensions,
+                                                      VK_ARM_EXPLICIT_HOST_UPDATES_EXTENSION_NAME))
+    {
+        auto iter = std::find_if(modified_extensions.begin(), modified_extensions.end(), [](const char* extension) {
+            return util::platform::StringCompare(VK_ARM_EXPLICIT_HOST_UPDATES_EXTENSION_NAME, extension) == 0;
+        });
+        modified_extensions.erase(iter);
+        singleton_->faked_extensions_.push_back(VK_ARM_EXPLICIT_HOST_UPDATES_EXTENSION_NAME);
+
+        explicit_host_update_features_parent = (VkBaseOutStructure*)pCreateInfo_unwrapped;
+
+        while (explicit_host_update_features_parent->pNext != nullptr &&
+               explicit_host_update_features_parent->pNext->sType !=
+                   VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXPLICIT_HOST_UPDATES_FEATURES_ARM)
+        {
+            explicit_host_update_features_parent = explicit_host_update_features_parent->pNext;
+        }
+
+        if (explicit_host_update_features_parent->pNext == nullptr)
+        {
+            explicit_host_update_features_parent = nullptr;
+        }
+        else
+        {
+            explicit_host_update_features = reinterpret_cast<VkPhysicalDeviceExplicitHostUpdatesFeaturesARM*>(
+                explicit_host_update_features_parent->pNext);
+            explicit_host_update_features_parent->pNext = explicit_host_update_features_parent->pNext->pNext;
+            GFXRECON_LOG_WARNING(
+                "VkPhysicalDeviceExplicitHostUpdatesFeaturesARM instance was removed from capture device creation");
+        }
+    }
+
     pCreateInfo_unwrapped->enabledExtensionCount   = static_cast<uint32_t>(modified_extensions.size());
     pCreateInfo_unwrapped->ppEnabledExtensionNames = modified_extensions.data();
 
@@ -849,6 +888,12 @@ VkResult VulkanCaptureManager::OverrideCreateDevice(VkPhysicalDevice            
     if (frame_boundary_features != nullptr)
     {
         frame_boundary_features_parent->pNext = reinterpret_cast<VkBaseOutStructure*>(frame_boundary_features);
+    }
+
+    if (explicit_host_update_features != nullptr)
+    {
+        explicit_host_update_features_parent->pNext =
+            reinterpret_cast<VkBaseOutStructure*>(explicit_host_update_features);
     }
 
     // Restore modified property/feature create info values to the original application values
@@ -1326,6 +1371,117 @@ void SetObjectName(VkDevice device, typename WrapperType::HandleType handle)
     name_info.pObjectName  = object_type_str.c_str();
     name_info.objectType   = object_type;
     encode::vkSetDebugUtilsObjectNameEXT(device, &name_info);
+}
+
+VkResult VulkanCaptureManager::OverrideFlushMappedMemoryRanges(VkDevice                   device,
+                                                               uint32_t                   memoryRangeCount,
+                                                               const VkMappedMemoryRange* pMemoryRanges)
+{
+    auto                       handle_unwrap_memory = VulkanCaptureManager::Get()->GetHandleUnwrapMemory();
+    const VkMappedMemoryRange* pMemoryRanges_unwrapped =
+        vulkan_wrappers::UnwrapStructArrayHandles(pMemoryRanges, memoryRangeCount, handle_unwrap_memory);
+
+    std::vector<VkMappedMemoryRange> modified_pMemoryRanges;
+
+    for (uint64_t i = 0; i < memoryRangeCount; i++)
+    {
+        if (auto flush_ranges_flags =
+                graphics::vulkan_struct_get_pnext<VkFlushRangesFlagsARM>(&(pMemoryRanges_unwrapped[i])))
+        {
+            if (flush_ranges_flags->flags == VK_FLUSH_OPERATION_INFORMATIVE_BIT_ARM)
+            {
+                continue;
+            }
+        }
+        modified_pMemoryRanges.push_back(pMemoryRanges_unwrapped[i]);
+    }
+
+    uint64_t modified_memoryRangeCount = modified_pMemoryRanges.size();
+
+    if (modified_memoryRangeCount)
+    {
+        const graphics::VulkanDeviceTable* device_table = vulkan_wrappers::GetDeviceTable(device);
+        return device_table->FlushMappedMemoryRanges(device, modified_memoryRangeCount, modified_pMemoryRanges.data());
+    }
+
+    return VK_SUCCESS;
+}
+
+void VulkanCaptureManager::OverrideCmdUpdateBuffer2ARM(VkCommandBuffer              commandBuffer,
+                                                       const VkUpdateBufferInfoARM* pInfo)
+{
+
+    auto                         handle_unwrap_memory = VulkanCaptureManager::Get()->GetHandleUnwrapMemory();
+    const VkUpdateBufferInfoARM* pInfo_unwrapped = vulkan_wrappers::UnwrapStructPtrHandles(pInfo, handle_unwrap_memory);
+
+    const graphics::VulkanDeviceTable* device_table = vulkan_wrappers::GetDeviceTable(commandBuffer);
+    // Execute actual workload
+    device_table->CmdUpdateBuffer(commandBuffer,
+                                  pInfo_unwrapped->dstBuffer,
+                                  pInfo_unwrapped->dstOffset,
+                                  pInfo_unwrapped->dataSize,
+                                  pInfo_unwrapped->pData);
+}
+
+void VulkanCaptureManager::OverrideCmdUpdateMemory2ARM(VkCommandBuffer              commandBuffer,
+                                                       const VkUpdateMemoryInfoARM* pInfo)
+{
+    // Not supported yet as the vulkan headers don't contain VK_KHR_device_address_commands (vkCmdUpdateMemoryKHR)
+    GFXRECON_LOG_FATAL("Unsupported function called vkCmdUpdateMemory2ARM");
+    GFXRECON_ASSERT(0);
+}
+
+VkResult VulkanCaptureManager::OverrideAssertBufferARM(VkDevice                     device,
+                                                       const VkUpdateBufferInfoARM* pInfo,
+                                                       uint32_t*                    checksum,
+                                                       const char*                  comment)
+{
+    const graphics::VulkanDeviceTable* device_table = vulkan_wrappers::GetDeviceTable(device);
+
+    auto wrapper = vulkan_wrappers::GetWrapper<vulkan_wrappers::BufferWrapper>(pInfo->dstBuffer);
+    GFXRECON_ASSERT(wrapper != nullptr && wrapper->bind_memory_id != format::kNullHandleId);
+
+    DeviceMemoryWrapper* memory_wrapper = nullptr;
+
+    VisitWrappers<DeviceMemoryWrapper>([&](DeviceMemoryWrapper* current_memory_wrapper) {
+        if (current_memory_wrapper->handle_id == wrapper->bind_memory_id)
+        {
+            memory_wrapper = current_memory_wrapper;
+            return;
+        }
+    });
+    GFXRECON_ASSERT(memory_wrapper != nullptr);
+
+    void*        pData{};
+    VkDeviceSize size   = pInfo->dataSize;
+    VkDeviceSize offset = pInfo->dstOffset;
+
+    VkResult result =
+        device_table->MapMemory(device, memory_wrapper->handle, wrapper->bind_offset + offset, size, 0, &pData);
+
+    if (result != VK_SUCCESS)
+    {
+        GFXRECON_LOG_WARNING_ONCE("vkAssertBufferARM input buffer is not mappable. Returning VK_INCOMPLETE");
+        return VK_INCOMPLETE;
+    }
+
+    if (size == VK_WHOLE_SIZE)
+    {
+        size = wrapper->size - offset;
+    }
+    *checksum = util::hash::GenerateAdler32Checksum((uint8_t*)pData, size);
+
+    return VK_SUCCESS;
+}
+
+VkResult VulkanCaptureManager::OverrideAssertMemoryARM(VkDevice                     device,
+                                                       const VkUpdateMemoryInfoARM* pInfo,
+                                                       uint32_t*                    checksum,
+                                                       const char*                  comment)
+{
+    GFXRECON_LOG_FATAL("Unsupported function called OverrideAssertMemoryARM");
+    GFXRECON_ASSERT(0);
+    return VK_ERROR_UNKNOWN;
 }
 
 VkResult

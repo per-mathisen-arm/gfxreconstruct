@@ -852,6 +852,11 @@ enum ApiCallId : uint32_t
     ApiCall_vkCreateAccelerationStructure2KHR                                                     = MakeApiCallId(ApiFamily_Vulkan, 0x136a),
     ApiCall_vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM                     = MakeApiCallId(ApiFamily_Vulkan, 0x136b),
 
+    ApiCall_vkAssertBufferARM                                                                     = MakeApiCallId(ApiFamily_Vulkan, 0x2000),
+    ApiCall_vkCmdUpdateBuffer2ARM                                                                 = MakeApiCallId(ApiFamily_Vulkan, 0x2001),
+    ApiCall_vkAssertMemoryARM                                                                     = MakeApiCallId(ApiFamily_Vulkan, 0x2002),
+    ApiCall_vkCmdUpdateMemory2ARM                                                                 = MakeApiCallId(ApiFamily_Vulkan, 0x2003),
+
     ApiCall_VulkanLast,
 
     // DXGI API

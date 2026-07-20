@@ -85,6 +85,23 @@ void VulkanAddressReplacerARM::ProcessCmdTraceRays(
     }
 }
 
+bool VulkanAddressReplacerARM::ProcessMarkedOffsetARM(VkDeviceSize                              offset,
+                                                      const void*                               pData,
+                                                      const decode::VulkanDeviceAddressTracker& address_tracker)
+
+{
+    VkDeviceAddress& address = *((uint64_t*)((((uint8_t*)(pData)) + offset)));
+
+    if (address == 0)
+    {
+        // This signals something going wrong
+        GFXRECON_LOG_FATAL("Marked Offset points to an address that is 0")
+        GFXRECON_ASSERT(false);
+    }
+
+    return address_remap(address, address_tracker);
+}
+
 void VulkanAddressReplacerARM::ProcessCmdBuildAccelerationStructuresKHR(
     const VulkanCommandBufferInfo*               command_buffer_info,
     uint32_t                                     info_count,
@@ -310,6 +327,7 @@ bool VulkanAddressReplacerARM::address_remap(VkDeviceAddress&                  c
     {
         return true;
     }
+
     const VulkanBufferInfo* buffer_info = address_tracker.GetBufferByCaptureDeviceAddress(capture_address);
 
     if (buffer_info != nullptr && buffer_info->replay_address != 0)

@@ -1643,30 +1643,6 @@ void CommonCaptureManager::WriteFillMemoryCmd(
     }
 }
 
-void CommonCaptureManager::WriteFixDeviceAddressCmd(format::ApiFamilyId          api_family,
-                                                    format::HandleId             relation_id,
-                                                    uint64_t                     num_of_locations,
-                                                    format::AddressLocationInfo* locations)
-{
-    if (!IsCaptureApp())
-        return;
-    if ((capture_mode_ & kModeWrite) == kModeWrite)
-    {
-        format::FixDeviceAddressCommandHeader fix_cmd;
-        auto                                  thread_data = GetThreadData();
-        assert(thread_data != nullptr);
-        fix_cmd.meta_header.block_header.type = format::BlockType::kMetaDataBlock;
-        fix_cmd.meta_header.block_header.size =
-            format::GetMetaDataBlockBaseSize(fix_cmd) + (num_of_locations * sizeof(format::AddressLocationInfo));
-        fix_cmd.meta_header.meta_data_id =
-            format::MakeMetaDataId(api_family, format::MetaDataType::kFixDeviceAddressCommand);
-        fix_cmd.relation_id      = relation_id;
-        fix_cmd.num_of_locations = num_of_locations;
-        CombineAndWriteToFile({ { &fix_cmd, sizeof(format::FixDeviceAddressCommandHeader) },
-                                { locations, num_of_locations * sizeof(format::AddressLocationInfo) } });
-    }
-}
-
 void CommonCaptureManager::WriteBeginResourceInitCmd(format::ApiFamilyId api_family,
                                                      format::HandleId    device_id,
                                                      uint64_t            total_copy_size,

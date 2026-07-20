@@ -35,6 +35,7 @@ void EncodeStruct(ParameterEncoder* encoder, const VkClearColorValue& value);
 void EncodeStruct(ParameterEncoder* encoder, const VkClearValue& value);
 void EncodeStruct(ParameterEncoder* encoder, const VkPipelineExecutableStatisticValueKHR& value);
 void EncodeStruct(ParameterEncoder* encoder, const VkDeviceOrHostAddressKHR& value);
+void EncodeStruct(ParameterEncoder* encoder, const VkMarkingSubTypeARM& value);
 void EncodeStruct(ParameterEncoder* encoder, const VkDeviceOrHostAddressConstKHR& value);
 void EncodeStruct(ParameterEncoder* encoder, const VkAccelerationStructureMotionInstanceNV& value);
 

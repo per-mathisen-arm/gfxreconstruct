@@ -4896,6 +4896,32 @@ class VulkanReplayConsumer : public VulkanReplayConsumerBase
         format::HandleId                            commandBuffer,
         uint32_t                                    primitiveRestartIndex) override;
 
+    virtual void Process_vkCmdUpdateBuffer2ARM(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        StructPointerDecoder<Decoded_VkUpdateBufferInfoARM>* pInfo) override;
+
+    virtual void Process_vkCmdUpdateMemory2ARM(
+        const ApiCallInfo&                          call_info,
+        format::HandleId                            commandBuffer,
+        StructPointerDecoder<Decoded_VkUpdateMemoryInfoARM>* pInfo) override;
+
+    virtual void Process_vkAssertBufferARM(
+        const ApiCallInfo&                          call_info,
+        VkResult                                    returnValue,
+        format::HandleId                            device,
+        StructPointerDecoder<Decoded_VkUpdateBufferInfoARM>* pInfo,
+        PointerDecoder<uint32_t>*                   checksum,
+        StringDecoder*                              comment) override;
+
+    virtual void Process_vkAssertMemoryARM(
+        const ApiCallInfo&                          call_info,
+        VkResult                                    returnValue,
+        format::HandleId                            device,
+        StructPointerDecoder<Decoded_VkUpdateMemoryInfoARM>* pInfo,
+        PointerDecoder<uint32_t>*                   checksum,
+        StringDecoder*                              comment) override;
+
     virtual void Process_vkCreateAccelerationStructureKHR(
         const ApiCallInfo&                          call_info,
         VkResult                                    returnValue,

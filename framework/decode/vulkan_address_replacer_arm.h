@@ -87,6 +87,10 @@ class VulkanAddressReplacerARM : public VulkanAddressReplacerBase
                              const std::unordered_map<graphics::shader_group_handle_t, graphics::shader_group_handle_t>&
                                  group_handle_map) override;
 
+    bool ProcessMarkedOffsetARM(VkDeviceSize                              offset,
+                                const void*                               pData,
+                                const decode::VulkanDeviceAddressTracker& address_tracker) override;
+
     /**
      * @brief   ProcessCmdBuildAccelerationStructuresKHR will check
      *          and potentially correct input-parameters to 'VkCmdBuildAccelerationStructuresKHR'

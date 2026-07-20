@@ -3467,6 +3467,25 @@ void VulkanReferencedBlockConsumer::Process_vkCmdSetPrimitiveRestartIndexEXT(
     if (check_handle_id_unused(commandBuffer)){ set_block_index_unused(call_info.index); }
 }
 
+void VulkanReferencedBlockConsumer::Process_vkCmdUpdateBuffer2ARM(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            commandBuffer,
+    StructPointerDecoder<Decoded_VkUpdateBufferInfoARM>* pInfo)
+{
+
+    if (check_handle_id_unused(commandBuffer)){ set_block_index_unused(call_info.index); }
+}
+
+void VulkanReferencedBlockConsumer::Process_vkCmdUpdateMemory2ARM(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            commandBuffer,
+    StructPointerDecoder<Decoded_VkUpdateMemoryInfoARM>* pInfo)
+{
+    GFXRECON_UNREFERENCED_PARAMETER(pInfo);
+
+    if (check_handle_id_unused(commandBuffer)){ set_block_index_unused(call_info.index); }
+}
+
 void VulkanReferencedBlockConsumer::Process_vkCmdBuildAccelerationStructuresKHR(
     const ApiCallInfo&                          call_info,
     format::HandleId                            commandBuffer,

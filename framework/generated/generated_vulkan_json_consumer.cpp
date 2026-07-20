@@ -11337,6 +11337,68 @@ void VulkanExportJsonConsumer::Process_vkCmdSetPrimitiveRestartIndexEXT(
     WriteBlockEnd();
 }
 
+void VulkanExportJsonConsumer::Process_vkCmdUpdateBuffer2ARM(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            commandBuffer,
+    StructPointerDecoder<Decoded_VkUpdateBufferInfoARM>* pInfo)
+{
+    nlohmann::ordered_json& jdata = WriteApiCallStart(call_info, "vkCmdUpdateBuffer2ARM");
+    jdata[NameCommandIndex()] = GetCommandBufferRecordIndex(commandBuffer);
+    auto& args = jdata[NameArgs()];
+        HandleToJson(args["commandBuffer"], commandBuffer);
+        FieldToJson(args["pInfo"], pInfo);
+    WriteBlockEnd();
+}
+
+void VulkanExportJsonConsumer::Process_vkCmdUpdateMemory2ARM(
+    const ApiCallInfo&                          call_info,
+    format::HandleId                            commandBuffer,
+    StructPointerDecoder<Decoded_VkUpdateMemoryInfoARM>* pInfo)
+{
+    nlohmann::ordered_json& jdata = WriteApiCallStart(call_info, "vkCmdUpdateMemory2ARM");
+    jdata[NameCommandIndex()] = GetCommandBufferRecordIndex(commandBuffer);
+    auto& args = jdata[NameArgs()];
+        HandleToJson(args["commandBuffer"], commandBuffer);
+        FieldToJson(args["pInfo"], pInfo);
+    WriteBlockEnd();
+}
+
+void VulkanExportJsonConsumer::Process_vkAssertBufferARM(
+    const ApiCallInfo&                          call_info,
+    VkResult                                    returnValue,
+    format::HandleId                            device,
+    StructPointerDecoder<Decoded_VkUpdateBufferInfoARM>* pInfo,
+    PointerDecoder<uint32_t>*                   checksum,
+    StringDecoder*                              comment)
+{
+    nlohmann::ordered_json& jdata = WriteApiCallStart(call_info, "vkAssertBufferARM");
+    jdata[NameReturn()] = returnValue;
+    auto& args = jdata[NameArgs()];
+        HandleToJson(args["device"], device);
+        FieldToJson(args["pInfo"], pInfo);
+        FieldToJson(args["checksum"], checksum);
+        FieldToJson(args["comment"], comment);
+    WriteBlockEnd();
+}
+
+void VulkanExportJsonConsumer::Process_vkAssertMemoryARM(
+    const ApiCallInfo&                          call_info,
+    VkResult                                    returnValue,
+    format::HandleId                            device,
+    StructPointerDecoder<Decoded_VkUpdateMemoryInfoARM>* pInfo,
+    PointerDecoder<uint32_t>*                   checksum,
+    StringDecoder*                              comment)
+{
+    nlohmann::ordered_json& jdata = WriteApiCallStart(call_info, "vkAssertMemoryARM");
+    jdata[NameReturn()] = returnValue;
+    auto& args = jdata[NameArgs()];
+        HandleToJson(args["device"], device);
+        FieldToJson(args["pInfo"], pInfo);
+        FieldToJson(args["checksum"], checksum);
+        FieldToJson(args["comment"], comment);
+    WriteBlockEnd();
+}
+
 void VulkanExportJsonConsumer::Process_vkCreateAccelerationStructureKHR(
     const ApiCallInfo&                          call_info,
     VkResult                                    returnValue,

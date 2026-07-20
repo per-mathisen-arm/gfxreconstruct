@@ -214,6 +214,18 @@ static inline uint32_t xxhash32(const K& key, uint32_t seed)
     return h;
 }
 
+inline uint32_t GenerateAdler32Checksum(unsigned char* data, size_t len)
+{
+    const uint32_t MOD_ADLER = 65521;
+    uint32_t       a = 1, b = 0;
+    for (size_t index = 0; index < len; ++index)
+    {
+        a = (a + data[index]) % MOD_ADLER;
+        b = (b + a) % MOD_ADLER;
+    }
+    return (b << 16) | a;
+}
+
 GFXRECON_END_NAMESPACE(hash)
 GFXRECON_END_NAMESPACE(util)
 GFXRECON_END_NAMESPACE(gfxrecon)

@@ -1870,6 +1870,16 @@ template <> std::string ToString<VkDeviceAddressBindingTypeEXT>(const VkDeviceAd
     return "Unhandled VkDeviceAddressBindingTypeEXT";
 }
 
+template <> std::string ToString<VkDeviceAddressTypeARM>(const VkDeviceAddressTypeARM& value, ToStringFlags, uint32_t, uint32_t)
+{
+    switch (value) {
+    case VK_DEVICE_ADDRESS_TYPE_BUFFER_ARM: return "VK_DEVICE_ADDRESS_TYPE_BUFFER_ARM";
+    case VK_DEVICE_ADDRESS_TYPE_ACCELERATION_STRUCTURE_ARM: return "VK_DEVICE_ADDRESS_TYPE_ACCELERATION_STRUCTURE_ARM";
+    default: break;
+    }
+    return "Unhandled VkDeviceAddressTypeARM";
+}
+
 template <> std::string ToString<VkDeviceDiagnosticsConfigFlagBitsNV>(const VkDeviceDiagnosticsConfigFlagBitsNV& value, ToStringFlags, uint32_t, uint32_t)
 {
     switch (value) {
@@ -2378,6 +2388,20 @@ template <> std::string ToString<VkFilter>(const VkFilter& value, ToStringFlags,
     default: break;
     }
     return "Unhandled VkFilter";
+}
+
+template <> std::string ToString<VkFlushOperationFlagBitsARM>(const VkFlushOperationFlagBitsARM& value, ToStringFlags, uint32_t, uint32_t)
+{
+    switch (value) {
+    case VK_FLUSH_OPERATION_INFORMATIVE_BIT_ARM: return "VK_FLUSH_OPERATION_INFORMATIVE_BIT_ARM";
+    default: break;
+    }
+    return "Unhandled VkFlushOperationFlagBitsARM";
+}
+
+template <> std::string ToString<VkFlushOperationFlagBitsARM>(VkFlags vkFlags, ToStringFlags, uint32_t, uint32_t)
+{
+    return BitmaskToString<VkFlushOperationFlagBitsARM>(vkFlags);
 }
 
 template <> std::string ToString<VkFormat>(const VkFormat& value, ToStringFlags, uint32_t, uint32_t)
@@ -3447,6 +3471,19 @@ template <> std::string ToString<VkLogicOp>(const VkLogicOp& value, ToStringFlag
     default: break;
     }
     return "Unhandled VkLogicOp";
+}
+
+template <> std::string ToString<VkMarkingTypeARM>(const VkMarkingTypeARM& value, ToStringFlags, uint32_t, uint32_t)
+{
+    switch (value) {
+    case VK_MARKING_TYPE_DEVICE_ADDRESS_ARM: return "VK_MARKING_TYPE_DEVICE_ADDRESS_ARM";
+    case VK_MARKING_TYPE_DESCRIPTOR_SIZE_ARM: return "VK_MARKING_TYPE_DESCRIPTOR_SIZE_ARM";
+    case VK_MARKING_TYPE_DESCRIPTOR_OFFSET_ARM: return "VK_MARKING_TYPE_DESCRIPTOR_OFFSET_ARM";
+    case VK_MARKING_TYPE_DESCRIPTOR_ARM: return "VK_MARKING_TYPE_DESCRIPTOR_ARM";
+    case VK_MARKING_TYPE_SHADER_GROUP_HANDLE_ARM: return "VK_MARKING_TYPE_SHADER_GROUP_HANDLE_ARM";
+    default: break;
+    }
+    return "Unhandled VkMarkingTypeARM";
 }
 
 template <> std::string ToString<VkMemoryAllocateFlagBits>(const VkMemoryAllocateFlagBits& value, ToStringFlags, uint32_t, uint32_t)
@@ -6308,6 +6345,11 @@ template <> std::string ToString<VkStructureType>(const VkStructureType& value, 
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LAYERED_API_VULKAN_PROPERTIES_KHR: return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LAYERED_API_VULKAN_PROPERTIES_KHR";
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT16_VECTOR_FEATURES_NV: return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT16_VECTOR_FEATURES_NV";
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_REPLICATED_COMPOSITES_FEATURES_EXT: return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_REPLICATED_COMPOSITES_FEATURES_EXT";
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXPLICIT_HOST_UPDATES_FEATURES_ARM: return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXPLICIT_HOST_UPDATES_FEATURES_ARM";
+    case VK_STRUCTURE_TYPE_FLUSH_RANGES_FLAGS_ARM: return "VK_STRUCTURE_TYPE_FLUSH_RANGES_FLAGS_ARM";
+    case VK_STRUCTURE_TYPE_UPDATE_BUFFER_INFO_ARM: return "VK_STRUCTURE_TYPE_UPDATE_BUFFER_INFO_ARM";
+    case VK_STRUCTURE_TYPE_MARKED_OFFSETS_ARM: return "VK_STRUCTURE_TYPE_MARKED_OFFSETS_ARM";
+    case VK_STRUCTURE_TYPE_UPDATE_MEMORY_INFO_ARM: return "VK_STRUCTURE_TYPE_UPDATE_MEMORY_INFO_ARM";
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT8_FEATURES_EXT: return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT8_FEATURES_EXT";
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_VALIDATION_FEATURES_NV: return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_VALIDATION_FEATURES_NV";
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CLUSTER_ACCELERATION_STRUCTURE_FEATURES_NV: return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CLUSTER_ACCELERATION_STRUCTURE_FEATURES_NV";

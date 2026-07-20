@@ -1181,7 +1181,7 @@ void EncodeStruct(ParameterEncoder* encoder, const VkSubmitInfo& value)
 void EncodeStruct(ParameterEncoder* encoder, const VkMappedMemoryRange& value)
 {
     encoder->EncodeEnumValue(value.sType);
-    EncodePNextStructIfValid(encoder, value.pNext);
+    EncodePNextStruct(encoder, value.pNext);
     encoder->EncodeVulkanHandleValue<vulkan_wrappers::DeviceMemoryWrapper>(value.memory);
     encoder->EncodeUInt64Value(value.offset);
     encoder->EncodeUInt64Value(value.size);
@@ -11876,6 +11876,50 @@ void EncodeStruct(ParameterEncoder* encoder, const VkPhysicalDevicePrimitiveRest
     encoder->EncodeEnumValue(value.sType);
     EncodePNextStruct(encoder, value.pNext);
     encoder->EncodeUInt32Value(value.primitiveRestartIndex);
+}
+
+void EncodeStruct(ParameterEncoder* encoder, const VkPhysicalDeviceExplicitHostUpdatesFeaturesARM& value)
+{
+    encoder->EncodeEnumValue(value.sType);
+    EncodePNextStruct(encoder, value.pNext);
+    encoder->EncodeUInt32Value(value.explicitHostUpdates);
+}
+
+void EncodeStruct(ParameterEncoder* encoder, const VkFlushRangesFlagsARM& value)
+{
+    encoder->EncodeEnumValue(value.sType);
+    EncodePNextStruct(encoder, value.pNext);
+    encoder->EncodeFlagsValue(value.flags);
+}
+
+void EncodeStruct(ParameterEncoder* encoder, const VkMarkedOffsetsARM& value)
+{
+    encoder->EncodeEnumValue(value.sType);
+    EncodePNextStruct(encoder, value.pNext);
+    encoder->EncodeUInt32Value(value.count);
+    encoder->EncodeEnumArray(value.pMarkingTypes, value.count);
+    EncodeStructArray(encoder, value.pSubTypes, value.count);
+    encoder->EncodeUInt64Array(value.pOffsets, value.count);
+}
+
+void EncodeStruct(ParameterEncoder* encoder, const VkUpdateBufferInfoARM& value)
+{
+    encoder->EncodeEnumValue(value.sType);
+    EncodePNextStruct(encoder, value.pNext);
+    encoder->EncodeVulkanHandleValue<vulkan_wrappers::BufferWrapper>(value.dstBuffer);
+    encoder->EncodeUInt64Value(value.dstOffset);
+    encoder->EncodeUInt64Value(value.dataSize);
+    encoder->EncodeVoidArray(value.pData, static_cast<size_t>(value.dataSize));
+}
+
+void EncodeStruct(ParameterEncoder* encoder, const VkUpdateMemoryInfoARM& value)
+{
+    encoder->EncodeEnumValue(value.sType);
+    EncodePNextStruct(encoder, value.pNext);
+    EncodeStructPtr(encoder, value.pDstRange);
+    encoder->EncodeFlagsValue(value.dstFlags);
+    encoder->EncodeUInt64Value(value.dataSize);
+    encoder->EncodeVoidArray(value.pData, static_cast<size_t>(value.dataSize));
 }
 
 void EncodeStruct(ParameterEncoder* encoder, const VkAccelerationStructureBuildRangeInfoKHR& value)
