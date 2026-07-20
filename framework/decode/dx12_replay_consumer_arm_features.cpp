@@ -64,6 +64,16 @@ void Dx12ReplayConsumerArmFeatures::CheckReplayResult(const char* call_name,
         }
     }
 
+    if ((capture_result == S_OK) &&
+        ((replay_result == DXGI_ERROR_NOT_FOUND) || (replay_result == DXGI_ERROR_MORE_DATA)))
+    {
+        GFXRECON_LOG_DEBUG("%s returned %s, which does not match the value returned at capture %s.",
+                           call_name,
+                           enumutil::GetResultValueString(replay_result).c_str(),
+                           enumutil::GetResultValueString(capture_result).c_str());
+        return;
+    }
+
     if (capture_result != replay_result)
     {
         if ((replay_result == DXGI_ERROR_DEVICE_REMOVED) || (replay_result == E_OUTOFMEMORY))
@@ -513,10 +523,29 @@ void Dx12ReplayConsumerArmFeatures::ApplyFillMemoryResourceAddressCommand(uint64
             {
                 auto value_type   = consumer_->fill_memory_resource_address_info_.resource_addresses[i].type;
                 auto value_offset = consumer_->fill_memory_resource_address_info_.resource_addresses[i].offset;
-                if ((offset > 0) && (value_offset >= offset))
+                if (offset > 0)
                 {
+                    if (value_offset < offset)
+                    {
+                        GFXRECON_LOG_ERROR("Invalid resource value offset %" PRIu64
+                                           " for FillMemory data range [%" PRIu64 ", %" PRIu64 "). Replay may fail.",
+                                           value_offset,
+                                           offset,
+                                           offset + size);
+                        continue;
+                    }
+
                     // Adjust the offset if the fill memory command is not at the start of the resource.
                     value_offset -= offset;
+                }
+
+                if ((value_offset > size) || (value_offset + sizeof(UINT64) > size))
+                {
+                    GFXRECON_LOG_ERROR("Resource value offset %" PRIu64
+                                       " with size exceeds FillMemory data size %" PRIu64 ". Replay may fail.",
+                                       value_offset,
+                                       size);
+                    continue;
                 }
 
                 auto object_id   = consumer_->fill_memory_resource_address_info_.resource_addresses[i].object_id;
@@ -530,15 +559,17 @@ void Dx12ReplayConsumerArmFeatures::ApplyFillMemoryResourceAddressCommand(uint64
                 {
                     case format::ResourceValueType::kGpuVirtualAddress:
                     {
-                        auto address_value_ptr = reinterpret_cast<UINT64*>(old_value_ptr);
-                        if (*address_value_ptr != adjusted_value)
+                        UINT64 current_value = 0;
+                        util::platform::MemoryCopy(
+                            &current_value, sizeof(current_value), old_value_ptr, sizeof(current_value));
+                        if (current_value != adjusted_value)
                         {
                             GFXRECON_LOG_ERROR("Unexpected GPU VA value found in memory for object_id %" PRIu64
                                                ". Expected: 0x%016" PRIx64 ", Found: 0x%016" PRIx64
                                                ". Replay may fail.",
                                                object_id,
                                                adjusted_value,
-                                               *address_value_ptr);
+                                               current_value);
                             break;
                         }
 
@@ -546,7 +577,10 @@ void Dx12ReplayConsumerArmFeatures::ApplyFillMemoryResourceAddressCommand(uint64
                             consumer_->gpu_va_map_.GetReplayAccelerationStructureAddress(adjusted_value);
                         if (replay_base_address != 0)
                         {
-                            *address_value_ptr = replay_base_address;
+                            util::platform::MemoryCopy(old_value_ptr,
+                                                       sizeof(replay_base_address),
+                                                       &replay_base_address,
+                                                       sizeof(replay_base_address));
                             break;
                         }
 
@@ -560,20 +594,24 @@ void Dx12ReplayConsumerArmFeatures::ApplyFillMemoryResourceAddressCommand(uint64
                             break;
                         }
 
-                        *address_value_ptr = replay_base_address + (adjusted_value - start_value);
+                        UINT64 replay_address = replay_base_address + (adjusted_value - start_value);
+                        util::platform::MemoryCopy(
+                            old_value_ptr, sizeof(replay_address), &replay_address, sizeof(replay_address));
                         break;
                     }
                     case format::ResourceValueType::kGpuDescriptorHandle:
                     {
-                        auto address_value_ptr = reinterpret_cast<UINT64*>(old_value_ptr);
-                        if (*address_value_ptr != adjusted_value)
+                        UINT64 current_value = 0;
+                        util::platform::MemoryCopy(
+                            &current_value, sizeof(current_value), old_value_ptr, sizeof(current_value));
+                        if (current_value != adjusted_value)
                         {
                             GFXRECON_LOG_ERROR("Unexpected GPU Descriptor Handle value found in memory for object_id "
                                                "%" PRIu64 ". Expected: 0x%016" PRIx64 ", Found: 0x%016" PRIx64
                                                ". Replay may fail.",
                                                object_id,
                                                adjusted_value,
-                                               *address_value_ptr);
+                                               current_value);
                             break;
                         }
 
@@ -589,7 +627,10 @@ void Dx12ReplayConsumerArmFeatures::ApplyFillMemoryResourceAddressCommand(uint64
                             break;
                         }
 
-                        *address_value_ptr = replay_offset_address;
+                        util::platform::MemoryCopy(old_value_ptr,
+                                                   sizeof(replay_offset_address),
+                                                   &replay_offset_address,
+                                                   sizeof(replay_offset_address));
                         break;
                     }
                     case format::ResourceValueType::kShaderIdentifier:

@@ -1546,7 +1546,7 @@ class Dx12ReplayConsumerBase : public Dx12Consumer
     std::unordered_map<format::HandleId, uint64_t>           resource_buffer_widths_;
     std::optional<std::pair<uint64_t, std::vector<uint8_t>>> latest_root_signature_blob_datas_;
     // map dx12 acceleration structure builders for each device
-    std::unordered_map<const ID3D12Device*, std::unique_ptr<Dx12AccelerationStructureBuilder>>
+    std::unordered_map<format::HandleId, std::unique_ptr<Dx12AccelerationStructureBuilder>>
                                                       acceleration_structure_builders_;
     std::unordered_map<format::HandleId, const void*> active_devices_;
     std::unique_ptr<Dx12ReplayConsumerArmFeatures>    arm_features_;

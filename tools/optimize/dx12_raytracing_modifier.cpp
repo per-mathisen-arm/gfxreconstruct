@@ -138,26 +138,31 @@ void Dx12RayTracingModifier::Process_ID3D12DescriptorHeap_GetGPUDescriptorHandle
         return;
     }
 
-    auto&    heap_info = descriptor_heap_infos_[object_id];
-    uint64_t increment = 0;
-    for (const auto& device_descriptor : device_descriptor_increment_sizes_)
+    auto& heap_info = descriptor_heap_infos_[object_id];
+    if (heap_info.descriptor_type == D3D12_DESCRIPTOR_HEAP_TYPE_RTV ||
+        heap_info.descriptor_type == D3D12_DESCRIPTOR_HEAP_TYPE_DSV)
     {
-        for (const auto& descriptor_increment : device_descriptor.second)
+        // For RTV and DSV heaps, do not track the GPU descriptor address.
+        return;
+    }
+
+    uint64_t increment      = 0;
+    auto     increment_iter = device_descriptor_increment_sizes_.find(heap_info.object_id);
+    if (increment_iter != device_descriptor_increment_sizes_.end())
+    {
+        auto descriptor_type_iter = increment_iter->second.find(heap_info.descriptor_type);
+        if (descriptor_type_iter != increment_iter->second.end())
         {
-            if (descriptor_increment.first == heap_info.descriptor_type)
-            {
-                increment = descriptor_increment.second;
-                break;
-            }
-        }
-        if (increment != 0)
-        {
-            break;
+            increment = descriptor_type_iter->second;
         }
     }
 
     if (increment == 0)
     {
+        GFXRECON_LOG_WARNING("Failed to find increment size for descriptor heap object id %" PRIu64 " in "
+                             "device_descriptor_increment_sizes_ map. Using default increment size of %" PRIu64 ".",
+                             object_id,
+                             min_gpu_descriptor_increment_);
         increment = min_gpu_descriptor_increment_;
     }
     heap_info.capture_increment = increment;
@@ -169,18 +174,9 @@ void Dx12RayTracingModifier::Process_ID3D12DescriptorHeap_GetGPUDescriptorHandle
         heap_info.capture_gpu_addr_end   = return_value.decoded_value->ptr + descriptor_size;
     }
 
-    if (heap_info.descriptor_type == D3D12_DESCRIPTOR_HEAP_TYPE_RTV ||
-        heap_info.descriptor_type == D3D12_DESCRIPTOR_HEAP_TYPE_DSV)
-    {
-        // For RTV and DSV heaps, do not track the GPU descriptor address.
-        return;
-    }
-
     descriptor_start_address_info_[return_value.decoded_value->ptr] = heap_info;
-
-    min_gpu_descriptor_           = std::min(min_gpu_descriptor_, (*return_value.decoded_value).ptr);
-    max_gpu_descriptor_           = std::max(max_gpu_descriptor_, (*return_value.decoded_value).ptr + descriptor_size);
-    min_gpu_descriptor_alignment_ = std::min(min_gpu_descriptor_alignment_, increment);
+    min_gpu_descriptor_ = std::min(min_gpu_descriptor_, (*return_value.decoded_value).ptr);
+    max_gpu_descriptor_ = std::max(max_gpu_descriptor_, (*return_value.decoded_value).ptr + descriptor_size);
 }
 
 void Dx12RayTracingModifier::Process_ID3D12Device_CreateCommittedResource(
@@ -773,6 +769,7 @@ void Dx12RayTracingModifier::Process_BuildRaytracingAccelerationStructure(
                 }
                 else
                 {
+                    std::vector<D3D12_RAYTRACING_GEOMETRY_DESC> new_geometry_descs = build_desc.geometry_descs;
                     for (UINT index = 0; index < build_desc_iter->second.geometry_descs.size(); ++index)
                     {
                         bool        found     = false;
@@ -783,7 +780,7 @@ void Dx12RayTracingModifier::Process_BuildRaytracingAccelerationStructure(
                             const_cast<D3D12_RAYTRACING_GEOMETRY_DESC&>(geom_desc).OmmTriangles.pOmmLinkage = nullptr;
                         }
 
-                        for (auto& new_geom_desc : build_desc.geometry_descs)
+                        for (auto& new_geom_desc : new_geometry_descs)
                         {
                             if (new_geom_desc.Type == D3D12_RAYTRACING_GEOMETRY_TYPE_OMM_TRIANGLES)
                             {
@@ -1945,25 +1942,22 @@ void Dx12RayTracingModifier::FindResourceRemapValues(
 {
     found_resource_addresses->clear();
 
-    const uint64_t kDescSize       = sizeof(D3D12_GPU_DESCRIPTOR_HANDLE::ptr);
-    const uint64_t kAddrSize       = sizeof(uint64_t);
-    const uint64_t kIdSize         = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
-    const uint64_t kMinDataStride  = 4;
-    const uint64_t kGpuVaAlignment = 4;
+    const uint64_t kDescSize      = sizeof(D3D12_GPU_DESCRIPTOR_HANDLE::ptr);
+    const uint64_t kAddrSize      = sizeof(uint64_t);
+    const uint64_t kIdSize        = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+    const uint64_t kMinDataStride = 1;
+
+    // Since the index buffer format can be DXGI_FORMAT_R16_UINT, the GPU VA should be aligned to at least 2 bytes.
+    const uint64_t kGpuVaAlignment = 2;
 
     // TODO: Before checking for GPU VA match, ensure that the data is valid.
     bool check_gpu_va = true;
     // TODO: Before checking for GPU descriptor handle match, ensure that the data is valid.
     bool check_gpu_descriptor = true;
 
-    if (min_gpu_descriptor_alignment_ == 0 || min_gpu_descriptor_alignment_ == UINT64_MAX)
-    {
-        min_gpu_descriptor_alignment_ = min_gpu_descriptor_increment_;
-    }
-
     std::vector<uint8_t> zero_shader_id(D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES, 0);
 
-    for (uint64_t i = 0; (i + kMinDataStride) <= data_size; i += kMinDataStride)
+    for (uint64_t i = 0; (i + kMinDataStride) < data_size; i += kMinDataStride)
     {
         Dx12FillCommandResourceAddress fill_cmd_resource_address;
 
@@ -1974,7 +1968,6 @@ void Dx12RayTracingModifier::FindResourceRemapValues(
 
             if (0 == std::memcmp(shader_id_ptr, zero_shader_id.data(), kIdSize))
             {
-                i += kIdSize - kMinDataStride;
                 continue;
             }
 
@@ -2009,24 +2002,22 @@ void Dx12RayTracingModifier::FindResourceRemapValues(
         // Next check for GPU descriptor match.
         if (check_gpu_descriptor && ((i + kDescSize) <= data_size))
         {
-            uint64_t* handle_value = reinterpret_cast<uint64_t*>(const_cast<uint8_t*>(data) + i);
-            if (*handle_value == 0)
-            {
-                i += kDescSize - kMinDataStride;
-                continue;
-            }
+            D3D12_GPU_DESCRIPTOR_HANDLE descriptor_handle = {};
+            util::platform::MemoryCopy(&descriptor_handle.ptr,
+                                       sizeof(D3D12_GPU_DESCRIPTOR_HANDLE::ptr),
+                                       const_cast<uint8_t*>(data) + i,
+                                       sizeof(D3D12_GPU_DESCRIPTOR_HANDLE::ptr));
 
-            if ((*handle_value >= min_gpu_descriptor_) && (*handle_value < max_gpu_descriptor_) &&
-                (*handle_value % min_gpu_descriptor_alignment_ == 0))
+            uint64_t handle_value = descriptor_handle.ptr;
+            if ((handle_value != 0) && (handle_value >= min_gpu_descriptor_) && (handle_value < max_gpu_descriptor_))
             {
-                D3D12_GPU_DESCRIPTOR_HANDLE old_descriptor;
-                old_descriptor.ptr = *handle_value;
-
                 auto entry = std::find_if(descriptor_start_address_info_.begin(),
                                           descriptor_start_address_info_.end(),
-                                          [old_descriptor](auto& entry) {
-                                              return (old_descriptor.ptr >= entry.second.capture_gpu_addr_begin) &&
-                                                     (old_descriptor.ptr < entry.second.capture_gpu_addr_end);
+                                          [descriptor_handle](auto& entry) {
+                                              return (descriptor_handle.ptr >= entry.second.capture_gpu_addr_begin) &&
+                                                     (descriptor_handle.ptr < entry.second.capture_gpu_addr_end) &&
+                                                     (((descriptor_handle.ptr - entry.second.capture_gpu_addr_begin) %
+                                                       entry.second.capture_increment) == 0);
                                           });
 
                 if (entry != descriptor_start_address_info_.end())
@@ -2035,7 +2026,7 @@ void Dx12RayTracingModifier::FindResourceRemapValues(
                                        " in resource ID: %" PRIu64 ", data_offset %" PRIu64 " data_size %" PRIu64
                                        " start handle: 0x%" PRIx64 ", end handle: 0x%" PRIx64
                                        " GetCurrentBlockIndex(%" PRIu64 ")",
-                                       old_descriptor.ptr,
+                                       descriptor_handle.ptr,
                                        i,
                                        mapped_resource_id,
                                        data_offset,
@@ -2048,7 +2039,7 @@ void Dx12RayTracingModifier::FindResourceRemapValues(
                     fill_cmd_resource_address.type           = format::ResourceValueType::kGpuDescriptorHandle;
                     fill_cmd_resource_address.object_id      = entry->second.handle_id;
                     fill_cmd_resource_address.start_value    = entry->second.capture_gpu_addr_begin;
-                    fill_cmd_resource_address.adjusted_value = old_descriptor.ptr;
+                    fill_cmd_resource_address.adjusted_value = descriptor_handle.ptr;
 
                     found_resource_addresses->emplace_back(fill_cmd_resource_address);
                     i += kDescSize - kMinDataStride;
@@ -2060,27 +2051,24 @@ void Dx12RayTracingModifier::FindResourceRemapValues(
         // Finally check for GPU VA match.
         if (check_gpu_va && ((i + kAddrSize) <= data_size))
         {
-            uint64_t* address_value = reinterpret_cast<uint64_t*>(const_cast<uint8_t*>(data) + i);
-            if (*address_value == 0)
-            {
-                i += kAddrSize - kMinDataStride;
-                continue;
-            }
+            D3D12_GPU_VIRTUAL_ADDRESS gpu_address = {};
+            util::platform::MemoryCopy(&gpu_address,
+                                       sizeof(D3D12_GPU_VIRTUAL_ADDRESS),
+                                       const_cast<uint8_t*>(data) + i,
+                                       sizeof(D3D12_GPU_VIRTUAL_ADDRESS));
 
-            if ((*address_value >= min_gpu_va_) && (*address_value < max_gpu_va_) &&
-                (*address_value % kGpuVaAlignment == 0))
+            if ((gpu_address != 0) && (gpu_address >= min_gpu_va_) && (gpu_address < max_gpu_va_) &&
+                ((gpu_address % kGpuVaAlignment) == 0))
             {
-                uint64_t old_address = *address_value;
-
                 // First check if the GPU VA is a raytracing acceleration structure.
-                auto accel_struct_iter = accel_struct_address_resource_.find(old_address);
+                auto accel_struct_iter = accel_struct_address_resource_.find(gpu_address);
                 if (accel_struct_iter != accel_struct_address_resource_.end())
                 {
                     GFXRECON_LOG_DEBUG("Found acceleration structure address: 0x%" PRIx64 " offset %" PRIu64
                                        " in resource ID: %" PRIu64 ", data_offset %" PRIu64 " data_size %" PRIu64
                                        "  start address: 0x%" PRIx64 ", end address: 0x%" PRIx64
                                        " GetCurrentBlockIndex(%" PRIu64 ")",
-                                       old_address,
+                                       gpu_address,
                                        i,
                                        mapped_resource_id,
                                        data_offset,
@@ -2093,7 +2081,7 @@ void Dx12RayTracingModifier::FindResourceRemapValues(
                     fill_cmd_resource_address.type           = format::ResourceValueType::kGpuVirtualAddress;
                     fill_cmd_resource_address.object_id      = accel_struct_iter->second.handle_id;
                     fill_cmd_resource_address.start_value    = accel_struct_iter->second.start_virtual_address;
-                    fill_cmd_resource_address.adjusted_value = old_address;
+                    fill_cmd_resource_address.adjusted_value = gpu_address;
 
                     found_resource_addresses->emplace_back(fill_cmd_resource_address);
                     i += kAddrSize - kMinDataStride;
@@ -2103,9 +2091,9 @@ void Dx12RayTracingModifier::FindResourceRemapValues(
                 {
                     auto entry = std::find_if(gpu_virtual_address_resource_.begin(),
                                               gpu_virtual_address_resource_.end(),
-                                              [old_address](auto& entry) {
-                                                  return (old_address >= entry.second.start_virtual_address) &&
-                                                         (old_address < entry.second.end_virtual_address);
+                                              [gpu_address](auto& entry) {
+                                                  return (gpu_address >= entry.second.start_virtual_address) &&
+                                                         (gpu_address < entry.second.end_virtual_address);
                                               });
 
                     if (entry != gpu_virtual_address_resource_.end())
@@ -2114,7 +2102,7 @@ void Dx12RayTracingModifier::FindResourceRemapValues(
                                            " in resource ID: %" PRIu64 ", data_offset %" PRIu64 " data_size %" PRIu64
                                            "  start address: 0x%" PRIx64 ", end address: 0x%" PRIx64
                                            " GetCurrentBlockIndex(%" PRIu64 ")",
-                                           old_address,
+                                           gpu_address,
                                            i,
                                            mapped_resource_id,
                                            data_offset,
@@ -2127,7 +2115,7 @@ void Dx12RayTracingModifier::FindResourceRemapValues(
                         fill_cmd_resource_address.type           = format::ResourceValueType::kGpuVirtualAddress;
                         fill_cmd_resource_address.object_id      = entry->second.handle_id;
                         fill_cmd_resource_address.start_value    = entry->second.start_virtual_address;
-                        fill_cmd_resource_address.adjusted_value = old_address;
+                        fill_cmd_resource_address.adjusted_value = gpu_address;
 
                         found_resource_addresses->emplace_back(fill_cmd_resource_address);
                         i += kAddrSize - kMinDataStride;
@@ -2352,10 +2340,13 @@ void Dx12RayTracingModifier::ProcessInitSubresourceCommand(const format::InitSub
         FindResourceRemapValues(resource_id, data, 0, data_size, &found_resource_addresses);
     }
 
-    for (const auto& found_resource_address : found_resource_addresses)
+    if (!found_resource_addresses.empty())
     {
         auto& resource_addresses = fill_cmd_resource_addresses_[GetCurrentBlockIndex()];
-        resource_addresses.push_back(found_resource_address);
+        for (const auto& found_resource_address : found_resource_addresses)
+        {
+            resource_addresses.push_back(found_resource_address);
+        }
     }
 }
 
@@ -2391,6 +2382,7 @@ void Dx12RayTracingModifier::ProcessFillMemoryCommand(uint64_t       memory_id,
             const auto& resource_info = resource_entries_[mapped_resource_id];
             if (resource_info.desc.Dimension != D3D12_RESOURCE_DIMENSION_BUFFER)
             {
+                GFXRECON_LOG_ERROR("Mapped resource ID: %" PRIu64 " is not a buffer resource.", mapped_resource_id);
                 return;
             }
         }
@@ -2398,11 +2390,14 @@ void Dx12RayTracingModifier::ProcessFillMemoryCommand(uint64_t       memory_id,
         FindResourceRemapValues(mapped_resource_id, data, offset, size, &found_resource_addresses);
     }
 
-    for (auto& found_resource_address : found_resource_addresses)
+    if (!found_resource_addresses.empty())
     {
-        found_resource_address.offset += offset;
         auto& resource_addresses = fill_cmd_resource_addresses_[GetCurrentBlockIndex()];
-        resource_addresses.push_back(found_resource_address);
+        for (auto& found_resource_address : found_resource_addresses)
+        {
+            found_resource_address.offset += offset;
+            resource_addresses.push_back(found_resource_address);
+        }
     }
 }
 

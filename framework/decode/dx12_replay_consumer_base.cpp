@@ -859,17 +859,24 @@ void Dx12ReplayConsumerBase::ProcessInitDx12AccelerationStructureCommand(
     auto device = graphics::dx12::GetDeviceComPtrFromChild<ID3D12Device>(dest_resource);
     GFXRECON_ASSERT(device);
 
+    auto dest_resource_object = GetObjectInfo(dest_resource_id);
+    GFXRECON_ASSERT(dest_resource_object != nullptr);
+    auto extra_resource_info = GetExtraInfo<D3D12ResourceInfo>(dest_resource_object);
+    GFXRECON_ASSERT(extra_resource_info != nullptr);
+    format::HandleId device_id = extra_resource_info->parent_id;
+    assert(device_id != format::kNullHandleId);
+
     Dx12AccelerationStructureBuilder* accel_struct_builder = nullptr;
-    if (acceleration_structure_builders_.find(device) == acceleration_structure_builders_.end())
+    if (acceleration_structure_builders_.find(device_id) == acceleration_structure_builders_.end())
     {
         graphics::dx12::ID3D12Device5ComPtr device5_ptr = nullptr;
         device->QueryInterface(IID_PPV_ARGS(&device5_ptr));
         GFXRECON_ASSERT(device5_ptr);
         auto builder = std::make_unique<Dx12AccelerationStructureBuilder>(std::move(device5_ptr));
-        acceleration_structure_builders_.emplace(device, std::move(builder));
+        acceleration_structure_builders_.emplace(device_id, std::move(builder));
     }
 
-    accel_struct_builder = acceleration_structure_builders_.at(device).get();
+    accel_struct_builder = acceleration_structure_builders_.at(device_id).get();
 
     accel_struct_builder->Build(gpu_va_map_, command_header, geometry_descs, build_inputs, build_inputs_data);
 
@@ -1027,15 +1034,6 @@ void Dx12ReplayConsumerBase::MapGpuDescriptorHandle(D3D12_GPU_DESCRIPTOR_HANDLE&
 void Dx12ReplayConsumerBase::MapGpuDescriptorHandle(uint8_t* dst_handle_ptr, const uint8_t* src_handle_ptr)
 {
     D3D12_GPU_DESCRIPTOR_HANDLE handle = {};
-
-    if (support_memory_allocator_)
-    {
-        handle.ptr = *reinterpret_cast<const UINT64*>(src_handle_ptr);
-        MapGpuDescriptorHandle(handle);
-        *reinterpret_cast<UINT64*>(dst_handle_ptr) = handle.ptr;
-        return;
-    }
-
     util::platform::MemoryCopy(&handle.ptr,
                                sizeof(D3D12_GPU_DESCRIPTOR_HANDLE::ptr),
                                src_handle_ptr,
@@ -1055,15 +1053,6 @@ void Dx12ReplayConsumerBase::MapCpuDescriptorHandle(D3D12_CPU_DESCRIPTOR_HANDLE&
 void Dx12ReplayConsumerBase::MapCpuDescriptorHandle(uint8_t* dst_handle_ptr, const uint8_t* src_handle_ptr)
 {
     D3D12_CPU_DESCRIPTOR_HANDLE handle = {};
-
-    if (support_memory_allocator_)
-    {
-        handle.ptr = *reinterpret_cast<const UINT64*>(src_handle_ptr);
-        MapCpuDescriptorHandle(handle);
-        *reinterpret_cast<UINT64*>(dst_handle_ptr) = handle.ptr;
-        return;
-    }
-
     util::platform::MemoryCopy(&handle.ptr,
                                sizeof(D3D12_CPU_DESCRIPTOR_HANDLE::ptr),
                                src_handle_ptr,
@@ -1087,14 +1076,6 @@ void Dx12ReplayConsumerBase::MapGpuVirtualAddress(D3D12_GPU_VIRTUAL_ADDRESS& add
 
 void Dx12ReplayConsumerBase::MapGpuVirtualAddress(uint8_t* dst_address_ptr, const uint8_t* src_address_ptr)
 {
-    if (support_memory_allocator_)
-    {
-        auto address_value = *reinterpret_cast<const D3D12_GPU_VIRTUAL_ADDRESS*>(src_address_ptr);
-        MapGpuVirtualAddress(address_value);
-        *reinterpret_cast<D3D12_GPU_VIRTUAL_ADDRESS*>(dst_address_ptr) = address_value;
-        return;
-    }
-
     D3D12_GPU_VIRTUAL_ADDRESS address;
     util::platform::MemoryCopy(
         &address, sizeof(D3D12_GPU_VIRTUAL_ADDRESS), src_address_ptr, sizeof(D3D12_GPU_VIRTUAL_ADDRESS));
@@ -1321,11 +1302,9 @@ ULONG Dx12ReplayConsumerBase::OverrideRelease(DxObjectInfo* replay_object_info, 
         if ((replay_object_info->extra_info != nullptr) &&
             (replay_object_info->extra_info->extra_info_type == DxObjectInfoType::kID3D12DeviceInfo))
         {
-            graphics::dx12::ID3D12DeviceComPtr device_ptr = nullptr;
-            object->QueryInterface(IID_PPV_ARGS(&device_ptr));
-            if (device_ptr != nullptr)
+            if (acceleration_structure_builders_.find(device_id) != acceleration_structure_builders_.end())
             {
-                acceleration_structure_builders_.erase(device_ptr.GetInterfacePtr());
+                acceleration_structure_builders_.erase(device_id);
             }
 
             active_devices_.erase(object_id);
@@ -2062,35 +2041,37 @@ Dx12ReplayConsumerBase::GetAccelerationStructureBuilder(const DxObjectInfo* repl
         return nullptr;
     }
 
-    graphics::dx12::ID3D12DeviceComPtr device_ptr = nullptr;
-    if ((replay_object_info->extra_info != nullptr) &&
-        (replay_object_info->extra_info->extra_info_type == DxObjectInfoType::kID3D12DeviceInfo))
+    format::HandleId device_id = format::kNullHandleId;
+    if (replay_object_info->extra_info != nullptr)
     {
-        if (FAILED(replay_object_info->object->QueryInterface(IID_PPV_ARGS(&device_ptr))))
+        if (replay_object_info->extra_info->extra_info_type == DxObjectInfoType::kID3D12DeviceInfo)
         {
-            GFXRECON_LOG_ERROR("Failed to get ID3D12Device from DxObjectInfo in GetAccelerationStructureBuilder.");
-            return nullptr;
+            device_id = replay_object_info->capture_id;
         }
-    }
-    else
-    {
-        ID3D12DeviceChild* device_child = static_cast<ID3D12DeviceChild*>(replay_object_info->object);
-        if (FAILED(device_child->GetDevice(IID_PPV_ARGS(&device_ptr))))
+        else
         {
-            GFXRECON_LOG_ERROR("Failed to get ID3D12Device from DxObjectInfo in GetAccelerationStructureBuilder.");
-            return nullptr;
+            device_id = replay_object_info->extra_info->parent_id;
         }
     }
 
-    ID3D12Device* device = device_ptr.GetInterfacePtr();
-    if (acceleration_structure_builders_.find(device) == acceleration_structure_builders_.end())
+    if (device_id == format::kNullHandleId)
     {
+        GFXRECON_LOG_DEBUG("Failed to get device id for object_id %" PRIu64 " in GetAccelerationStructureBuilder.",
+                           replay_object_info->capture_id);
+        return nullptr;
+    }
+
+    if (acceleration_structure_builders_.find(device_id) == acceleration_structure_builders_.end())
+    {
+        auto* device = MapObject<ID3D12Device>(device_id);
+        GFXRECON_ASSERT(device);
+
         graphics::dx12::ID3D12Device5ComPtr device5_ptr = nullptr;
         device->QueryInterface(IID_PPV_ARGS(&device5_ptr));
         if (device5_ptr != nullptr)
         {
             auto builder = std::make_unique<Dx12AccelerationStructureBuilder>(std::move(device5_ptr));
-            acceleration_structure_builders_.emplace(device, std::move(builder));
+            acceleration_structure_builders_.emplace(device_id, std::move(builder));
         }
         else
         {
@@ -2099,7 +2080,7 @@ Dx12ReplayConsumerBase::GetAccelerationStructureBuilder(const DxObjectInfo* repl
         }
     }
 
-    return acceleration_structure_builders_.at(device).get();
+    return acceleration_structure_builders_.at(device_id).get();
 }
 
 void Dx12ReplayConsumerBase::DetectAdapters()

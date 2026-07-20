@@ -515,10 +515,9 @@ class Dx12RayTracingModifier : public util::Dx12ModifierBase
     uint64_t max_gpu_va_{ 0 };
     uint64_t min_gpu_descriptor_{ UINT64_MAX };
     uint64_t max_gpu_descriptor_{ 0 };
-    uint64_t min_gpu_descriptor_alignment_{ UINT64_MAX };
 
-    // Minimum GPU descriptor increment size for D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV
-    const uint64_t min_gpu_descriptor_increment_ = 32;
+    // Minimum GPU descriptor increment size for D3D12_DESCRIPTOR_HEAP_TYPE
+    const uint64_t min_gpu_descriptor_increment_ = 16;
 
     // -----state object-----state object properties-----
     std::unordered_map<format::HandleId, format::HandleId> state_object_properties_;
