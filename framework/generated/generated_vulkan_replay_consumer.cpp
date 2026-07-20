@@ -1205,7 +1205,7 @@ void VulkanReplayConsumer::Process_vkCmdResetQueryPool(
 
     if (options_.dumping_resources)
     {
-        resource_dumper_->Process_vkCmdResetQueryPool(call_info, GetDeviceTable(in_commandBuffer)->CmdResetQueryPool, in_commandBuffer, in_queryPool, firstQuery, queryCount);
+        resource_dumper_->Process_vkCmdResetQueryPool(call_info, GetDeviceTable(in_commandBuffer)->CmdResetQueryPool, in_commandBuffer, GetObjectInfoTable().GetVkQueryPoolInfo(queryPool), firstQuery, queryCount);
     }
 }
 
@@ -1223,7 +1223,7 @@ void VulkanReplayConsumer::Process_vkCmdWriteTimestamp(
 
     if (options_.dumping_resources)
     {
-        resource_dumper_->Process_vkCmdWriteTimestamp(call_info, GetDeviceTable(in_commandBuffer)->CmdWriteTimestamp, in_commandBuffer, pipelineStage, in_queryPool, query);
+        resource_dumper_->Process_vkCmdWriteTimestamp(call_info, GetDeviceTable(in_commandBuffer)->CmdWriteTimestamp, in_commandBuffer, pipelineStage, GetObjectInfoTable().GetVkQueryPoolInfo(queryPool), query);
     }
 }
 
@@ -1246,7 +1246,7 @@ void VulkanReplayConsumer::Process_vkCmdCopyQueryPoolResults(
 
     if (options_.dumping_resources)
     {
-        resource_dumper_->Process_vkCmdCopyQueryPoolResults(call_info, GetDeviceTable(in_commandBuffer->handle)->CmdCopyQueryPoolResults, in_commandBuffer->handle, in_queryPool->handle, firstQuery, queryCount, in_dstBuffer->handle, dstOffset, stride, flags);
+        resource_dumper_->Process_vkCmdCopyQueryPoolResults(call_info, GetDeviceTable(in_commandBuffer->handle)->CmdCopyQueryPoolResults, in_commandBuffer->handle, in_queryPool, firstQuery, queryCount, in_dstBuffer, dstOffset, stride, flags);
     }
 }
 
@@ -3271,7 +3271,7 @@ void VulkanReplayConsumer::Process_vkCmdWriteTimestamp2(
 
     if (options_.dumping_resources)
     {
-        resource_dumper_->Process_vkCmdWriteTimestamp2(call_info, GetDeviceTable(in_commandBuffer)->CmdWriteTimestamp2, in_commandBuffer, stage, in_queryPool, query);
+        resource_dumper_->Process_vkCmdWriteTimestamp2(call_info, GetDeviceTable(in_commandBuffer)->CmdWriteTimestamp2, in_commandBuffer, stage, GetObjectInfoTable().GetVkQueryPoolInfo(queryPool), query);
     }
 }
 
@@ -6514,7 +6514,7 @@ void VulkanReplayConsumer::Process_vkCmdWriteTimestamp2KHR(
 
     if (options_.dumping_resources)
     {
-        resource_dumper_->Process_vkCmdWriteTimestamp2KHR(call_info, GetDeviceTable(in_commandBuffer)->CmdWriteTimestamp2KHR, in_commandBuffer, stage, in_queryPool, query);
+        resource_dumper_->Process_vkCmdWriteTimestamp2KHR(call_info, GetDeviceTable(in_commandBuffer)->CmdWriteTimestamp2KHR, in_commandBuffer, stage, GetObjectInfoTable().GetVkQueryPoolInfo(queryPool), query);
     }
 }
 
@@ -6737,7 +6737,7 @@ void VulkanReplayConsumer::Process_vkCmdCopyQueryPoolResultsToMemoryKHR(
 
     if (options_.dumping_resources)
     {
-        resource_dumper_->Process_vkCmdCopyQueryPoolResultsToMemoryKHR(call_info, GetDeviceTable(in_commandBuffer)->CmdCopyQueryPoolResultsToMemoryKHR, in_commandBuffer, in_queryPool, firstQuery, queryCount, in_pDstRange, dstFlags, queryResultFlags);
+        resource_dumper_->Process_vkCmdCopyQueryPoolResultsToMemoryKHR(call_info, GetDeviceTable(in_commandBuffer)->CmdCopyQueryPoolResultsToMemoryKHR, in_commandBuffer, GetObjectInfoTable().GetVkQueryPoolInfo(queryPool), firstQuery, queryCount, pDstRange, dstFlags, queryResultFlags);
     }
 }
 
@@ -7819,7 +7819,7 @@ void VulkanReplayConsumer::Process_vkCmdBeginQueryIndexedEXT(
 
     if (options_.dumping_resources)
     {
-        resource_dumper_->Process_vkCmdBeginQueryIndexedEXT(call_info, GetDeviceTable(in_commandBuffer)->CmdBeginQueryIndexedEXT, in_commandBuffer, in_queryPool, query, flags, index);
+        resource_dumper_->Process_vkCmdBeginQueryIndexedEXT(call_info, GetDeviceTable(in_commandBuffer)->CmdBeginQueryIndexedEXT, in_commandBuffer, GetObjectInfoTable().GetVkQueryPoolInfo(queryPool), query, flags, index);
     }
 }
 
@@ -7837,7 +7837,7 @@ void VulkanReplayConsumer::Process_vkCmdEndQueryIndexedEXT(
 
     if (options_.dumping_resources)
     {
-        resource_dumper_->Process_vkCmdEndQueryIndexedEXT(call_info, GetDeviceTable(in_commandBuffer)->CmdEndQueryIndexedEXT, in_commandBuffer, in_queryPool, query, index);
+        resource_dumper_->Process_vkCmdEndQueryIndexedEXT(call_info, GetDeviceTable(in_commandBuffer)->CmdEndQueryIndexedEXT, in_commandBuffer, GetObjectInfoTable().GetVkQueryPoolInfo(queryPool), query, index);
     }
 }
 
@@ -9093,7 +9093,7 @@ void VulkanReplayConsumer::Process_vkCmdWriteAccelerationStructuresPropertiesNV(
 
     if (options_.dumping_resources)
     {
-        resource_dumper_->Process_vkCmdWriteAccelerationStructuresPropertiesNV(call_info, GetDeviceTable(in_commandBuffer)->CmdWriteAccelerationStructuresPropertiesNV, in_commandBuffer, accelerationStructureCount, in_pAccelerationStructures, queryType, in_queryPool, firstQuery);
+        resource_dumper_->Process_vkCmdWriteAccelerationStructuresPropertiesNV(call_info, GetDeviceTable(in_commandBuffer)->CmdWriteAccelerationStructuresPropertiesNV, in_commandBuffer, accelerationStructureCount, pAccelerationStructures, queryType, GetObjectInfoTable().GetVkQueryPoolInfo(queryPool), firstQuery);
     }
 }
 
@@ -11223,7 +11223,7 @@ void VulkanReplayConsumer::Process_vkCmdWriteMicromapsPropertiesEXT(
 
     if (options_.dumping_resources)
     {
-        resource_dumper_->Process_vkCmdWriteMicromapsPropertiesEXT(call_info, GetDeviceTable(in_commandBuffer->handle)->CmdWriteMicromapsPropertiesEXT, in_commandBuffer->handle, micromapCount, pMicromaps->GetHandlePointer(), queryType, in_queryPool->handle, firstQuery);
+        resource_dumper_->Process_vkCmdWriteMicromapsPropertiesEXT(call_info, GetDeviceTable(in_commandBuffer->handle)->CmdWriteMicromapsPropertiesEXT, in_commandBuffer->handle, micromapCount, pMicromaps, queryType, in_queryPool, firstQuery);
     }
 }
 
@@ -13364,7 +13364,7 @@ void VulkanReplayConsumer::Process_vkCmdWriteAccelerationStructuresPropertiesKHR
 
     if (options_.dumping_resources)
     {
-        resource_dumper_->Process_vkCmdWriteAccelerationStructuresPropertiesKHR(call_info, GetDeviceTable(in_commandBuffer->handle)->CmdWriteAccelerationStructuresPropertiesKHR, in_commandBuffer->handle, accelerationStructureCount, pAccelerationStructures->GetHandlePointer(), queryType, in_queryPool->handle, firstQuery);
+        resource_dumper_->Process_vkCmdWriteAccelerationStructuresPropertiesKHR(call_info, GetDeviceTable(in_commandBuffer->handle)->CmdWriteAccelerationStructuresPropertiesKHR, in_commandBuffer->handle, accelerationStructureCount, pAccelerationStructures, queryType, in_queryPool, firstQuery);
     }
 }
 

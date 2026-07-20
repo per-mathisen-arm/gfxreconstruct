@@ -173,6 +173,10 @@ class DrawCallsDumpingContext
 
     void EndRendering();
 
+    void RecordCmdBeginRendering(VkCommandBuffer command_buffer, const VkRenderingInfo* rendering_info) const;
+
+    void RecordCmdEndRendering(VkCommandBuffer command_buffer) const;
+
     void BindVertexBuffers(uint64_t                                    index,
                            uint32_t                                    firstBinding,
                            const std::vector<const VulkanBufferInfo*>& buffer_infos,
@@ -195,10 +199,6 @@ class DrawCallsDumpingContext
                          VkDeviceSize            offset,
                          VkIndexType             index_type,
                          VkDeviceSize            size = 0);
-
-    void CmdBeginQuery(VkQueryPool queryPool, uint32_t query);
-
-    void CmdEndQuery(VkQueryPool queryPool, uint32_t query);
 
     // When this is called for a command buffer that corresponds to a before command, dc_params should be null
     void FinalizeCommandBuffer(DrawCallParams* dc_params = nullptr);
@@ -290,6 +290,10 @@ class DrawCallsDumpingContext
     void ReleaseIndirectParams();
 
     void ResetFetchedIndirectParams();
+
+    PFN_vkCmdBeginRendering ResolveCmdBeginRendering() const;
+
+    PFN_vkCmdEndRendering ResolveCmdEndRendering() const;
 
     VkResult BackUpMutableResources(VkQueue queue);
 
@@ -804,8 +808,6 @@ class DrawCallsDumpingContext
     const DumpResourcesAccelerationStructuresContext& acceleration_structures_context_;
 
     const VulkanPerDeviceAddressTrackers& address_trackers_;
-
-    std::map<std::pair<VkQueryPool, uint32_t>, bool> active_queries_;
 
     void SecondaryUpdateContextFromPrimary(const VulkanPipelineInfo*     gr_pipeline,
                                            const BoundVertexBuffersInfo& vertex_buffers,

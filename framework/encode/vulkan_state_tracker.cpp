@@ -1879,7 +1879,7 @@ void VulkanStateTracker::TrackQueryReset(VkCommandBuffer command_buffer,
     auto& query_pool_info =
         wrapper->recorded_queries[vulkan_wrappers::GetWrapper<vulkan_wrappers::QueryPoolWrapper>(query_pool)];
 
-    for (uint32_t i = first_query; i < query_count; ++i)
+    for (uint32_t i = first_query; i < first_query + query_count; ++i)
     {
         query_pool_info[i].active = false;
     }
@@ -1892,7 +1892,7 @@ void VulkanStateTracker::TrackQueryReset(VkQueryPool query_pool, uint32_t first_
     auto wrapper = vulkan_wrappers::GetWrapper<vulkan_wrappers::QueryPoolWrapper>(query_pool);
     assert((first_query + query_count) <= wrapper->pending_queries.size());
 
-    for (uint32_t i = first_query; i < query_count; ++i)
+    for (uint32_t i = first_query; i < first_query + query_count; ++i)
     {
         wrapper->pending_queries[i].active = false;
     }
@@ -2289,15 +2289,15 @@ void gfxrecon::encode::VulkanStateTracker::DestroyState(vulkan_wrappers::BufferW
     GFXRECON_ASSERT(wrapper != nullptr && wrapper->device != nullptr);
     wrapper->create_parameters = nullptr;
 
+    if (wrapper != nullptr && wrapper->device != nullptr)
+    {
+        device_address_trackers_[wrapper->device].RemoveBuffer(wrapper);
+    }
+
     vulkan_wrappers::BufferWrapper* target_storage_wrapper = nullptr;
     if (wrapper->as_target_storage_buffer_id != format::kNullHandleId)
     {
         target_storage_wrapper = state_table_.GetVulkanBufferWrapper(wrapper->as_target_storage_buffer_id);
-    }
-
-    if (wrapper != nullptr && wrapper->device != nullptr)
-    {
-        device_address_trackers_[wrapper->device].RemoveBuffer(wrapper);
     }
 
     vulkan_wrappers::DeviceMemoryWrapper* mem_wrapper =
