@@ -1063,6 +1063,81 @@ void VulkanReplayConsumerBase::ProcessMarkedOffsetsARM(const VulkanDeviceInfo*  
     }
 }
 
+void VulkanReplayConsumerBase::ReverseProcessMarkedOffsetsARM(const VulkanDeviceInfo*            device_info,
+                                                              const VkMarkedOffsetsARM*          marked_offsets,
+                                                              const void*                        p_data,
+                                                              std::vector<std::vector<uint8_t>>& out)
+{
+    const auto&         address_tracker = GetDeviceAddressTracker(device_info);
+    VulkanPipelineInfo* p_pipeline_info = nullptr;
+    out.resize(marked_offsets->count);
+
+    for (uint64_t i = 0; i < marked_offsets->count; i++)
+    {
+        bool result = false;
+        switch (marked_offsets->pMarkingTypes[i])
+        {
+            case VK_MARKING_TYPE_DEVICE_ADDRESS_ARM:
+            {
+                size_t                  offset      = 0;
+                const VulkanBufferInfo* buffer_info = address_tracker.GetBufferByReplayDeviceAddress(
+                    *((uint64_t*)((((uint8_t*)(p_data)) + marked_offsets->pOffsets[i]))), &offset);
+                if ((buffer_info != nullptr) && (buffer_info->capture_address != 0))
+                {
+                    result                   = true;
+                    VkDeviceAddress out_addr = buffer_info->capture_address + offset;
+                    out[i].resize(sizeof(VkDeviceAddress));
+                    memcpy(out[i].data(), &out_addr, sizeof(VkDeviceAddress));
+                }
+                break;
+            }
+            case VK_MARKING_TYPE_SHADER_GROUP_HANDLE_ARM:
+            {
+                for (auto& el : device_info->shader_group_handles)
+                {
+                    p_pipeline_info = GetObjectInfoTable().GetVkPipelineInfo(el.first);
+                    if (p_pipeline_info == nullptr || p_pipeline_info->shader_group_handle_map.empty())
+                    {
+                        continue;
+                    }
+
+                    for (auto it = p_pipeline_info->shader_group_handle_map.begin();
+                         it != p_pipeline_info->shader_group_handle_map.end();
+                         it++)
+                    {
+                        if (0 == std::memcmp((uint8_t*)p_data + marked_offsets->pOffsets[i],
+                                             it->second.data,
+                                             32 * sizeof(uint8_t)))
+                        {
+                            result = true;
+                            out[i].resize(32 * sizeof(uint8_t));
+                            std::memcpy(out[i].data(), it->first.data, 32 * sizeof(uint8_t));
+                            break;
+                        }
+                    }
+                }
+                break;
+            }
+            case VK_MARKING_TYPE_DESCRIPTOR_SIZE_ARM:
+            case VK_MARKING_TYPE_DESCRIPTOR_OFFSET_ARM:
+            case VK_MARKING_TYPE_DESCRIPTOR_ARM:
+            default:
+                result = true;
+                GFXRECON_LOG_WARNING("Not Handled/Unrecognized marking type %s",
+                                     util::ToString<VkMarkingTypeARM>(marked_offsets->pMarkingTypes[i]).c_str());
+                break;
+        };
+        if (!result)
+        {
+            GFXRECON_LOG_FATAL("FAILED to convert replay time data to capture time data for markingType %s, "
+                               "markingSubtype %lu, offset %lu",
+                               util::ToString<VkMarkingTypeARM>(marked_offsets->pMarkingTypes[i]).c_str(),
+                               marked_offsets->pSubTypes[i].reserved,
+                               marked_offsets->pOffsets[i]);
+        }
+    }
+}
+
 void VulkanReplayConsumerBase::ProcessTraceHelpersDataCommand(const format::TraceHelpersDataCommandHeader&      header,
                                                               const std::vector<format::TraceHelpersDataInfos>& infos)
 {
@@ -15618,7 +15693,47 @@ VulkanReplayConsumerBase::OverrideAssertBufferARM(PFN_vkAssertBufferARM   func,
             return original_result;
         }
 
-        replay_time_checksum = util::hash::GenerateAdler32Checksum((uint8_t*)mapped + offset, capture_len);
+        if (auto address_offset_arm =
+                gfxrecon::graphics::vulkan_struct_get_pnext<VkMarkedOffsetsARM>(pInfo->GetPointer());
+            address_offset_arm != nullptr)
+        {
+            std::vector<std::vector<uint8_t>> capture_data;
+            std::vector<VkDeviceSize>         marked_offsets(address_offset_arm->pOffsets,
+                                                     address_offset_arm->pOffsets + address_offset_arm->count);
+            ReverseProcessMarkedOffsetsARM(device_info, address_offset_arm, (uint8_t*)mapped + offset, capture_data);
+
+            const uint32_t MOD_ADLER = 65521;
+            uint32_t       a = 1, b = 0;
+            uint8_t*       data = (uint8_t*)mapped + offset;
+
+            std::vector<VkDeviceSize>::iterator it;
+            for (size_t index = 0; index < capture_len; ++index)
+            {
+                it = std::find(marked_offsets.begin(), marked_offsets.end(), index);
+                if (it != marked_offsets.end())
+                {
+                    size_t                index2  = std::distance(marked_offsets.begin(), it);
+                    std::vector<uint8_t>& current = capture_data[index2];
+                    if (!current.empty())
+                    {
+                        for (auto el : current)
+                        {
+                            a = (a + el) % MOD_ADLER;
+                            b = (b + a) % MOD_ADLER;
+                        }
+                        index += current.size() - 1;
+                        continue;
+                    }
+                }
+                a = (a + data[index]) % MOD_ADLER;
+                b = (b + a) % MOD_ADLER;
+            }
+            replay_time_checksum = (b << 16) | a;
+        }
+        else
+        {
+            replay_time_checksum = util::hash::GenerateAdler32Checksum((uint8_t*)mapped + offset, capture_len);
+        }
 
         if (replay_time_checksum != capture_time_checksum)
         {

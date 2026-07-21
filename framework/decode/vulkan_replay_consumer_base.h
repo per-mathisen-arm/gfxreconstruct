@@ -314,6 +314,11 @@ class VulkanReplayConsumerBase : public VulkanConsumer
                                  const VkMarkedOffsetsARM* marked_offsets,
                                  const void*               p_data);
 
+    void ReverseProcessMarkedOffsetsARM(const VulkanDeviceInfo*            device_info,
+                                        const VkMarkedOffsetsARM*          marked_offsets,
+                                        const void*                        p_data,
+                                        std::vector<std::vector<uint8_t>>& out);
+
     void PostCreateInstanceUpdateState(VkInstance                  replay_instance,
                                        const VkInstanceCreateInfo& modified_create_info,
                                        VulkanInstanceInfo&         instance_info);
