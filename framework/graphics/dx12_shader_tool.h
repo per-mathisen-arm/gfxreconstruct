@@ -49,13 +49,11 @@ class Dx12ShaderTool
         kUnknown
     };
 
-    static const char* ShaderTypeToString(ShaderType type);
-
     // File naming convention matches tools/extract and replay --replace-shaders logic.
     // Graphics/compute pipeline stage shaders:
-    //   sh<handle_id>.<stage>.cso
+    //   sh<handle_id>.{v/p/d/h/g/c}so
     // StateObject DXIL libraries:
-    //   sh<handle_id>_<subobject_index>.cso
+    //   sh<handle_id>_<subobject_index>.dxil
     // Root signatures:
     //   rs<handle_id>.rootsig              (original serialized blob)
     //   rs<handle_id>_reserialized.rootsig (deserialize + serialize result)
@@ -66,53 +64,23 @@ class Dx12ShaderTool
     static std::string MakeRootSignatureReserializedFileName(uint64_t handle_id);
     static std::string MakeRootSignatureTextFileName(uint64_t handle_id);
 
-    static bool ExtractShaderToDir(const std::string& extract_dir,
-                                   const std::string& file_name,
-                                   const void*        code,
-                                   size_t             code_size);
-
-    static bool ExtractPipelineShaderToDir(
-        const std::string& extract_dir, uint64_t handle_id, ShaderType type, const void* code, size_t code_size);
-
-    static bool ExtractStateObjectDxilLibraryToDir(const std::string& extract_dir,
-                                                   uint64_t           state_object_handle_id,
-                                                   uint32_t           subobject_index,
-                                                   const void*        code,
-                                                   size_t             code_size);
-
-    // Writes the human-readable text description (.rootsig.txt). Default extraction output.
-    static bool ExtractRootSignatureTextToDir(const std::string& extract_dir,
-                                              uint64_t           handle_id,
-                                              const void*        blob,
-                                              size_t             blob_size);
-
-    // Writes the serialized binary blobs (.rootsig, _reserialized.rootsig). Opt-in output.
-    static bool ExtractRootSignatureBinaryToDir(const std::string& extract_dir,
-                                                uint64_t           handle_id,
-                                                const void*        blob,
-                                                size_t             blob_size);
-
-    // Writes everything (text + binary). Retained for callers that want the full set.
-    static bool
-    ExtractRootSignatureToDir(const std::string& extract_dir, uint64_t handle_id, const void* blob, size_t blob_size);
-
     // Human-readable disassembly output file names:
     //   sh<handle_id>.<stage>.txt   (pipeline shader disassembly)
     //   sh<handle_id>_<subobject_index>.txt (state object DXIL library disassembly)
     static std::string MakeShaderDisassemblyFileName(uint64_t handle_id, ShaderType type);
     static std::string MakeStateObjectDxilLibraryDisassemblyFileName(uint64_t handle_id, uint32_t subobject_index);
 
-    // Disassemble shader bytecode and write human-readable text alongside the .cso binary.
-    // Uses DXC IDxcCompiler::Disassemble for DXIL (SM6.0+) and D3DDisassemble for DXBC (SM5.x).
-    // Returns true if a .txt file was successfully written.
-    static bool DisassemblePipelineShaderToDir(
-        const std::string& extract_dir, uint64_t handle_id, ShaderType type, const void* code, size_t code_size);
+    // Disassembles shader bytecode to human-readable text.
+    // Tries DXC first (for DXIL SM6.0+), then falls back to D3DDisassemble (for DXBC SM5.x).
+    // Returns true if the shader bytecode could successfully be disassembled.
+    static bool DisassembleShaderBytecode(const void* code, size_t code_size, std::string& out_text);
 
-    static bool DisassembleStateObjectDxilLibraryToDir(const std::string& extract_dir,
-                                                       uint64_t           state_object_handle_id,
-                                                       uint32_t           subobject_index,
-                                                       const void*        code,
-                                                       size_t             code_size);
+    static bool TryReserializeRootSignature(const void*              blob,
+                                            size_t                   blob_size,
+                                            std::unique_ptr<char[]>& out_data,
+                                            size_t&                  out_size);
+
+    static bool BuildRootSignatureText(const void* blob, size_t blob_size, std::string& out_text);
 
     // Replacement helpers (read shader bytecode from replace_shader_dir)
     static bool LoadReplacementShaderFromDir(const std::string&       replace_shader_dir,

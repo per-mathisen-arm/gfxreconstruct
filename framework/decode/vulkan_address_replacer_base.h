@@ -53,12 +53,13 @@ class VulkanAddressReplacerBase
 
     virtual void SetRaytracingProperties(const decode::VulkanPhysicalDeviceInfo* physical_device_info) {}
 
-    virtual VkSemaphore UpdateBufferAddresses(const VulkanCommandBufferInfo*             command_buffer_info,
-                                              const std::span<VkDeviceAddress>           addresses_to_replace,
-                                              const decode::VulkanDeviceAddressTracker&  address_tracker,
-                                              const std::span<graphics::VulkanSemaphore> wait_semaphores = {})
+    virtual graphics::VulkanSemaphore
+    UpdateBufferAddresses(const VulkanCommandBufferInfo*             command_buffer_info,
+                          const std::span<VkDeviceAddress>           addresses_to_replace,
+                          const decode::VulkanDeviceAddressTracker&  address_tracker,
+                          const std::span<graphics::VulkanSemaphore> wait_semaphores = {})
     {
-        return VK_NULL_HANDLE;
+        return {};
     }
 
     virtual std::pair<std::vector<VkDeviceAddress>, const VulkanCommandBufferInfo*>

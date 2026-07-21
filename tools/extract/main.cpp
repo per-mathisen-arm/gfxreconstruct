@@ -21,34 +21,22 @@
 */
 
 #include PROJECT_VERSION_HEADER_FILE
+#include "tool_settings.h"
 
-#include "decode/decode_api_detection.h"
 #include "decode/file_processor.h"
-#include "format/format.h"
-#include "generated/generated_vulkan_consumer.h"
-#include "generated/generated_vulkan_decoder.h"
-#if defined(D3D12_SUPPORT)
-#include "generated/generated_dx12_consumer.h"
-#include "generated/generated_dx12_decoder.h"
-#include "graphics/dx12_shader_tool.h"
-#endif
+#include "extract_feature.h"
 #include "util/argument_parser.h"
+#include "util/feature_module_registry.h"
 #include "util/file_path.h"
 #include "util/logging.h"
 #include "util/options.h"
 
-#include "vulkan/vulkan.h"
-
 #include <cstdlib>
+#include <memory>
 #include <string>
+#include <vector>
 
-const char kHelpShortOption[]              = "-h";
-const char kHelpLongOption[]               = "--help";
-const char kVersionOption[]                = "--version";
-const char kDirectoryArgument[]            = "--dir";
-const char kExtractRootSignatureArgument[] = "--extract_root_signature";
-const char kDisassembleArgument[]          = "--disassemble";
-const char kNoDebugPopup[]                 = "--no-debug-popup";
+const char kDirectoryArgument[] = "--dir";
 
 const char kOptions[]   = "-h|--help,--version,--no-debug-popup";
 const char kArguments[] = "--dir,--extract_root_signature,--disassemble";
@@ -93,469 +81,17 @@ static void PrintUsage(const char* exe_name)
 #endif
 }
 
-static bool CheckOptionPrintUsage(const char* exe_name, const gfxrecon::util::ArgumentParser& arg_parser)
-{
-    if (arg_parser.IsOptionSet(kHelpShortOption) || arg_parser.IsOptionSet(kHelpLongOption))
-    {
-        PrintUsage(exe_name);
-        return true;
-    }
-
-    return false;
-}
-
-static bool CheckOptionPrintVersion(const char* exe_name, const gfxrecon::util::ArgumentParser& arg_parser)
-{
-    if (arg_parser.IsOptionSet(kVersionOption))
-    {
-        std::string app_name     = exe_name;
-        size_t      dir_location = app_name.find_last_of("/\\");
-
-        if (dir_location >= 0)
-        {
-            app_name.replace(0, dir_location + 1, "");
-        }
-
-        GFXRECON_WRITE_CONSOLE("%s version info:", app_name.c_str());
-        GFXRECON_WRITE_CONSOLE("  GFXReconstruct Version %s", GetProjectVersionString());
-        GFXRECON_WRITE_CONSOLE("  Vulkan Header Version %u.%u.%u",
-                               VK_VERSION_MAJOR(VK_HEADER_VERSION_COMPLETE),
-                               VK_VERSION_MINOR(VK_HEADER_VERSION_COMPLETE),
-                               VK_VERSION_PATCH(VK_HEADER_VERSION_COMPLETE));
-
-        return true;
-    }
-
-    return false;
-}
-
-class VulkanExtractConsumer : public gfxrecon::decode::VulkanConsumer
-{
-  public:
-    VulkanExtractConsumer(std::string& extract_dir) : extract_dir_(extract_dir) {}
-
-    virtual void Process_vkCreateShaderModule(
-        const gfxrecon::decode::ApiCallInfo&                                                        call_info,
-        VkResult                                                                                    returnValue,
-        gfxrecon::format::HandleId                                                                  shaderModule,
-        gfxrecon::decode::StructPointerDecoder<gfxrecon::decode::Decoded_VkShaderModuleCreateInfo>* pCreateInfo,
-        gfxrecon::decode::StructPointerDecoder<gfxrecon::decode::Decoded_VkAllocationCallbacks>*,
-        gfxrecon::decode::HandlePointerDecoder<VkShaderModule>* pShaderModule) override
-    {
-        if ((returnValue >= 0) && (pCreateInfo != nullptr) && !pCreateInfo->IsNull() && (pShaderModule != nullptr) &&
-            !pShaderModule->IsNull())
-        {
-            const uint32_t* orig_code = pCreateInfo->GetPointer()->pCode;
-            size_t          orig_size = pCreateInfo->GetPointer()->codeSize;
-            uint64_t        handle_id = *pShaderModule->GetPointer();
-            std::string     file_name = "sh" + std::to_string(handle_id);
-            std::string     file_path = gfxrecon::util::filepath::Join(extract_dir_, file_name);
-
-            FILE*   fp     = nullptr;
-            int32_t result = gfxrecon::util::platform::FileOpen(&fp, file_path.c_str(), "wb");
-            if (result == 0)
-            {
-                if (!gfxrecon::util::platform::FileWrite(orig_code, orig_size, fp))
-                {
-                    GFXRECON_WRITE_CONSOLE("Error while writing file %s: Could not complete", file_name.c_str());
-                }
-                gfxrecon::util::platform::FileClose(fp);
-            }
-            else
-            {
-                GFXRECON_WRITE_CONSOLE("Error while writing file %s: Could not open", file_name.c_str());
-            }
-        }
-    }
-
-    virtual void Process_vkCreateShadersEXT(
-        const gfxrecon::decode::ApiCallInfo&                                                     call_info,
-        VkResult                                                                                 returnValue,
-        gfxrecon::format::HandleId                                                               device,
-        uint32_t                                                                                 createInfoCount,
-        gfxrecon::decode::StructPointerDecoder<gfxrecon::decode::Decoded_VkShaderCreateInfoEXT>* pCreateInfos,
-        gfxrecon::decode::StructPointerDecoder<gfxrecon::decode::Decoded_VkAllocationCallbacks>* pAllocator,
-        gfxrecon::decode::HandlePointerDecoder<VkShaderEXT>*                                     pShaders) override
-    {
-        if ((returnValue >= 0) && (pCreateInfos != nullptr) && !pCreateInfos->IsNull() && (pShaders != nullptr) &&
-            !pShaders->IsNull())
-        {
-            for (size_t i = 0; i < createInfoCount; i++)
-            {
-                const void* orig_code = pCreateInfos->GetPointer()[i].pCode;
-                size_t      orig_size = pCreateInfos->GetPointer()[i].codeSize;
-                uint64_t    handle_id = pShaders->GetPointer()[i];
-                std::string file_name = "sh" + std::to_string(handle_id);
-                std::string file_path = gfxrecon::util::filepath::Join(extract_dir_, file_name);
-
-                FILE*   fp     = nullptr;
-                int32_t result = gfxrecon::util::platform::FileOpen(&fp, file_path.c_str(), "wb");
-                if (result == 0)
-                {
-                    if (!gfxrecon::util::platform::FileWrite(orig_code, orig_size, fp))
-                    {
-                        GFXRECON_WRITE_CONSOLE("Error while writing file %s: Could not complete", file_name.c_str());
-                    }
-                    gfxrecon::util::platform::FileClose(fp);
-                }
-                else
-                {
-                    GFXRECON_WRITE_CONSOLE("Error while writing file %s: Could not open", file_name.c_str());
-                }
-            }
-        }
-    }
-
-    virtual void Process_vkCreateGraphicsPipelines(
-        const gfxrecon::decode::ApiCallInfo&                                                            call_info,
-        VkResult                                                                                        returnValue,
-        gfxrecon::format::HandleId                                                                      device,
-        gfxrecon::format::HandleId                                                                      pipelineCache,
-        uint32_t                                                                                        createInfoCount,
-        gfxrecon::decode::StructPointerDecoder<gfxrecon::decode::Decoded_VkGraphicsPipelineCreateInfo>* pCreateInfos,
-        gfxrecon::decode::StructPointerDecoder<gfxrecon::decode::Decoded_VkAllocationCallbacks>*        pAllocator,
-        gfxrecon::decode::HandlePointerDecoder<VkPipeline>* pPipelines) override
-    {
-        if ((returnValue >= 0) && (pCreateInfos != nullptr) && !pCreateInfos->IsNull())
-        {
-            for (size_t create_info_index = 0; create_info_index < createInfoCount; create_info_index++)
-            {
-                auto& pipeline_create_info = pCreateInfos->GetPointer()[create_info_index];
-                for (size_t stage_index = 0; stage_index < pipeline_create_info.stageCount; stage_index++)
-                {
-                    auto& stage_create_info = pipeline_create_info.pStages[stage_index];
-                    if (stage_create_info.module != VK_NULL_HANDLE)
-                        continue;
-
-                    const void* pNext = stage_create_info.pNext;
-                    while (pNext != nullptr)
-                    {
-                        auto* base = reinterpret_cast<const VkBaseInStructure*>(pNext);
-                        if (base->sType == VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO)
-                        {
-                            auto*       create_info = reinterpret_cast<const VkShaderModuleCreateInfo*>(base);
-                            const void* orig_code   = create_info->pCode;
-                            size_t      orig_size   = create_info->codeSize;
-                            uint64_t    handle_id   = pPipelines->GetPointer()[create_info_index];
-                            std::string file_name =
-                                "sh" + std::to_string(handle_id) + "_" + std::to_string(stage_create_info.stage);
-                            std::string file_path = gfxrecon::util::filepath::Join(extract_dir_, file_name);
-
-                            FILE*   fp     = nullptr;
-                            int32_t result = gfxrecon::util::platform::FileOpen(&fp, file_path.c_str(), "wb");
-                            if (result == 0)
-                            {
-                                if (!gfxrecon::util::platform::FileWrite(orig_code, orig_size, fp))
-                                {
-                                    GFXRECON_WRITE_CONSOLE("Error while writing file %s: Could not complete",
-                                                           file_name.c_str());
-                                }
-                                gfxrecon::util::platform::FileClose(fp);
-                            }
-                            else
-                            {
-                                GFXRECON_WRITE_CONSOLE("Error while writing file %s: Could not open",
-                                                       file_name.c_str());
-                            }
-                        }
-                        pNext = base->pNext;
-                    }
-                }
-            }
-        }
-    }
-
-  private:
-    std::string extract_dir_;
-};
-
-#if defined(D3D12_SUPPORT)
-class Dx12ExtractConsumer : public gfxrecon::decode::Dx12Consumer
-{
-  public:
-    Dx12ExtractConsumer(std::string& extract_dir, bool extract_root_signature, bool disassemble) :
-        extract_dir_(extract_dir), extract_root_signature_(extract_root_signature), disassemble_(disassemble)
-    {}
-
-    virtual void
-    Process_ID3D12Device_CreateRootSignature(const gfxrecon::decode::ApiCallInfo&           call_info,
-                                             gfxrecon::format::HandleId                     object_id,
-                                             HRESULT                                        return_value,
-                                             UINT                                           nodeMask,
-                                             gfxrecon::decode::PointerDecoder<uint8_t>*     pBlobWithRootSignature,
-                                             SIZE_T                                         blobLengthInBytes,
-                                             gfxrecon::decode::Decoded_GUID                 riid,
-                                             gfxrecon::decode::HandlePointerDecoder<void*>* ppvRootSignature) override
-    {
-        if (extract_root_signature_ && (return_value == S_OK) && (ppvRootSignature != nullptr) &&
-            !ppvRootSignature->IsNull() && (pBlobWithRootSignature != nullptr) &&
-            (pBlobWithRootSignature->GetPointer() != nullptr) && (blobLengthInBytes > 0))
-        {
-            uint64_t handle_id = *ppvRootSignature->GetPointer();
-            gfxrecon::graphics::Dx12ShaderTool::ExtractRootSignatureBinaryToDir(
-                extract_dir_, handle_id, pBlobWithRootSignature->GetPointer(), static_cast<size_t>(blobLengthInBytes));
-            if (disassemble_)
-            {
-                gfxrecon::graphics::Dx12ShaderTool::ExtractRootSignatureTextToDir(
-                    extract_dir_,
-                    handle_id,
-                    pBlobWithRootSignature->GetPointer(),
-                    static_cast<size_t>(blobLengthInBytes));
-            }
-        }
-    }
-
-    virtual void Process_ID3D12Device14_CreateRootSignatureFromSubobjectInLibrary(
-        const gfxrecon::decode::ApiCallInfo&           call_info,
-        gfxrecon::format::HandleId                     object_id,
-        HRESULT                                        return_value,
-        UINT                                           nodeMask,
-        gfxrecon::decode::PointerDecoder<uint8_t>*     pLibraryBlob,
-        SIZE_T                                         blobLengthInBytes,
-        gfxrecon::decode::WStringDecoder*              subobjectName,
-        gfxrecon::decode::Decoded_GUID                 riid,
-        gfxrecon::decode::HandlePointerDecoder<void*>* ppvRootSignature) override
-    {
-        if (extract_root_signature_ && (return_value == S_OK) && (ppvRootSignature != nullptr) &&
-            !ppvRootSignature->IsNull() && (pLibraryBlob != nullptr) && (pLibraryBlob->GetPointer() != nullptr) &&
-            (blobLengthInBytes > 0))
-        {
-            uint64_t handle_id = *ppvRootSignature->GetPointer();
-            gfxrecon::graphics::Dx12ShaderTool::ExtractRootSignatureBinaryToDir(
-                extract_dir_, handle_id, pLibraryBlob->GetPointer(), static_cast<size_t>(blobLengthInBytes));
-            if (disassemble_)
-            {
-                gfxrecon::graphics::Dx12ShaderTool::ExtractRootSignatureTextToDir(
-                    extract_dir_, handle_id, pLibraryBlob->GetPointer(), static_cast<size_t>(blobLengthInBytes));
-            }
-        }
-    }
-
-    virtual void Process_ID3D12Device_CreateGraphicsPipelineState(
-        const gfxrecon::decode::ApiCallInfo& call_info,
-        gfxrecon::format::HandleId           object_id,
-        HRESULT                              return_value,
-        gfxrecon::decode::StructPointerDecoder<gfxrecon::decode::Decoded_D3D12_GRAPHICS_PIPELINE_STATE_DESC>* pDesc,
-        gfxrecon::decode::Decoded_GUID                                                                        riid,
-        gfxrecon::decode::HandlePointerDecoder<void*>* ppPipelineState) override
-    {
-        if ((return_value == S_OK) && (pDesc != nullptr) && !pDesc->IsNull() && (ppPipelineState != nullptr) &&
-            !ppPipelineState->IsNull())
-        {
-            uint64_t handle_id = *ppPipelineState->GetPointer();
-
-            auto& vertex_shader = pDesc->GetPointer()->VS;
-            if ((vertex_shader.BytecodeLength > 0) && (vertex_shader.pShaderBytecode != nullptr))
-            {
-                gfxrecon::graphics::Dx12ShaderTool::ExtractPipelineShaderToDir(
-                    extract_dir_,
-                    handle_id,
-                    gfxrecon::graphics::Dx12ShaderTool::ShaderType::kVertex,
-                    vertex_shader.pShaderBytecode,
-                    vertex_shader.BytecodeLength);
-                if (disassemble_)
-                {
-                    gfxrecon::graphics::Dx12ShaderTool::DisassemblePipelineShaderToDir(
-                        extract_dir_,
-                        handle_id,
-                        gfxrecon::graphics::Dx12ShaderTool::ShaderType::kVertex,
-                        vertex_shader.pShaderBytecode,
-                        vertex_shader.BytecodeLength);
-                }
-            }
-
-            auto& pixel_shader = pDesc->GetPointer()->PS;
-            if ((pixel_shader.BytecodeLength > 0) && (pixel_shader.pShaderBytecode != nullptr))
-            {
-                gfxrecon::graphics::Dx12ShaderTool::ExtractPipelineShaderToDir(
-                    extract_dir_,
-                    handle_id,
-                    gfxrecon::graphics::Dx12ShaderTool::ShaderType::kPixel,
-                    pixel_shader.pShaderBytecode,
-                    pixel_shader.BytecodeLength);
-                if (disassemble_)
-                {
-                    gfxrecon::graphics::Dx12ShaderTool::DisassemblePipelineShaderToDir(
-                        extract_dir_,
-                        handle_id,
-                        gfxrecon::graphics::Dx12ShaderTool::ShaderType::kPixel,
-                        pixel_shader.pShaderBytecode,
-                        pixel_shader.BytecodeLength);
-                }
-            }
-
-            auto& domain_shader = pDesc->GetPointer()->DS;
-            if ((domain_shader.BytecodeLength > 0) && (domain_shader.pShaderBytecode != nullptr))
-            {
-                gfxrecon::graphics::Dx12ShaderTool::ExtractPipelineShaderToDir(
-                    extract_dir_,
-                    handle_id,
-                    gfxrecon::graphics::Dx12ShaderTool::ShaderType::kDomain,
-                    domain_shader.pShaderBytecode,
-                    domain_shader.BytecodeLength);
-                if (disassemble_)
-                {
-                    gfxrecon::graphics::Dx12ShaderTool::DisassemblePipelineShaderToDir(
-                        extract_dir_,
-                        handle_id,
-                        gfxrecon::graphics::Dx12ShaderTool::ShaderType::kDomain,
-                        domain_shader.pShaderBytecode,
-                        domain_shader.BytecodeLength);
-                }
-            }
-
-            auto& hull_shader = pDesc->GetPointer()->HS;
-            if ((hull_shader.BytecodeLength > 0) && (hull_shader.pShaderBytecode != nullptr))
-            {
-                gfxrecon::graphics::Dx12ShaderTool::ExtractPipelineShaderToDir(
-                    extract_dir_,
-                    handle_id,
-                    gfxrecon::graphics::Dx12ShaderTool::ShaderType::kHull,
-                    hull_shader.pShaderBytecode,
-                    hull_shader.BytecodeLength);
-                if (disassemble_)
-                {
-                    gfxrecon::graphics::Dx12ShaderTool::DisassemblePipelineShaderToDir(
-                        extract_dir_,
-                        handle_id,
-                        gfxrecon::graphics::Dx12ShaderTool::ShaderType::kHull,
-                        hull_shader.pShaderBytecode,
-                        hull_shader.BytecodeLength);
-                }
-            }
-
-            auto& geometry_shader = pDesc->GetPointer()->GS;
-            if ((geometry_shader.BytecodeLength > 0) && (geometry_shader.pShaderBytecode != nullptr))
-            {
-                gfxrecon::graphics::Dx12ShaderTool::ExtractPipelineShaderToDir(
-                    extract_dir_,
-                    handle_id,
-                    gfxrecon::graphics::Dx12ShaderTool::ShaderType::kGeometry,
-                    geometry_shader.pShaderBytecode,
-                    geometry_shader.BytecodeLength);
-                if (disassemble_)
-                {
-                    gfxrecon::graphics::Dx12ShaderTool::DisassemblePipelineShaderToDir(
-                        extract_dir_,
-                        handle_id,
-                        gfxrecon::graphics::Dx12ShaderTool::ShaderType::kGeometry,
-                        geometry_shader.pShaderBytecode,
-                        geometry_shader.BytecodeLength);
-                }
-            }
-        }
-    }
-
-    virtual void Process_ID3D12Device_CreateComputePipelineState(
-        const gfxrecon::decode::ApiCallInfo& call_info,
-        gfxrecon::format::HandleId           object_id,
-        HRESULT                              return_value,
-        gfxrecon::decode::StructPointerDecoder<gfxrecon::decode::Decoded_D3D12_COMPUTE_PIPELINE_STATE_DESC>* pDesc,
-        gfxrecon::decode::Decoded_GUID                                                                       riid,
-        gfxrecon::decode::HandlePointerDecoder<void*>* ppPipelineState) override
-    {
-        if ((return_value == S_OK) && (pDesc != nullptr) && !pDesc->IsNull() && (ppPipelineState != nullptr) &&
-            !ppPipelineState->IsNull())
-        {
-            uint64_t handle_id = *ppPipelineState->GetPointer();
-
-            auto& compute_shader = pDesc->GetPointer()->CS;
-            if ((compute_shader.BytecodeLength > 0) && (compute_shader.pShaderBytecode != nullptr))
-            {
-                gfxrecon::graphics::Dx12ShaderTool::ExtractPipelineShaderToDir(
-                    extract_dir_,
-                    handle_id,
-                    gfxrecon::graphics::Dx12ShaderTool::ShaderType::kCompute,
-                    compute_shader.pShaderBytecode,
-                    compute_shader.BytecodeLength);
-                if (disassemble_)
-                {
-                    gfxrecon::graphics::Dx12ShaderTool::DisassemblePipelineShaderToDir(
-                        extract_dir_,
-                        handle_id,
-                        gfxrecon::graphics::Dx12ShaderTool::ShaderType::kCompute,
-                        compute_shader.pShaderBytecode,
-                        compute_shader.BytecodeLength);
-                }
-            }
-        }
-    }
-
-    virtual void Process_ID3D12Device5_CreateStateObject(
-        const gfxrecon::decode::ApiCallInfo&                                                       call_info,
-        gfxrecon::format::HandleId                                                                 object_id,
-        HRESULT                                                                                    return_value,
-        gfxrecon::decode::StructPointerDecoder<gfxrecon::decode::Decoded_D3D12_STATE_OBJECT_DESC>* pDesc,
-        gfxrecon::decode::Decoded_GUID                                                             riid,
-        gfxrecon::decode::HandlePointerDecoder<void*>* ppStateObject) override
-    {
-        if ((return_value == S_OK) && (pDesc != nullptr) && !pDesc->IsNull() && (ppStateObject != nullptr) &&
-            !ppStateObject->IsNull())
-        {
-            uint64_t handle_id = *ppStateObject->GetPointer();
-
-            auto& subobjects = pDesc->GetPointer()->pSubobjects;
-            for (uint32_t i = 0; i < pDesc->GetPointer()->NumSubobjects; i++)
-            {
-                if ((subobjects[i].pDesc != nullptr) && (subobjects[i].Type == D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY))
-                {
-                    auto& dxil_lib = reinterpret_cast<const D3D12_DXIL_LIBRARY_DESC*>(subobjects[i].pDesc)->DXILLibrary;
-
-                    gfxrecon::graphics::Dx12ShaderTool::ExtractStateObjectDxilLibraryToDir(
-                        extract_dir_, handle_id, i, dxil_lib.pShaderBytecode, dxil_lib.BytecodeLength);
-                    if (disassemble_)
-                    {
-                        gfxrecon::graphics::Dx12ShaderTool::DisassembleStateObjectDxilLibraryToDir(
-                            extract_dir_, handle_id, i, dxil_lib.pShaderBytecode, dxil_lib.BytecodeLength);
-                    }
-                }
-            }
-        }
-    }
-
-    virtual void Process_ID3D12Device7_AddToStateObject(
-        const gfxrecon::decode::ApiCallInfo&                                                       call_info,
-        gfxrecon::format::HandleId                                                                 object_id,
-        HRESULT                                                                                    return_value,
-        gfxrecon::decode::StructPointerDecoder<gfxrecon::decode::Decoded_D3D12_STATE_OBJECT_DESC>* pAddition,
-        gfxrecon::format::HandleId                     pStateObjectToGrowFrom,
-        gfxrecon::decode::Decoded_GUID                 riid,
-        gfxrecon::decode::HandlePointerDecoder<void*>* ppNewStateObject) override
-    {
-        if ((return_value == S_OK) && (pAddition != nullptr) && !pAddition->IsNull() && (ppNewStateObject != nullptr) &&
-            !ppNewStateObject->IsNull())
-        {
-            uint64_t handle_id = *ppNewStateObject->GetPointer();
-
-            auto& subobjects = pAddition->GetPointer()->pSubobjects;
-            for (uint32_t i = 0; i < pAddition->GetPointer()->NumSubobjects; i++)
-            {
-                if ((subobjects[i].pDesc != nullptr) && (subobjects[i].Type == D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY))
-                {
-                    auto& dxil_lib = reinterpret_cast<const D3D12_DXIL_LIBRARY_DESC*>(subobjects[i].pDesc)->DXILLibrary;
-
-                    gfxrecon::graphics::Dx12ShaderTool::ExtractStateObjectDxilLibraryToDir(
-                        extract_dir_, handle_id, i, dxil_lib.pShaderBytecode, dxil_lib.BytecodeLength);
-                    if (disassemble_)
-                    {
-                        gfxrecon::graphics::Dx12ShaderTool::DisassembleStateObjectDxilLibraryToDir(
-                            extract_dir_, handle_id, i, dxil_lib.pShaderBytecode, dxil_lib.BytecodeLength);
-                    }
-                }
-            }
-        }
-    }
-
-  private:
-    std::string extract_dir_;
-    bool        extract_root_signature_;
-    bool        disassemble_;
-};
-#endif
-
 int main(int argc, const char** argv)
 {
     gfxrecon::util::Log::Init();
+
+    std::vector<std::unique_ptr<gfxrecon::extract::ExtractFeatureBase>> features;
+    for (const auto& creator :
+         gfxrecon::util::FeatureModuleRegistry<gfxrecon::extract::ExtractFeatureBase>::GetSingleton()
+             .GetRegisteredFeatureCreators())
+    {
+        features.push_back(creator());
+    }
 
     gfxrecon::util::ArgumentParser arg_parser(argc, argv, kOptions, kArguments);
 
@@ -582,9 +118,6 @@ int main(int argc, const char** argv)
 
     const std::vector<std::string>& positional_arguments = arg_parser.GetPositionalArguments();
     std::string                     input_filename       = positional_arguments[0];
-    bool                            extract_root_signature =
-        gfxrecon::util::ParseBoolString(arg_parser.GetArgumentValue(kExtractRootSignatureArgument), true);
-    bool disassemble = gfxrecon::util::ParseBoolString(arg_parser.GetArgumentValue(kDisassembleArgument), false);
     gfxrecon::decode::FileProcessor file_processor;
 
     if (file_processor.Initialize(input_filename))
@@ -596,7 +129,7 @@ int main(int argc, const char** argv)
         {
             extract_dir         = input_filename;
             size_t dir_location = extract_dir.find_last_of("/\\");
-            if (dir_location >= 0)
+            if (dir_location != std::string::npos)
             {
                 extract_dir.replace(0, dir_location + 1, "");
             }
@@ -622,48 +155,21 @@ int main(int argc, const char** argv)
             }
         }
 
-        bool detected_d3d12  = false;
-        bool detected_vulkan = false;
-        bool detected_openxr = false;
-        gfxrecon::decode::DetectAPIs(input_filename, detected_d3d12, detected_vulkan, detected_openxr);
-
-        if ((!detected_d3d12) && (!detected_vulkan))
+        for (auto& feature : features)
         {
-            // Detect with no block limit
-            gfxrecon::decode::DetectAPIs(input_filename, detected_d3d12, detected_vulkan, detected_openxr, true);
+            feature->Initialize(file_processor, extract_dir, arg_parser);
         }
 
-        if (detected_d3d12)
+        file_processor.ProcessAllFrames();
+
+        bool any_detected = false;
+        for (const auto& feature : features)
         {
-#if defined(D3D12_SUPPORT)
-            gfxrecon::decode::Dx12Decoder decoder;
-            Dx12ExtractConsumer           extract_consumer(extract_dir, extract_root_signature, disassemble);
-
-            decoder.AddConsumer(&extract_consumer);
-
-            file_processor.AddDecoder(&decoder);
-            file_processor.ProcessAllFrames();
-#endif
+            any_detected |= feature->WasDetected();
         }
-        else if (detected_vulkan)
+        if (!any_detected)
         {
-            gfxrecon::decode::VulkanDecoder decoder;
-            VulkanExtractConsumer           extract_consumer(extract_dir);
-
-            decoder.AddConsumer(&extract_consumer);
-
-            file_processor.AddDecoder(&decoder);
-            file_processor.ProcessAllFrames();
-        }
-#ifdef ENABLE_OPENXR_SUPPORT
-        else if (detected_openxr)
-        {
-            GFXRECON_LOG_INFO("No extraction defined for OpenXR capture files");
-        }
-#endif
-        else
-        {
-            GFXRECON_LOG_ERROR("Could not detect graphics API. Aborting Extract.")
+            GFXRECON_LOG_ERROR("Could not detect graphics API. Aborting Extract.");
         }
 
         if (file_processor.GetErrorState() != gfxrecon::decode::BlockIOError::kErrorNone)

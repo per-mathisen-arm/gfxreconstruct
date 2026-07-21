@@ -38,7 +38,7 @@
 #include <dxcapi.h>
 #endif
 
-#if defined(WIN32)
+#if defined(_WIN32)
 #include <d3dcompiler.h>
 #pragma comment(lib, "d3dcompiler.lib")
 #endif
@@ -46,51 +46,28 @@
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(graphics)
 
-const char* Dx12ShaderTool::ShaderTypeToString(ShaderType type)
-{
-    switch (type)
-    {
-        case ShaderType::kVertex:
-            return "vertex";
-        case ShaderType::kDomain:
-            return "domain";
-        case ShaderType::kHull:
-            return "hull";
-        case ShaderType::kGeometry:
-            return "geometry";
-        case ShaderType::kPixel:
-            return "pixel";
-        case ShaderType::kCompute:
-            return "compute";
-        case ShaderType::kStateObjectDxilLibrary:
-            return "dxil_library";
-        default:
-            return "unknown";
-    }
-}
-
 std::string Dx12ShaderTool::MakePipelineShaderFileName(uint64_t handle_id, ShaderType type)
 {
     std::string suffix;
     switch (type)
     {
         case ShaderType::kVertex:
-            suffix = ".vs.cso";
+            suffix = ".vso";
             break;
         case ShaderType::kPixel:
-            suffix = ".ps.cso";
+            suffix = ".pso";
             break;
         case ShaderType::kDomain:
-            suffix = ".ds.cso";
+            suffix = ".dso";
             break;
         case ShaderType::kHull:
-            suffix = ".hs.cso";
+            suffix = ".hso";
             break;
         case ShaderType::kGeometry:
-            suffix = ".gs.cso";
+            suffix = ".gso";
             break;
         case ShaderType::kCompute:
-            suffix = ".cs.cso";
+            suffix = ".cso";
             break;
         default:
             suffix = ".cso";
@@ -102,7 +79,7 @@ std::string Dx12ShaderTool::MakePipelineShaderFileName(uint64_t handle_id, Shade
 
 std::string Dx12ShaderTool::MakeStateObjectDxilLibraryFileName(uint64_t handle_id, uint32_t subobject_index)
 {
-    return "sh" + std::to_string(handle_id) + "_" + std::to_string(subobject_index) + ".cso";
+    return "sh" + std::to_string(handle_id) + "_" + std::to_string(subobject_index) + ".dxil";
 }
 
 std::string Dx12ShaderTool::MakeShaderDisassemblyFileName(uint64_t handle_id, ShaderType type)
@@ -111,25 +88,25 @@ std::string Dx12ShaderTool::MakeShaderDisassemblyFileName(uint64_t handle_id, Sh
     switch (type)
     {
         case ShaderType::kVertex:
-            suffix = ".vs.txt";
+            suffix = ".vso.txt";
             break;
         case ShaderType::kPixel:
-            suffix = ".ps.txt";
+            suffix = ".pso.txt";
             break;
         case ShaderType::kDomain:
-            suffix = ".ds.txt";
+            suffix = ".dso.txt";
             break;
         case ShaderType::kHull:
-            suffix = ".hs.txt";
+            suffix = ".hso.txt";
             break;
         case ShaderType::kGeometry:
-            suffix = ".gs.txt";
+            suffix = ".gso.txt";
             break;
         case ShaderType::kCompute:
-            suffix = ".cs.txt";
+            suffix = ".cso.txt";
             break;
         default:
-            suffix = ".txt";
+            suffix = ".cso.txt";
             break;
     }
 
@@ -138,7 +115,7 @@ std::string Dx12ShaderTool::MakeShaderDisassemblyFileName(uint64_t handle_id, Sh
 
 std::string Dx12ShaderTool::MakeStateObjectDxilLibraryDisassemblyFileName(uint64_t handle_id, uint32_t subobject_index)
 {
-    return "sh" + std::to_string(handle_id) + "_" + std::to_string(subobject_index) + ".txt";
+    return "sh" + std::to_string(handle_id) + "_" + std::to_string(subobject_index) + ".dxil.txt";
 }
 
 std::string Dx12ShaderTool::MakeRootSignatureFileName(uint64_t handle_id)
@@ -156,33 +133,7 @@ std::string Dx12ShaderTool::MakeRootSignatureTextFileName(uint64_t handle_id)
     return "rs" + std::to_string(handle_id) + ".rootsig.txt";
 }
 
-static bool WriteTextFileToDir(const std::string& extract_dir, const std::string& file_name, const std::string& text)
-{
-    std::string file_path = util::filepath::Join(extract_dir, file_name);
-
-    FILE* fp     = nullptr;
-    auto  result = util::platform::FileOpen(&fp, file_path.c_str(), "wb");
-    if ((result == 0) && (fp != nullptr))
-    {
-        if (!text.empty())
-        {
-            if (!util::platform::FileWrite(text.data(), text.size(), fp))
-            {
-                GFXRECON_WRITE_CONSOLE("Error while writing file %s: Could not complete", file_name.c_str());
-                util::platform::FileClose(fp);
-                return false;
-            }
-        }
-
-        util::platform::FileClose(fp);
-        return true;
-    }
-
-    GFXRECON_WRITE_CONSOLE("Error while writing file %s: Could not open", file_name.c_str());
-    return false;
-}
-
-#if defined(WIN32)
+#if defined(_WIN32)
 static const char* RootSignatureVersionToString(D3D_ROOT_SIGNATURE_VERSION version)
 {
     switch (version)
@@ -389,9 +340,11 @@ static void AppendDesc_1_2(std::string& out, const D3D12_ROOT_SIGNATURE_DESC2& d
     }
 }
 #endif
+#endif
 
-static bool BuildRootSignatureText(const void* blob, size_t blob_size, std::string& out_text)
+bool Dx12ShaderTool::BuildRootSignatureText(const void* blob, size_t blob_size, std::string& out_text)
 {
+#if defined(_WIN32)
     using Microsoft::WRL::ComPtr;
 
     out_text.clear();
@@ -460,13 +413,16 @@ static bool BuildRootSignatureText(const void* blob, size_t blob_size, std::stri
             return true;
         }
     }
-
+#endif
     return false;
 }
 
-static bool
-TryReserializeRootSignature(const void* blob, size_t blob_size, std::unique_ptr<char[]>& out_data, size_t& out_size)
+bool Dx12ShaderTool::TryReserializeRootSignature(const void*              blob,
+                                                 size_t                   blob_size,
+                                                 std::unique_ptr<char[]>& out_data,
+                                                 size_t&                  out_size)
 {
+#if defined(_WIN32)
     using Microsoft::WRL::ComPtr;
 
     out_data.reset();
@@ -549,14 +505,13 @@ TryReserializeRootSignature(const void* blob, size_t blob_size, std::unique_ptr<
             return true;
         }
     }
-
+#endif
     return false;
 }
-#endif
 
 // Internal helper: disassemble shader bytecode to human-readable text.
 // Tries DXC first (for DXIL SM6.0+), then falls back to D3DDisassemble (for DXBC SM5.x).
-static bool DisassembleShaderBytecode(const void* code, size_t code_size, std::string& out_text)
+bool Dx12ShaderTool::DisassembleShaderBytecode(const void* code, size_t code_size, std::string& out_text)
 {
     out_text.clear();
     if ((code == nullptr) || (code_size == 0))
@@ -599,7 +554,7 @@ static bool DisassembleShaderBytecode(const void* code, size_t code_size, std::s
     }
 #endif
 
-#if defined(WIN32)
+#if defined(_WIN32)
     // Fallback: D3DDisassemble for DXBC (SM5.x and below)
     {
         using Microsoft::WRL::ComPtr;
@@ -620,140 +575,6 @@ static bool DisassembleShaderBytecode(const void* code, size_t code_size, std::s
 #endif
 
     return false;
-}
-
-bool Dx12ShaderTool::ExtractShaderToDir(const std::string& extract_dir,
-                                        const std::string& file_name,
-                                        const void*        code,
-                                        size_t             code_size)
-{
-    if ((code == nullptr) || (code_size == 0))
-    {
-        return false;
-    }
-
-    std::string file_path = util::filepath::Join(extract_dir, file_name);
-
-    FILE* fp     = nullptr;
-    auto  result = util::platform::FileOpen(&fp, file_path.c_str(), "wb");
-    if ((result == 0) && (fp != nullptr))
-    {
-        if (!util::platform::FileWrite(code, code_size, fp))
-        {
-            GFXRECON_WRITE_CONSOLE("Error while writing file %s: Could not complete", file_name.c_str());
-            util::platform::FileClose(fp);
-            return false;
-        }
-        util::platform::FileClose(fp);
-        return true;
-    }
-
-    GFXRECON_WRITE_CONSOLE("Error while writing file %s: Could not open", file_name.c_str());
-    return false;
-}
-
-bool Dx12ShaderTool::ExtractPipelineShaderToDir(
-    const std::string& extract_dir, uint64_t handle_id, ShaderType type, const void* code, size_t code_size)
-{
-    return ExtractShaderToDir(extract_dir, MakePipelineShaderFileName(handle_id, type), code, code_size);
-}
-
-bool Dx12ShaderTool::ExtractStateObjectDxilLibraryToDir(const std::string& extract_dir,
-                                                        uint64_t           state_object_handle_id,
-                                                        uint32_t           subobject_index,
-                                                        const void*        code,
-                                                        size_t             code_size)
-{
-    return ExtractShaderToDir(
-        extract_dir, MakeStateObjectDxilLibraryFileName(state_object_handle_id, subobject_index), code, code_size);
-}
-
-bool Dx12ShaderTool::ExtractRootSignatureTextToDir(const std::string& extract_dir,
-                                                   uint64_t           handle_id,
-                                                   const void*        blob,
-                                                   size_t             blob_size)
-{
-#if defined(WIN32)
-    std::string text;
-    if (BuildRootSignatureText(blob, blob_size, text))
-    {
-        return WriteTextFileToDir(extract_dir, MakeRootSignatureTextFileName(handle_id), text);
-    }
-    return false;
-#else
-    (void)extract_dir;
-    (void)handle_id;
-    (void)blob;
-    (void)blob_size;
-    return false;
-#endif
-}
-
-bool Dx12ShaderTool::ExtractRootSignatureBinaryToDir(const std::string& extract_dir,
-                                                     uint64_t           handle_id,
-                                                     const void*        blob,
-                                                     size_t             blob_size)
-{
-    bool wrote_original = ExtractShaderToDir(extract_dir, MakeRootSignatureFileName(handle_id), blob, blob_size);
-    if (!wrote_original)
-    {
-        return false;
-    }
-
-#if defined(WIN32)
-    // Best-effort: also emit a reserialized blob to make diffs easier.
-    std::unique_ptr<char[]> reser;
-    size_t                  reser_size = 0;
-    if (TryReserializeRootSignature(blob, blob_size, reser, reser_size))
-    {
-        ExtractShaderToDir(extract_dir, MakeRootSignatureReserializedFileName(handle_id), reser.get(), reser_size);
-    }
-#endif
-
-    return true;
-}
-
-bool Dx12ShaderTool::ExtractRootSignatureToDir(const std::string& extract_dir,
-                                               uint64_t           handle_id,
-                                               const void*        blob,
-                                               size_t             blob_size)
-{
-    bool ok = ExtractRootSignatureBinaryToDir(extract_dir, handle_id, blob, blob_size);
-    ExtractRootSignatureTextToDir(extract_dir, handle_id, blob, blob_size);
-    return ok;
-}
-
-bool Dx12ShaderTool::DisassemblePipelineShaderToDir(
-    const std::string& extract_dir, uint64_t handle_id, ShaderType type, const void* code, size_t code_size)
-{
-    std::string disasm_text;
-    if (!DisassembleShaderBytecode(code, code_size, disasm_text))
-    {
-        GFXRECON_LOG_WARNING(
-            "Failed to disassemble pipeline shader sh%" PRIu64 ".%s", handle_id, ShaderTypeToString(type));
-        return false;
-    }
-
-    return WriteTextFileToDir(extract_dir, MakeShaderDisassemblyFileName(handle_id, type), disasm_text);
-}
-
-bool Dx12ShaderTool::DisassembleStateObjectDxilLibraryToDir(const std::string& extract_dir,
-                                                            uint64_t           state_object_handle_id,
-                                                            uint32_t           subobject_index,
-                                                            const void*        code,
-                                                            size_t             code_size)
-{
-    std::string disasm_text;
-    if (!DisassembleShaderBytecode(code, code_size, disasm_text))
-    {
-        GFXRECON_LOG_WARNING(
-            "Failed to disassemble state object sh%" PRIu64 " subobject %u", state_object_handle_id, subobject_index);
-        return false;
-    }
-
-    return WriteTextFileToDir(extract_dir,
-                              MakeStateObjectDxilLibraryDisassemblyFileName(state_object_handle_id, subobject_index),
-                              disasm_text);
 }
 
 bool Dx12ShaderTool::LoadReplacementShaderFromDir(const std::string&       replace_shader_dir,

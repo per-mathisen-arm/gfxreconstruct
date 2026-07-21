@@ -90,10 +90,10 @@ class VulkanAddressReplacer : public VulkanAddressReplacerBase
      * @param   wait_semaphores      optional span of (timeline) wait-semaphores, along with their wait-values
      * @return  an optional Semaphore that will be signaled or VK_NULL_HANDLE
      */
-    VkSemaphore UpdateBufferAddresses(const VulkanCommandBufferInfo*             command_buffer_info,
-                                      const std::span<VkDeviceAddress>           addresses_to_replace,
-                                      const decode::VulkanDeviceAddressTracker&  address_tracker,
-                                      const std::span<graphics::VulkanSemaphore> wait_semaphores = {});
+    graphics::VulkanSemaphore UpdateBufferAddresses(const VulkanCommandBufferInfo*             command_buffer_info,
+                                                    const std::span<VkDeviceAddress>           addresses_to_replace,
+                                                    const decode::VulkanDeviceAddressTracker&  address_tracker,
+                                                    const std::span<graphics::VulkanSemaphore> wait_semaphores = {});
 
   private:
     /**
@@ -450,7 +450,7 @@ class VulkanAddressReplacer : public VulkanAddressReplacerBase
         // actual payload
         VkCommandBuffer command_buffer   = VK_NULL_HANDLE;
         VkFence         fence            = VK_NULL_HANDLE;
-        VkSemaphore     signal_semaphore = VK_NULL_HANDLE;
+        graphics::VulkanSemaphore signal_semaphore{ VK_NULL_HANDLE };
 
         PFN_vkDestroyFence       destroy_fence_fn        = nullptr;
         PFN_vkFreeCommandBuffers free_command_buffers_fn = nullptr;
