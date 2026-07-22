@@ -11180,6 +11180,7 @@ VkResult VulkanReplayConsumerBase::OverrideCreateRayTracingPipelinesKHR(
     }
 
     // Replace potential device addresses in specialization constants
+
     if (UseAddressReplacement(device_info))
     {
         auto& address_replacer = GetDeviceAddressReplacer(device_info);
@@ -11189,18 +11190,6 @@ VkResult VulkanReplayConsumerBase::OverrideCreateRayTracingPipelinesKHR(
         {
             for (uint32_t j = 0; j < in_pCreateInfos[i].stageCount; ++j)
             {
-                address_replacer.ProcessSpecializationInfo(
-                    const_cast<VkSpecializationInfo*>(in_pCreateInfos[i].pStages[j].pSpecializationInfo),
-                    address_tracker);
-            }
-        }
-    }
-    if (UseAddressReplacement(device_info))
-    {
-        for (uint32_t i = 0; i < createInfoCount; i++)
-        {
-            for (uint32_t j = 0; j < in_pCreateInfos[i].stageCount; j++)
-            {
                 auto adress_offset_arm =
                     graphics::vulkan_struct_get_pnext<VkMarkedOffsetsARM>(&(in_pCreateInfos[i].pStages[j]));
                 const VkSpecializationInfo* specialization_info = in_pCreateInfos[i].pStages[j].pSpecializationInfo;
@@ -11209,6 +11198,12 @@ VkResult VulkanReplayConsumerBase::OverrideCreateRayTracingPipelinesKHR(
                     auto&       address_replacer = GetDeviceAddressReplacer(device_info);
                     const auto& address_tracker  = GetDeviceAddressTracker(device_info);
                     ProcessMarkedOffsetsARM(device_info, adress_offset_arm, specialization_info->pData);
+                }
+                else
+                {
+                    address_replacer.ProcessSpecializationInfo(
+                        const_cast<VkSpecializationInfo*>(in_pCreateInfos[i].pStages[j].pSpecializationInfo),
+                        address_tracker);
                 }
             }
         }
@@ -14144,25 +14139,18 @@ VkResult VulkanReplayConsumerBase::OverrideCreateGraphicsPipelines(
         {
             for (uint32_t j = 0; j < in_p_create_infos[i].stageCount; ++j)
             {
-                address_replacer.ProcessSpecializationInfo(
-                    const_cast<VkSpecializationInfo*>(in_p_create_infos[i].pStages[j].pSpecializationInfo),
-                    address_tracker);
-            }
-        }
-    }
-
-    if (UseAddressReplacement(device_info))
-    {
-        for (uint32_t i = 0; i < create_info_count; i++)
-        {
-            for (uint32_t j = 0; j < in_p_create_infos[i].stageCount; j++)
-            {
                 auto adress_offset_arm =
                     graphics::vulkan_struct_get_pnext<VkMarkedOffsetsARM>(&(in_p_create_infos[i].pStages[j]));
                 const VkSpecializationInfo* specialization_info = in_p_create_infos[i].pStages[j].pSpecializationInfo;
                 if ((adress_offset_arm != nullptr) && (specialization_info != nullptr))
                 {
                     ProcessMarkedOffsetsARM(device_info, adress_offset_arm, specialization_info->pData);
+                }
+                else
+                {
+                    address_replacer.ProcessSpecializationInfo(
+                        const_cast<VkSpecializationInfo*>(in_p_create_infos[i].pStages[j].pSpecializationInfo),
+                        address_tracker);
                 }
             }
         }
@@ -14243,21 +14231,17 @@ VkResult VulkanReplayConsumerBase::OverrideCreateComputePipelines(
 
         for (uint32_t i = 0; i < create_info_count; ++i)
         {
-            address_replacer.ProcessSpecializationInfo(
-                const_cast<VkSpecializationInfo*>(in_p_create_infos[i].stage.pSpecializationInfo), address_tracker);
-        }
-    }
-
-    if (UseAddressReplacement(device_info))
-    {
-        for (uint32_t i = 0; i < create_info_count; i++)
-        {
             auto adress_offset_arm =
                 graphics::vulkan_struct_get_pnext<VkMarkedOffsetsARM>(&(in_p_create_infos[i].stage));
             const VkSpecializationInfo* specialization_info = in_p_create_infos[i].stage.pSpecializationInfo;
             if ((adress_offset_arm != nullptr) && (specialization_info != nullptr))
             {
                 ProcessMarkedOffsetsARM(device_info, adress_offset_arm, specialization_info->pData);
+            }
+            else
+            {
+                address_replacer.ProcessSpecializationInfo(
+                    const_cast<VkSpecializationInfo*>(in_p_create_infos[i].stage.pSpecializationInfo), address_tracker);
             }
         }
     }
