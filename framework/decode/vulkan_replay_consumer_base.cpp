@@ -16112,12 +16112,13 @@ VulkanReplayConsumerBase::OverrideCreateTensorARM(PFN_vkCreateTensorARM         
     auto* tensor_info = reinterpret_cast<VulkanTensorARMInfo*>(tensor->GetConsumerData(0));
     GFXRECON_ASSERT(tensor_info != nullptr);
 
+    VkTensorDescriptionARM modified_description;
     if (replaying_trimmed_capture_)
     {
-        auto modified_create_info = const_cast<VkTensorCreateInfoARM*>(replay_create_info);
-        auto modified_description = const_cast<VkTensorDescriptionARM*>(replay_create_info->pDescription);
-        modified_description->usage |= VK_TENSOR_USAGE_TRANSFER_SRC_BIT_ARM;
-        modified_description->usage |= VK_TENSOR_USAGE_TRANSFER_DST_BIT_ARM;
+        modified_description = *modified_create_info.pDescription;
+        modified_description.usage |= VK_TENSOR_USAGE_TRANSFER_SRC_BIT_ARM;
+        modified_description.usage |= VK_TENSOR_USAGE_TRANSFER_DST_BIT_ARM;
+        modified_create_info.pDescription = &modified_description;
     }
 
     result = allocator->CreateTensor(
@@ -16154,7 +16155,11 @@ VulkanReplayConsumerBase::OverrideCreateTensorARM(PFN_vkCreateTensorARM         
         VkMemoryRequirements2 replay_req_2{};
         replay_req_2.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
 
-        allocator->GetTensorMemoryRequirementsARM(&tensor_mem_req, &replay_req_2, tensor_info->allocator_data);
+        // Query the replay requirements directly. The decoded vkGetTensorMemoryRequirementsARM call records the
+        // captured requirements in the allocator; routing this internal query through the allocator would overwrite
+        // them with this initially zeroed output structure.
+        GetDeviceTable(device_info->handle)
+            ->GetTensorMemoryRequirementsARM(device_info->handle, &tensor_mem_req, &replay_req_2);
         tensor_info->size = replay_req_2.memoryRequirements.size;
 
         if ((replay_create_info->sharingMode == VK_SHARING_MODE_CONCURRENT) &&

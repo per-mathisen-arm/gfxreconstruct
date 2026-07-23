@@ -3279,6 +3279,8 @@ VkResult VulkanRebindAllocator::BindTensorMemory(uint32_t                       
     if ((bind_infos != nullptr) && (allocator_tensor_datas != nullptr) && (allocator_memory_datas != nullptr) &&
         (bind_memory_properties != nullptr))
     {
+        result = VK_SUCCESS;
+
         for (uint32_t i = 0; i < bind_info_count; ++i)
         {
             VkTensorARM tensor                = bind_infos[i].tensor;
@@ -3291,6 +3293,8 @@ VkResult VulkanRebindAllocator::BindTensorMemory(uint32_t                       
                 auto           memory_alloc_info   = reinterpret_cast<MemoryAllocInfo*>(allocator_memory_data);
                 VkDeviceSize   memory_offset       = bind_infos[i].memoryOffset;
                 VmaMemoryInfo* vma_mem_info        = nullptr;
+
+                const size_t vma_count_before = memory_alloc_info->vma_mem_infos.size();
 
                 uint8_t aliasing_group = 0;
                 if (GetAliasingGroupWithRequirements(resource_alloc_info->capture_id, &aliasing_group))
@@ -3317,6 +3321,14 @@ VkResult VulkanRebindAllocator::BindTensorMemory(uint32_t                       
                                             *memory_alloc_info,
                                             *vma_mem_info,
                                             bind_memory_properties[i]);
+                        }
+                        else if (memory_alloc_info->vma_mem_infos.size() > vma_count_before)
+                        {
+                            // The bind failed: remove and free the new shared allocation. A cached allocation may
+                            // already be bound to other resources and must remain alive.
+                            memory_alloc_info->aliasing_group_vma_memories.erase(aliasing_group);
+                            vmaFreeMemory(allocator_, vma_mem_info->allocation);
+                            memory_alloc_info->vma_mem_infos.pop_back();
                         }
                     }
                     else
@@ -3356,6 +3368,16 @@ VkResult VulkanRebindAllocator::BindTensorMemory(uint32_t                       
                                         *memory_alloc_info,
                                         *vma_mem_info,
                                         bind_memory_properties[i]);
+                    }
+                    else
+                    {
+                        // The bind failed: free a new per-resource VMA allocation that was never successfully bound
+                        // to avoid a leak.
+                        if (memory_alloc_info->vma_mem_infos.size() > vma_count_before)
+                        {
+                            vmaFreeMemory(allocator_, vma_mem_info->allocation);
+                            memory_alloc_info->vma_mem_infos.pop_back();
+                        }
                     }
                 }
             }

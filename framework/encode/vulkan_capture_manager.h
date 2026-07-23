@@ -2024,16 +2024,24 @@ class VulkanCaptureManager : public ApiCaptureManager
         }
     }
 
-    void PostProcess_vkCreateTensorViewARM(VkResult,
-                                           VkDevice                         device,
+    void PostProcess_vkCreateTensorViewARM(VkResult result,
+                                           VkDevice,
                                            const VkTensorViewCreateInfoARM* pCreateInfo,
-                                           const VkAllocationCallbacks*     pAllocator,
-                                           VkTensorViewARM*                 pView)
+                                           const VkAllocationCallbacks*,
+                                           VkTensorViewARM* pView)
     {
-        auto view   = GetWrapper<TensorViewARMWrapper>(*pView);
-        auto tensor = GetWrapper<TensorARMWrapper>(pCreateInfo->tensor);
-        tensor->tensor_views.insert(view);
-        view->tensor = tensor;
+        if (!IsCaptureModeTrack() || (result != VK_SUCCESS))
+        {
+            return;
+        }
+
+        auto view   = vulkan_wrappers::GetWrapper<vulkan_wrappers::TensorViewARMWrapper>(*pView);
+        auto tensor = vulkan_wrappers::GetWrapper<vulkan_wrappers::TensorARMWrapper>(pCreateInfo->tensor);
+        if ((view != nullptr) && (tensor != nullptr))
+        {
+            tensor->tensor_views.insert(view);
+            view->tensor = tensor;
+        }
     }
 
     CaptureSettings::TraceSettings GetDefaultTraceSettings() override

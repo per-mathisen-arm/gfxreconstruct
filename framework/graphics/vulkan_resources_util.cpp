@@ -949,6 +949,7 @@ VulkanResourcesUtil::~VulkanResourcesUtil()
     }
 
     DestroyStagingTensor();
+    DestroyStagingTensorMemory();
 }
 
 uint64_t VulkanResourcesUtil::GetImageResourceSizesOptimal(VkFormat               format,
@@ -1296,8 +1297,12 @@ VkResult VulkanResourcesUtil::CreateStagingTensor(const VkTensorDescriptionARM* 
     device_table_.GetTensorMemoryRequirementsARM(device_, &mem_req, &mem_req2);
     VkMemoryRequirements* memory_requirements = &mem_req2.memoryRequirements;
 
-    // If the new size is bigger than the previous staging tensor size, a reallocation is needed
-    if (memory_requirements->size > staging_tensor_.size)
+    const bool memory_type_is_compatible =
+        (staging_tensor_.memory_type_index < VK_MAX_MEMORY_TYPES) &&
+        ((memory_requirements->memoryTypeBits & (1U << staging_tensor_.memory_type_index)) != 0);
+
+    // A larger tensor or incompatible memory requirements need a new allocation.
+    if ((memory_requirements->size > staging_tensor_.size) || !memory_type_is_compatible)
     {
         DestroyStagingTensorMemory();
         uint32_t memory_type_index = std::numeric_limits<uint32_t>::max();
@@ -1320,7 +1325,8 @@ VkResult VulkanResourcesUtil::CreateStagingTensor(const VkTensorDescriptionARM* 
         result = device_table_.AllocateMemory(device_, &alloc_info, nullptr, &staging_tensor_.memory);
         if (result == VK_SUCCESS)
         {
-            staging_tensor_.size = memory_requirements->size;
+            staging_tensor_.size              = memory_requirements->size;
+            staging_tensor_.memory_type_index = memory_type_index;
         }
     }
 
@@ -1417,6 +1423,7 @@ void VulkanResourcesUtil::DestroyStagingTensorMemory()
     }
 
     staging_tensor_.memory_property_flags = VkMemoryPropertyFlags(0);
+    staging_tensor_.memory_type_index     = std::numeric_limits<uint32_t>::max();
     staging_tensor_.size                  = 0;
 }
 
