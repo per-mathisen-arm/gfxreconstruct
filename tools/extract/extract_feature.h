@@ -1,5 +1,5 @@
 /*
-** Copyright (c) 2021-2026 LunarG, Inc.
+** Copyright (c) 2026 LunarG, Inc.
 **
 ** Permission is hereby granted, free of charge, to any person obtaining a
 ** copy of this software and associated documentation files (the "Software"),
@@ -20,36 +20,30 @@
 ** DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef GFXRECON_GRAPHICS_VULKAN_SEMAPHORE_UTIL_H
-#define GFXRECON_GRAPHICS_VULKAN_SEMAPHORE_UTIL_H
+#ifndef GFXRECON_EXTRACT_FEATURE_H
+#define GFXRECON_EXTRACT_FEATURE_H
 
-#include "generated/generated_vulkan_dispatch_table.h"
+#include "decode/file_processor.h"
+#include "util/argument_parser.h"
 #include "util/defines.h"
-#include "util/platform.h"
 
-#include "vulkan/vulkan.h"
+#include <string>
 
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
-GFXRECON_BEGIN_NAMESPACE(graphics)
+GFXRECON_BEGIN_NAMESPACE(extract)
 
-struct VulkanSemaphore
+class ExtractFeatureBase
 {
-    VkSemaphore semaphore = VK_NULL_HANDLE;
-    /// Only used for timeline semaphores, ignored for binary semaphores
-    uint64_t timeline_value = 0;
+  public:
+    virtual ~ExtractFeatureBase() = default;
+
+    virtual void Initialize(decode::FileProcessor& file_processor,
+                            const std::string&     extract_dir,
+                            util::ArgumentParser&  arg_parser) = 0;
+    virtual bool WasDetected() const                          = 0;
 };
 
-/**
- * @brief   StripWaitSemaphores can be used to remove all wait-semaphores for a provided VkSubmitInfo.
- *          Respective pointer in submit_info will be set to nullptr and count to zero.
- *
- * @param   submit_info     a provided VkSubmitInfo(2) struct
- * @return  an array of VulkanSemaphore structs that have been stripped/removed from submit_info
- */
-std::vector<VulkanSemaphore> StripWaitSemaphores(VkSubmitInfo* submit_info);
-std::vector<VulkanSemaphore> StripWaitSemaphores(VkSubmitInfo2* submit_info);
-
-GFXRECON_END_NAMESPACE(graphics)
+GFXRECON_END_NAMESPACE(extract)
 GFXRECON_END_NAMESPACE(gfxrecon)
 
-#endif // GFXRECON_GRAPHICS_VULKAN_SEMAPHORE_UTIL_H
+#endif // GFXRECON_EXTRACT_FEATURE_H
