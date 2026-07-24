@@ -127,7 +127,7 @@ struct PhysicalDeviceWrapper : public HandleWrapper<VkPhysicalDevice>
 {
     graphics::VulkanInstanceTable*   layer_table_ref{ nullptr };
     std::vector<DisplayKHRWrapper*>  child_displays;
-    graphics::VulkanInstanceUtilInfo instance_info{};
+    graphics::VulkanInstanceUtilInfo parent_info{};
 
     // Track memory types for use when creating snapshots of buffer and image resource memory content.
     VkPhysicalDeviceMemoryProperties memory_properties{};
@@ -150,6 +150,7 @@ struct InstanceWrapper : public HandleWrapper<VkInstance>
 {
     graphics::VulkanInstanceTable       layer_table;
     std::vector<PhysicalDeviceWrapper*> child_physical_devices;
+    graphics::VulkanInstanceUtilInfo    util_info{};
     bool                                have_device_properties{ false };
     uint32_t                            api_version{ VK_MAKE_VERSION(1, 0, 0) };
 };
