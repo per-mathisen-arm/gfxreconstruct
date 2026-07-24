@@ -497,6 +497,17 @@ void Dx12ResourceAliasingModifier::Process_IUnknown_Release(const ApiCallInfo& c
     }
 }
 
+void Dx12ResourceAliasingModifier::ProcessDx12ResourceAliasingCommand(
+    const format::arm::Dx12ResourceAliasingCommandHeader& command_header, const uint8_t* data)
+{
+    if (IsModificationPass())
+    {
+        // All old Dx12ResourceAliasingCommand Will be deleted
+        SetDeleteCurrentCall();
+        return;
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Aliasing detection
 // ---------------------------------------------------------------------------

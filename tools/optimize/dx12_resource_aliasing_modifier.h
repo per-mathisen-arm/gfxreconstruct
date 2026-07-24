@@ -88,6 +88,10 @@ class Dx12ResourceAliasingModifier : public util::Dx12ModifierBase
         UINT                                                  NumBarriers,
         StructPointerDecoder<Decoded_D3D12_RESOURCE_BARRIER>* pBarriers) override;
 
+    virtual void
+    ProcessDx12ResourceAliasingCommand(const format::arm::Dx12ResourceAliasingCommandHeader& command_header,
+                                       const uint8_t*                                        data) override;
+
     // Intercept captured GetResourceAllocationInfo* calls to record resource sizes.
     virtual void Process_ID3D12Device_GetResourceAllocationInfo(
         const ApiCallInfo&                                 call_info,
