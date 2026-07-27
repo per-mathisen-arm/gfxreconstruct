@@ -741,8 +741,13 @@ bool FileProcessor::ProcessFrameDelimiter(const FrameEndMarkerArgs& end_frame)
 {
     // Validate frame end marker's frame number matches current_frame_number_ when capture_uses_frame_markers_ is
     // true.
-    GFXRECON_ASSERT((!capture_uses_frame_markers_) ||
-                    (process_frame_number_ == (end_frame.frame_number - first_frame_)));
+    if (capture_uses_frame_markers_ && (process_frame_number_ != (end_frame.frame_number - first_frame_)))
+    {
+        GFXRECON_LOG_ERROR("Frame end marker frame number (%" PRIu64 ") does not match current frame number (%" PRIu64
+                           ")",
+                           end_frame.frame_number - first_frame_,
+                           process_frame_number_);
+    }
     if (IsFrameDelimiter(format::BlockType::kFrameMarkerBlock, format::MarkerType::kEndMarker))
     {
         // If this is the first FrameEndMarker, this frame has side effects to be applied after dispatch
