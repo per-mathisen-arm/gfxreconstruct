@@ -49,7 +49,7 @@ void UpdateBufferSize(ID3D12Device*                         device,
         if (!buffer)
         {
             buffer_size = 0;
-            GFXRECON_LOG_FATAL("Failed to create a buffer of size %" PRIu64 " for building acceleration structures.",
+            GFXRECON_LOG_ERROR("Failed to create a buffer of size %" PRIu64 " for building acceleration structures.",
                                required_size);
         }
         else

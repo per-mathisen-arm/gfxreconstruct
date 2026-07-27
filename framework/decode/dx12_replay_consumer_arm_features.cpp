@@ -95,7 +95,6 @@ void Dx12ReplayConsumerArmFeatures::CheckReplayResult(const char* call_name,
                 call_name,
                 enumutil::GetResultValueString(replay_result).c_str(),
                 enumutil::GetResultValueString(capture_result).c_str());
-            consumer_->RaiseFatalError(enumutil::GetResultDescription(replay_result));
         }
         else
         {

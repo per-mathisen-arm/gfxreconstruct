@@ -82,6 +82,8 @@ int main(int argc, const char** argv)
 
     // Default initialize logging to report issues while loading settings.
     gfxrecon::util::Log::Init(gfxrecon::decode::kDefaultLogLevel);
+    gfxrecon::util::Log::SetFatalCallback([](const char* message) { throw std::runtime_error(message); });
+
     PrintVersion(argv[0]);
 
     std::vector<std::unique_ptr<gfxrecon::replay::ReplayFeatureBase>> features;

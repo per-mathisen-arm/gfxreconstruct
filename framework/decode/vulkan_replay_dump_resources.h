@@ -322,6 +322,35 @@ class VulkanReplayDumpResourcesBase
                                        uint32_t                        dynamicOffsetCount,
                                        const uint32_t*                 pDynamicOffsets);
 
+    void OverrideCmdPushDescriptorSet(const ApiCallInfo&                                  call_info,
+                                      PFN_vkCmdPushDescriptorSet                          func,
+                                      VkCommandBuffer                                     original_command_buffer,
+                                      VkPipelineBindPoint                                 pipeline_bind_point,
+                                      const VulkanPipelineLayoutInfo*                     layout_info,
+                                      uint32_t                                            set,
+                                      uint32_t                                            descriptor_write_count,
+                                      StructPointerDecoder<Decoded_VkWriteDescriptorSet>* p_descriptor_writes);
+
+    void OverrideCmdPushDescriptorSetKHR(const ApiCallInfo&                                  call_info,
+                                         PFN_vkCmdPushDescriptorSet                          func,
+                                         VkCommandBuffer                                     original_command_buffer,
+                                         VkPipelineBindPoint                                 pipeline_bind_point,
+                                         const VulkanPipelineLayoutInfo*                     layout_info,
+                                         uint32_t                                            set,
+                                         uint32_t                                            descriptor_write_count,
+                                         StructPointerDecoder<Decoded_VkWriteDescriptorSet>* p_descriptor_writes);
+
+    void OverrideCmdPushDescriptorSet2(const ApiCallInfo&                                     call_info,
+                                       PFN_vkCmdPushDescriptorSet2                            func,
+                                       VkCommandBuffer                                        original_command_buffer,
+                                       StructPointerDecoder<Decoded_VkPushDescriptorSetInfo>* pPushDescriptorSetInfo);
+
+    void
+    OverrideCmdPushDescriptorSet2KHR(const ApiCallInfo&                                     call_info,
+                                     PFN_vkCmdPushDescriptorSet2KHR                         func,
+                                     VkCommandBuffer                                        original_command_buffer,
+                                     StructPointerDecoder<Decoded_VkPushDescriptorSetInfo>* pPushDescriptorSetInfo);
+
     void
     OverrideCmdBindDescriptorSets2(const ApiCallInfo&                                      call_info,
                                    PFN_vkCmdBindDescriptorSets2                            func,
@@ -615,8 +644,6 @@ class VulkanReplayDumpResourcesBase
             }
         }
     }
-
-    void DumpResourcesSetFatalErrorHandler(std::function<void(const char*)> handler);
 
     // Handles population of acceleration_structures_context_ map. For each AS that is build an entry in that map is
     // created and the input buffers are cloned
@@ -918,8 +945,6 @@ class VulkanReplayDumpResourcesBase
     DumpResourcesAccelerationStructuresContext acceleration_structures_context_;
     bool                                       dump_as_build_input_buffers_;
 
-    std::function<void(const char*)> fatal_error_handler_;
-    void                             RaiseFatalError(const char* message) const;
 };
 
 GFXRECON_END_NAMESPACE(gfxrecon)

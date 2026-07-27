@@ -181,14 +181,15 @@ const char kDumpResourcesModifiableStateOnly[] = "--dump-resources-modifiable-st
 const char kDumpResourcesBeforeDrawOption[]    = "--dump-resources-before-draw";
 #endif
 
-const char kDumpResourcesArgument[]     = "--dump-resources";
-const char kDumpResourcesDirArgument[]  = "--dump-resources-dir";
-const char kFrameWarmUpSpirv[]          = "--frame-warm-up-spirv";
-const char kFrameWarmUpLoad[]           = "--frame-warm-up-load";
-const char kSerializeQueueSubmissions[] = "--serialize-queue-submissions";
-const char kReplayEventPluginPath[]     = "--replay-event-plugin-path";
-const char kReplayEventPluginParams[]   = "--replay-event-plugin-params";
-const char kIsolateRenderPasses[]       = "--isolate-render-passes";
+const char kDumpResourcesArgument[]       = "--dump-resources";
+const char kDumpResourcesDirArgument[]    = "--dump-resources-dir";
+const char kFrameWarmUpSpirv[]            = "--frame-warm-up-spirv";
+const char kFrameWarmUpLoad[]             = "--frame-warm-up-load";
+const char kSerializeQueueSubmissions[]   = "--serialize-queue-submissions";
+const char kReplayEventPluginPath[]       = "--replay-event-plugin-path";
+const char kReplayEventPluginParams[]     = "--replay-event-plugin-params";
+const char kIsolateRenderPasses[]         = "--isolate-render-passes";
+const char kSerializeComputeAndTransfer[] = "--serialize-compute-and-transfer";
 
 enum class WsiPlatform
 {
@@ -849,7 +850,6 @@ GetMeasurementFrameRange(const gfxrecon::util::ArgumentParser& arg_parser, uint3
     {
         GFXRECON_LOG_FATAL("Invalid measurement frame range \"%s\". Must have format: <start_frame>-<end_frame>",
                            value.c_str());
-        std::abort();
     }
 
     for (std::string& num : values)
@@ -862,7 +862,6 @@ GetMeasurementFrameRange(const gfxrecon::util::ArgumentParser& arg_parser, uint3
         {
             GFXRECON_LOG_FATAL("Invalid measurement frame range \"%s\", which contains non-numeric values",
                                value.c_str());
-            std::abort();
         }
     }
 
@@ -874,7 +873,6 @@ GetMeasurementFrameRange(const gfxrecon::util::ArgumentParser& arg_parser, uint3
         GFXRECON_LOG_FATAL("Invalid measurement frame range \"%s\", where first frame is greater than or equal "
                            "to the last frame",
                            value.c_str());
-        std::abort();
     }
 
     if (start_frame_arg == 0)
@@ -882,7 +880,6 @@ GetMeasurementFrameRange(const gfxrecon::util::ArgumentParser& arg_parser, uint3
         GFXRECON_LOG_FATAL("Invalid measurement frame range \"%s\", where first frame is 0 which is invalid in "
                            "GFXReconstruct (frame count starts at 1)",
                            value.c_str());
-        std::abort();
     }
 
     start_frame = start_frame_arg;
@@ -1442,9 +1439,7 @@ GetVulkanReplayOptions(const gfxrecon::util::ArgumentParser&           arg_parse
         }
         else
         {
-            GFXRECON_LOG_FATAL("Unexpected value after '--skip-get-fence-status' : '%s'. Closing the program.",
-                               skip_get_fence_status.c_str());
-            abort();
+            GFXRECON_LOG_FATAL("Unexpected value after '--skip-get-fence-status': '%s'", skip_get_fence_status.c_str());
         }
     }
 
@@ -1515,9 +1510,10 @@ GetVulkanReplayOptions(const gfxrecon::util::ArgumentParser&           arg_parse
     GetFrameWarmUpOptions(arg_parser, replay_options.frame_warm_up_spirv_path, replay_options.frame_warm_up_load);
     GetWaitBeforeFrame(arg_parser, replay_options.wait_before_frame);
 
-    replay_options.replay_event_plugin_path   = arg_parser.GetArgumentValue(kReplayEventPluginPath);
-    replay_options.replay_event_plugin_params = arg_parser.GetArgumentValue(kReplayEventPluginParams);
-    replay_options.isolate_render_passes      = arg_parser.IsOptionSet(kIsolateRenderPasses);
+    replay_options.replay_event_plugin_path       = arg_parser.GetArgumentValue(kReplayEventPluginPath);
+    replay_options.replay_event_plugin_params     = arg_parser.GetArgumentValue(kReplayEventPluginParams);
+    replay_options.isolate_render_passes          = arg_parser.IsOptionSet(kIsolateRenderPasses);
+    replay_options.serialize_compute_and_transfer = arg_parser.IsOptionSet(kSerializeComputeAndTransfer);
 
     if (replay_options.blackhole)
     {
