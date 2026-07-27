@@ -648,6 +648,7 @@ gfxrecon-replay <file>  [-h | --help] [--version] [--cpu-mask <binary-mask>] [--
                         [--wait-before-frame MILLISECONDS]
                         [--serialize-queue-submissions]
                         [--replay-event-plugin-path <path>] [--replay-event-plugin-params <params>]
+                        [--isolate-render-passes]
 
 
 Required arguments:
@@ -939,6 +940,8 @@ Optional arguments:
               Parameters to forward to the replay event plugin. The format
               of the parameters is determined by the plugin and is not
               interpreted by the replay tool. (forwarded to replay tool)
+  --isolate-render-passes
+              Isolate render passes by splitting the command buffer into multiple submits.
 ```
 
 ### Frame Warm-Up

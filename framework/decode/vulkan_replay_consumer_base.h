@@ -37,6 +37,7 @@
 #include "decode/vulkan_object_info.h"
 #include "decode/common_object_info_table.h"
 #include "decode/vulkan_replay_options.h"
+#include "decode/vulkan_command_splitter.h"
 #include "decode/vulkan_resource_allocator.h"
 #include "decode/vulkan_submit_job.h"
 #include "decode/vulkan_swapchain.h"
@@ -1483,6 +1484,13 @@ class VulkanReplayConsumerBase : public VulkanConsumer
                                         VulkanCommandBufferInfo*  command_buffer_info,
                                         VkCommandBufferResetFlags flags);
 
+    VkResult OverrideCreateCommandPool(PFN_vkCreateCommandPool                                      func,
+                                       VkResult                                                     original_result,
+                                       const VulkanDeviceInfo*                                      device_info,
+                                       const StructPointerDecoder<Decoded_VkCommandPoolCreateInfo>* pCreateInfo,
+                                       const StructPointerDecoder<Decoded_VkAllocationCallbacks>*   pAllocator,
+                                       HandlePointerDecoder<VkCommandPool>*                         pCommandPool);
+
     VkResult OverrideResetCommandPool(PFN_vkResetCommandPool  func,
                                       VkResult                original_result,
                                       const VulkanDeviceInfo* device_info,
@@ -2057,6 +2065,7 @@ class VulkanReplayConsumerBase : public VulkanConsumer
     decode::VulkanDeviceAddressTracker& GetDeviceAddressTracker(const decode::VulkanDeviceInfo* device_info);
     decode::VulkanAddressReplacerBase&  GetDeviceAddressReplacer(const decode::VulkanDeviceInfo* device_info);
     VulkanFrameWarmUp&                  GetDeviceFrameWarmUp(const VulkanDeviceInfo* device_info);
+    VulkanCommandSplitter&              GetDeviceCommandSplitter(const VulkanDeviceInfo* device_info);
     VulkanSubmitJobExecutor&            GetDeviceSubmitJobExecutor(const VulkanDeviceInfo* device_info);
 
     decode::VulkanAccelerationStructureBuilder&
@@ -2185,6 +2194,7 @@ class VulkanReplayConsumerBase : public VulkanConsumer
     VulkanPerDeviceAddressTrackers    device_address_trackers_;
     VulkanPerDeviceAddressReplacers   device_address_replacers_;
     VulkanPerDeviceFrameWarmUp        device_frame_warmups_;
+    VulkanPerDeviceCommandSplitters   device_command_splitters_;
     VulkanPerDeviceSubmitJobExecutors device_submit_job_executors_;
 
     util::ThreadPool main_thread_queue_;
