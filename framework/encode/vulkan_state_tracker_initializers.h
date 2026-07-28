@@ -641,8 +641,7 @@ InitializeState<VkDevice, vulkan_wrappers::DataGraphPipelineSessionARMWrapper, V
     assert(wrapper != nullptr);
     assert(create_parameters != nullptr);
 
-    GFXRECON_UNREFERENCED_PARAMETER(parent_handle);
-
+    wrapper->device            = GetWrapper<DeviceWrapper>(parent_handle);
     wrapper->create_call_id    = create_call_id;
     wrapper->create_parameters = std::move(create_parameters);
 
@@ -694,12 +693,11 @@ inline void InitializeState<VkDevice, vulkan_wrappers::BufferWrapper, VkBufferCr
     assert(create_info != nullptr);
     assert(create_parameters != nullptr);
 
-    GFXRECON_UNREFERENCED_PARAMETER(parent_handle);
-
+    wrapper->device            = GetWrapper<DeviceWrapper>(parent_handle);
     wrapper->create_call_id    = create_call_id;
     wrapper->create_parameters = std::move(create_parameters);
 
-    wrapper->created_size = create_info->size;
+    wrapper->size = create_info->size;
 
     if ((create_info->flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) != 0)
     {
@@ -725,6 +723,7 @@ inline void InitializeState<VkDevice, vulkan_wrappers::TensorARMWrapper, VkTenso
     assert(create_info != nullptr);
     assert(create_parameters != nullptr);
 
+    wrapper->device                    = GetWrapper<DeviceWrapper>(parent_handle);
     wrapper->create_call_id            = create_call_id;
     wrapper->create_parameters         = std::move(create_parameters);
     const VkTensorDescriptionARM* desc = create_info->pDescription;
@@ -777,8 +776,7 @@ inline void InitializeState<VkDevice, vulkan_wrappers::ImageWrapper, VkImageCrea
     assert(create_info != nullptr);
     assert(create_parameters != nullptr);
 
-    GFXRECON_UNREFERENCED_PARAMETER(parent_handle);
-
+    wrapper->device            = GetWrapper<DeviceWrapper>(parent_handle);
     wrapper->create_call_id    = create_call_id;
     wrapper->create_parameters = std::move(create_parameters);
 

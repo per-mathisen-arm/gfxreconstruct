@@ -392,7 +392,7 @@ void VulkanStateTracker::TrackBufferMemoryBinding(
     assert((device != VK_NULL_HANDLE) && (buffer != VK_NULL_HANDLE) && (memory != VK_NULL_HANDLE));
 
     auto wrapper            = vulkan_wrappers::GetWrapper<vulkan_wrappers::BufferWrapper>(buffer);
-    wrapper->bind_device    = vulkan_wrappers::GetWrapper<vulkan_wrappers::DeviceWrapper>(device);
+    wrapper->device         = vulkan_wrappers::GetWrapper<vulkan_wrappers::DeviceWrapper>(device);
     wrapper->bind_memory_id = vulkan_wrappers::GetWrappedId<vulkan_wrappers::DeviceMemoryWrapper>(memory);
     wrapper->bind_offset    = memoryOffset;
     wrapper->bind_pnext     = nullptr;
@@ -416,7 +416,7 @@ void VulkanStateTracker::TrackTensorMemoryBinding(
     assert((device != VK_NULL_HANDLE) && (tensor != VK_NULL_HANDLE) && (memory != VK_NULL_HANDLE));
 
     auto wrapper            = vulkan_wrappers::GetWrapper<vulkan_wrappers::TensorARMWrapper>(tensor);
-    wrapper->bind_device    = vulkan_wrappers::GetWrapper<vulkan_wrappers::DeviceWrapper>(device);
+    wrapper->device         = vulkan_wrappers::GetWrapper<vulkan_wrappers::DeviceWrapper>(device);
     wrapper->bind_memory_id = vulkan_wrappers::GetWrappedId<vulkan_wrappers::DeviceMemoryWrapper>(memory);
     wrapper->bind_offset    = memoryOffset;
     wrapper->bind_pnext     = nullptr;
@@ -443,7 +443,7 @@ void VulkanStateTracker::TrackDataGraphPipelineSessionMemoryBinding(VkDevice    
     assert((device != VK_NULL_HANDLE) && (session != VK_NULL_HANDLE) && (memory != VK_NULL_HANDLE));
 
     auto wrapper            = vulkan_wrappers::GetWrapper<vulkan_wrappers::DataGraphPipelineSessionARMWrapper>(session);
-    wrapper->bind_device    = vulkan_wrappers::GetWrapper<vulkan_wrappers::DeviceWrapper>(device);
+    wrapper->device         = vulkan_wrappers::GetWrapper<vulkan_wrappers::DeviceWrapper>(device);
     wrapper->bind_memory_id = vulkan_wrappers::GetWrappedId<vulkan_wrappers::DeviceMemoryWrapper>(memory);
     wrapper->bind_offset    = memoryOffset;
     wrapper->bind_pnext     = nullptr;
@@ -555,13 +555,13 @@ void VulkanStateTracker::TrackAccelerationStructureBuildCommand(
                     encode::AccelerationStructureInputBuffer& buffer =
                         dst_command.input_buffers[target_buffer_wrapper->handle_id];
 
-                    buffer.capture_address                          = address;
-                    buffer.handle                                   = target_buffer_wrapper->handle;
-                    buffer.handle_id                                = target_buffer_wrapper->handle_id;
-                    buffer.bind_device                              = target_buffer_wrapper->bind_device;
-                    buffer.queue_family_index                       = target_buffer_wrapper->queue_family_index;
-                    buffer.created_size                             = target_buffer_wrapper->size;
-                    buffer.usage                                    = target_buffer_wrapper->usage;
+                    buffer.capture_address                             = address;
+                    buffer.handle                                      = target_buffer_wrapper->handle;
+                    buffer.handle_id                                   = target_buffer_wrapper->handle_id;
+                    buffer.bind_device                                 = target_buffer_wrapper->device;
+                    buffer.queue_family_index                          = target_buffer_wrapper->queue_family_index;
+                    buffer.created_size                                = target_buffer_wrapper->size;
+                    buffer.usage                                       = target_buffer_wrapper->usage;
                     target_buffer_wrapper->as_target_storage_buffer_id = wrapper->buffer->handle_id;
                 }
             }
@@ -666,7 +666,7 @@ void VulkanStateTracker::TrackMicromapBuildCommand(VkCommandBuffer              
             buffer.capture_address                   = address;
             buffer.handle                            = target_buffer_wrapper->handle;
             buffer.handle_id                         = target_buffer_wrapper->handle_id;
-            buffer.bind_device                       = target_buffer_wrapper->bind_device;
+            buffer.bind_device                       = target_buffer_wrapper->device;
             buffer.queue_family_index                = target_buffer_wrapper->queue_family_index;
             buffer.created_size                      = target_buffer_wrapper->size;
             buffer.usage                             = target_buffer_wrapper->usage;
@@ -686,7 +686,7 @@ void VulkanStateTracker::TrackImageMemoryBinding(
     assert((device != VK_NULL_HANDLE) && (image != VK_NULL_HANDLE));
 
     auto wrapper            = vulkan_wrappers::GetWrapper<vulkan_wrappers::ImageWrapper>(image);
-    wrapper->bind_device    = vulkan_wrappers::GetWrapper<vulkan_wrappers::DeviceWrapper>(device);
+    wrapper->device         = vulkan_wrappers::GetWrapper<vulkan_wrappers::DeviceWrapper>(device);
     wrapper->bind_memory_id = vulkan_wrappers::GetWrappedId<vulkan_wrappers::DeviceMemoryWrapper>(memory);
     wrapper->bind_offset    = memoryOffset;
     wrapper->bind_pnext     = nullptr;
@@ -2292,7 +2292,7 @@ void gfxrecon::encode::VulkanStateTracker::DestroyState(vulkan_wrappers::BufferW
 
     if (wrapper != nullptr && wrapper->device != nullptr)
     {
-        device_address_trackers_[wrapper->device].RemoveBuffer(wrapper);
+        device_address_trackers_[wrapper->device->handle].RemoveBuffer(wrapper);
     }
 
     vulkan_wrappers::BufferWrapper* target_storage_wrapper = nullptr;
