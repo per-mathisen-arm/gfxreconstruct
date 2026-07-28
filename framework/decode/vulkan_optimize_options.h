@@ -26,14 +26,19 @@
 
 #include "decode/optimize_options.h"
 
+#include <string>
+#include <vector>
+
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(decode)
 
 struct VulkanOptimizationOptions : public OptimizationOptions
 {
-    bool        remove_rt{ false };
-    bool        filter_device_instance{ false };
-    std::string replace_shader_dir{};
+    bool                     remove_rt{ false };
+    bool                     remove_device_instance{ false };
+    bool                     keep_device_instance{ false };
+    std::vector<std::string> remove_app_name;
+    std::string              replace_shader_dir{};
 };
 
 GFXRECON_END_NAMESPACE(decode)
