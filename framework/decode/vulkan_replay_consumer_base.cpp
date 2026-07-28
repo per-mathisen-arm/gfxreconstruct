@@ -42,8 +42,10 @@
 #endif
 
 #include "graphics/vulkan_feature_util.h"
+#include "decode/vulkan_descriptor_utils.h"
 #include "decode/vulkan_object_cleanup_util.h"
 #include "decode/vulkan_submit_job.h"
+#include "decode/vulkan_swapchain_format.h"
 #include "format/format.h"
 #include "format/format_util.h"
 #include "generated/generated_vulkan_enum_to_string.h"
@@ -295,7 +297,6 @@ VulkanReplayConsumerBase::VulkanReplayConsumerBase(std::shared_ptr<application::
                 GFXRECON_LOG_FATAL("Could not open pipeline cache file '%s'. Error: '%s'",
                                    options_.save_pipeline_cache_filename.c_str(),
                                    strerror(error));
-                exit(-1);
             }
             util::platform::FileClose(file);
         }
@@ -2057,24 +2058,6 @@ void VulkanReplayConsumerBase::ClearRecaptureHandleIds()
     }
 }
 
-void VulkanReplayConsumerBase::SetFatalErrorHandler(std::function<void(const char*)> handler)
-{
-    fatal_error_handler_ = handler;
-    if (resource_dumper_)
-    {
-        resource_dumper_->DumpResourcesSetFatalErrorHandler(handler);
-    }
-}
-
-void VulkanReplayConsumerBase::RaiseFatalError(const char* message) const
-{
-    // TODO: Should there be a default action if no error handler has been provided?
-    if (fatal_error_handler_ != nullptr)
-    {
-        fatal_error_handler_(message);
-    }
-}
-
 void VulkanReplayConsumerBase::InitializeLoader()
 {
     loader_handle_ = graphics::InitializeLoader(getenv("GFXRECON_VULKAN_LIBRARY_PATH"));
@@ -2097,7 +2080,6 @@ void VulkanReplayConsumerBase::InitializeLoader()
         GFXRECON_LOG_FATAL("Failed to load Vulkan runtime library; please ensure that the path to the Vulkan "
                            "loader (eg. %s) has been added to the appropriate system path",
                            graphics::kLoaderLibNames[0].c_str());
-        RaiseFatalError("Failed to load Vulkan runtime library");
     }
 }
 
@@ -2249,7 +2231,6 @@ void VulkanReplayConsumerBase::CheckResult(const char*                func_name,
                 // replay to attempt to continue for the case where an application may have queried for formats that it
                 // did not use.
                 GFXRECON_LOG_FATAL("%s. Replay cannot continue.", log_str);
-                RaiseFatalError(enumutil::GetResultDescription(replay));
             }
             else
             {
@@ -3130,8 +3111,6 @@ void VulkanReplayConsumerBase::InitializeResourceAllocator(const VulkanPhysicalD
     if (result < 0)
     {
         GFXRECON_LOG_FATAL("Failed to initialize memory allocator.  Replay cannot continue.");
-        RaiseFatalError(
-            "Replay has encountered a fatal error and cannot continue (failed to initialize memory allocator)");
     }
 }
 
@@ -9346,6 +9325,35 @@ VkResult VulkanReplayConsumerBase::OverrideCreateSwapchainKHR(
                 supported_extension_iterator == instance_info->util_info.enabled_extensions.end();
         }
 
+        // If supported surface formats were not queried before, query them now
+        if (!physical_device_info->surface_formats && options_.swapchain_option != util::SwapchainOption::kOffscreen)
+        {
+            const auto instance_table = GetInstanceTable(physical_device_info->handle);
+            util::MarkingLayersUtil::instance().BeginInjected(device_info);
+            uint32_t surface_format_count = 0;
+            auto     result               = instance_table->GetPhysicalDeviceSurfaceFormatsKHR(
+                physical_device_info->handle, modified_create_info.surface, &surface_format_count, nullptr);
+            if (result == VK_SUCCESS && surface_format_count > 0)
+            {
+                physical_device_info->surface_formats =
+                    std::make_optional<std::vector<VkSurfaceFormatKHR>>(surface_format_count);
+                result =
+                    instance_table->GetPhysicalDeviceSurfaceFormatsKHR(physical_device_info->handle,
+                                                                       modified_create_info.surface,
+                                                                       &surface_format_count,
+                                                                       physical_device_info->surface_formats->data());
+                if (result == VK_SUCCESS || result == VK_INCOMPLETE)
+                {
+                    physical_device_info->surface_formats->resize(surface_format_count);
+                }
+                else
+                {
+                    physical_device_info->surface_formats.reset();
+                }
+            }
+            util::MarkingLayersUtil::instance().EndInjected(device_info);
+        }
+
         // check if 'replay_create_info->imageFormat' is supported,
         // do nothing if we got no information about available surfaces
         bool surface_format_supported = !physical_device_info->surface_formats;
@@ -9382,11 +9390,14 @@ VkResult VulkanReplayConsumerBase::OverrideCreateSwapchainKHR(
                 }
             }
 
-            // fallback to a safe surface-format
-            modified_create_info.imageFormat = fallback_color_formats[0];
-            GFXRECON_LOG_WARNING_ONCE(
-                "Replay adjusted unsupported surface imageFormat (%d) to VK_FORMAT_B8G8R8A8_UNORM",
-                replay_create_info->imageFormat);
+            // fallback to a supported surface-format
+            const VkFormat fallback_format = SelectFallbackSurfaceFormat(
+                *physical_device_info->surface_formats, vkuFormatIsSRGB(replay_create_info->imageFormat));
+
+            modified_create_info.imageFormat = fallback_format;
+            GFXRECON_LOG_WARNING_ONCE("Replay adjusted unsupported surface imageFormat (%s -> %s)",
+                                      util::ToString<VkFormat>(replay_create_info->imageFormat).c_str(),
+                                      util::ToString<VkFormat>(fallback_format).c_str());
         }
 
         if (colorspace_extension_used_unsupported)
@@ -12593,9 +12604,18 @@ VkResult VulkanReplayConsumerBase::OverrideCreateImageView(
     }
     else if (img_info->is_swapchain_image && img_info->format != modified_create_info.format)
     {
-        // for swapchain-images set image-view to a fallback format, avoid issues with distorted HDR/SRGB colors
-        modified_create_info.format =
-            vkuFormatIsSRGB(modified_create_info.format) ? VK_FORMAT_B8G8R8A8_SRGB : VK_FORMAT_B8G8R8A8_UNORM;
+        // for swapchain-images set image-view to a fallback format, avoid issues with distorted HDR/SRGB colors.
+        // when the swapchain fell back to a BGRA8 format we preserve the captured view's sRGB-ness; for any other
+        // fallback format we match the swapchain image format exactly to keep the view format-compatible.
+        if (img_info->format == VK_FORMAT_B8G8R8A8_UNORM || img_info->format == VK_FORMAT_B8G8R8A8_SRGB)
+        {
+            modified_create_info.format =
+                vkuFormatIsSRGB(modified_create_info.format) ? VK_FORMAT_B8G8R8A8_SRGB : VK_FORMAT_B8G8R8A8_UNORM;
+        }
+        else
+        {
+            modified_create_info.format = img_info->format;
+        }
     }
 
     if (device_info->property_feature_info.feature_descriptorBufferCaptureReplay && !UseAddressReplacement(device_info))
@@ -14046,104 +14066,7 @@ void VulkanReplayConsumerBase::OverrideUpdateDescriptorSets(
     // The information gathered here is only relevant when dumping or for portability-features
     if (UseExtraDescriptorInfo(device_info))
     {
-        const auto* writes_meta = p_descriptor_writes->GetMetaStructPointer();
-
-        for (uint32_t s = 0; s < descriptor_write_count; ++s)
-        {
-            const auto&              write_meta        = writes_meta[s];
-            VulkanDescriptorSetInfo* dst_desc_set_info = GetObjectInfoTable().GetVkDescriptorSetInfo(write_meta.dstSet);
-            GFXRECON_ASSERT(dst_desc_set_info != nullptr);
-
-            const VkWriteDescriptorSet* write = write_meta.decoded_value;
-            GFXRECON_ASSERT(write != nullptr);
-
-            const uint32_t binding = write->dstBinding;
-            GFXRECON_ASSERT(dst_desc_set_info->descriptors.find(binding) != dst_desc_set_info->descriptors.end());
-            auto& descriptor_set_binding_info = dst_desc_set_info->descriptors[binding];
-            GFXRECON_ASSERT(descriptor_set_binding_info.desc_type == write->descriptorType ||
-                            descriptor_set_binding_info.desc_type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT);
-
-            if (auto* inline_uniform_block_write =
-                    graphics::vulkan_struct_get_pnext<VkWriteDescriptorSetInlineUniformBlock>(write);
-                inline_uniform_block_write != nullptr &&
-                write->descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK)
-            {
-                const uint32_t offset = write->dstArrayElement;
-                const uint32_t size   = write->descriptorCount;
-                GFXRECON_ASSERT(descriptor_set_binding_info.inline_uniform_block.size() >= offset + size);
-                util::platform::MemoryCopy(descriptor_set_binding_info.inline_uniform_block.data() + offset,
-                                           size,
-                                           inline_uniform_block_write->pData,
-                                           size);
-
-                // skip iterating individual bytes in below loop
-                continue;
-            }
-
-            for (uint32_t i = 0; i < write->descriptorCount; ++i)
-            {
-                const uint32_t arr_idx = write->dstArrayElement + i;
-
-                switch (write->descriptorType)
-                {
-                    case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
-                    case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
-                    case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
-                    case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
-                    {
-                        auto& desc_image_info           = descriptor_set_binding_info.image_info[arr_idx];
-                        desc_image_info.image_layout    = write->pImageInfo[i].imageLayout;
-                        desc_image_info.image_view_info = object_info_table_->GetVkImageViewInfo(
-                            write_meta.pImageInfo->GetMetaStructPointer()[i].imageView);
-                    }
-                    break;
-
-                    case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
-                    case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
-                    case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
-                    case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
-                    {
-                        auto& desc_buffer_info       = descriptor_set_binding_info.buffer_info[arr_idx];
-                        desc_buffer_info.buffer_info = object_info_table_->GetVkBufferInfo(
-                            write_meta.pBufferInfo->GetMetaStructPointer()[i].buffer);
-                        desc_buffer_info.offset = write->pBufferInfo[i].offset;
-                        desc_buffer_info.range  = write->pBufferInfo[i].range;
-                    }
-                    break;
-
-                    case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
-                    case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
-                    {
-                        descriptor_set_binding_info.texel_buffer_view_info[arr_idx] =
-                            object_info_table_->GetVkBufferViewInfo(writes_meta[s].pTexelBufferView.GetPointer()[i]);
-                    }
-                    break;
-
-                    case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
-                    {
-                        const auto* as_descriptors_meta =
-                            GetPNextMetaStruct<Decoded_VkWriteDescriptorSetAccelerationStructureKHR>(write_meta.pNext);
-                        if (as_descriptors_meta != nullptr)
-                        {
-                            const auto* as_ids = as_descriptors_meta->pAccelerationStructures.GetPointer();
-                            for (uint32_t as = 0; as < as_descriptors_meta->decoded_value->accelerationStructureCount;
-                                 ++as)
-                            {
-                                const auto* as_info = object_info_table_->GetVkAccelerationStructureKHRInfo(as_ids[as]);
-                                if (as_info != nullptr)
-                                {
-                                    descriptor_set_binding_info.acceleration_structs_khr_info[arr_idx] = as_info;
-                                }
-                            }
-                        }
-                    }
-                    break;
-
-                    default:
-                        break;
-                }
-            }
-        }
+        HandleDescriptorUpdate(*object_info_table_, descriptor_write_count, p_descriptor_writes);
     }
 }
 
@@ -16582,6 +16505,77 @@ void VulkanReplayConsumerBase::OverrideCmdExecuteGeneratedCommandsEXT(
     }
 
     func(command_buffer_info->handle, isPreprocessed, in_pGeneratedCommandsInfo);
+}
+
+void VulkanReplayConsumerBase::MaybeInjectComputeTransferBarrier(
+    const VulkanCommandBufferInfo* command_buffer_info) const
+{
+    if (!options_.serialize_compute_and_transfer)
+    {
+        return;
+    }
+
+    GFXRECON_ASSERT(command_buffer_info != nullptr);
+    const VulkanDeviceInfo* device_info = GetObjectInfoTable().GetVkDeviceInfo(command_buffer_info->parent_id);
+    GFXRECON_ASSERT(device_info != nullptr);
+    const graphics::VulkanDeviceTable* device_table = GetDeviceTable(device_info->handle);
+    GFXRECON_ASSERT(device_table != nullptr);
+
+    util::MarkingLayersUtil::instance().BeginInjected(device_info);
+
+    VkMemoryBarrier memory_barrier = { VK_STRUCTURE_TYPE_MEMORY_BARRIER };
+    memory_barrier.srcAccessMask   = VK_ACCESS_MEMORY_WRITE_BIT;
+    memory_barrier.dstAccessMask =
+        VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT | VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
+
+    const VkPipelineStageFlags stages =
+        VK_PIPELINE_STAGE_TRANSFER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
+
+    // Make sure compute and transfer write operations before this barrier are completed
+    // before doing other compute and transfer read/write operations.
+    device_table->CmdPipelineBarrier(
+        command_buffer_info->handle, stages, stages, 0, 1, &memory_barrier, 0, nullptr, 0, nullptr);
+
+    util::MarkingLayersUtil::instance().EndInjected(device_info);
+}
+
+void VulkanReplayConsumerBase::OverrideCmdDispatch(PFN_vkCmdDispatch              func,
+                                                   const VulkanCommandBufferInfo* command_buffer_info,
+                                                   uint32_t                       groupCountX,
+                                                   uint32_t                       groupCountY,
+                                                   uint32_t                       groupCountZ)
+{
+    GFXRECON_ASSERT(command_buffer_info != nullptr);
+    MaybeInjectComputeTransferBarrier(command_buffer_info);
+    func(command_buffer_info->handle, groupCountX, groupCountY, groupCountZ);
+    MaybeInjectComputeTransferBarrier(command_buffer_info);
+}
+
+void VulkanReplayConsumerBase::OverrideCmdDispatchIndirect(PFN_vkCmdDispatchIndirect      func,
+                                                           const VulkanCommandBufferInfo* command_buffer_info,
+                                                           const VulkanBufferInfo*        buffer_info,
+                                                           VkDeviceSize                   offset)
+{
+    GFXRECON_ASSERT(command_buffer_info != nullptr);
+    GFXRECON_ASSERT(buffer_info != nullptr);
+    MaybeInjectComputeTransferBarrier(command_buffer_info);
+    func(command_buffer_info->handle, buffer_info->handle, offset);
+    MaybeInjectComputeTransferBarrier(command_buffer_info);
+}
+
+void VulkanReplayConsumerBase::OverrideCmdDispatchBase(PFN_vkCmdDispatchBase          func,
+                                                       const VulkanCommandBufferInfo* command_buffer_info,
+                                                       uint32_t                       baseGroupX,
+                                                       uint32_t                       baseGroupY,
+                                                       uint32_t                       baseGroupZ,
+                                                       uint32_t                       groupCountX,
+                                                       uint32_t                       groupCountY,
+                                                       uint32_t                       groupCountZ)
+{
+    GFXRECON_ASSERT(command_buffer_info != nullptr);
+    MaybeInjectComputeTransferBarrier(command_buffer_info);
+    func(command_buffer_info->handle, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
+    MaybeInjectComputeTransferBarrier(command_buffer_info);
 }
 
 GFXRECON_END_NAMESPACE(decode)

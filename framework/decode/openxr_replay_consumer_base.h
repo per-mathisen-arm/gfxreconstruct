@@ -276,11 +276,6 @@ class OpenXrReplayConsumerBase : public OpenXrConsumer
                                         format::HandleId   swapchain,
                                         XrResult           replay_result);
 
-    void SetFatalErrorHandler(std::function<void(const char*)> handler)
-    {
-        fatal_error_handler_ = handler;
-    }
-
     const OpenXrReplayOptions options_;
 
   protected:
@@ -471,13 +466,11 @@ class OpenXrReplayConsumerBase : public OpenXrConsumer
                      bool                       assert_on_error = true);
 
   private:
-    void RaiseFatalError(const char* message) const;
-
     PFN_xrGetInstanceProcAddr                                   get_instance_proc_addr_;
     CommonObjectInfoTable*                                      object_info_table_;
     std::unordered_map<XrInstance, encode::OpenXrInstanceTable> instance_tables_;
     std::shared_ptr<application::Application>                   application_;
-    std::function<void(const char*)>                            fatal_error_handler_;
+    graphics::FpsInfo*                                          fps_info_;
 
 #if defined(__ANDROID__)
     struct android_app* android_app_;

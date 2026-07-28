@@ -214,6 +214,10 @@
     "vkCmdPreprocessGeneratedCommandsEXT": "OverrideCmdPreprocessGeneratedCommandsEXT",
     "vkCmdExecuteGeneratedCommandsEXT": "OverrideCmdExecuteGeneratedCommandsEXT",
     "vkAssertBufferARM": "OverrideAssertBufferARM",
-    "vkCmdUpdateBuffer2ARM": "OverrideCmdUpdateBuffer2ARM"
+    "vkCmdUpdateBuffer2ARM": "OverrideCmdUpdateBuffer2ARM",
+    "vkCmdDispatch": "OverrideCmdDispatch",
+    "vkCmdDispatchIndirect": "OverrideCmdDispatchIndirect",
+    "vkCmdDispatchBase": "OverrideCmdDispatchBase",
+    "vkCmdDispatchBaseKHR": "OverrideCmdDispatchBase"
   }
 }

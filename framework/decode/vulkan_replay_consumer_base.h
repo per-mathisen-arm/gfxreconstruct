@@ -1874,6 +1874,26 @@ class VulkanReplayConsumerBase : public VulkanConsumer
         VkBool32                                                  isPreprocessed,
         StructPointerDecoder<Decoded_VkGeneratedCommandsInfoEXT>* pGeneratedCommandsInfo);
 
+    void OverrideCmdDispatch(PFN_vkCmdDispatch              func,
+                             const VulkanCommandBufferInfo* command_buffer_info,
+                             uint32_t                       groupCountX,
+                             uint32_t                       groupCountY,
+                             uint32_t                       groupCountZ);
+
+    void OverrideCmdDispatchIndirect(PFN_vkCmdDispatchIndirect      func,
+                                     const VulkanCommandBufferInfo* command_buffer_info,
+                                     const VulkanBufferInfo*        buffer_info,
+                                     VkDeviceSize                   offset);
+
+    void OverrideCmdDispatchBase(PFN_vkCmdDispatchBase          func,
+                                 const VulkanCommandBufferInfo* command_buffer_info,
+                                 uint32_t                       baseGroupX,
+                                 uint32_t                       baseGroupY,
+                                 uint32_t                       baseGroupZ,
+                                 uint32_t                       groupCountX,
+                                 uint32_t                       groupCountY,
+                                 uint32_t                       groupCountZ);
+
     std::function<handle_create_result_t<VkPipeline>()>
     AsyncCreateGraphicsPipelines(PFN_vkCreateGraphicsPipelines                               func,
                                  VkResult                                                    returnValue,
@@ -1933,8 +1953,6 @@ class VulkanReplayConsumerBase : public VulkanConsumer
   private:
     static bool SupportsDataGraphOpticalFlowPipeline(const VulkanReplayDeviceInfo::DataGraphOpticalFlowInfo& info,
                                                      const VkDataGraphPipelineOpticalFlowCreateInfoARM& create_info);
-
-    void RaiseFatalError(const char* message) const;
 
     void InitializeLoader();
 
@@ -2131,6 +2149,12 @@ class VulkanReplayConsumerBase : public VulkanConsumer
      */
     void MaybeInjectExecutionBarrier(const VulkanCommandBufferInfo* command_buffer_info) const;
 
+    /**
+     * @brief If the option to serialize compute and transfer operations is enabled, inject a memory barrier
+     * before and after each compute dispatch to ensure compute and transfer operations do not overlap.
+     */
+    void MaybeInjectComputeTransferBarrier(const VulkanCommandBufferInfo* command_buffer_info) const;
+
   private:
     // Retrieve image attachments from the renderpass framebuffer
     // Returns attachments specified in CreateFramebuffer call, or in BeginRenderPass if imageless flag
@@ -2180,7 +2204,6 @@ class VulkanReplayConsumerBase : public VulkanConsumer
     graphics::InstanceDispatchTablesMap                                      instance_tables_;
     graphics::DeviceDispatchTablesMap                                        device_tables_;
     std::unordered_map<format::HandleId, format::HandleId>                   device_phy_id_map_;
-    std::function<void(const char*)>                                         fatal_error_handler_;
     std::shared_ptr<application::Application>                                application_;
     CommonObjectInfoTable*                                                   object_info_table_;
     bool                                                                     loading_trim_state_;

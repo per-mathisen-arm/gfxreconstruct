@@ -21,6 +21,7 @@
 */
 
 #include "decode/custom_vulkan_struct_decoders.h"
+#include "decode/vulkan_descriptor_utils.h"
 #include "decode/vulkan_device_address_tracker.h"
 #include "decode/vulkan_replay_dump_resources_common.h"
 #include "decode/vulkan_replay_dump_resources_compute_ray_tracing.h"
@@ -33,6 +34,7 @@
 #include "format/format_util.h"
 #include "generated/generated_vulkan_enum_to_string.h"
 #include "generated/generated_vulkan_struct_decoders.h"
+#include "graphics/vulkan_submit_info_util.h"
 #include "vulkan_replay_dump_resources.h"
 #include "decode/vulkan_pnext_node.h"
 #include "graphics/vulkan_struct_get_pnext.h"
@@ -1203,6 +1205,121 @@ void VulkanReplayDumpResourcesBase::OverrideCmdBindDescriptorSets(const ApiCallI
     }
 }
 
+void VulkanReplayDumpResourcesBase::OverrideCmdPushDescriptorSet(
+    const ApiCallInfo&                                  call_info,
+    PFN_vkCmdPushDescriptorSet                          func,
+    VkCommandBuffer                                     original_command_buffer,
+    VkPipelineBindPoint                                 pipeline_bind_point,
+    const VulkanPipelineLayoutInfo*                     layout_info,
+    uint32_t                                            set,
+    uint32_t                                            descriptor_write_count,
+    StructPointerDecoder<Decoded_VkWriteDescriptorSet>* p_descriptor_writes)
+{
+    const std::vector<std::shared_ptr<DrawCallsDumpingContext>> dc_contexts =
+        FindDrawCallDumpingContexts(original_command_buffer);
+    for (auto dc_context : dc_contexts)
+    {
+        dc_context->PushDescriptorSet(
+            PipelineBindPointToShaderStageFlags(pipeline_bind_point), set, descriptor_write_count, p_descriptor_writes);
+
+        CommandBufferIterator first, last;
+        dc_context->GetDrawCallActiveCommandBuffers(first, last);
+        for (CommandBufferIterator it = first; it < last; ++it)
+        {
+            func(*it,
+                 pipeline_bind_point,
+                 layout_info->handle,
+                 set,
+                 descriptor_write_count,
+                 p_descriptor_writes->GetPointer());
+        }
+    }
+
+    const std::vector<std::shared_ptr<DispatchTraceRaysDumpingContext>> dr_contexts =
+        FindDispatchTraceRaysContexts(original_command_buffer);
+    for (auto dr_context : dr_contexts)
+    {
+        VkCommandBuffer dr_cmd_buf = dr_context->GetDispatchRaysCommandBuffer();
+        func(dr_cmd_buf,
+             pipeline_bind_point,
+             layout_info->handle,
+             set,
+             descriptor_write_count,
+             p_descriptor_writes->GetPointer());
+
+        dr_context->PushDescriptorSet(
+            PipelineBindPointToShaderStageFlags(pipeline_bind_point), set, descriptor_write_count, p_descriptor_writes);
+    }
+}
+
+void VulkanReplayDumpResourcesBase::OverrideCmdPushDescriptorSetKHR(
+    const ApiCallInfo&                                  call_info,
+    PFN_vkCmdPushDescriptorSet                          func,
+    VkCommandBuffer                                     original_command_buffer,
+    VkPipelineBindPoint                                 pipeline_bind_point,
+    const VulkanPipelineLayoutInfo*                     layout_info,
+    uint32_t                                            set,
+    uint32_t                                            descriptor_write_count,
+    StructPointerDecoder<Decoded_VkWriteDescriptorSet>* p_descriptor_writes)
+{
+    OverrideCmdPushDescriptorSet(call_info,
+                                 func,
+                                 original_command_buffer,
+                                 pipeline_bind_point,
+                                 layout_info,
+                                 set,
+                                 descriptor_write_count,
+                                 p_descriptor_writes);
+}
+
+void VulkanReplayDumpResourcesBase::OverrideCmdPushDescriptorSet2(
+    const ApiCallInfo&                                     call_info,
+    PFN_vkCmdPushDescriptorSet2                            func,
+    VkCommandBuffer                                        original_command_buffer,
+    StructPointerDecoder<Decoded_VkPushDescriptorSetInfo>* pPushDescriptorSetInfo)
+{
+    const auto* set_info_meta = pPushDescriptorSetInfo->GetMetaStructPointer();
+    GFXRECON_ASSERT(set_info_meta != nullptr);
+
+    const auto* set_info = pPushDescriptorSetInfo->GetPointer();
+    GFXRECON_ASSERT(set_info != nullptr);
+
+    const std::vector<std::shared_ptr<DrawCallsDumpingContext>> dc_contexts =
+        FindDrawCallDumpingContexts(original_command_buffer);
+    for (auto dc_context : dc_contexts)
+    {
+        dc_context->PushDescriptorSet(
+            set_info->stageFlags, set_info->set, set_info->descriptorWriteCount, set_info_meta->pDescriptorWrites);
+
+        CommandBufferIterator first, last;
+        dc_context->GetDrawCallActiveCommandBuffers(first, last);
+        for (CommandBufferIterator it = first; it < last; ++it)
+        {
+            func(*it, set_info);
+        }
+    }
+
+    const std::vector<std::shared_ptr<DispatchTraceRaysDumpingContext>> dr_contexts =
+        FindDispatchTraceRaysContexts(original_command_buffer);
+    for (auto dr_context : dr_contexts)
+    {
+        VkCommandBuffer dr_cmd_buf = dr_context->GetDispatchRaysCommandBuffer();
+        func(dr_cmd_buf, set_info);
+
+        dr_context->PushDescriptorSet(
+            set_info->stageFlags, set_info->set, set_info->descriptorWriteCount, set_info_meta->pDescriptorWrites);
+    }
+}
+
+void VulkanReplayDumpResourcesBase::OverrideCmdPushDescriptorSet2KHR(
+    const ApiCallInfo&                                     call_info,
+    PFN_vkCmdPushDescriptorSet2KHR                         func,
+    VkCommandBuffer                                        original_command_buffer,
+    StructPointerDecoder<Decoded_VkPushDescriptorSetInfo>* pPushDescriptorSetInfo)
+{
+    OverrideCmdPushDescriptorSet2(call_info, func, original_command_buffer, pPushDescriptorSetInfo);
+}
+
 void VulkanReplayDumpResourcesBase::OverrideCmdBindDescriptorSets2(
     const ApiCallInfo&                                      call_info,
     PFN_vkCmdBindDescriptorSets2                            func,
@@ -1852,60 +1969,10 @@ VkResult VulkanReplayDumpResourcesBase::QueueSubmit(std::span<const VkSubmitInfo
                                                     uint64_t                           index)
 {
     // Losslessly widen each VkSubmitInfo into a VkSubmitInfo2 and forward to the canonical QueueSubmit2 implementation.
-    std::vector<VkSubmitInfo2>                          submit_infos_2(submit_infos.size());
-    std::vector<std::vector<VkSemaphoreSubmitInfo>>     wait_semaphores(submit_infos.size());
-    std::vector<std::vector<VkCommandBufferSubmitInfo>> command_buffers(submit_infos.size());
-    std::vector<std::vector<VkSemaphoreSubmitInfo>>     signal_semaphores(submit_infos.size());
+    // The translator owns the storage referenced by the produced VkSubmitInfo2 array and must outlive the submit call.
+    graphics::SubmitInfo2Translator translated(submit_infos);
 
-    for (size_t i = 0; i < submit_infos.size(); ++i)
-    {
-        const VkSubmitInfo& submit_info = submit_infos[i];
-
-        // Wait semaphores. The per-semaphore wait stage moves from pWaitDstStageMask into VkSemaphoreSubmitInfo.
-        wait_semaphores[i].resize(submit_info.waitSemaphoreCount);
-        for (uint32_t j = 0; j < submit_info.waitSemaphoreCount; ++j)
-        {
-            wait_semaphores[i][j] = VkSemaphoreSubmitInfo{
-                VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-                nullptr,
-                submit_info.pWaitSemaphores[j],
-                0, // value (binary semaphore; timeline values via VkTimelineSemaphoreSubmitInfo are not translated)
-                submit_info.pWaitDstStageMask ? static_cast<VkPipelineStageFlags2>(submit_info.pWaitDstStageMask[j])
-                                              : VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
-                0
-            };
-        }
-
-        // Command buffers
-        command_buffers[i].resize(submit_info.commandBufferCount);
-        for (uint32_t j = 0; j < submit_info.commandBufferCount; ++j)
-        {
-            command_buffers[i][j] = VkCommandBufferSubmitInfo{
-                VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO, nullptr, submit_info.pCommandBuffers[j], 0
-            };
-        }
-
-        // Signal semaphores. A VkSubmitInfo signals once all submitted work completes, i.e. at ALL_COMMANDS.
-        signal_semaphores[i].resize(submit_info.signalSemaphoreCount);
-        for (uint32_t j = 0; j < submit_info.signalSemaphoreCount; ++j)
-        {
-            signal_semaphores[i][j] = VkSemaphoreSubmitInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO, nullptr,
-                                                             submit_info.pSignalSemaphores[j],        0,
-                                                             VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,    0 };
-        }
-
-        submit_infos_2[i] = VkSubmitInfo2{ VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
-                                           submit_info.pNext,
-                                           0,
-                                           static_cast<uint32_t>(wait_semaphores[i].size()),
-                                           wait_semaphores[i].size() ? wait_semaphores[i].data() : nullptr,
-                                           static_cast<uint32_t>(command_buffers[i].size()),
-                                           command_buffers[i].size() ? command_buffers[i].data() : nullptr,
-                                           static_cast<uint32_t>(signal_semaphores[i].size()),
-                                           signal_semaphores[i].size() ? signal_semaphores[i].data() : nullptr };
-    }
-
-    return QueueSubmit2(submit_infos_2, device_table, queue, fence, index);
+    return QueueSubmit2(translated.GetSubmitInfos2(), device_table, queue, fence, index);
 }
 
 VkResult VulkanReplayDumpResourcesBase::QueueSubmit2(std::span<const VkSubmitInfo2>     submit_infos,
@@ -2370,18 +2437,6 @@ void VulkanReplayDumpResourcesBase::OverrideCmdExecuteCommands(const ApiCallInfo
     }
 }
 
-void VulkanReplayDumpResourcesBase::DumpResourcesSetFatalErrorHandler(std::function<void(const char*)> handler)
-{
-    fatal_error_handler_ = handler;
-}
-
-void VulkanReplayDumpResourcesBase::RaiseFatalError(const char* message) const
-{
-    if (fatal_error_handler_ != nullptr)
-    {
-        fatal_error_handler_(message);
-    }
-}
 
 void VulkanReplayDumpResourcesBase::OverrideCmdBuildAccelerationStructuresKHR(
     const VulkanCommandBufferInfo*                                             original_command_buffer,
@@ -3307,9 +3362,8 @@ void VulkanReplayDumpResourcesBase::ProcessStateEndMarker()
         if (res != VK_SUCCESS)
         {
             Release();
-            RaiseFatalError(("Dumping transfer commands from state setup section failed failed (" +
-                             util::ToString<VkResult>(res) + ")")
-                                .c_str());
+            GFXRECON_LOG_FATAL("Dumping transfer commands from state setup section failed (%s)",
+                               util::ToString<VkResult>(res).c_str());
         }
 
         // ProcessStateEndMarker marks the end of the state setup section. If a TransferDumpingContext was assigned to
