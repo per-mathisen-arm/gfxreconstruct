@@ -149,6 +149,15 @@ void VulkanSkiaModifier::AppendFrameEndMarkerForCurrentBlock()
     frame_end_marker_blocks_to_insert_.erase(block_index_);
 }
 
+void VulkanSkiaModifier::ProcessStateEndMarker(uint64_t frame_number)
+{
+    if (!IsModificationPass() && !has_output_frame_number_base_)
+    {
+        next_output_frame_number_     = frame_number;
+        has_output_frame_number_base_ = true;
+    }
+}
+
 void VulkanSkiaModifier::ProcessFrameEndMarker(uint64_t frame_number)
 {
     GFXRECON_UNREFERENCED_PARAMETER(frame_number);

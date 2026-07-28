@@ -4999,6 +4999,7 @@ class VulkanSkiaModifier : public util::VulkanModifierBase
     format::HandleId device_id, StructPointerDecoder<Decoded_VkCopyAccelerationStructureInfoKHR>* copy_infos) override;
     virtual void ProcessVulkanWriteAccelerationStructuresPropertiesCommand(
     format::HandleId device_id, VkQueryType query_type, format::HandleId acceleration_structure_id) override;
+    virtual void ProcessStateEndMarker(uint64_t frame_number) override;
     virtual void ProcessFrameEndMarker(uint64_t frame_number) override;
 
   private:
@@ -5018,6 +5019,7 @@ class VulkanSkiaModifier : public util::VulkanModifierBase
     std::unordered_map<uint64_t, bool>                                  skiavkindex2remove;
     std::unordered_set<uint64_t>                                         frame_end_marker_blocks_to_insert_;
     uint64_t                                                            next_output_frame_number_ = 1;
+    bool                                                                has_output_frame_number_base_ = false;
     std::unordered_set<format::HandleId>                                frame_boundary_command_buffers_;
     std::unordered_map<format::HandleId, std::vector<format::HandleId>> skiavk_instance2physical_device;
     std::unordered_map<format::HandleId, std::vector<format::HandleId>> skia_instance2surface;
