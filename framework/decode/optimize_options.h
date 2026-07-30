@@ -24,14 +24,14 @@
 #ifndef GFXRECON_DECODE_OPTIMIZE_OPTIONS_H
 #define GFXRECON_DECODE_OPTIMIZE_OPTIONS_H
 
+#include <unordered_set>
+
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(decode)
 
 struct OptimizationOptions
 {
-    std::vector<std::string>                       remove_app_name;
     std::unordered_set<gfxrecon::format::ThreadId> removed_threads_ids;
-    bool                                           keep_device_instance{ false };
 };
 
 GFXRECON_END_NAMESPACE(decode)

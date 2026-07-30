@@ -389,7 +389,7 @@ void ArgumentParser::AddArguments(std::vector<std::string> command_line_args)
     }
 }
 
-const std::vector<std::string> ArgumentParser::SplitStringByFlag(std::string& rawstring, char flag)
+const std::vector<std::string> ArgumentParser::SplitStringByFlag(std::string& rawstring, char flag) const
 {
     std::vector<std::string> node;
     std::istringstream       raw_string_stream(rawstring);

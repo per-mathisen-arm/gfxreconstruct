@@ -52,7 +52,9 @@ class ArgumentParser
     const std::string&              GetArgumentValue(const std::string& argument) const;
     size_t                          GetPositionalArgumentsCount() const { return positional_arguments_present_.size(); }
     const std::vector<std::string>& GetPositionalArguments() const { return positional_arguments_present_; }
-    const std::vector<std::string>  SplitStringByFlag(std::string& rawstring, char flag);
+    const std::vector<std::string>  SplitStringByFlag(std::string& rawstring, char flag) const;
+    size_t                          GetArgumentCount() const { return arguments_indices_.size(); }
+    size_t                          GetOptionCount() const { return options_indices_.size(); }
 
     // Add new arguments to existing commands without overwriting them
     void AddArguments(std::vector<std::string> command_line_args);
