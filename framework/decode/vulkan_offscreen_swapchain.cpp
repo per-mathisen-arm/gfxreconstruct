@@ -23,10 +23,23 @@
 #include "decode/vulkan_offscreen_swapchain.h"
 #include "encode/vulkan_handle_wrapper_util.h"
 #include "decode/decoder_util.h"
+#include "generated/generated_vulkan_enum_to_string.h"
 #include "util/callbacks.h"
 
 GFXRECON_BEGIN_NAMESPACE(gfxrecon)
 GFXRECON_BEGIN_NAMESPACE(decode)
+
+void VulkanOffscreenSwapchain::CleanDeviceResources(VkDevice device, const graphics::VulkanDeviceTable* device_table)
+{
+    VulkanVirtualSwapchain::CleanDeviceResources(device, device_table);
+
+    external_sync_type_.erase(device);
+}
+
+void VulkanOffscreenSwapchain::SetExternalSyncType(VkDevice device, ExternalSyncType external_sync_type)
+{
+    external_sync_type_[device] = external_sync_type;
+}
 
 VkResult VulkanOffscreenSwapchain::CreateSurface(VkResult                             original_result,
                                                  VulkanInstanceInfo*                  instance_info,
@@ -160,7 +173,7 @@ VkResult VulkanOffscreenSwapchain::AcquireNextImageKHR(VkResult                 
     {
         auto it = external_sync_type_.find(device_info->handle);
         GFXRECON_ASSERT(it != external_sync_type_.end());
-        SignalAcquireNextImageSemaphoreFence(device_info, semaphore, fence, it->second);
+        return SignalAcquireNextImageSemaphoreFence(device_info, semaphore, fence, it->second);
     }
     return original_result;
 }
@@ -178,7 +191,8 @@ VkResult VulkanOffscreenSwapchain::AcquireNextImage2KHR(VkResult                
     {
         auto it = external_sync_type_.find(device_info->handle);
         GFXRECON_ASSERT(it != external_sync_type_.end());
-        SignalAcquireNextImageSemaphoreFence(device_info, acquire_info->semaphore, acquire_info->fence, it->second);
+        return SignalAcquireNextImageSemaphoreFence(
+            device_info, acquire_info->semaphore, acquire_info->fence, it->second);
     }
     return original_result;
 }
@@ -217,7 +231,7 @@ VkResult VulkanOffscreenSwapchain::QueuePresentKHR(VkResult                     
                             .image;
         }
         GFXRECON_NARROWING_ASSIGN(frame_boundary_.imageCount, images.size());
-        frame_boundary_.pImages    = images.data();
+        frame_boundary_.pImages = images.data();
         ++frame_boundary_.frameID;
 
         submit_info.pNext = &frame_boundary_;
@@ -231,7 +245,7 @@ VkResult VulkanOffscreenSwapchain::QueuePresentKHR(VkResult                     
 
         if (result != VK_SUCCESS)
         {
-            GFXRECON_LOG_ERROR("Offscreen swapchain failed to QueueSubmit on QueuePresentKHR for queue " PRIu64,
+            GFXRECON_LOG_ERROR("Offscreen swapchain failed to QueueSubmit on QueuePresentKHR for queue %" PRIu64,
                                queue_info->handle);
         }
     }
@@ -277,13 +291,15 @@ void VulkanOffscreenSwapchain::PresentImageAdHoc(const VulkanDeviceInfo*        
     device_table->QueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
 }
 
-void VulkanOffscreenSwapchain::SignalAcquireNextImageSemaphoreFence(const VulkanDeviceInfo* device_info,
-                                                                    VkSemaphore             semaphore,
-                                                                    VkFence                 fence,
-                                                                    ExternalSyncType        external_sync_type)
+VkResult VulkanOffscreenSwapchain::SignalAcquireNextImageSemaphoreFence(const VulkanDeviceInfo* device_info,
+                                                                        VkSemaphore             semaphore,
+                                                                        VkFence                 fence,
+                                                                        ExternalSyncType        external_sync_type)
 {
     GFXRECON_ASSERT(device_info != nullptr);
     GFXRECON_ASSERT(semaphore != VK_NULL_HANDLE || fence != VK_NULL_HANDLE);
+
+    VkResult result = VK_ERROR_UNKNOWN;
 
     switch (external_sync_type)
     {
@@ -301,15 +317,14 @@ void VulkanOffscreenSwapchain::SignalAcquireNextImageSemaphoreFence(const Vulkan
             submit_info.pSignalSemaphores    = (semaphore == VK_NULL_HANDLE ? nullptr : &semaphore);
 
             util::MarkingLayersUtil::instance().BeginInjected(device_info);
-            VkResult result = device_table_->QueueSubmit(default_queue_, 1, &submit_info, fence);
+            result = device_table_->QueueSubmit(default_queue_, 1, &submit_info, fence);
             util::MarkingLayersUtil::instance().EndInjected(device_info);
 
             if (result != VK_SUCCESS)
             {
-                GFXRECON_LOG_FATAL("Offscreen swapchain failed to signal semaphore and fence by submitting and empty "
+                GFXRECON_LOG_ERROR("Offscreen swapchain failed to signal semaphore and fence by submitting and empty "
                                    "queue submission. (%s)",
                                    util::ToString<VkResult>(result).c_str());
-                std::abort();
             }
 
             break;
@@ -327,7 +342,7 @@ void VulkanOffscreenSwapchain::SignalAcquireNextImageSemaphoreFence(const Vulkan
                 import_info.fd         = -1;
 
                 util::MarkingLayersUtil::instance().BeginInjected(device_info);
-                VkResult result = device_table_->ImportSemaphoreFdKHR(device_info->handle, &import_info);
+                result = device_table_->ImportSemaphoreFdKHR(device_info->handle, &import_info);
                 util::MarkingLayersUtil::instance().EndInjected(device_info);
 
                 if (result != VK_SUCCESS)
@@ -335,7 +350,7 @@ void VulkanOffscreenSwapchain::SignalAcquireNextImageSemaphoreFence(const Vulkan
                     GFXRECON_LOG_ERROR_ONCE("Offscreen swapchain failed to signal semaphore by importing it as a file "
                                             "descriptor. (%s)",
                                             util::ToString<VkResult>(result).c_str());
-                    SignalAcquireNextImageSemaphoreFence(
+                    result = SignalAcquireNextImageSemaphoreFence(
                         device_info, semaphore, VK_NULL_HANDLE, ExternalSyncType::QueueSubmit);
                 }
             }
@@ -351,7 +366,7 @@ void VulkanOffscreenSwapchain::SignalAcquireNextImageSemaphoreFence(const Vulkan
                 import_info.fd         = -1;
 
                 util::MarkingLayersUtil::instance().BeginInjected(device_info);
-                VkResult result = device_table_->ImportFenceFdKHR(device_info->handle, &import_info);
+                result = device_table_->ImportFenceFdKHR(device_info->handle, &import_info);
                 util::MarkingLayersUtil::instance().EndInjected(device_info);
 
                 if (result != VK_SUCCESS)
@@ -359,7 +374,7 @@ void VulkanOffscreenSwapchain::SignalAcquireNextImageSemaphoreFence(const Vulkan
                     GFXRECON_LOG_ERROR_ONCE("Offscreen swapchain failed to signal fence by importing it as a file "
                                             "descriptor. (%s)",
                                             util::ToString<VkResult>(result).c_str());
-                    SignalAcquireNextImageSemaphoreFence(
+                    result = SignalAcquireNextImageSemaphoreFence(
                         device_info, VK_NULL_HANDLE, fence, ExternalSyncType::QueueSubmit);
                 }
             }
@@ -369,9 +384,10 @@ void VulkanOffscreenSwapchain::SignalAcquireNextImageSemaphoreFence(const Vulkan
         default:
         {
             GFXRECON_LOG_FATAL("Unhandled VulkanSwapchain::ExternalSyncType. Seems like a missing implementation.");
-            std::abort();
         }
     }
+
+    return result;
 }
 
 GFXRECON_END_NAMESPACE(decode)

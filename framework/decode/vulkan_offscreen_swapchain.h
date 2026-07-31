@@ -35,6 +35,10 @@ class VulkanOffscreenSwapchain : public VulkanVirtualSwapchain
   public:
     virtual ~VulkanOffscreenSwapchain() override {}
 
+    virtual void CleanDeviceResources(VkDevice device, const graphics::VulkanDeviceTable* device_table) override;
+
+    virtual void SetExternalSyncType(VkDevice device, ExternalSyncType external_sync_type) override;
+
     virtual VkResult CreateSurface(VkResult                             original_result,
                                    VulkanInstanceInfo*                  instance_info,
                                    const std::string&                   wsi_extension,
@@ -107,10 +111,10 @@ class VulkanOffscreenSwapchain : public VulkanVirtualSwapchain
     const uint32_t default_queue_family_index_{ 0 };
     VkQueue        default_queue_{ VK_NULL_HANDLE }; // default_queue_family_index_,0
 
-    void SignalAcquireNextImageSemaphoreFence(const VulkanDeviceInfo* device_info,
-                                              VkSemaphore             semaphore,
-                                              VkFence                 fence,
-                                              ExternalSyncType        external_sync_type);
+    VkResult SignalAcquireNextImageSemaphoreFence(const VulkanDeviceInfo* device_info,
+                                                  VkSemaphore             semaphore,
+                                                  VkFence                 fence,
+                                                  ExternalSyncType        external_sync_type);
 
     VkFrameBoundaryEXT frame_boundary_{ VK_STRUCTURE_TYPE_FRAME_BOUNDARY_EXT,
                                         nullptr,
@@ -123,6 +127,8 @@ class VulkanOffscreenSwapchain : public VulkanVirtualSwapchain
                                         0,
                                         0,
                                         nullptr };
+
+    std::unordered_map<VkDevice, ExternalSyncType> external_sync_type_;
 };
 
 GFXRECON_END_NAMESPACE(decode)

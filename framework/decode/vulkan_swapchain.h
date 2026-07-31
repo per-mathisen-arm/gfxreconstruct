@@ -66,12 +66,12 @@ class VulkanSwapchain
 
     virtual void Clean();
 
-    virtual void CleanDeviceResources(VkDevice device, const graphics::VulkanDeviceTable* device_table);
+    virtual void CleanDeviceResources(VkDevice device, const graphics::VulkanDeviceTable* device_table) {}
 
     VulkanSwapchainOptions GetOptions() { return swapchain_options_; }
     void                   SetOptions(const VulkanSwapchainOptions& options) { swapchain_options_ = options; }
 
-    void SetExternalSyncType(VkDevice device, ExternalSyncType external_sync_type);
+    virtual void SetExternalSyncType(VkDevice device, ExternalSyncType external_sync_type) {}
 
     virtual VkResult CreateSurface(VkResult                             original_result,
                                    VulkanInstanceInfo*                  instance_info,
