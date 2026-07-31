@@ -101,6 +101,7 @@ void OptimizeDx12Feature::PrintUsage() const
     GFXRECON_WRITE_CONSOLE(
         "  --d3d12-no-default\t\tSkip D3D12 default optimizations. Not commonly used unless specifically required.");
     GFXRECON_WRITE_CONSOLE("  --dxr\t\t\t\tOptimize for DXR and ExecuteIndirect replay.");
+    GFXRECON_WRITE_CONSOLE("  --dxr-offline\t\t\tOptimize for DXR and ExecuteIndirect replay offline (on by default).");
     GFXRECON_WRITE_CONSOLE("  --gpu <index>\t\t\tUse the specified device for the optimizer replay,");
     GFXRECON_WRITE_CONSOLE("          \t\t\twhere index is the zero-based index to the array of adapters");
     GFXRECON_WRITE_CONSOLE("          \t\t\treturned by IDXGIFactory1::EnumAdapters1.");
@@ -119,6 +120,12 @@ decode::Dx12OptimizationOptions OptimizeDx12Feature::BuildOptions(const util::Ar
     options.remove_redundant_psos                 = args.IsOptionSet(kD3d12PsoRemoval);
     options.remove_redundant_resources            = args.IsOptionSet(kD3d12ResourceRemoval);
     options.no_default                            = args.IsOptionSet(kD3d12NoDefault);
+
+    if (!options.optimize_resource_values)
+    {
+        GFXRECON_WRITE_CONSOLE("Running DXR optimization offline.");
+        options.optimize_resource_values_offline = true;
+    }
 
     if (options.optimize_resource_values_experimental)
     {
@@ -158,6 +165,14 @@ decode::Dx12OptimizationOptions OptimizeDx12Feature::BuildOptions(const util::Ar
         {
             options.removed_threads_ids.insert(std::stoi(thread_string));
         }
+    }
+
+    if (options.optimize_resource_values_offline)
+    {
+        options.optimize_resource_values = true;
+        options.remove_redundant_psos    = true;
+        // Redundant resource removal is experimental and disabled by default.
+        options.remove_redundant_resources = false;
     }
 
     return options;
