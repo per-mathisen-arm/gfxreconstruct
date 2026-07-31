@@ -309,7 +309,7 @@ bool CommonCaptureManager::ProcessMatchesCaptureName(const std::string& desired_
             }
         }
 
-#elif defined(WIN32)
+#elif defined(_WIN32)
 
         char  ascii_name[MAX_PATH];
 #ifdef UNICODE
@@ -469,7 +469,7 @@ bool CommonCaptureManager::Initialize(format::ApiFamilyId                   api_
 
         bool use_external_memory = trace_settings.page_guard_external_memory;
 
-#if !defined(WIN32)
+#if !defined(_WIN32)
         if (use_external_memory)
         {
             use_external_memory = false;
