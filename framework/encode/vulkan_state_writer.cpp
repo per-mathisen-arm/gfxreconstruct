@@ -1988,8 +1988,21 @@ void VulkanStateWriter::WriteAccelerationStructureStateMetaCommands(const Vulkan
     for (auto& [device, command] : commands)
     {
         auto device_id = vulkan_wrappers::GetWrappedId<vulkan_wrappers::DeviceWrapper>(device, true);
+        // resource init
+
         BeginAccelerationStructuresSection(device_id, max_resource_size);
 
+        for (auto& blas_build : command.blas_build)
+        {
+            WriteAccelerationStructureResourceInit(device_id, *blas_build);
+        }
+
+        for (auto& tlas_build : command.tlas_build)
+        {
+            WriteAccelerationStructureResourceInit(device_id, *tlas_build);
+        }
+
+        // build + cleanup
         for (auto& blas_build : command.blas_build)
         {
             WriteAccelerationStructureBuildState(device_id, *blas_build);
@@ -2011,13 +2024,12 @@ void VulkanStateWriter::WriteAccelerationStructureStateMetaCommands(const Vulkan
         {
             WriteAccelerationStructureBuildState(device_id, *tlas_build);
         }
-
         EndAccelerationStructureSection(device_id);
     }
 }
 
-void VulkanStateWriter::WriteAccelerationStructureBuildState(const gfxrecon::format::HandleId&                 device,
-                                                             encode::AccelerationStructureKHRBuildCommandData& command)
+void VulkanStateWriter::WriteAccelerationStructureResourceInit(
+    const gfxrecon::format::HandleId& device, encode::AccelerationStructureKHRBuildCommandData& command)
 {
     for (auto& [handle_id, buffer] : command.input_buffers)
     {
@@ -2029,7 +2041,11 @@ void VulkanStateWriter::WriteAccelerationStructureBuildState(const gfxrecon::for
         }
     }
     UpdateAddresses(command);
+}
 
+void VulkanStateWriter::WriteAccelerationStructureBuildState(const gfxrecon::format::HandleId&                 device,
+                                                             encode::AccelerationStructureKHRBuildCommandData& command)
+{
     // check for deleted handles, create replacements
     bool as_destroyed = vulkan_wrappers::GetWrappedId<vulkan_wrappers::AccelerationStructureKHRWrapper>(
                             command.geometry_info.dstAccelerationStructure, false) == format::kNullHandleId;
@@ -2042,6 +2058,7 @@ void VulkanStateWriter::WriteAccelerationStructureBuildState(const gfxrecon::for
     }
 
     EncodeAccelerationStructureBuildMetaCommand(device, command);
+
     for (auto& [handle_id, buffer] : command.input_buffers)
     {
         if (buffer.destroyed)

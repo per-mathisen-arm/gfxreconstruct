@@ -1590,7 +1590,7 @@ void VulkanReplayConsumerBase::ProcessBeginResourceInitCommand(format::HandleId 
 
     if (device_info != nullptr)
     {
-        assert(device_info->handle != VK_NULL_HANDLE);
+        GFXRECON_ASSERT(device_info->handle != VK_NULL_HANDLE);
 
         VkResult       result = VK_SUCCESS;
         VkDevice       device = device_info->handle;
@@ -1598,19 +1598,19 @@ void VulkanReplayConsumerBase::ProcessBeginResourceInitCommand(format::HandleId 
         VkDeviceMemory memory = VK_NULL_HANDLE;
 
         auto allocator = device_info->allocator.get();
-        assert(allocator != nullptr);
+        GFXRECON_ASSERT(allocator != nullptr);
 
         auto table = GetDeviceTable(device);
-        assert(table != nullptr);
+        GFXRECON_ASSERT(table != nullptr);
 
         VkPhysicalDevice physical_device = device_info->parent;
-        assert(physical_device != VK_NULL_HANDLE);
+        GFXRECON_ASSERT(physical_device != VK_NULL_HANDLE);
 
-        VkPhysicalDeviceMemoryProperties properties;
+        VkPhysicalDeviceMemoryProperties memory_properties;
         auto                             instance_table = GetInstanceTable(physical_device);
-        assert(instance_table != nullptr);
+        GFXRECON_ASSERT(instance_table != nullptr);
 
-        instance_table->GetPhysicalDeviceMemoryProperties(physical_device, &properties);
+        instance_table->GetPhysicalDeviceMemoryProperties(physical_device, &memory_properties);
 
         const auto& available_extensions      = device_info->extensions;
         bool        have_shader_stencil_write = false;
@@ -1622,8 +1622,13 @@ void VulkanReplayConsumerBase::ProcessBeginResourceInitCommand(format::HandleId 
             have_shader_stencil_write = true;
         }
 
-        device_info->resource_initializer = std::make_shared<VulkanResourceInitializer>(
-            device_info, total_copy_size, max_copy_size, properties, have_shader_stencil_write, allocator, table);
+        device_info->resource_initializer = std::make_shared<VulkanResourceInitializer>(device_info,
+                                                                                        total_copy_size,
+                                                                                        max_copy_size,
+                                                                                        memory_properties,
+                                                                                        have_shader_stencil_write,
+                                                                                        allocator,
+                                                                                        table);
     }
 }
 

@@ -226,7 +226,6 @@ struct BufferWrapper : public HandleWrapper<VkBuffer>, AssetWrapperBase
     VkQueue                                    sparse_bind_queue;
 
     std::unordered_map<VkDeviceAddress, AccelerationStructureBuildState> acceleration_structures;
-    format::HandleId as_target_storage_buffer_id{ format::kNullHandleId };
 
     // optional opaque descriptor-data used by VK_EXT_descriptor_buffer
     std::vector<uint8_t> opaque_descriptor_data;
