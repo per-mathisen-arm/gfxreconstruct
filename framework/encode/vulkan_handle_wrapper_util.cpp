@@ -481,6 +481,11 @@ VkObjectType GetObjectType<DataGraphPipelineSessionARMWrapper>()
 {
     return VK_OBJECT_TYPE_DATA_GRAPH_PIPELINE_SESSION_ARM;
 }
+template <>
+VkObjectType GetObjectType<GpaSessionAMDWrapper>()
+{
+    return VK_OBJECT_TYPE_GPA_SESSION_AMD;
+}
 
 GFXRECON_END_NAMESPACE(vulkan_wrappers)
 GFXRECON_END_NAMESPACE(encode)

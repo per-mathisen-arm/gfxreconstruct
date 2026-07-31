@@ -26,6 +26,7 @@
 #include "../optimize/vulkan_file_optimizer.h"
 #include "../optimize/vulkan_spirv_tracker_modifier.h"
 #include "../tool_settings.h"
+#include "../tool_command_line.h"
 
 #if defined(D3D12_SUPPORT)
 #include "../optimize/dx12_optimize_util.h"
