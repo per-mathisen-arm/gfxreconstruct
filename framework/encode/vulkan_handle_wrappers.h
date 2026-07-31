@@ -91,6 +91,7 @@ struct ValidationCacheEXTWrapper                      : public HandleWrapper<VkV
 struct IndirectCommandsLayoutNVWrapper                : public HandleWrapper<VkIndirectCommandsLayoutNV> {};
 struct PerformanceConfigurationINTELWrapper           : public HandleWrapper<VkPerformanceConfigurationINTEL> {};
 struct OpticalFlowSessionNVWrapper                    : public HandleWrapper<VkOpticalFlowSessionNV> {};
+struct GpaSessionAMDWrapper                           : public HandleWrapper<VkGpaSessionAMD> {};
 struct VideoSessionKHRWrapper                         : public HandleWrapper<VkVideoSessionKHR> {};
 struct VideoSessionParametersKHRWrapper               : public HandleWrapper<VkVideoSessionParametersKHR> {};
 struct ShaderEXTWrapper                               : public HandleWrapper<VkShaderEXT> {};

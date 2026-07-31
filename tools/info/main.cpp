@@ -46,6 +46,7 @@
 
 #include "info_feature.h"
 #include "tool_settings.h"
+#include "tool_command_line.h"
 
 #include <cassert>
 #include <cstdarg>
@@ -64,8 +65,8 @@ const char kFileFormatOnlyOption[] = "--file-format-only";
 const char kVerboseOption[]        = "--verbose";
 const char kOutputFileArgument[]   = "--output";
 
-const char kOptions[]   = "-h|--help,--version,--no-debug-popup,--exe-info-only,--env-vars-only,--file-format-only,--"
-                          "enum-gpu-indices,--verbose";
+const char kOptions[]   = "-h|--help,--version,--no-debug-popup,--exe-info-only,--env-vars-only,--file-format-only,"
+                          "--verbose";
 const char kArguments[] = "--output,--log-level";
 
 #if defined(D3D12_SUPPORT)
@@ -187,6 +188,7 @@ static void PrintUsage(const char* exe_name)
     {
         app_name.replace(0, dir_location + 1, "");
     }
+    app_name = GFXRECON_APP_NAME_PREFIX + app_name;
     WriteOutput("\n%s - Print statistics for a GFXReconstruct capture file.\n", app_name.c_str());
     WriteOutput("Usage:");
     WriteOutput("  %s [-h | --help] [--version] [--exe-info-only] [--verbose] [--output <file>] <capture-file>\n",
@@ -741,9 +743,6 @@ int main(int argc, const char** argv)
 {
     gfxrecon::util::Log::Init();
 
-    // Save the app name first
-    const std::string app_name = std::filesystem::path{ argv[0] }.filename().string();
-
     // Query the module registry for registered modules, and
     // call each generator here and put the unique_ptr into our
     // internal unique_ptr vector.
@@ -759,21 +758,20 @@ int main(int argc, const char** argv)
     std::string options   = kOptions;
 
 #if defined(D3D12_SUPPORT)
-    options += " ";
+    options += ",";
     options += kEnumGpuIndices;
 #endif
 
     gfxrecon::util::ArgumentParser arg_parser(argc, argv, options, arguments);
 
-    if (CheckOptionPrintUsage(app_name.c_str(), arg_parser))
+    if (CheckOptionPrintUsage(argv[0], arg_parser))
     {
         gfxrecon::util::Log::Release();
         exit(0);
     }
     else if (arg_parser.IsOptionSet(kVersionOption))
     {
-        GFXRECON_WRITE_CONSOLE("%s version info:", app_name.c_str());
-        GFXRECON_WRITE_CONSOLE("  GFXReconstruct Version %s", GetProjectVersionString());
+        PrintVersionHeader(argv[0]);
         for (auto& feature : g_info_features)
         {
             GFXRECON_WRITE_CONSOLE(feature->CompiledHeaderVersionString().c_str());
@@ -784,7 +782,7 @@ int main(int argc, const char** argv)
     }
     else if (arg_parser.IsInvalid() || (arg_parser.GetPositionalArgumentsCount() != 1))
     {
-        PrintUsage(app_name.c_str());
+        PrintUsage(argv[0]);
         gfxrecon::util::Log::Release();
         exit(-1);
     }
@@ -811,6 +809,12 @@ int main(int argc, const char** argv)
     {
         std::string output_filename = arg_parser.GetArgumentValue(kOutputFileArgument);
         g_output_file.open(output_filename);
+        if (!g_output_file.is_open())
+        {
+            GFXRECON_LOG_ERROR("Failed to open output file '%s'", output_filename.c_str());
+            gfxrecon::util::Log::Release();
+            exit(EXIT_FAILURE);
+        }
     }
 
     if (arg_parser.IsOptionSet(kExeInfoOnlyOption))
