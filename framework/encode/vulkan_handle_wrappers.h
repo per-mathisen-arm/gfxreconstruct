@@ -209,6 +209,15 @@ struct AssetWrapperBase
     VkDeviceSize                              size{ 0 };
     bool                                      dirty{ true };
     std::unordered_set<DescriptorSetWrapper*> descriptor_sets_bound_to;
+    enum class AssetType
+    {
+        Undefined,
+        Buffer,
+        Image,
+        TensorARM,
+        DataGraphPipelineSessionARM
+    };
+    AssetType type{ AssetType::Undefined };
 };
 
 struct BufferViewWrapper;
@@ -226,6 +235,7 @@ struct BufferWrapper : public HandleWrapper<VkBuffer>, AssetWrapperBase
     VkQueue                                    sparse_bind_queue;
 
     std::unordered_map<VkDeviceAddress, AccelerationStructureBuildState> acceleration_structures;
+    std::set<format::HandleId>                                           input_buffer_to_as_storage_map;
 
     // optional opaque descriptor-data used by VK_EXT_descriptor_buffer
     std::vector<uint8_t> opaque_descriptor_data;
@@ -640,9 +650,9 @@ struct AccelerationStructureKHRWrapper : public HandleWrapper<VkAccelerationStru
     VkAccelerationStructureTypeKHR type;
 
     // associated buffer
-    BufferWrapper* buffer = nullptr;
-    VkDeviceSize   offset = 0;
-    VkDeviceSize   size   = 0;
+    format::HandleId buffer = format::kNullHandleId;
+    VkDeviceSize     offset = 0;
+    VkDeviceSize     size   = 0;
 
     // Only used when tracking
     std::unordered_set<DescriptorSetWrapper*> descriptor_sets_bound_to;

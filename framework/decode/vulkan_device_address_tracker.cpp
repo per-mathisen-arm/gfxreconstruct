@@ -115,8 +115,8 @@ void VulkanDeviceAddressTracker::TrackAccelerationStructure(
             if (buffer_info != nullptr)
             {
                 // if not already present, keep track of AS<->VkBuffer association
-                buffer_info->acceleration_structures[acceleration_structure_info->replay_address].insert(
-                    acceleration_structure_info->capture_id);
+                buffer_info->acceleration_structures[buffer_info->capture_address + acceleration_structure_info->offset]
+                    .insert(acceleration_structure_info->capture_id);
 
                 buffer_info->replay_address =
                     acceleration_structure_info->replay_address - acceleration_structure_info->offset;

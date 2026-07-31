@@ -1618,7 +1618,7 @@ VulkanCaptureManager::OverrideCreateAccelerationStructureKHR(VkDevice           
             vulkan_wrappers::GetWrapper<vulkan_wrappers::BufferWrapper>(modified_create_info->buffer, true);
         GFXRECON_ASSERT(buffer_wrapper != nullptr);
 
-        accel_struct_wrapper->buffer = buffer_wrapper;
+        accel_struct_wrapper->buffer = buffer_wrapper->handle_id;
         accel_struct_wrapper->offset = modified_create_info->offset;
         accel_struct_wrapper->size   = modified_create_info->size;
 
