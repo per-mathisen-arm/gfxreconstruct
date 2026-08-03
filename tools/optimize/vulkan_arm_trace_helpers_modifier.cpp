@@ -54,13 +54,7 @@ bool VulkanArmTraceHelpersModifier::CanOptimize()
     return result;
 }
 
-void VulkanArmTraceHelpersModifier::Process_vkCreateDevice(
-    const ApiCallInfo&                                   call_info,
-    VkResult                                             returnValue,
-    format::HandleId                                     physicalDevice,
-    StructPointerDecoder<Decoded_VkDeviceCreateInfo>*    pCreateInfo,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-    HandlePointerDecoder<VkDevice>*                      pDevice)
+void VulkanArmTraceHelpersModifier::Process_vkCreateDevice(const ApiCallInfo& call_info, args::CreateDevice& args)
 {
     if (IsModificationPass())
     {
@@ -68,7 +62,7 @@ void VulkanArmTraceHelpersModifier::Process_vkCreateDevice(
     }
 
     // Keep track of devices requesting trace helpers support
-    auto pCreateInfoDec = pCreateInfo->GetMetaStructPointer()->decoded_value;
+    auto pCreateInfoDec = args.pCreateInfo.GetMetaStructPointer()->decoded_value;
     if (pCreateInfoDec->enabledExtensionCount)
     {
 
@@ -79,18 +73,12 @@ void VulkanArmTraceHelpersModifier::Process_vkCreateDevice(
         if (std::find(extensions_vector.begin(), extensions_vector.end(), VK_ARM_TRACE_HELPERS_EXTENSION_NAME) !=
             extensions_vector.end())
         {
-            devices_using_helpers.push_back(*pDevice->GetPointer());
+            devices_using_helpers.push_back(*args.pDevice.GetPointer());
         }
     }
 }
 
-void VulkanArmTraceHelpersModifier::Process_vkAllocateMemory(
-    const ApiCallInfo&                                   call_info,
-    VkResult                                             returnValue,
-    format::HandleId                                     device,
-    StructPointerDecoder<Decoded_VkMemoryAllocateInfo>*  pAllocateInfo,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-    HandlePointerDecoder<VkDeviceMemory>*                pMemory)
+void VulkanArmTraceHelpersModifier::Process_vkAllocateMemory(const ApiCallInfo& call_info, args::AllocateMemory& args)
 {
     if (IsModificationPass())
     {
@@ -98,9 +86,10 @@ void VulkanArmTraceHelpersModifier::Process_vkAllocateMemory(
     }
 
     // Keep track of memories of device requesting trace helpers support
-    if (std::find(devices_using_helpers.begin(), devices_using_helpers.end(), device) != devices_using_helpers.end())
+    if (std::find(devices_using_helpers.begin(), devices_using_helpers.end(), args.device) !=
+        devices_using_helpers.end())
     {
-        memories_using_helpers.push_back(*pMemory->GetPointer());
+        memories_using_helpers.push_back(*args.pMemory.GetPointer());
     }
 }
 
@@ -185,21 +174,17 @@ void VulkanArmTraceHelpersModifier::ProcessFillMemoryCommand(uint64_t       memo
     }
 }
 
-void VulkanArmTraceHelpersModifier::Process_vkFlushMappedMemoryRanges(
-    const ApiCallInfo&                                 call_info,
-    VkResult                                           returnValue,
-    format::HandleId                                   device,
-    uint32_t                                           memoryRangeCount,
-    StructPointerDecoder<Decoded_VkMappedMemoryRange>* pMemoryRanges)
+void VulkanArmTraceHelpersModifier::Process_vkFlushMappedMemoryRanges(const ApiCallInfo&             call_info,
+                                                                      args::FlushMappedMemoryRanges& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    auto in_pMemoryRanges     = pMemoryRanges->GetPointer();
-    auto in_pMemoryRangesMeta = pMemoryRanges->GetMetaStructPointer();
-    for (uint32_t i = 0; i < memoryRangeCount; i++)
+    auto in_pMemoryRanges     = args.pMemoryRanges.GetPointer();
+    auto in_pMemoryRangesMeta = args.pMemoryRanges.GetMetaStructPointer();
+    for (uint32_t i = 0; i < args.memoryRangeCount; i++)
     {
         if (auto address_offset_arm =
                 gfxrecon::graphics::vulkan_struct_get_pnext<VkMarkedOffsetsARM>(&(in_pMemoryRanges[i]));

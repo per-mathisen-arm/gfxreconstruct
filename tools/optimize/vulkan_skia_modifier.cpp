@@ -164,10 +164,7 @@ void VulkanSkiaModifier::ProcessFrameEndMarker(uint64_t frame_number)
     SetDeleteCurrentCall();
 }
 
-void VulkanSkiaModifier::Process_vkQueuePresentKHR(const ApiCallInfo&                              call_info,
-                                                   VkResult                                        returnValue,
-                                                   format::HandleId                                queue,
-                                                   StructPointerDecoder<Decoded_VkPresentInfoKHR>* pPresentInfo)
+void VulkanSkiaModifier::Process_vkQueuePresentKHR(const ApiCallInfo& call_info, args::QueuePresentKHR& args)
 {
     if (IsModificationPass())
     {
@@ -178,12 +175,7 @@ void VulkanSkiaModifier::Process_vkQueuePresentKHR(const ApiCallInfo&           
     frame_end_marker_blocks_to_insert_.insert(block_index_);
 }
 
-void VulkanSkiaModifier::Process_vkQueueSubmit(const ApiCallInfo&                          call_info,
-                                               VkResult                                    returnValue,
-                                               format::HandleId                            queue,
-                                               uint32_t                                    submitCount,
-                                               StructPointerDecoder<Decoded_VkSubmitInfo>* pSubmits,
-                                               format::HandleId                            fence)
+void VulkanSkiaModifier::Process_vkQueueSubmit(const ApiCallInfo& call_info, args::QueueSubmit& args)
 {
     if (IsModificationPass())
     {
@@ -191,8 +183,8 @@ void VulkanSkiaModifier::Process_vkQueueSubmit(const ApiCallInfo&               
         return;
     }
 
-    const bool delete_call = IsSkiaBlock(queue);
-    const bool has_marker  = SubmitHasFrameEndMarker(submitCount, pSubmits);
+    const bool delete_call = IsSkiaBlock(args.queue);
+    const bool has_marker  = SubmitHasFrameEndMarker(args.submitCount, &args.pSubmits);
 
     if (delete_call)
     {
@@ -204,12 +196,7 @@ void VulkanSkiaModifier::Process_vkQueueSubmit(const ApiCallInfo&               
     }
 }
 
-void VulkanSkiaModifier::Process_vkQueueSubmit2(const ApiCallInfo&                           call_info,
-                                                VkResult                                     returnValue,
-                                                format::HandleId                             queue,
-                                                uint32_t                                     submitCount,
-                                                StructPointerDecoder<Decoded_VkSubmitInfo2>* pSubmits,
-                                                format::HandleId                             fence)
+void VulkanSkiaModifier::Process_vkQueueSubmit2(const ApiCallInfo& call_info, args::QueueSubmit2& args)
 {
     if (IsModificationPass())
     {
@@ -217,8 +204,8 @@ void VulkanSkiaModifier::Process_vkQueueSubmit2(const ApiCallInfo&              
         return;
     }
 
-    const bool delete_call = IsSkiaBlock(queue);
-    const bool has_marker  = Submit2HasFrameEndMarker(submitCount, pSubmits);
+    const bool delete_call = IsSkiaBlock(args.queue);
+    const bool has_marker  = Submit2HasFrameEndMarker(args.submitCount, &args.pSubmits);
 
     if (delete_call)
     {
@@ -230,20 +217,7 @@ void VulkanSkiaModifier::Process_vkQueueSubmit2(const ApiCallInfo&              
     }
 }
 
-void VulkanSkiaModifier::Process_vkQueueSubmit2KHR(const ApiCallInfo&                           call_info,
-                                                   VkResult                                     returnValue,
-                                                   format::HandleId                             queue,
-                                                   uint32_t                                     submitCount,
-                                                   StructPointerDecoder<Decoded_VkSubmitInfo2>* pSubmits,
-                                                   format::HandleId                             fence)
-{
-    Process_vkQueueSubmit2(call_info, returnValue, queue, submitCount, pSubmits, fence);
-}
-
-void VulkanSkiaModifier::Process_vkFrameBoundaryANDROID(const ApiCallInfo& call_info,
-                                                        format::HandleId   device,
-                                                        format::HandleId   semaphore,
-                                                        format::HandleId   image)
+void VulkanSkiaModifier::Process_vkQueueSubmit2KHR(const ApiCallInfo& call_info, args::QueueSubmit2KHR& args)
 {
     if (IsModificationPass())
     {
@@ -251,7 +225,28 @@ void VulkanSkiaModifier::Process_vkFrameBoundaryANDROID(const ApiCallInfo& call_
         return;
     }
 
-    const bool delete_call = IsSkiaBlock(device);
+    const bool delete_call = IsSkiaBlock(args.queue);
+    const bool has_marker  = Submit2HasFrameEndMarker(args.submitCount, &args.pSubmits);
+
+    if (delete_call)
+    {
+        SetDeleteCurrentCall();
+    }
+    else if (has_marker)
+    {
+        frame_end_marker_blocks_to_insert_.insert(block_index_);
+    }
+}
+
+void VulkanSkiaModifier::Process_vkFrameBoundaryANDROID(const ApiCallInfo& call_info, args::FrameBoundaryANDROID& args)
+{
+    if (IsModificationPass())
+    {
+        AppendFrameEndMarkerForCurrentBlock();
+        return;
+    }
+
+    const bool delete_call = IsSkiaBlock(args.device);
 
     if (delete_call)
     {
@@ -263,80 +258,69 @@ void VulkanSkiaModifier::Process_vkFrameBoundaryANDROID(const ApiCallInfo& call_
     }
 }
 
-void VulkanSkiaModifier::Process_vkBeginCommandBuffer(
-    const ApiCallInfo&                                      call_info,
-    VkResult                                                returnValue,
-    format::HandleId                                        commandBuffer,
-    StructPointerDecoder<Decoded_VkCommandBufferBeginInfo>* pBeginInfo)
+void VulkanSkiaModifier::Process_vkBeginCommandBuffer(const ApiCallInfo& call_info, args::BeginCommandBuffer& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    frame_boundary_command_buffers_.erase(commandBuffer);
-    if (IsSkiaBlock(commandBuffer))
+    frame_boundary_command_buffers_.erase(args.commandBuffer);
+    if (IsSkiaBlock(args.commandBuffer))
     {
         SetDeleteCurrentCall();
     }
 }
 
-void VulkanSkiaModifier::Process_vkResetCommandBuffer(const ApiCallInfo&        call_info,
-                                                      VkResult                  returnValue,
-                                                      format::HandleId          commandBuffer,
-                                                      VkCommandBufferResetFlags flags)
+void VulkanSkiaModifier::Process_vkResetCommandBuffer(const ApiCallInfo& call_info, args::ResetCommandBuffer& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    frame_boundary_command_buffers_.erase(commandBuffer);
-    if (IsSkiaBlock(commandBuffer))
+    frame_boundary_command_buffers_.erase(args.commandBuffer);
+    if (IsSkiaBlock(args.commandBuffer))
     {
         SetDeleteCurrentCall();
     }
 }
 
-void VulkanSkiaModifier::Process_vkCmdDebugMarkerInsertEXT(
-    const ApiCallInfo&                                        call_info,
-    format::HandleId                                          commandBuffer,
-    StructPointerDecoder<Decoded_VkDebugMarkerMarkerInfoEXT>* pMarkerInfo)
+void VulkanSkiaModifier::Process_vkCmdDebugMarkerInsertEXT(const ApiCallInfo&             call_info,
+                                                           args::CmdDebugMarkerInsertEXT& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    const VkDebugMarkerMarkerInfoEXT* marker_info = pMarkerInfo->GetPointer();
+    const VkDebugMarkerMarkerInfoEXT* marker_info = args.pMarkerInfo.GetPointer();
     if ((marker_info != nullptr) && ContainsVrFrameDelimiter(marker_info->pMarkerName))
     {
-        frame_boundary_command_buffers_.insert(commandBuffer);
+        frame_boundary_command_buffers_.insert(args.commandBuffer);
     }
 
-    if (IsSkiaBlock(commandBuffer))
+    if (IsSkiaBlock(args.commandBuffer))
     {
         SetDeleteCurrentCall();
     }
 }
 
-void VulkanSkiaModifier::Process_vkCmdInsertDebugUtilsLabelEXT(
-    const ApiCallInfo&                                  call_info,
-    format::HandleId                                    commandBuffer,
-    StructPointerDecoder<Decoded_VkDebugUtilsLabelEXT>* pLabelInfo)
+void VulkanSkiaModifier::Process_vkCmdInsertDebugUtilsLabelEXT(const ApiCallInfo&                 call_info,
+                                                               args::CmdInsertDebugUtilsLabelEXT& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    const VkDebugUtilsLabelEXT* label_info = pLabelInfo->GetPointer();
+    const VkDebugUtilsLabelEXT* label_info = args.pLabelInfo.GetPointer();
     if ((label_info != nullptr) && ContainsVrFrameDelimiter(label_info->pLabelName))
     {
-        frame_boundary_command_buffers_.insert(commandBuffer);
+        frame_boundary_command_buffers_.insert(args.commandBuffer);
     }
 
-    if (IsSkiaBlock(commandBuffer))
+    if (IsSkiaBlock(args.commandBuffer))
     {
         SetDeleteCurrentCall();
     }
@@ -408,16 +392,12 @@ bool VulkanSkiaModifier::IsSkiaBlock(format::HandleId handle)
     return false;
 }
 
-void VulkanSkiaModifier::Process_vkCreateInstance(const ApiCallInfo&                                   call_info,
-                                                  VkResult                                             returnValue,
-                                                  StructPointerDecoder<Decoded_VkInstanceCreateInfo>*  pCreateInfo,
-                                                  StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-                                                  HandlePointerDecoder<VkInstance>*                    pInstance)
+void VulkanSkiaModifier::Process_vkCreateInstance(const ApiCallInfo& call_info, args::CreateInstance& args)
 {
     if (IsModificationPass())
         return;
 
-    const VkInstanceCreateInfo* pVkInstanceCreateInfo = pCreateInfo->GetPointer();
+    const VkInstanceCreateInfo* pVkInstanceCreateInfo = args.pCreateInfo.GetPointer();
 
     if (pVkInstanceCreateInfo == nullptr)
     {
@@ -456,8 +436,8 @@ void VulkanSkiaModifier::Process_vkCreateInstance(const ApiCallInfo&            
 
     if (remove)
     {
-        std::vector<format::HandleId> pyhsical_device;
-        skiavk_instance2physical_device[*(pInstance->GetPointer())] = pyhsical_device;
+        std::vector<format::HandleId> physical_device;
+        skiavk_instance2physical_device[*(args.pInstance.GetPointer())] = physical_device;
         SetDeleteCurrentCall();
         skiavk_instance = true;
         return;
@@ -466,13 +446,11 @@ void VulkanSkiaModifier::Process_vkCreateInstance(const ApiCallInfo&            
     not_skiavk_instance = true;
 }
 
-void VulkanSkiaModifier::Process_vkDestroyInstance(const ApiCallInfo&                                   call_info,
-                                                   format::HandleId                                     instance,
-                                                   StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator)
+void VulkanSkiaModifier::Process_vkDestroyInstance(const ApiCallInfo& call_info, args::DestroyInstance& args)
 {
     if (IsModificationPass())
         return;
-    auto                          it0 = skiavk_instance2physical_device.find(instance);
+    auto                          it0 = skiavk_instance2physical_device.find(args.instance);
     std::vector<format::HandleId> physical_devices;
     if (it0 != skiavk_instance2physical_device.end())
     {
@@ -526,58 +504,48 @@ void VulkanSkiaModifier::Process_vkDestroyInstance(const ApiCallInfo&           
     }
 }
 
-void VulkanSkiaModifier::Process_vkEnumeratePhysicalDevices(const ApiCallInfo&        call_info,
-                                                            VkResult                  returnValue,
-                                                            format::HandleId          instance,
-                                                            PointerDecoder<uint32_t>* pPhysicalDeviceCount,
-                                                            HandlePointerDecoder<VkPhysicalDevice>* pPhysicalDevices)
+void VulkanSkiaModifier::Process_vkEnumeratePhysicalDevices(const ApiCallInfo&              call_info,
+                                                            args::EnumeratePhysicalDevices& args)
 {
     if (IsModificationPass())
         return;
-    auto it = skiavk_instance2physical_device.find(instance);
+    auto it = skiavk_instance2physical_device.find(args.instance);
     if (it != skiavk_instance2physical_device.end())
     {
         SetDeleteCurrentCall();
-        if (!pPhysicalDevices->IsNull())
+        if (!args.pPhysicalDevices.IsNull())
         {
-            for (int i = 0; i < *pPhysicalDeviceCount->GetPointer(); i++)
+            for (int i = 0; i < *args.pPhysicalDeviceCount.GetPointer(); i++)
             {
-                it->second.push_back(((pPhysicalDevices->GetPointer()))[i]);
+                it->second.push_back(((args.pPhysicalDevices.GetPointer()))[i]);
             }
         }
     }
 }
 
-void VulkanSkiaModifier::Process_vkCreateDevice(const ApiCallInfo&                                   call_info,
-                                                VkResult                                             returnValue,
-                                                format::HandleId                                     physicalDevice,
-                                                StructPointerDecoder<Decoded_VkDeviceCreateInfo>*    pCreateInfo,
-                                                StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-                                                HandlePointerDecoder<VkDevice>*                      pDevice)
+void VulkanSkiaModifier::Process_vkCreateDevice(const ApiCallInfo& call_info, args::CreateDevice& args)
 {
     if (IsModificationPass())
         return;
     for (auto& e : skiavk_instance2physical_device)
     {
-        auto it = std::find(e.second.begin(), e.second.end(), physicalDevice);
+        auto it = std::find(e.second.begin(), e.second.end(), args.physicalDevice);
         if (it != e.second.end())
         {
             SetDeleteCurrentCall();
-            skiavk_physical_device2device[physicalDevice].push_back(*pDevice->GetPointer());
+            skiavk_physical_device2device[args.physicalDevice].push_back(*args.pDevice.GetPointer());
             break;
         }
     }
 }
 
-void VulkanSkiaModifier::Process_vkDestroyDevice(const ApiCallInfo&                                   call_info,
-                                                 format::HandleId                                     device,
-                                                 StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator)
+void VulkanSkiaModifier::Process_vkDestroyDevice(const ApiCallInfo& call_info, args::DestroyDevice& args)
 {
     if (IsModificationPass())
         return;
     for (auto& e : skiavk_physical_device2device)
     {
-        auto it = std::find(e.second.begin(), e.second.end(), device);
+        auto it = std::find(e.second.begin(), e.second.end(), args.device);
         if (it != e.second.end())
         {
             SetDeleteCurrentCall();
@@ -585,13 +553,13 @@ void VulkanSkiaModifier::Process_vkDestroyDevice(const ApiCallInfo&             
             break;
         }
     }
-    auto it2 = skia_device2queue.find(device);
+    auto it2 = skia_device2queue.find(args.device);
     if (it2 != skia_device2queue.end())
     {
         skia_device2queue.erase(it2);
     }
     std::vector<format::HandleId> command_pool;
-    auto                          it3 = skia_device2command_pool.find(device);
+    auto                          it3 = skia_device2command_pool.find(args.device);
     if (it3 != skia_device2command_pool.end())
     {
         command_pool = it3->second;
@@ -605,94 +573,79 @@ void VulkanSkiaModifier::Process_vkDestroyDevice(const ApiCallInfo&             
             skia_command_pool2command_buffer.erase(it4);
         }
     }
-    auto it5 = skia_device2memory.find(device);
+    auto it5 = skia_device2memory.find(args.device);
     if (it5 != skia_device2memory.end())
     {
         skia_device2memory.erase(it5);
     }
-    auto it6 = skia_device2buffer.find(device);
+    auto it6 = skia_device2buffer.find(args.device);
     if (it6 != skia_device2buffer.end())
     {
         skia_device2buffer.erase(it6);
     }
 }
 
-void VulkanSkiaModifier::Process_vkGetDeviceQueue(const ApiCallInfo&             call_info,
-                                                  format::HandleId               device,
-                                                  uint32_t                       queueFamilyIndex,
-                                                  uint32_t                       queueIndex,
-                                                  HandlePointerDecoder<VkQueue>* pQueue)
+void VulkanSkiaModifier::Process_vkGetDeviceQueue(const ApiCallInfo& call_info, args::GetDeviceQueue& args)
 {
     if (IsModificationPass())
         return;
     for (auto& e : skiavk_physical_device2device)
     {
-        auto it = std::find(e.second.begin(), e.second.end(), device);
+        auto it = std::find(e.second.begin(), e.second.end(), args.device);
         if (it != e.second.end())
         {
             SetDeleteCurrentCall();
-            skia_device2queue[device].push_back((*pQueue->GetPointer()));
+            skia_device2queue[args.device].push_back((*args.pQueue.GetPointer()));
             break;
         }
     }
 }
 
-void VulkanSkiaModifier::Process_vkGetDeviceQueue2(const ApiCallInfo&                                call_info,
-                                                   format::HandleId                                  device,
-                                                   StructPointerDecoder<Decoded_VkDeviceQueueInfo2>* pQueueInfo,
-                                                   HandlePointerDecoder<VkQueue>*                    pQueue)
+void VulkanSkiaModifier::Process_vkGetDeviceQueue2(const ApiCallInfo& call_info, args::GetDeviceQueue2& args)
 {
     if (IsModificationPass())
         return;
     for (auto& e : skiavk_physical_device2device)
     {
-        auto it = std::find(e.second.begin(), e.second.end(), device);
+        auto it = std::find(e.second.begin(), e.second.end(), args.device);
         if (it != e.second.end())
         {
             SetDeleteCurrentCall();
-            skia_device2queue[device].push_back((*pQueue->GetPointer()));
+            skia_device2queue[args.device].push_back((*args.pQueue.GetPointer()));
             break;
         }
     }
 }
 
-void VulkanSkiaModifier::Process_vkCreateCommandPool(const ApiCallInfo&                                     call_info,
-                                                     VkResult                                               returnValue,
-                                                     format::HandleId                                       device,
-                                                     StructPointerDecoder<Decoded_VkCommandPoolCreateInfo>* pCreateInfo,
-                                                     StructPointerDecoder<Decoded_VkAllocationCallbacks>*   pAllocator,
-                                                     HandlePointerDecoder<VkCommandPool>* pCommandPool)
+void VulkanSkiaModifier::Process_vkCreateCommandPool(const ApiCallInfo& call_info, args::CreateCommandPool& args)
 {
     if (IsModificationPass())
         return;
     for (auto& e : skiavk_physical_device2device)
     {
-        auto it = std::find(e.second.begin(), e.second.end(), device);
+        auto it = std::find(e.second.begin(), e.second.end(), args.device);
         if (it != e.second.end())
         {
             SetDeleteCurrentCall();
-            skia_device2command_pool[device].push_back((*pCommandPool->GetPointer()));
+            skia_device2command_pool[args.device].push_back((*args.pCommandPool.GetPointer()));
             break;
         }
     }
 }
 
-void VulkanSkiaModifier::Process_vkDestroyCommandPool(const ApiCallInfo&                                   call_info,
-                                                      format::HandleId                                     device,
-                                                      format::HandleId                                     commandPool,
-                                                      StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator)
+void VulkanSkiaModifier::Process_vkDestroyCommandPool(const ApiCallInfo& call_info, args::DestroyCommandPool& args)
 {
     if (IsModificationPass())
         return;
-    auto it = skia_device2command_pool.find(device);
+    auto it = skia_device2command_pool.find(args.device);
     if (it != skia_device2command_pool.end())
     {
         SetDeleteCurrentCall();
-        auto it1 = std::find(it->second.begin(), it->second.end(), commandPool);
+        auto it1 = std::find(it->second.begin(), it->second.end(), args.commandPool);
         if (it1 != it->second.end())
         {
             it->second.erase(it1);
-            auto it2 = skia_command_pool2command_buffer.find(commandPool);
+            auto it2 = skia_command_pool2command_buffer.find(args.commandPool);
             if (it2 != skia_command_pool2command_buffer.end())
             {
                 skia_command_pool2command_buffer.erase(it2);
@@ -701,44 +654,36 @@ void VulkanSkiaModifier::Process_vkDestroyCommandPool(const ApiCallInfo&        
     }
 }
 
-void VulkanSkiaModifier::Process_vkAllocateCommandBuffers(
-    const ApiCallInfo&                                         call_info,
-    VkResult                                                   returnValue,
-    format::HandleId                                           device,
-    StructPointerDecoder<Decoded_VkCommandBufferAllocateInfo>* pAllocateInfo,
-    HandlePointerDecoder<VkCommandBuffer>*                     pCommandBuffers)
+void VulkanSkiaModifier::Process_vkAllocateCommandBuffers(const ApiCallInfo&            call_info,
+                                                          args::AllocateCommandBuffers& args)
 {
     if (IsModificationPass())
         return;
-    auto it = skia_device2queue.find(device);
+    auto it = skia_device2queue.find(args.device);
     if (it != skia_device2queue.end())
     {
         SetDeleteCurrentCall();
         VkCommandBufferAllocateInfo* pVkCommandBufferAllocateInfo =
-            (VkCommandBufferAllocateInfo*)pAllocateInfo->GetPointer();
+            (VkCommandBufferAllocateInfo*)args.pAllocateInfo.GetPointer();
         for (int i = 0; i < pVkCommandBufferAllocateInfo->commandBufferCount; i++)
         {
-            skia_command_pool2command_buffer[(pAllocateInfo->GetMetaStructPointer()->commandPool)].push_back(
-                (pCommandBuffers->GetPointer())[i]);
+            skia_command_pool2command_buffer[(args.pAllocateInfo.GetMetaStructPointer()->commandPool)].push_back(
+                (args.pCommandBuffers.GetPointer())[i]);
         }
     }
 }
 
-void VulkanSkiaModifier::Process_vkFreeCommandBuffers(const ApiCallInfo&                     call_info,
-                                                      format::HandleId                       device,
-                                                      format::HandleId                       commandPool,
-                                                      uint32_t                               commandBufferCount,
-                                                      HandlePointerDecoder<VkCommandBuffer>* pCommandBuffers)
+void VulkanSkiaModifier::Process_vkFreeCommandBuffers(const ApiCallInfo& call_info, args::FreeCommandBuffers& args)
 {
     if (IsModificationPass())
         return;
-    auto it = skia_command_pool2command_buffer.find(commandPool);
+    auto it = skia_command_pool2command_buffer.find(args.commandPool);
     if (it != skia_command_pool2command_buffer.end())
     {
         SetDeleteCurrentCall();
-        for (int i = 0; i < commandBufferCount; i++)
+        for (int i = 0; i < args.commandBufferCount; i++)
         {
-            auto it1 = std::find(it->second.begin(), it->second.end(), ((pCommandBuffers->GetPointer()))[i]);
+            auto it1 = std::find(it->second.begin(), it->second.end(), ((args.pCommandBuffers.GetPointer()))[i]);
             if (it1 != it->second.end())
             {
                 it->second.erase(it1);
@@ -747,40 +692,32 @@ void VulkanSkiaModifier::Process_vkFreeCommandBuffers(const ApiCallInfo&        
     }
 }
 
-void VulkanSkiaModifier::Process_vkAllocateMemory(const ApiCallInfo&                                   call_info,
-                                                  VkResult                                             returnValue,
-                                                  format::HandleId                                     device,
-                                                  StructPointerDecoder<Decoded_VkMemoryAllocateInfo>*  pAllocateInfo,
-                                                  StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-                                                  HandlePointerDecoder<VkDeviceMemory>*                pMemory)
+void VulkanSkiaModifier::Process_vkAllocateMemory(const ApiCallInfo& call_info, args::AllocateMemory& args)
 {
     if (IsModificationPass())
         return;
 
-    if (IsSkiaBlock(device))
+    if (IsSkiaBlock(args.device))
     {
         SetDeleteCurrentCall();
-        skia_device2memory[device].push_back(*pMemory->GetPointer());
+        skia_device2memory[args.device].push_back(*args.pMemory.GetPointer());
     }
 }
 
-void VulkanSkiaModifier::Process_vkFreeMemory(const ApiCallInfo&                                   call_info,
-                                              format::HandleId                                     device,
-                                              format::HandleId                                     memory,
-                                              StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator)
+void VulkanSkiaModifier::Process_vkFreeMemory(const ApiCallInfo& call_info, args::FreeMemory& args)
 {
     if (IsModificationPass())
         return;
 
-    if (IsSkiaBlock(device))
+    if (IsSkiaBlock(args.device))
     {
         SetDeleteCurrentCall();
     }
 
-    auto it = skia_device2memory.find(device);
+    auto it = skia_device2memory.find(args.device);
     if (it != skia_device2memory.end())
     {
-        auto it1 = std::find(it->second.begin(), it->second.end(), memory);
+        auto it1 = std::find(it->second.begin(), it->second.end(), args.memory);
         if (it1 != it->second.end())
         {
             it->second.erase(it1);
@@ -788,53 +725,40 @@ void VulkanSkiaModifier::Process_vkFreeMemory(const ApiCallInfo&                
     }
 }
 
-void VulkanSkiaModifier::Process_vkCreateAndroidSurfaceKHR(
-    const ApiCallInfo&                                           call_info,
-    VkResult                                                     returnValue,
-    format::HandleId                                             instance,
-    StructPointerDecoder<Decoded_VkAndroidSurfaceCreateInfoKHR>* pCreateInfo,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>*         pAllocator,
-    HandlePointerDecoder<VkSurfaceKHR>*                          pSurface)
+void VulkanSkiaModifier::Process_vkCreateAndroidSurfaceKHR(const ApiCallInfo&             call_info,
+                                                           args::CreateAndroidSurfaceKHR& args)
 {
     if (IsModificationPass())
         return;
-    auto it = skiavk_instance2physical_device.find(instance);
+    auto it = skiavk_instance2physical_device.find(args.instance);
     if (it != skiavk_instance2physical_device.end())
     {
         SetDeleteCurrentCall();
-        skia_instance2surface[instance].push_back(*pSurface->GetPointer());
+        skia_instance2surface[args.instance].push_back(*args.pSurface.GetPointer());
     }
 }
 
-void VulkanSkiaModifier::Process_vkCreateBuffer(const ApiCallInfo&                                   call_info,
-                                                VkResult                                             returnValue,
-                                                format::HandleId                                     device,
-                                                StructPointerDecoder<Decoded_VkBufferCreateInfo>*    pCreateInfo,
-                                                StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-                                                HandlePointerDecoder<VkBuffer>*                      pBuffer)
+void VulkanSkiaModifier::Process_vkCreateBuffer(const ApiCallInfo& call_info, args::CreateBuffer& args)
 {
     if (IsModificationPass())
         return;
-    auto it = skia_device2queue.find(device);
+    auto it = skia_device2queue.find(args.device);
     if (it != skia_device2queue.end())
     {
         SetDeleteCurrentCall();
-        skia_device2buffer[device].push_back(*pBuffer->GetPointer());
+        skia_device2buffer[args.device].push_back(*args.pBuffer.GetPointer());
     }
 }
 
-void VulkanSkiaModifier::Process_vkDestroyBuffer(const ApiCallInfo&                                   call_info,
-                                                 format::HandleId                                     device,
-                                                 format::HandleId                                     buffer,
-                                                 StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator)
+void VulkanSkiaModifier::Process_vkDestroyBuffer(const ApiCallInfo& call_info, args::DestroyBuffer& args)
 {
     if (IsModificationPass())
         return;
-    auto it = skia_device2buffer.find(device);
+    auto it = skia_device2buffer.find(args.device);
     if (it != skia_device2buffer.end())
     {
         SetDeleteCurrentCall();
-        auto it1 = std::find(it->second.begin(), it->second.end(), buffer);
+        auto it1 = std::find(it->second.begin(), it->second.end(), args.buffer);
         if (it1 != it->second.end())
         {
             it->second.erase(it1);

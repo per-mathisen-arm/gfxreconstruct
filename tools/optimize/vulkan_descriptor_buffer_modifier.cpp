@@ -163,67 +163,51 @@ void VulkanDescriptorBufferModifier::ProcessFixShadowMemoryCommand(format::Handl
     }
 }
 
-void VulkanDescriptorBufferModifier::Process_vkCreateBuffer(
-    const ApiCallInfo&                                   call_info,
-    VkResult                                             returnValue,
-    format::HandleId                                     device,
-    StructPointerDecoder<Decoded_VkBufferCreateInfo>*    pCreateInfo,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-    HandlePointerDecoder<VkBuffer>*                      pBuffer)
+void VulkanDescriptorBufferModifier::Process_vkCreateBuffer(const ApiCallInfo& call_info, args::CreateBuffer& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    format::HandleId handle                   = *pBuffer->GetPointer();
+    format::HandleId handle                   = *args.pBuffer.GetPointer();
     buffer_entries_[handle].handle            = handle;
-    buffer_entries_[handle].size              = pCreateInfo->GetPointer()->size;
-    buffer_entries_[handle].usage             = pCreateInfo->GetPointer()->usage;
-    buffer_entries_[handle].flags             = pCreateInfo->GetPointer()->flags;
+    buffer_entries_[handle].size              = args.pCreateInfo.GetPointer()->size;
+    buffer_entries_[handle].usage             = args.pCreateInfo.GetPointer()->usage;
+    buffer_entries_[handle].flags             = args.pCreateInfo.GetPointer()->flags;
     buffer_entries_[handle].creation_index    = call_info.index;
     buffer_entries_[handle].destruction_index = UINT64_MAX;
 }
 
-void VulkanDescriptorBufferModifier::Process_vkDestroyBuffer(
-    const ApiCallInfo&                                   call_info,
-    format::HandleId                                     device,
-    format::HandleId                                     buffer,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator)
+void VulkanDescriptorBufferModifier::Process_vkDestroyBuffer(const ApiCallInfo& call_info, args::DestroyBuffer& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    if (buffer_entries_.find(buffer) != buffer_entries_.end())
+    if (buffer_entries_.find(args.buffer) != buffer_entries_.end())
     {
-        buffer_entries_[buffer].destruction_index = call_info.index;
+        buffer_entries_[args.buffer].destruction_index = call_info.index;
     }
 }
 
-void VulkanDescriptorBufferModifier::Process_vkAllocateMemory(
-    const ApiCallInfo&                                   call_info,
-    VkResult                                             returnValue,
-    format::HandleId                                     device,
-    StructPointerDecoder<Decoded_VkMemoryAllocateInfo>*  pAllocateInfo,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-    HandlePointerDecoder<VkDeviceMemory>*                pMemory)
+void VulkanDescriptorBufferModifier::Process_vkAllocateMemory(const ApiCallInfo& call_info, args::AllocateMemory& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    format::HandleId handle                           = *pMemory->GetPointer();
+    format::HandleId handle                           = *args.pMemory.GetPointer();
     memory_binding_entries_[handle].handle            = handle;
-    memory_binding_entries_[handle].size              = pAllocateInfo->GetPointer()->allocationSize;
-    memory_binding_entries_[handle].type_index        = pAllocateInfo->GetPointer()->memoryTypeIndex;
+    memory_binding_entries_[handle].size              = args.pAllocateInfo.GetPointer()->allocationSize;
+    memory_binding_entries_[handle].type_index        = args.pAllocateInfo.GetPointer()->memoryTypeIndex;
     memory_binding_entries_[handle].creation_index    = call_info.index;
     memory_binding_entries_[handle].destruction_index = UINT64_MAX;
-    if (pAllocateInfo->GetPointer()->pNext)
+    if (args.pAllocateInfo.GetPointer()->pNext)
     {
-        VkMemoryAllocateFlagsInfo* info = (VkMemoryAllocateFlagsInfo*)(pAllocateInfo->GetPointer()->pNext);
+        VkMemoryAllocateFlagsInfo* info = (VkMemoryAllocateFlagsInfo*)(args.pAllocateInfo.GetPointer()->pNext);
         if (info->sType == VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO)
         {
             memory_binding_entries_[handle].flags = info->flags;
@@ -231,65 +215,50 @@ void VulkanDescriptorBufferModifier::Process_vkAllocateMemory(
     }
 }
 
-void VulkanDescriptorBufferModifier::Process_vkFreeMemory(
-    const ApiCallInfo&                                   call_info,
-    format::HandleId                                     device,
-    format::HandleId                                     memory,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator)
+void VulkanDescriptorBufferModifier::Process_vkFreeMemory(const ApiCallInfo& call_info, args::FreeMemory& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    if (memory_binding_entries_.find(memory) != memory_binding_entries_.end())
+    if (memory_binding_entries_.find(args.memory) != memory_binding_entries_.end())
     {
-        memory_binding_entries_[memory].destruction_index = call_info.index;
+        memory_binding_entries_[args.memory].destruction_index = call_info.index;
     }
 }
 
-void VulkanDescriptorBufferModifier::Process_vkMapMemory(const ApiCallInfo&               call_info,
-                                                         VkResult                         returnValue,
-                                                         format::HandleId                 device,
-                                                         format::HandleId                 memory,
-                                                         VkDeviceSize                     offset,
-                                                         VkDeviceSize                     size,
-                                                         VkMemoryMapFlags                 flags,
-                                                         PointerDecoder<uint64_t, void*>* ppData)
+void VulkanDescriptorBufferModifier::Process_vkMapMemory(const ApiCallInfo& call_info, args::MapMemory& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    if (memory_binding_entries_.find(memory) != memory_binding_entries_.end())
+    if (memory_binding_entries_.find(args.memory) != memory_binding_entries_.end())
     {
-        if (size == VK_WHOLE_SIZE)
+        if (args.size == VK_WHOLE_SIZE)
         {
-            assert(offset <= memory_binding_entries_[memory].size);
-            size = memory_binding_entries_[memory].size - offset;
+            assert(args.offset <= memory_binding_entries_[args.memory].size);
+            args.size = memory_binding_entries_[args.memory].size - args.offset;
         }
 
-        memory_binding_entries_[memory].mapping.offset        = offset;
-        memory_binding_entries_[memory].mapping.size          = size;
-        memory_binding_entries_[memory].mapping.map_memory    = *ppData->GetPointer();
-        memory_binding_entries_[memory].mapping.shadow_memory = 0;
+        memory_binding_entries_[args.memory].mapping.offset        = args.offset;
+        memory_binding_entries_[args.memory].mapping.size          = args.size;
+        memory_binding_entries_[args.memory].mapping.map_memory    = *args.ppData.GetPointer();
+        memory_binding_entries_[args.memory].mapping.shadow_memory = 0;
     }
 }
 
-void VulkanDescriptorBufferModifier::Process_vkMapMemory2(const ApiCallInfo&                             call_info,
-                                                          VkResult                                       returnValue,
-                                                          format::HandleId                               device,
-                                                          StructPointerDecoder<Decoded_VkMemoryMapInfo>* pMemoryMapInfo,
-                                                          PointerDecoder<uint64_t, void*>*               ppData)
+void VulkanDescriptorBufferModifier::Process_vkMapMemory2(const ApiCallInfo& call_info, args::MapMemory2& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    VkMemoryMapInfo*         map_info      = pMemoryMapInfo->GetPointer();
-    Decoded_VkMemoryMapInfo* map_meta_info = pMemoryMapInfo->GetMetaStructPointer();
+    VkMemoryMapInfo*         map_info      = args.pMemoryMapInfo.GetPointer();
+    Decoded_VkMemoryMapInfo* map_meta_info = args.pMemoryMapInfo.GetMetaStructPointer();
 
     format::HandleId memory = map_meta_info->memory;
     if (memory_binding_entries_.find(memory) != memory_binding_entries_.end())
@@ -303,41 +272,35 @@ void VulkanDescriptorBufferModifier::Process_vkMapMemory2(const ApiCallInfo&    
 
         memory_binding_entries_[memory].mapping.offset        = map_info->offset;
         memory_binding_entries_[memory].mapping.size          = in_size;
-        memory_binding_entries_[memory].mapping.map_memory    = *ppData->GetPointer();
+        memory_binding_entries_[memory].mapping.map_memory    = *args.ppData.GetPointer();
         memory_binding_entries_[memory].mapping.shadow_memory = 0;
     }
 }
 
-void VulkanDescriptorBufferModifier::Process_vkUnmapMemory(const ApiCallInfo& call_info,
-                                                           format::HandleId   device,
-                                                           format::HandleId   memory)
+void VulkanDescriptorBufferModifier::Process_vkUnmapMemory(const ApiCallInfo& call_info, args::UnmapMemory& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    if (memory_binding_entries_.find(memory) != memory_binding_entries_.end())
+    if (memory_binding_entries_.find(args.memory) != memory_binding_entries_.end())
     {
-        memory_binding_entries_[memory].mapping.offset        = 0;
-        memory_binding_entries_[memory].mapping.size          = 0;
-        memory_binding_entries_[memory].mapping.map_memory    = 0;
-        memory_binding_entries_[memory].mapping.shadow_memory = 0;
+        memory_binding_entries_[args.memory].mapping.offset        = 0;
+        memory_binding_entries_[args.memory].mapping.size          = 0;
+        memory_binding_entries_[args.memory].mapping.map_memory    = 0;
+        memory_binding_entries_[args.memory].mapping.shadow_memory = 0;
     }
 }
 
-void VulkanDescriptorBufferModifier::Process_vkUnmapMemory2(
-    const ApiCallInfo&                               call_info,
-    VkResult                                         returnValue,
-    format::HandleId                                 device,
-    StructPointerDecoder<Decoded_VkMemoryUnmapInfo>* pMemoryUnmapInfo)
+void VulkanDescriptorBufferModifier::Process_vkUnmapMemory2(const ApiCallInfo& call_info, args::UnmapMemory2& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    Decoded_VkMemoryUnmapInfo* unmap_meta_info = pMemoryUnmapInfo->GetMetaStructPointer();
+    Decoded_VkMemoryUnmapInfo* unmap_meta_info = args.pMemoryUnmapInfo.GetMetaStructPointer();
 
     format::HandleId memory = unmap_meta_info->memory;
     if (memory_binding_entries_.find(memory) != memory_binding_entries_.end())
@@ -349,40 +312,33 @@ void VulkanDescriptorBufferModifier::Process_vkUnmapMemory2(
     }
 }
 
-void VulkanDescriptorBufferModifier::Process_vkBindBufferMemory(const ApiCallInfo& call_info,
-                                                                VkResult           returnValue,
-                                                                format::HandleId   device,
-                                                                format::HandleId   buffer,
-                                                                format::HandleId   memory,
-                                                                VkDeviceSize       memory_offset)
+void VulkanDescriptorBufferModifier::Process_vkBindBufferMemory(const ApiCallInfo&      call_info,
+                                                                args::BindBufferMemory& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    if (memory_binding_entries_.find(memory) != memory_binding_entries_.end())
+    if (memory_binding_entries_.find(args.memory) != memory_binding_entries_.end())
     {
-        memory_binding_entries_[memory].memory_binding_records_.push_back({ buffer, true, memory_offset });
+        memory_binding_entries_[args.memory].memory_binding_records_.push_back(
+            { args.buffer, true, args.memoryOffset });
     }
 }
 
-void VulkanDescriptorBufferModifier::Process_vkBindBufferMemory2(
-    const ApiCallInfo&                                    call_info,
-    VkResult                                              returnValue,
-    format::HandleId                                      device,
-    uint32_t                                              bindInfoCount,
-    StructPointerDecoder<Decoded_VkBindBufferMemoryInfo>* pBindInfos)
+void VulkanDescriptorBufferModifier::Process_vkBindBufferMemory2(const ApiCallInfo&       call_info,
+                                                                 args::BindBufferMemory2& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    const VkBindBufferMemoryInfo*         bind_infos      = pBindInfos->GetPointer();
-    const Decoded_VkBindBufferMemoryInfo* bind_meta_infos = pBindInfos->GetMetaStructPointer();
+    const VkBindBufferMemoryInfo*         bind_infos      = args.pBindInfos.GetPointer();
+    const Decoded_VkBindBufferMemoryInfo* bind_meta_infos = args.pBindInfos.GetMetaStructPointer();
 
-    for (uint32_t i = 0; i < bindInfoCount; ++i)
+    for (uint32_t i = 0; i < args.bindInfoCount; ++i)
     {
         if (memory_binding_entries_.find(bind_meta_infos[i].memory) != memory_binding_entries_.end())
         {
@@ -392,56 +348,45 @@ void VulkanDescriptorBufferModifier::Process_vkBindBufferMemory2(
     }
 }
 
-void VulkanDescriptorBufferModifier::Process_vkAllocateCommandBuffers(
-    const ApiCallInfo&                                         call_info,
-    VkResult                                                   returnValue,
-    format::HandleId                                           device,
-    StructPointerDecoder<Decoded_VkCommandBufferAllocateInfo>* pAllocateInfo,
-    HandlePointerDecoder<VkCommandBuffer>*                     pCommandBuffers)
+void VulkanDescriptorBufferModifier::Process_vkAllocateCommandBuffers(const ApiCallInfo&            call_info,
+                                                                      args::AllocateCommandBuffers& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    const VkCommandBufferAllocateInfo* allocate_info = pAllocateInfo->GetPointer();
+    const VkCommandBufferAllocateInfo* allocate_info = args.pAllocateInfo.GetPointer();
     for (uint32_t i = 0; i < allocate_info->commandBufferCount; i++)
     {
-        format::HandleId handle = pCommandBuffers->GetPointer()[i];
-        command_buffer_entries_.try_emplace(handle, handle, device, allocate_info->level, 0, call_info.index);
+        format::HandleId handle = args.pCommandBuffers.GetPointer()[i];
+        command_buffer_entries_.try_emplace(handle, handle, args.device, allocate_info->level, 0, call_info.index);
     }
 }
 
-void VulkanDescriptorBufferModifier::Process_vkBeginCommandBuffer(
-    const ApiCallInfo&                                      call_info,
-    VkResult                                                returnValue,
-    format::HandleId                                        commandBuffer,
-    StructPointerDecoder<Decoded_VkCommandBufferBeginInfo>* pBeginInfo)
+void VulkanDescriptorBufferModifier::Process_vkBeginCommandBuffer(const ApiCallInfo&        call_info,
+                                                                  args::BeginCommandBuffer& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    const VkCommandBufferBeginInfo* begin_info       = pBeginInfo->GetPointer();
-    command_buffer_entries_.at(commandBuffer).usage_ = begin_info->flags;
+    const VkCommandBufferBeginInfo* begin_info            = args.pBeginInfo.GetPointer();
+    command_buffer_entries_.at(args.commandBuffer).usage_ = begin_info->flags;
 }
 
-void VulkanDescriptorBufferModifier::Process_vkFreeCommandBuffers(
-    const ApiCallInfo&                     call_info,
-    format::HandleId                       device,
-    format::HandleId                       commandPool,
-    uint32_t                               commandBufferCount,
-    HandlePointerDecoder<VkCommandBuffer>* pCommandBuffers)
+void VulkanDescriptorBufferModifier::Process_vkFreeCommandBuffers(const ApiCallInfo&        call_info,
+                                                                  args::FreeCommandBuffers& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    for (uint32_t i = 0; i < commandBufferCount; i++)
+    for (uint32_t i = 0; i < args.commandBufferCount; i++)
     {
-        format::HandleId handle = pCommandBuffers->GetPointer()[i];
+        format::HandleId handle = args.pCommandBuffers.GetPointer()[i];
         if (handle == format::kNullHandleId)
         {
             GFXRECON_LOG_WARNING("Skipping vkFreeCommandBuffers for null command buffer handle at call index %" PRIu64
@@ -464,81 +409,57 @@ void VulkanDescriptorBufferModifier::Process_vkFreeCommandBuffers(
     }
 }
 
-void VulkanDescriptorBufferModifier::Process_vkCmdCopyBuffer(const ApiCallInfo&                          call_info,
-                                                             format::HandleId                            commandBuffer,
-                                                             format::HandleId                            srcBuffer,
-                                                             format::HandleId                            dstBuffer,
-                                                             uint32_t                                    regionCount,
-                                                             StructPointerDecoder<Decoded_VkBufferCopy>* pRegions)
+void VulkanDescriptorBufferModifier::Process_vkCmdCopyBuffer(const ApiCallInfo& call_info, args::CmdCopyBuffer& args) {}
+
+void VulkanDescriptorBufferModifier::Process_vkCmdCopyBuffer2(const ApiCallInfo& call_info, args::CmdCopyBuffer2& args)
 {}
 
-void VulkanDescriptorBufferModifier::Process_vkCmdCopyBuffer2(
-    const ApiCallInfo&                               call_info,
-    format::HandleId                                 commandBuffer,
-    StructPointerDecoder<Decoded_VkCopyBufferInfo2>* pCopyBufferInfo)
+void VulkanDescriptorBufferModifier::Process_vkCmdCopyBuffer2KHR(const ApiCallInfo&       call_info,
+                                                                 args::CmdCopyBuffer2KHR& args)
 {}
 
-void VulkanDescriptorBufferModifier::Process_vkCmdCopyBuffer2KHR(
-    const ApiCallInfo&                               call_info,
-    format::HandleId                                 commandBuffer,
-    StructPointerDecoder<Decoded_VkCopyBufferInfo2>* pCopyBufferInfo)
-{}
-
-void VulkanDescriptorBufferModifier::Process_vkCmdUpdateBuffer(const ApiCallInfo&       call_info,
-                                                               format::HandleId         commandBuffer,
-                                                               format::HandleId         dstBuffer,
-                                                               VkDeviceSize             dstOffset,
-                                                               VkDeviceSize             dataSize,
-                                                               PointerDecoder<uint8_t>* pData)
+void VulkanDescriptorBufferModifier::Process_vkCmdUpdateBuffer(const ApiCallInfo&     call_info,
+                                                               args::CmdUpdateBuffer& args)
 {
     if (!IsModificationPass())
     {
         return;
     }
 
-    const CommandBufferInfo& command_buffer_info = command_buffer_entries_.at(commandBuffer);
+    const CommandBufferInfo& command_buffer_info = command_buffer_entries_.at(args.commandBuffer);
 
     format::HandleId device_id = command_buffer_info.device_id_;
-    auto             data      = pData->GetPointer();
+    auto             data      = args.pData.GetPointer();
     // reserved for descriptor buffer to WriteFixDescriptorDataCmd
 }
 
-void VulkanDescriptorBufferModifier::Process_vkCmdPushConstants(const ApiCallInfo&       call_info,
-                                                                format::HandleId         commandBuffer,
-                                                                format::HandleId         layout,
-                                                                VkShaderStageFlags       stageFlags,
-                                                                uint32_t                 offset,
-                                                                uint32_t                 size,
-                                                                PointerDecoder<uint8_t>* pValues)
+void VulkanDescriptorBufferModifier::Process_vkCmdPushConstants(const ApiCallInfo&      call_info,
+                                                                args::CmdPushConstants& args)
 {
     if (!IsModificationPass())
     {
         return;
     }
-    const CommandBufferInfo& command_buffer_info = command_buffer_entries_.at(commandBuffer);
+    const CommandBufferInfo& command_buffer_info = command_buffer_entries_.at(args.commandBuffer);
 
     format::HandleId device_id = command_buffer_info.device_id_;
-    auto             data      = pValues->GetPointer();
+    auto             data      = args.pValues.GetPointer();
     // reserved for descriptor buffer to WriteFixDescriptorDataCmd
 }
 
-void VulkanDescriptorBufferModifier::Process_vkGetDescriptorEXT(
-    const ApiCallInfo&                                    call_info,
-    format::HandleId                                      device,
-    StructPointerDecoder<Decoded_VkDescriptorGetInfoEXT>* pDescriptorInfo,
-    size_t                                                dataSize,
-    PointerDecoder<uint8_t>*                              pDescriptor)
+void VulkanDescriptorBufferModifier::Process_vkGetDescriptorEXT(const ApiCallInfo&      call_info,
+                                                                args::GetDescriptorEXT& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    uint64_t desc_addr = pDescriptor->GetAddress();
+    uint64_t desc_addr = args.pDescriptor.GetAddress();
     bool     found     = false;
 
     format::DescriptorDataLocationInfo location{};
-    location.orig_size       = dataSize;
+    location.orig_size       = args.dataSize;
     location.new_size        = 0;
     location.descriptor_addr = desc_addr;
 
@@ -590,11 +511,11 @@ void VulkanDescriptorBufferModifier::Process_vkGetDescriptorEXT(
 
                         // fill map
                         device_memory_descriptor_locations[mem_id][desc_addr] =
-                            std::make_pair(location, std::vector<uint8_t>(dataSize));
+                            std::make_pair(location, std::vector<uint8_t>(args.dataSize));
                         util::platform::MemoryCopy(device_memory_descriptor_locations[mem_id][desc_addr].second.data(),
-                                                   dataSize,
-                                                   pDescriptor->GetPointer(),
-                                                   dataSize);
+                                                   args.dataSize,
+                                                   args.pDescriptor.GetPointer(),
+                                                   args.dataSize);
 
                         GFXRECON_LOG_DEBUG("GetDescriptorEXT into buffer(%" PRIu64
                                            ", at 0x%lx), bound in memory(%" PRIu64 ", 0x%lx).",

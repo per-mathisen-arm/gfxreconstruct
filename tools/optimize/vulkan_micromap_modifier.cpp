@@ -54,20 +54,14 @@ GFXRECON_BEGIN_NAMESPACE(decode)
 
 VulkanMicromapModifier::VulkanMicromapModifier() {}
 
-void VulkanMicromapModifier::Process_vkCreateMicromapEXT(
-    const ApiCallInfo&                                     call_info,
-    VkResult                                               returnValue,
-    format::HandleId                                       device,
-    StructPointerDecoder<Decoded_VkMicromapCreateInfoEXT>* pCreateInfo,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>*   pAllocator,
-    HandlePointerDecoder<VkMicromapEXT>*                   pMicromap)
+void VulkanMicromapModifier::Process_vkCreateMicromapEXT(const ApiCallInfo& call_info, args::CreateMicromapEXT& args)
 {
     if (!IsModificationPass())
     {
         return;
     }
 
-    format::HandleId micromap_id = *pMicromap->GetPointer();
+    format::HandleId micromap_id = *args.pMicromap.GetPointer();
 
     assert(handle_id_to_build_info_.count(micromap_id) == 1);
 
@@ -78,7 +72,7 @@ void VulkanMicromapModifier::Process_vkCreateMicromapEXT(
         new_call->call_id   = gfxrecon::format::ApiCallId::ApiCall_vkGetMicromapBuildSizesEXT;
         new_call->thread_id = 1;
         gfxrecon::encode::ParameterEncoder encoder(&new_call->parameter_buffer);
-        encoder.EncodeHandleIdValue(device);
+        encoder.EncodeHandleIdValue(args.device);
 
         VkMicromapBuildInfoEXT pBuildInfo = handle_id_to_build_info_[micromap_id].info;
         pBuildInfo.pUsageCounts           = handle_id_to_build_info_[micromap_id].usages.data();
@@ -114,20 +108,17 @@ void VulkanMicromapModifier::Process_vkCreateMicromapEXT(
     }
 }
 
-void VulkanMicromapModifier::Process_vkCmdBuildMicromapsEXT(
-    const ApiCallInfo&                                    call_info,
-    format::HandleId                                      commandBuffer,
-    uint32_t                                              infoCount,
-    StructPointerDecoder<Decoded_VkMicromapBuildInfoEXT>* pInfos)
+void VulkanMicromapModifier::Process_vkCmdBuildMicromapsEXT(const ApiCallInfo&          call_info,
+                                                            args::CmdBuildMicromapsEXT& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    auto pInfosDec = pInfos->GetMetaStructPointer();
+    auto pInfosDec = args.pInfos.GetMetaStructPointer();
 
-    for (uint64_t i = 0; i < infoCount; i++)
+    for (uint64_t i = 0; i < args.infoCount; i++)
     {
         if (handle_id_to_build_info_.count(pInfosDec[i].dstMicromap) == 0)
         {
@@ -143,20 +134,14 @@ void VulkanMicromapModifier::Process_vkCmdBuildMicromapsEXT(
     }
 }
 
-void VulkanMicromapModifier::Process_vkGetMicromapBuildSizesEXT(
-    const ApiCallInfo&                                         call_info,
-    format::HandleId                                           device,
-    VkAccelerationStructureBuildTypeKHR                        buildType,
-    StructPointerDecoder<Decoded_VkMicromapBuildInfoEXT>*      pBuildInfo,
-    StructPointerDecoder<Decoded_VkMicromapBuildSizesInfoEXT>* pSizeInfo)
+void VulkanMicromapModifier::Process_vkGetMicromapBuildSizesEXT(const ApiCallInfo&              call_info,
+                                                                args::GetMicromapBuildSizesEXT& args)
 {
     // TODO: delete original call since we insert it ourselves. This is meant to be done at the end of other TODOs
     // delete_current_call = true;
 }
 
-void VulkanMicromapModifier::Process_vkCmdCopyMicromapEXT(const ApiCallInfo& call_info,
-                                                          format::HandleId   commandBuffer,
-                                                          StructPointerDecoder<Decoded_VkCopyMicromapInfoEXT>* pInfo)
+void VulkanMicromapModifier::Process_vkCmdCopyMicromapEXT(const ApiCallInfo& call_info, args::CmdCopyMicromapEXT& args)
 {
 
     if (IsModificationPass())
@@ -164,7 +149,7 @@ void VulkanMicromapModifier::Process_vkCmdCopyMicromapEXT(const ApiCallInfo& cal
         return;
     }
 
-    auto pInfosDec = pInfo->GetMetaStructPointer();
+    auto pInfosDec = args.pInfo.GetMetaStructPointer();
 
     if (pInfosDec->decoded_value->mode != VK_COPY_MICROMAP_MODE_COMPACT_EXT)
     {

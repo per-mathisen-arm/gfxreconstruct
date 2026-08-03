@@ -34,25 +34,18 @@ VulkanShaderReplacementModifier::VulkanShaderReplacementModifier(const std::stri
     shader_dir_(shader_dir), shaders_()
 {}
 
-void VulkanShaderReplacementModifier::Process_vkCreateShaderModule(
-    const ApiCallInfo&                                      call_info,
-    VkResult                                                returnValue,
-    format::HandleId                                        device,
-    StructPointerDecoder<Decoded_VkShaderModuleCreateInfo>* pCreateInfo,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>*    pAllocator,
-    HandlePointerDecoder<VkShaderModule>*                   pShaderModule)
+void VulkanShaderReplacementModifier::Process_vkCreateShaderModule(const ApiCallInfo&        call_info,
+                                                                   args::CreateShaderModule& args)
 {
-    if (returnValue != VK_SUCCESS)
+    if (args.result != VK_SUCCESS)
     {
         return;
     }
 
-    GFXRECON_ASSERT(pCreateInfo != nullptr && pAllocator != nullptr && pShaderModule != nullptr);
-
-    VkShaderModuleCreateInfo* create_info = pCreateInfo->GetPointer();
+    VkShaderModuleCreateInfo* create_info = args.pCreateInfo.GetPointer();
     GFXRECON_ASSERT(create_info != nullptr);
 
-    const format::HandleId handle_id = *pShaderModule->GetPointer();
+    const format::HandleId handle_id = *args.pShaderModule.GetPointer();
     GFXRECON_ASSERT(handle_id != format::kNullHandleId);
 
     const std::string file_name = "sh" + std::to_string(handle_id);
@@ -81,39 +74,31 @@ void VulkanShaderReplacementModifier::Process_vkCreateShaderModule(
 
         encode::ParameterEncoder encoder(&new_call->parameter_buffer);
 
-        encoder.EncodeHandleIdValue(device);
+        encoder.EncodeHandleIdValue(args.device);
         encode::EncodeStructPtr(&encoder, create_info);
-        encode::EncodeStructPtr(&encoder, pAllocator->GetPointer());
+        encode::EncodeStructPtr(&encoder, args.pAllocator.GetPointer());
         encoder.EncodeHandleIdPtr(&handle_id);
-        encoder.EncodeEnumValue(returnValue);
+        encoder.EncodeEnumValue(args.result);
 
         SetDeleteCurrentCall();
     }
 }
 
-void VulkanShaderReplacementModifier::Process_vkCreateShadersEXT(
-    const ApiCallInfo&                                   call_info,
-    VkResult                                             returnValue,
-    format::HandleId                                     device,
-    uint32_t                                             createInfoCount,
-    StructPointerDecoder<Decoded_VkShaderCreateInfoEXT>* pCreateInfos,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-    HandlePointerDecoder<VkShaderEXT>*                   pShaders)
+void VulkanShaderReplacementModifier::Process_vkCreateShadersEXT(const ApiCallInfo&      call_info,
+                                                                 args::CreateShadersEXT& args)
 {
-    if (returnValue != VK_SUCCESS)
+    if (args.result != VK_SUCCESS)
     {
         return;
     }
 
-    GFXRECON_ASSERT(pCreateInfos != nullptr && pAllocator != nullptr && pShaders != nullptr);
-
-    VkShaderCreateInfoEXT* create_infos = pCreateInfos->GetPointer();
+    VkShaderCreateInfoEXT* create_infos = args.pCreateInfos.GetPointer();
     GFXRECON_ASSERT(create_infos != nullptr);
 
-    const format::HandleId* handle_ids = pShaders->GetPointer();
+    const format::HandleId* handle_ids = args.pShaders.GetPointer();
 
     bool replace_call = false;
-    for (uint32_t i = 0; i < createInfoCount; ++i)
+    for (uint32_t i = 0; i < args.createInfoCount; ++i)
     {
         const std::string file_name = "sh" + std::to_string(handle_ids[i]);
 
@@ -150,40 +135,31 @@ void VulkanShaderReplacementModifier::Process_vkCreateShadersEXT(
 
     encode::ParameterEncoder encoder(&new_call->parameter_buffer);
 
-    encoder.EncodeHandleIdValue(device);
-    encoder.EncodeUInt32Value(createInfoCount);
-    encode::EncodeStructArray(&encoder, create_infos, createInfoCount);
-    encode::EncodeStructPtr(&encoder, pAllocator->GetPointer());
-    encoder.EncodeHandleIdArray(handle_ids, createInfoCount);
-    encoder.EncodeEnumValue(returnValue);
+    encoder.EncodeHandleIdValue(args.device);
+    encoder.EncodeUInt32Value(args.createInfoCount);
+    encode::EncodeStructArray(&encoder, create_infos, args.createInfoCount);
+    encode::EncodeStructPtr(&encoder, args.pAllocator.GetPointer());
+    encoder.EncodeHandleIdArray(handle_ids, args.createInfoCount);
+    encoder.EncodeEnumValue(args.result);
 
     SetDeleteCurrentCall();
 }
 
-void VulkanShaderReplacementModifier::Process_vkCreateGraphicsPipelines(
-    const ApiCallInfo&                                          call_info,
-    VkResult                                                    returnValue,
-    format::HandleId                                            device,
-    format::HandleId                                            pipelineCache,
-    uint32_t                                                    createInfoCount,
-    StructPointerDecoder<Decoded_VkGraphicsPipelineCreateInfo>* pCreateInfos,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>*        pAllocator,
-    HandlePointerDecoder<VkPipeline>*                           pPipelines)
+void VulkanShaderReplacementModifier::Process_vkCreateGraphicsPipelines(const ApiCallInfo&             call_info,
+                                                                        args::CreateGraphicsPipelines& args)
 {
-    if (returnValue != VK_SUCCESS)
+    if (args.result != VK_SUCCESS)
     {
         return;
     }
 
-    GFXRECON_ASSERT(pCreateInfos != nullptr && pAllocator != nullptr && pPipelines != nullptr);
-
-    VkGraphicsPipelineCreateInfo* pipeline_create_infos = pCreateInfos->GetPointer();
+    VkGraphicsPipelineCreateInfo* pipeline_create_infos = args.pCreateInfos.GetPointer();
     GFXRECON_ASSERT(pipeline_create_infos != nullptr);
 
-    const format::HandleId* pipeline_ids = pPipelines->GetPointer();
+    const format::HandleId* pipeline_ids = args.pPipelines.GetPointer();
 
     bool replace_call = false;
-    for (uint32_t i = 0; i < createInfoCount; ++i)
+    for (uint32_t i = 0; i < args.createInfoCount; ++i)
     {
         const format::HandleId&       pipeline_id          = pipeline_ids[i];
         VkGraphicsPipelineCreateInfo& pipeline_create_info = pipeline_create_infos[i];
@@ -212,41 +188,32 @@ void VulkanShaderReplacementModifier::Process_vkCreateGraphicsPipelines(
 
     encode::ParameterEncoder encoder(&new_call->parameter_buffer);
 
-    encoder.EncodeHandleIdValue(device);
-    encoder.EncodeHandleIdValue(pipelineCache);
-    encoder.EncodeUInt32Value(createInfoCount);
-    encode::EncodeStructArray(&encoder, pipeline_create_infos, createInfoCount);
-    encode::EncodeStructPtr(&encoder, pAllocator->GetPointer());
-    encoder.EncodeHandleIdArray(pipeline_ids, createInfoCount);
-    encoder.EncodeEnumValue(returnValue);
+    encoder.EncodeHandleIdValue(args.device);
+    encoder.EncodeHandleIdValue(args.pipelineCache);
+    encoder.EncodeUInt32Value(args.createInfoCount);
+    encode::EncodeStructArray(&encoder, pipeline_create_infos, args.createInfoCount);
+    encode::EncodeStructPtr(&encoder, args.pAllocator.GetPointer());
+    encoder.EncodeHandleIdArray(pipeline_ids, args.createInfoCount);
+    encoder.EncodeEnumValue(args.result);
 
     SetDeleteCurrentCall();
 }
 
-void VulkanShaderReplacementModifier::Process_vkCreateComputePipelines(
-    const ApiCallInfo&                                         call_info,
-    VkResult                                                   returnValue,
-    format::HandleId                                           device,
-    format::HandleId                                           pipelineCache,
-    uint32_t                                                   createInfoCount,
-    StructPointerDecoder<Decoded_VkComputePipelineCreateInfo>* pCreateInfos,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>*       pAllocator,
-    HandlePointerDecoder<VkPipeline>*                          pPipelines)
+void VulkanShaderReplacementModifier::Process_vkCreateComputePipelines(const ApiCallInfo&            call_info,
+                                                                       args::CreateComputePipelines& args)
 {
-    if (returnValue != VK_SUCCESS)
+    if (args.result != VK_SUCCESS)
     {
         return;
     }
 
-    GFXRECON_ASSERT(pCreateInfos != nullptr && pAllocator != nullptr && pPipelines != nullptr);
-
-    VkComputePipelineCreateInfo* pipeline_create_infos = pCreateInfos->GetPointer();
+    VkComputePipelineCreateInfo* pipeline_create_infos = args.pCreateInfos.GetPointer();
     GFXRECON_ASSERT(pipeline_create_infos != nullptr);
 
-    const format::HandleId* pipeline_ids = pPipelines->GetPointer();
+    const format::HandleId* pipeline_ids = args.pPipelines.GetPointer();
 
     bool replace_call = false;
-    for (uint32_t i = 0; i < createInfoCount; ++i)
+    for (uint32_t i = 0; i < args.createInfoCount; ++i)
     {
         const format::HandleId&          pipeline_id       = pipeline_ids[i];
         VkPipelineShaderStageCreateInfo* stage_create_info = &pipeline_create_infos[i].stage;
@@ -269,42 +236,32 @@ void VulkanShaderReplacementModifier::Process_vkCreateComputePipelines(
 
     encode::ParameterEncoder encoder(&new_call->parameter_buffer);
 
-    encoder.EncodeHandleIdValue(device);
-    encoder.EncodeHandleIdValue(pipelineCache);
-    encoder.EncodeUInt32Value(createInfoCount);
-    encode::EncodeStructArray(&encoder, pipeline_create_infos, createInfoCount);
-    encode::EncodeStructPtr(&encoder, pAllocator->GetPointer());
-    encoder.EncodeHandleIdArray(pipeline_ids, createInfoCount);
-    encoder.EncodeEnumValue(returnValue);
+    encoder.EncodeHandleIdValue(args.device);
+    encoder.EncodeHandleIdValue(args.pipelineCache);
+    encoder.EncodeUInt32Value(args.createInfoCount);
+    encode::EncodeStructArray(&encoder, pipeline_create_infos, args.createInfoCount);
+    encode::EncodeStructPtr(&encoder, args.pAllocator.GetPointer());
+    encoder.EncodeHandleIdArray(pipeline_ids, args.createInfoCount);
+    encoder.EncodeEnumValue(args.result);
 
     SetDeleteCurrentCall();
 }
 
-void VulkanShaderReplacementModifier::Process_vkCreateRayTracingPipelinesKHR(
-    const ApiCallInfo&                                               call_info,
-    VkResult                                                         returnValue,
-    format::HandleId                                                 device,
-    format::HandleId                                                 deferredOperation,
-    format::HandleId                                                 pipelineCache,
-    uint32_t                                                         createInfoCount,
-    StructPointerDecoder<Decoded_VkRayTracingPipelineCreateInfoKHR>* pCreateInfos,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>*             pAllocator,
-    HandlePointerDecoder<VkPipeline>*                                pPipelines)
+void VulkanShaderReplacementModifier::Process_vkCreateRayTracingPipelinesKHR(const ApiCallInfo& call_info,
+                                                                             args::CreateRayTracingPipelinesKHR& args)
 {
-    if (returnValue != VK_SUCCESS)
+    if (args.result != VK_SUCCESS)
     {
         return;
     }
 
-    GFXRECON_ASSERT(pCreateInfos != nullptr && pAllocator != nullptr && pPipelines != nullptr);
-
-    VkRayTracingPipelineCreateInfoKHR* pipeline_create_infos = pCreateInfos->GetPointer();
+    VkRayTracingPipelineCreateInfoKHR* pipeline_create_infos = args.pCreateInfos.GetPointer();
     GFXRECON_ASSERT(pipeline_create_infos != nullptr);
 
-    const format::HandleId* pipeline_ids = pPipelines->GetPointer();
+    const format::HandleId* pipeline_ids = args.pPipelines.GetPointer();
 
     bool replace_call = false;
-    for (uint32_t i = 0; i < createInfoCount; ++i)
+    for (uint32_t i = 0; i < args.createInfoCount; ++i)
     {
         const format::HandleId&            pipeline_id          = pipeline_ids[i];
         VkRayTracingPipelineCreateInfoKHR& pipeline_create_info = pipeline_create_infos[i];
@@ -333,42 +290,33 @@ void VulkanShaderReplacementModifier::Process_vkCreateRayTracingPipelinesKHR(
 
     encode::ParameterEncoder encoder(&new_call->parameter_buffer);
 
-    encoder.EncodeHandleIdValue(device);
-    encoder.EncodeHandleIdValue(deferredOperation);
-    encoder.EncodeHandleIdValue(pipelineCache);
-    encoder.EncodeUInt32Value(createInfoCount);
-    encode::EncodeStructArray(&encoder, pipeline_create_infos, createInfoCount);
-    encode::EncodeStructPtr(&encoder, pAllocator->GetPointer());
-    encoder.EncodeHandleIdArray(pipeline_ids, createInfoCount);
-    encoder.EncodeEnumValue(returnValue);
+    encoder.EncodeHandleIdValue(args.device);
+    encoder.EncodeHandleIdValue(args.deferredOperation);
+    encoder.EncodeHandleIdValue(args.pipelineCache);
+    encoder.EncodeUInt32Value(args.createInfoCount);
+    encode::EncodeStructArray(&encoder, pipeline_create_infos, args.createInfoCount);
+    encode::EncodeStructPtr(&encoder, args.pAllocator.GetPointer());
+    encoder.EncodeHandleIdArray(pipeline_ids, args.createInfoCount);
+    encoder.EncodeEnumValue(args.result);
 
     SetDeleteCurrentCall();
 }
 
-void VulkanShaderReplacementModifier::Process_vkCreateRayTracingPipelinesNV(
-    const ApiCallInfo&                                              call_info,
-    VkResult                                                        returnValue,
-    format::HandleId                                                device,
-    format::HandleId                                                pipelineCache,
-    uint32_t                                                        createInfoCount,
-    StructPointerDecoder<Decoded_VkRayTracingPipelineCreateInfoNV>* pCreateInfos,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>*            pAllocator,
-    HandlePointerDecoder<VkPipeline>*                               pPipelines)
+void VulkanShaderReplacementModifier::Process_vkCreateRayTracingPipelinesNV(const ApiCallInfo& call_info,
+                                                                            args::CreateRayTracingPipelinesNV& args)
 {
-    if (returnValue != VK_SUCCESS)
+    if (args.result != VK_SUCCESS)
     {
         return;
     }
 
-    GFXRECON_ASSERT(pCreateInfos != nullptr && pAllocator != nullptr && pPipelines != nullptr);
-
-    VkRayTracingPipelineCreateInfoNV* pipeline_create_infos = pCreateInfos->GetPointer();
+    VkRayTracingPipelineCreateInfoNV* pipeline_create_infos = args.pCreateInfos.GetPointer();
     GFXRECON_ASSERT(pipeline_create_infos != nullptr);
 
-    const format::HandleId* pipeline_ids = pPipelines->GetPointer();
+    const format::HandleId* pipeline_ids = args.pPipelines.GetPointer();
 
     bool replace_call = false;
-    for (uint32_t i = 0; i < createInfoCount; ++i)
+    for (uint32_t i = 0; i < args.createInfoCount; ++i)
     {
         const format::HandleId&           pipeline_id          = pipeline_ids[i];
         VkRayTracingPipelineCreateInfoNV& pipeline_create_info = pipeline_create_infos[i];
@@ -397,42 +345,32 @@ void VulkanShaderReplacementModifier::Process_vkCreateRayTracingPipelinesNV(
 
     encode::ParameterEncoder encoder(&new_call->parameter_buffer);
 
-    encoder.EncodeHandleIdValue(device);
-    encoder.EncodeHandleIdValue(pipelineCache);
-    encoder.EncodeUInt32Value(createInfoCount);
-    encode::EncodeStructArray(&encoder, pipeline_create_infos, createInfoCount);
-    encode::EncodeStructPtr(&encoder, pAllocator->GetPointer());
-    encoder.EncodeHandleIdArray(pipeline_ids, createInfoCount);
-    encoder.EncodeEnumValue(returnValue);
+    encoder.EncodeHandleIdValue(args.device);
+    encoder.EncodeHandleIdValue(args.pipelineCache);
+    encoder.EncodeUInt32Value(args.createInfoCount);
+    encode::EncodeStructArray(&encoder, pipeline_create_infos, args.createInfoCount);
+    encode::EncodeStructPtr(&encoder, args.pAllocator.GetPointer());
+    encoder.EncodeHandleIdArray(pipeline_ids, args.createInfoCount);
+    encoder.EncodeEnumValue(args.result);
 
     SetDeleteCurrentCall();
 }
 
-void VulkanShaderReplacementModifier::Process_vkCreateDataGraphPipelinesARM(
-    const ApiCallInfo&                                              call_info,
-    VkResult                                                        returnValue,
-    format::HandleId                                                device,
-    format::HandleId                                                deferredOperation,
-    format::HandleId                                                pipelineCache,
-    uint32_t                                                        createInfoCount,
-    StructPointerDecoder<Decoded_VkDataGraphPipelineCreateInfoARM>* pCreateInfos,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>*            pAllocator,
-    HandlePointerDecoder<VkPipeline>*                               pPipelines)
+void VulkanShaderReplacementModifier::Process_vkCreateDataGraphPipelinesARM(const ApiCallInfo& call_info,
+                                                                            args::CreateDataGraphPipelinesARM& args)
 {
-    if (returnValue != VK_SUCCESS)
+    if (args.result != VK_SUCCESS)
     {
         return;
     }
 
-    GFXRECON_ASSERT(pCreateInfos != nullptr && pAllocator != nullptr && pPipelines != nullptr);
-
-    VkDataGraphPipelineCreateInfoARM* pipeline_create_infos = pCreateInfos->GetPointer();
+    VkDataGraphPipelineCreateInfoARM* pipeline_create_infos = args.pCreateInfos.GetPointer();
     GFXRECON_ASSERT(pipeline_create_infos != nullptr);
 
-    const format::HandleId* pipeline_ids = pPipelines->GetPointer();
+    const format::HandleId* pipeline_ids = args.pPipelines.GetPointer();
 
     bool replace_call = false;
-    for (uint32_t i = 0; i < createInfoCount; ++i)
+    for (uint32_t i = 0; i < args.createInfoCount; ++i)
     {
         const format::HandleId&           pipeline_id          = pipeline_ids[i];
         VkDataGraphPipelineCreateInfoARM& pipeline_create_info = pipeline_create_infos[i];
@@ -478,14 +416,14 @@ void VulkanShaderReplacementModifier::Process_vkCreateDataGraphPipelinesARM(
 
     encode::ParameterEncoder encoder(&new_call->parameter_buffer);
 
-    encoder.EncodeHandleIdValue(device);
-    encoder.EncodeHandleIdValue(deferredOperation);
-    encoder.EncodeHandleIdValue(pipelineCache);
-    encoder.EncodeUInt32Value(createInfoCount);
-    encode::EncodeStructArray(&encoder, pipeline_create_infos, createInfoCount);
-    encode::EncodeStructPtr(&encoder, pAllocator->GetPointer());
-    encoder.EncodeHandleIdArray(pipeline_ids, createInfoCount);
-    encoder.EncodeEnumValue(returnValue);
+    encoder.EncodeHandleIdValue(args.device);
+    encoder.EncodeHandleIdValue(args.deferredOperation);
+    encoder.EncodeHandleIdValue(args.pipelineCache);
+    encoder.EncodeUInt32Value(args.createInfoCount);
+    encode::EncodeStructArray(&encoder, pipeline_create_infos, args.createInfoCount);
+    encode::EncodeStructPtr(&encoder, args.pAllocator.GetPointer());
+    encoder.EncodeHandleIdArray(pipeline_ids, args.createInfoCount);
+    encoder.EncodeEnumValue(args.result);
 
     SetDeleteCurrentCall();
 }

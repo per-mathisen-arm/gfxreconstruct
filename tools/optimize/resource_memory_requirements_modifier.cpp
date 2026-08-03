@@ -58,34 +58,25 @@ bool ResourceMemoryRequirementsModifier::CanOptimize()
     return false;
 }
 
-void ResourceMemoryRequirementsModifier::Process_vkCreateDevice(
-    const ApiCallInfo&                                   call_info,
-    VkResult                                             returnValue,
-    format::HandleId                                     physicalDevice,
-    StructPointerDecoder<Decoded_VkDeviceCreateInfo>*    pCreateInfo,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-    HandlePointerDecoder<VkDevice>*                      pDevice)
+void ResourceMemoryRequirementsModifier::Process_vkCreateDevice(const ApiCallInfo& call_info, args::CreateDevice& args)
 {
-    if (!IsModificationPass() || (returnValue != VK_SUCCESS))
+    if (!IsModificationPass() || (args.result != VK_SUCCESS))
     {
         return;
     }
 
-    if ((pDevice == nullptr) || (pDevice->GetPointer() == nullptr))
+    if (args.pDevice.GetPointer() == nullptr)
     {
         return;
     }
 
     GFXRECON_UNREFERENCED_PARAMETER(call_info);
-    GFXRECON_UNREFERENCED_PARAMETER(physicalDevice);
-    GFXRECON_UNREFERENCED_PARAMETER(pCreateInfo);
-    GFXRECON_UNREFERENCED_PARAMETER(pAllocator);
 
     format::arm::ResourceMemoryRequirementsCommandHeader header{};
     header.meta_header.block_header.type = format::BlockType::kMetaDataBlock;
     header.meta_header.meta_data_id      = format::MakeMetaDataId(format::ApiFamilyId::ApiFamily_Vulkan,
                                                              format::arm::MetaDataType::kMemoryRequirementsCommand);
-    header.device_id                     = *pDevice->GetPointer();
+    header.device_id                     = *args.pDevice.GetPointer();
 
     auto resources_iter = resources_memory_requirements_by_device_.find(header.device_id);
     if (resources_iter == resources_memory_requirements_by_device_.end())
@@ -321,148 +312,115 @@ void ResourceMemoryRequirementsModifier::GenerateAliasingGroups(std::vector<Reso
     }
 }
 
-void ResourceMemoryRequirementsModifier::Process_vkCreateBuffer(
-    const ApiCallInfo&                                   call_info,
-    VkResult                                             returnValue,
-    format::HandleId                                     device,
-    StructPointerDecoder<Decoded_VkBufferCreateInfo>*    pCreateInfo,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-    HandlePointerDecoder<VkBuffer>*                      handle)
+void ResourceMemoryRequirementsModifier::Process_vkCreateBuffer(const ApiCallInfo& call_info, args::CreateBuffer& args)
 {
-    if (IsModificationPass() || returnValue != VK_SUCCESS)
+    if (IsModificationPass() || args.result != VK_SUCCESS)
     {
         return;
     }
 
-    auto& device_resources                                     = resources_memory_requirements_by_device_[device];
+    auto& device_resources                                     = resources_memory_requirements_by_device_[args.device];
     auto& resource_memory_requirements                         = device_resources.emplace_back();
-    auto& device_index                                         = resource_index_by_device_[device];
-    resource_memory_requirements.resource_handle               = *handle->GetPointer();
+    auto& device_index                                         = resource_index_by_device_[args.device];
+    resource_memory_requirements.resource_handle               = *args.pBuffer.GetPointer();
     device_index[resource_memory_requirements.resource_handle] = device_resources.size() - 1;
     resource_memory_requirements.resource_type =
         format::arm::ResourceMemoryRequirementsPropertiesResourceType::kResourceTypeVkBuffer;
     encode::ParameterEncoder encoder(&resource_memory_requirements.encoded_create_info);
-    encode::EncodeStruct(&encoder, *pCreateInfo->GetPointer());
+    encode::EncodeStruct(&encoder, *args.pCreateInfo.GetPointer());
 
     GFXRECON_UNREFERENCED_PARAMETER(call_info);
-    GFXRECON_UNREFERENCED_PARAMETER(pAllocator);
 }
 
-void ResourceMemoryRequirementsModifier::Process_vkCreateImage(
-    const ApiCallInfo&                                   call_info,
-    VkResult                                             returnValue,
-    format::HandleId                                     device,
-    StructPointerDecoder<Decoded_VkImageCreateInfo>*     pCreateInfo,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-    HandlePointerDecoder<VkImage>*                       handle)
+void ResourceMemoryRequirementsModifier::Process_vkCreateImage(const ApiCallInfo& call_info, args::CreateImage& args)
 {
-    if (IsModificationPass() || returnValue != VK_SUCCESS)
+    if (IsModificationPass() || args.result != VK_SUCCESS)
     {
         return;
     }
 
-    auto& device_resources                                     = resources_memory_requirements_by_device_[device];
+    auto& device_resources                                     = resources_memory_requirements_by_device_[args.device];
     auto& resource_memory_requirements                         = device_resources.emplace_back();
-    auto& device_index                                         = resource_index_by_device_[device];
-    resource_memory_requirements.resource_handle               = *handle->GetPointer();
+    auto& device_index                                         = resource_index_by_device_[args.device];
+    resource_memory_requirements.resource_handle               = *args.pImage.GetPointer();
     device_index[resource_memory_requirements.resource_handle] = device_resources.size() - 1;
     resource_memory_requirements.resource_type =
         format::arm::ResourceMemoryRequirementsPropertiesResourceType::kResourceTypeVkImage;
     encode::ParameterEncoder encoder(&resource_memory_requirements.encoded_create_info);
-    encode::EncodeStruct(&encoder, *pCreateInfo->GetPointer());
+    encode::EncodeStruct(&encoder, *args.pCreateInfo.GetPointer());
 
     GFXRECON_UNREFERENCED_PARAMETER(call_info);
-    GFXRECON_UNREFERENCED_PARAMETER(pAllocator);
 }
 
-void ResourceMemoryRequirementsModifier::Process_vkCreateTensorARM(
-    const ApiCallInfo&                                   call_info,
-    VkResult                                             returnValue,
-    format::HandleId                                     device,
-    StructPointerDecoder<Decoded_VkTensorCreateInfoARM>* pCreateInfo,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-    HandlePointerDecoder<VkTensorARM>*                   handle)
+void ResourceMemoryRequirementsModifier::Process_vkCreateTensorARM(const ApiCallInfo&     call_info,
+                                                                   args::CreateTensorARM& args)
 
 {
-    if (IsModificationPass() || (returnValue != VK_SUCCESS))
+    if (IsModificationPass() || (args.result != VK_SUCCESS))
     {
         return;
     }
 
-    auto& device_resources                                     = resources_memory_requirements_by_device_[device];
+    auto& device_resources                                     = resources_memory_requirements_by_device_[args.device];
     auto& resource_memory_requirements                         = device_resources.emplace_back();
-    auto& device_index                                         = resource_index_by_device_[device];
-    resource_memory_requirements.resource_handle               = *handle->GetPointer();
+    auto& device_index                                         = resource_index_by_device_[args.device];
+    resource_memory_requirements.resource_handle               = *args.pTensor.GetPointer();
     device_index[resource_memory_requirements.resource_handle] = device_resources.size() - 1;
     resource_memory_requirements.resource_type =
         format::arm::ResourceMemoryRequirementsPropertiesResourceType::kResourceTypeVkTensor;
 
     encode::ParameterEncoder encoder(&resource_memory_requirements.encoded_create_info);
-    encode::EncodeStruct(&encoder, *pCreateInfo->GetPointer());
+    encode::EncodeStruct(&encoder, *args.pCreateInfo.GetPointer());
 
     GFXRECON_UNREFERENCED_PARAMETER(call_info);
-    GFXRECON_UNREFERENCED_PARAMETER(pAllocator);
 }
 
-void ResourceMemoryRequirementsModifier::Process_vkBindBufferMemory(const ApiCallInfo& call_info,
-                                                                    VkResult           returnValue,
-                                                                    format::HandleId   device,
-                                                                    format::HandleId   buffer,
-                                                                    format::HandleId   memory,
-                                                                    VkDeviceSize       memory_offset)
+void ResourceMemoryRequirementsModifier::Process_vkBindBufferMemory(const ApiCallInfo&      call_info,
+                                                                    args::BindBufferMemory& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    if (returnValue != VK_SUCCESS)
+    if (args.result != VK_SUCCESS)
     {
         return;
     }
 
-    TrackBind(device, buffer, memory, memory_offset, call_info.index, "buffer");
+    TrackBind(args.device, args.buffer, args.memory, args.memoryOffset, call_info.index, "buffer");
 }
 
-void ResourceMemoryRequirementsModifier::Process_vkBindImageMemory(const ApiCallInfo& call_info,
-                                                                   VkResult           returnValue,
-                                                                   format::HandleId   device,
-                                                                   format::HandleId   image,
-                                                                   format::HandleId   memory,
-                                                                   VkDeviceSize       memory_offset)
+void ResourceMemoryRequirementsModifier::Process_vkBindImageMemory(const ApiCallInfo&     call_info,
+                                                                   args::BindImageMemory& args)
 {
-    if (IsModificationPass() || returnValue != VK_SUCCESS)
+    if (IsModificationPass() || args.result != VK_SUCCESS)
     {
         return;
     }
 
-    TrackBind(device, image, memory, memory_offset, call_info.index, "image");
+    TrackBind(args.device, args.image, args.memory, args.memoryOffset, call_info.index, "image");
 }
 
-void ResourceMemoryRequirementsModifier::Process_vkBindBufferMemory2(
-    const ApiCallInfo&                                    call_info,
-    VkResult                                              returnValue,
-    format::HandleId                                      device,
-    uint32_t                                              bindInfoCount,
-    StructPointerDecoder<Decoded_VkBindBufferMemoryInfo>* pBindInfos)
+void ResourceMemoryRequirementsModifier::Process_vkBindBufferMemory2(const ApiCallInfo&       call_info,
+                                                                     args::BindBufferMemory2& args)
 {
-    if (IsModificationPass() || returnValue != VK_SUCCESS)
+    if (IsModificationPass() || args.result != VK_SUCCESS)
     {
         return;
     }
 
-    if ((pBindInfos == nullptr) || (pBindInfos->GetPointer() == nullptr) ||
-        (pBindInfos->GetMetaStructPointer() == nullptr))
+    if ((args.pBindInfos.GetPointer() == nullptr) || (args.pBindInfos.GetMetaStructPointer() == nullptr))
     {
         return;
     }
 
-    const VkBindBufferMemoryInfo*         bind_infos      = pBindInfos->GetPointer();
-    const Decoded_VkBindBufferMemoryInfo* bind_meta_infos = pBindInfos->GetMetaStructPointer();
+    const VkBindBufferMemoryInfo*         bind_infos      = args.pBindInfos.GetPointer();
+    const Decoded_VkBindBufferMemoryInfo* bind_meta_infos = args.pBindInfos.GetMetaStructPointer();
 
-    for (uint32_t i = 0; i < bindInfoCount; ++i)
+    for (uint32_t i = 0; i < args.bindInfoCount; ++i)
     {
-        TrackBind(device,
+        TrackBind(args.device,
                   bind_meta_infos[i].buffer,
                   bind_meta_infos[i].memory,
                   bind_infos[i].memoryOffset,
@@ -471,45 +429,57 @@ void ResourceMemoryRequirementsModifier::Process_vkBindBufferMemory2(
     }
 }
 
-void ResourceMemoryRequirementsModifier::Process_vkBindBufferMemory2KHR(
-    const ApiCallInfo&                                    call_info,
-    VkResult                                              returnValue,
-    format::HandleId                                      device,
-    uint32_t                                              bindInfoCount,
-    StructPointerDecoder<Decoded_VkBindBufferMemoryInfo>* pBindInfos)
+void ResourceMemoryRequirementsModifier::Process_vkBindBufferMemory2KHR(const ApiCallInfo&          call_info,
+                                                                        args::BindBufferMemory2KHR& args)
 {
-    Process_vkBindBufferMemory2(call_info, returnValue, device, bindInfoCount, pBindInfos);
+    if (IsModificationPass() || args.result != VK_SUCCESS)
+    {
+        return;
+    }
+
+    if ((args.pBindInfos.GetPointer() == nullptr) || (args.pBindInfos.GetMetaStructPointer() == nullptr))
+    {
+        return;
+    }
+
+    const VkBindBufferMemoryInfo*         bind_infos      = args.pBindInfos.GetPointer();
+    const Decoded_VkBindBufferMemoryInfo* bind_meta_infos = args.pBindInfos.GetMetaStructPointer();
+
+    for (uint32_t i = 0; i < args.bindInfoCount; ++i)
+    {
+        TrackBind(args.device,
+                  bind_meta_infos[i].buffer,
+                  bind_meta_infos[i].memory,
+                  bind_infos[i].memoryOffset,
+                  call_info.index,
+                  "buffer");
+    }
 }
 
-void ResourceMemoryRequirementsModifier::Process_vkBindImageMemory2(
-    const ApiCallInfo&                                   call_info,
-    VkResult                                             returnValue,
-    format::HandleId                                     device,
-    uint32_t                                             bindInfoCount,
-    StructPointerDecoder<Decoded_VkBindImageMemoryInfo>* pBindInfos)
+void ResourceMemoryRequirementsModifier::Process_vkBindImageMemory2(const ApiCallInfo&      call_info,
+                                                                    args::BindImageMemory2& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    if (returnValue != VK_SUCCESS)
+    if (args.result != VK_SUCCESS)
     {
         return;
     }
 
-    if ((pBindInfos == nullptr) || (pBindInfos->GetPointer() == nullptr) ||
-        (pBindInfos->GetMetaStructPointer() == nullptr))
+    if ((args.pBindInfos.GetPointer() == nullptr) || (args.pBindInfos.GetMetaStructPointer() == nullptr))
     {
         return;
     }
 
-    const VkBindImageMemoryInfo*         bind_infos      = pBindInfos->GetPointer();
-    const Decoded_VkBindImageMemoryInfo* bind_meta_infos = pBindInfos->GetMetaStructPointer();
+    const VkBindImageMemoryInfo*         bind_infos      = args.pBindInfos.GetPointer();
+    const Decoded_VkBindImageMemoryInfo* bind_meta_infos = args.pBindInfos.GetMetaStructPointer();
 
-    for (uint32_t i = 0; i < bindInfoCount; ++i)
+    for (uint32_t i = 0; i < args.bindInfoCount; ++i)
     {
-        TrackBind(device,
+        TrackBind(args.device,
                   bind_meta_infos[i].image,
                   bind_meta_infos[i].memory,
                   bind_infos[i].memoryOffset,
@@ -518,40 +488,57 @@ void ResourceMemoryRequirementsModifier::Process_vkBindImageMemory2(
     }
 }
 
-void ResourceMemoryRequirementsModifier::Process_vkBindImageMemory2KHR(
-    const ApiCallInfo&                                   call_info,
-    VkResult                                             returnValue,
-    format::HandleId                                     device,
-    uint32_t                                             bindInfoCount,
-    StructPointerDecoder<Decoded_VkBindImageMemoryInfo>* pBindInfos)
+void ResourceMemoryRequirementsModifier::Process_vkBindImageMemory2KHR(const ApiCallInfo&         call_info,
+                                                                       args::BindImageMemory2KHR& args)
 {
-    Process_vkBindImageMemory2(call_info, returnValue, device, bindInfoCount, pBindInfos);
+    if (IsModificationPass())
+    {
+        return;
+    }
+
+    if (args.result != VK_SUCCESS)
+    {
+        return;
+    }
+
+    if ((args.pBindInfos.GetPointer() == nullptr) || (args.pBindInfos.GetMetaStructPointer() == nullptr))
+    {
+        return;
+    }
+
+    const VkBindImageMemoryInfo*         bind_infos      = args.pBindInfos.GetPointer();
+    const Decoded_VkBindImageMemoryInfo* bind_meta_infos = args.pBindInfos.GetMetaStructPointer();
+
+    for (uint32_t i = 0; i < args.bindInfoCount; ++i)
+    {
+        TrackBind(args.device,
+                  bind_meta_infos[i].image,
+                  bind_meta_infos[i].memory,
+                  bind_infos[i].memoryOffset,
+                  call_info.index,
+                  "image");
+    }
 }
 
-void ResourceMemoryRequirementsModifier::Process_vkBindTensorMemoryARM(
-    const ApiCallInfo&                                       call_info,
-    VkResult                                                 returnValue,
-    format::HandleId                                         device,
-    uint32_t                                                 bindInfoCount,
-    StructPointerDecoder<Decoded_VkBindTensorMemoryInfoARM>* pBindInfos)
+void ResourceMemoryRequirementsModifier::Process_vkBindTensorMemoryARM(const ApiCallInfo&         call_info,
+                                                                       args::BindTensorMemoryARM& args)
 {
-    if (IsModificationPass() || returnValue != VK_SUCCESS)
+    if (IsModificationPass() || args.result != VK_SUCCESS)
     {
         return;
     }
 
-    if ((pBindInfos == nullptr) || (pBindInfos->GetPointer() == nullptr) ||
-        (pBindInfos->GetMetaStructPointer() == nullptr))
+    if ((args.pBindInfos.GetPointer() == nullptr) || (args.pBindInfos.GetMetaStructPointer() == nullptr))
     {
         return;
     }
 
-    const VkBindTensorMemoryInfoARM*         bind_infos      = pBindInfos->GetPointer();
-    const Decoded_VkBindTensorMemoryInfoARM* bind_meta_infos = pBindInfos->GetMetaStructPointer();
+    const VkBindTensorMemoryInfoARM*         bind_infos      = args.pBindInfos.GetPointer();
+    const Decoded_VkBindTensorMemoryInfoARM* bind_meta_infos = args.pBindInfos.GetMetaStructPointer();
 
-    for (uint32_t i = 0; i < bindInfoCount; ++i)
+    for (uint32_t i = 0; i < args.bindInfoCount; ++i)
     {
-        TrackBind(device,
+        TrackBind(args.device,
                   bind_meta_infos[i].tensor,
                   bind_meta_infos[i].memory,
                   bind_infos[i].memoryOffset,
@@ -560,52 +547,36 @@ void ResourceMemoryRequirementsModifier::Process_vkBindTensorMemoryARM(
     }
 }
 
-void ResourceMemoryRequirementsModifier::Process_vkDestroyBuffer(
-    const ApiCallInfo&                                   call_info,
-    format::HandleId                                     device,
-    format::HandleId                                     buffer,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator)
+void ResourceMemoryRequirementsModifier::Process_vkDestroyBuffer(const ApiCallInfo&   call_info,
+                                                                 args::DestroyBuffer& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    OnResourceDestroyCall(device, buffer, call_info.index);
-
-    GFXRECON_UNREFERENCED_PARAMETER(pAllocator);
+    OnResourceDestroyCall(args.device, args.buffer, call_info.index);
 }
 
-void ResourceMemoryRequirementsModifier::Process_vkDestroyImage(
-    const ApiCallInfo&                                   call_info,
-    format::HandleId                                     device,
-    format::HandleId                                     image,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator)
+void ResourceMemoryRequirementsModifier::Process_vkDestroyImage(const ApiCallInfo& call_info, args::DestroyImage& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    OnResourceDestroyCall(device, image, call_info.index);
-
-    GFXRECON_UNREFERENCED_PARAMETER(pAllocator);
+    OnResourceDestroyCall(args.device, args.image, call_info.index);
 }
 
-void ResourceMemoryRequirementsModifier::Process_vkDestroyTensorARM(
-    const ApiCallInfo&                                   call_info,
-    format::HandleId                                     device,
-    format::HandleId                                     tensor,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator)
+void ResourceMemoryRequirementsModifier::Process_vkDestroyTensorARM(const ApiCallInfo&      call_info,
+                                                                    args::DestroyTensorARM& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    OnResourceDestroyCall(device, tensor, call_info.index);
-
-    GFXRECON_UNREFERENCED_PARAMETER(pAllocator);
+    OnResourceDestroyCall(args.device, args.tensor, call_info.index);
 }
 
 void ResourceMemoryRequirementsModifier::OnResourceDestroyCall(format::HandleId device_id,

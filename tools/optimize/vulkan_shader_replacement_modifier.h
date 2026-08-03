@@ -40,72 +40,22 @@ class VulkanShaderReplacementModifier : public util::VulkanModifierBase
 
     bool CanOptimize() override { return !shaders_.empty(); };
 
-    virtual void Process_vkCreateShaderModule(const ApiCallInfo&                                      call_info,
-                                              VkResult                                                returnValue,
-                                              format::HandleId                                        device,
-                                              StructPointerDecoder<Decoded_VkShaderModuleCreateInfo>* pCreateInfo,
-                                              StructPointerDecoder<Decoded_VkAllocationCallbacks>*    pAllocator,
-                                              HandlePointerDecoder<VkShaderModule>* pShaderModule) override;
+    void Process_vkCreateShaderModule(const ApiCallInfo& call_info, args::CreateShaderModule& args) override;
 
-    virtual void Process_vkCreateShadersEXT(const ApiCallInfo&                                   call_info,
-                                            VkResult                                             returnValue,
-                                            format::HandleId                                     device,
-                                            uint32_t                                             createInfoCount,
-                                            StructPointerDecoder<Decoded_VkShaderCreateInfoEXT>* pCreateInfos,
-                                            StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-                                            HandlePointerDecoder<VkShaderEXT>*                   pShaders) override;
+    void Process_vkCreateShadersEXT(const ApiCallInfo& call_info, args::CreateShadersEXT& args) override;
 
-    virtual void
-    Process_vkCreateGraphicsPipelines(const ApiCallInfo&                                          call_info,
-                                      VkResult                                                    returnValue,
-                                      format::HandleId                                            device,
-                                      format::HandleId                                            pipelineCache,
-                                      uint32_t                                                    createInfoCount,
-                                      StructPointerDecoder<Decoded_VkGraphicsPipelineCreateInfo>* pCreateInfos,
-                                      StructPointerDecoder<Decoded_VkAllocationCallbacks>*        pAllocator,
-                                      HandlePointerDecoder<VkPipeline>*                           pPipelines) override;
+    void Process_vkCreateGraphicsPipelines(const ApiCallInfo& call_info, args::CreateGraphicsPipelines& args) override;
 
-    virtual void
-    Process_vkCreateComputePipelines(const ApiCallInfo&                                         call_info,
-                                     VkResult                                                   returnValue,
-                                     format::HandleId                                           device,
-                                     format::HandleId                                           pipelineCache,
-                                     uint32_t                                                   createInfoCount,
-                                     StructPointerDecoder<Decoded_VkComputePipelineCreateInfo>* pCreateInfos,
-                                     StructPointerDecoder<Decoded_VkAllocationCallbacks>*       pAllocator,
-                                     HandlePointerDecoder<VkPipeline>*                          pPipelines) override;
+    void Process_vkCreateComputePipelines(const ApiCallInfo& call_info, args::CreateComputePipelines& args) override;
 
-    virtual void Process_vkCreateRayTracingPipelinesKHR(
-        const ApiCallInfo&                                               call_info,
-        VkResult                                                         returnValue,
-        format::HandleId                                                 device,
-        format::HandleId                                                 deferredOperation,
-        format::HandleId                                                 pipelineCache,
-        uint32_t                                                         createInfoCount,
-        StructPointerDecoder<Decoded_VkRayTracingPipelineCreateInfoKHR>* pCreateInfos,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>*             pAllocator,
-        HandlePointerDecoder<VkPipeline>*                                pPipelines) override;
+    void Process_vkCreateRayTracingPipelinesKHR(const ApiCallInfo&                  call_info,
+                                                args::CreateRayTracingPipelinesKHR& args) override;
 
-    virtual void
-    Process_vkCreateRayTracingPipelinesNV(const ApiCallInfo& call_info,
-                                          VkResult           returnValue,
-                                          format::HandleId   device,
-                                          format::HandleId   pipelineCache,
-                                          uint32_t           createInfoCount,
-                                          StructPointerDecoder<Decoded_VkRayTracingPipelineCreateInfoNV>* pCreateInfos,
-                                          StructPointerDecoder<Decoded_VkAllocationCallbacks>*            pAllocator,
-                                          HandlePointerDecoder<VkPipeline>* pPipelines) override;
+    void Process_vkCreateRayTracingPipelinesNV(const ApiCallInfo&                 call_info,
+                                               args::CreateRayTracingPipelinesNV& args) override;
 
-    virtual void
-    Process_vkCreateDataGraphPipelinesARM(const ApiCallInfo& call_info,
-                                          VkResult           returnValue,
-                                          format::HandleId   device,
-                                          format::HandleId   deferredOperation,
-                                          format::HandleId   pipelineCache,
-                                          uint32_t           createInfoCount,
-                                          StructPointerDecoder<Decoded_VkDataGraphPipelineCreateInfoARM>* pCreateInfos,
-                                          StructPointerDecoder<Decoded_VkAllocationCallbacks>*            pAllocator,
-                                          HandlePointerDecoder<VkPipeline>* pPipelines) override;
+    void Process_vkCreateDataGraphPipelinesARM(const ApiCallInfo&                 call_info,
+                                               args::CreateDataGraphPipelinesARM& args) override;
 
   private:
     bool TryLoadShader(const std::string& file_name);

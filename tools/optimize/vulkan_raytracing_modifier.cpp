@@ -52,58 +52,46 @@ bool VulkanRayTracingModifier::CanOptimize()
     return true;
 }
 
-void VulkanRayTracingModifier::Process_vkGetBufferDeviceAddress(
-    const ApiCallInfo&                                       call_info,
-    VkDeviceAddress                                          returnValue,
-    format::HandleId                                         device,
-    StructPointerDecoder<Decoded_VkBufferDeviceAddressInfo>* pInfo)
+void VulkanRayTracingModifier::Process_vkGetBufferDeviceAddress(const ApiCallInfo&            call_info,
+                                                                args::GetBufferDeviceAddress& args)
 {
     if (IsModificationPass())
     {
         return;
     }
-    const auto& buffer_id                     = pInfo->GetMetaStructPointer()->buffer;
-    buffer_device_addresses_[returnValue]     = buffer_id;
-    buffer_entries_[buffer_id].device_address = returnValue;
+    const auto& buffer_id                     = args.pInfo.GetMetaStructPointer()->buffer;
+    buffer_device_addresses_[args.result]     = buffer_id;
+    buffer_entries_[buffer_id].device_address = args.result;
 }
 
-void VulkanRayTracingModifier::Process_vkGetBufferDeviceAddressKHR(
-    const ApiCallInfo&                                       call_info,
-    VkDeviceAddress                                          returnValue,
-    format::HandleId                                         device,
-    StructPointerDecoder<Decoded_VkBufferDeviceAddressInfo>* pInfo)
+void VulkanRayTracingModifier::Process_vkGetBufferDeviceAddressKHR(const ApiCallInfo&               call_info,
+                                                                   args::GetBufferDeviceAddressKHR& args)
 {
     if (IsModificationPass())
     {
         return;
     }
-    const auto& buffer_id                     = pInfo->GetMetaStructPointer()->buffer;
-    buffer_device_addresses_[returnValue]     = buffer_id;
-    buffer_entries_[buffer_id].device_address = returnValue;
+    const auto& buffer_id                     = args.pInfo.GetMetaStructPointer()->buffer;
+    buffer_device_addresses_[args.result]     = buffer_id;
+    buffer_entries_[buffer_id].device_address = args.result;
 }
 
-void VulkanRayTracingModifier::Process_vkGetBufferDeviceAddressEXT(
-    const ApiCallInfo&                                       call_info,
-    VkDeviceAddress                                          returnValue,
-    format::HandleId                                         device,
-    StructPointerDecoder<Decoded_VkBufferDeviceAddressInfo>* pInfo)
+void VulkanRayTracingModifier::Process_vkGetBufferDeviceAddressEXT(const ApiCallInfo&               call_info,
+                                                                   args::GetBufferDeviceAddressEXT& args)
 {
     if (IsModificationPass())
     {
         return;
     }
-    const auto& buffer_id                     = pInfo->GetMetaStructPointer()->buffer;
-    buffer_device_addresses_[returnValue]     = buffer_id;
-    buffer_entries_[buffer_id].device_address = returnValue;
+    const auto& buffer_id                     = args.pInfo.GetMetaStructPointer()->buffer;
+    buffer_device_addresses_[args.result]     = buffer_id;
+    buffer_entries_[buffer_id].device_address = args.result;
 }
 
 void VulkanRayTracingModifier::Process_vkGetAccelerationStructureDeviceAddressKHR(
-    const ApiCallInfo&                                                         call_info,
-    VkDeviceAddress                                                            returnValue,
-    format::HandleId                                                           device,
-    StructPointerDecoder<Decoded_VkAccelerationStructureDeviceAddressInfoKHR>* pInfo)
+    const ApiCallInfo& call_info, args::GetAccelerationStructureDeviceAddressKHR& args)
 {
-    const auto& as_id = pInfo->GetMetaStructPointer()->accelerationStructure;
+    const auto& as_id = args.pInfo.GetMetaStructPointer()->accelerationStructure;
     if (IsModificationPass())
     {
         if (options_.remove_rt)
@@ -122,39 +110,33 @@ void VulkanRayTracingModifier::Process_vkGetAccelerationStructureDeviceAddressKH
 
             gfxrecon::encode::ParameterEncoder encoder(
                 &acceleration_structure_build_infos_[as_id].get_address_parameter_buffer);
-            encoder.EncodeHandleIdValue(device);
-            encoder.EncodeStructPtrPreamble(pInfo->GetPointer());
-            encoder.EncodeEnumValue(pInfo->GetPointer()->sType);
-            encode::EncodePNextStruct(&encoder, pInfo->GetPointer()->pNext);
+            encoder.EncodeHandleIdValue(args.device);
+            encoder.EncodeStructPtrPreamble(args.pInfo.GetPointer());
+            encoder.EncodeEnumValue(args.pInfo.GetPointer()->sType);
+            encode::EncodePNextStruct(&encoder, args.pInfo.GetPointer()->pNext);
             encoder.EncodeHandleIdValue(as_id);
-            encoder.EncodeHandleIdValue(returnValue);
+            encoder.EncodeHandleIdValue(args.result);
         }
         return;
     }
 
     auto [it, inserted] =
-        acceleration_structure_device_addresses_.try_emplace(returnValue, std::unordered_set<format::HandleId>{});
+        acceleration_structure_device_addresses_.try_emplace(args.result, std::unordered_set<format::HandleId>{});
     it->second.insert(as_id);
 
-    acceleration_structure_entries_[as_id].device_address = returnValue;
+    acceleration_structure_entries_[as_id].device_address = args.result;
 
     if (acceleration_structure_entries_.find(as_id) != acceleration_structure_entries_.end())
     {
-        if (buffer_device_addresses_.find(returnValue) != buffer_device_addresses_.end())
+        if (buffer_device_addresses_.find(args.result) != buffer_device_addresses_.end())
         {
-            buffer_device_addresses_.erase(returnValue);
+            buffer_device_addresses_.erase(args.result);
         }
     }
 }
 
-void VulkanRayTracingModifier::Process_vkGetRayTracingShaderGroupHandlesKHR(const ApiCallInfo&       call_info,
-                                                                            VkResult                 returnValue,
-                                                                            format::HandleId         device,
-                                                                            format::HandleId         pipeline,
-                                                                            uint32_t                 firstGroup,
-                                                                            uint32_t                 groupCount,
-                                                                            size_t                   dataSize,
-                                                                            PointerDecoder<uint8_t>* pData)
+void VulkanRayTracingModifier::Process_vkGetRayTracingShaderGroupHandlesKHR(
+    const ApiCallInfo& call_info, args::GetRayTracingShaderGroupHandlesKHR& args)
 {
     if (IsModificationPass())
     {
@@ -166,23 +148,22 @@ void VulkanRayTracingModifier::Process_vkGetRayTracingShaderGroupHandlesKHR(cons
         return;
     }
 
-    const auto single_entry_size = dataSize / groupCount;
+    const auto single_entry_size = args.dataSize / args.groupCount;
     assert(single_entry_size == format::kMaxShaderGroupHandleSize);
-    assert(pData != nullptr);
 
-    for (int group = 0; group < groupCount; group++)
+    for (int group = 0; group < args.groupCount; group++)
     {
-        uint8_t* ptr = (uint8_t*)pData->GetPointer() + group * single_entry_size;
+        uint8_t* ptr = (uint8_t*)args.pData.GetPointer() + group * single_entry_size;
 
         std::vector<uint8_t> data_zero_handle(single_entry_size, 0);
         if (0 != memcmp(ptr, data_zero_handle.data(), single_entry_size))
         {
             format::ShaderHandleLocationInfo loc{};
-            loc.id         = pipeline;
-            loc.group      = firstGroup + group;
+            loc.id         = args.pipeline;
+            loc.group      = args.firstGroup + group;
             loc.group_size = single_entry_size;
             memcpy(loc.original_handles, ptr, single_entry_size);
-            shader_group_handle_entries_[pipeline][firstGroup + group] = loc;
+            shader_group_handle_entries_[args.pipeline][args.firstGroup + group] = loc;
         }
     }
 }
@@ -625,65 +606,51 @@ void VulkanRayTracingModifier::ProcessSetOpaqueAddressCommand(format::HandleId d
     }
 }
 
-void VulkanRayTracingModifier::Process_vkCreateBuffer(const ApiCallInfo&                                   call_info,
-                                                      VkResult                                             returnValue,
-                                                      format::HandleId                                     device,
-                                                      StructPointerDecoder<Decoded_VkBufferCreateInfo>*    pCreateInfo,
-                                                      StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-                                                      HandlePointerDecoder<VkBuffer>*                      pBuffer)
+void VulkanRayTracingModifier::Process_vkCreateBuffer(const ApiCallInfo& call_info, args::CreateBuffer& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    format::HandleId handle                   = *pBuffer->GetPointer();
+    format::HandleId handle                   = *args.pBuffer.GetPointer();
     buffer_entries_[handle].handle            = handle;
-    buffer_entries_[handle].size              = pCreateInfo->GetPointer()->size;
-    buffer_entries_[handle].usage             = pCreateInfo->GetPointer()->usage;
-    buffer_entries_[handle].flags             = pCreateInfo->GetPointer()->flags;
+    buffer_entries_[handle].size              = args.pCreateInfo.GetPointer()->size;
+    buffer_entries_[handle].usage             = args.pCreateInfo.GetPointer()->usage;
+    buffer_entries_[handle].flags             = args.pCreateInfo.GetPointer()->flags;
     buffer_entries_[handle].creation_index    = call_info.index;
     buffer_entries_[handle].destruction_index = UINT64_MAX;
 }
 
-void VulkanRayTracingModifier::Process_vkDestroyBuffer(const ApiCallInfo&                                   call_info,
-                                                       format::HandleId                                     device,
-                                                       format::HandleId                                     buffer,
-                                                       StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator)
+void VulkanRayTracingModifier::Process_vkDestroyBuffer(const ApiCallInfo& call_info, args::DestroyBuffer& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    if (buffer_entries_.find(buffer) != buffer_entries_.end())
+    if (buffer_entries_.find(args.buffer) != buffer_entries_.end())
     {
-        buffer_entries_[buffer].destruction_index = call_info.index;
+        buffer_entries_[args.buffer].destruction_index = call_info.index;
     }
 }
 
-void VulkanRayTracingModifier::Process_vkAllocateMemory(
-    const ApiCallInfo&                                   call_info,
-    VkResult                                             returnValue,
-    format::HandleId                                     device,
-    StructPointerDecoder<Decoded_VkMemoryAllocateInfo>*  pAllocateInfo,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-    HandlePointerDecoder<VkDeviceMemory>*                pMemory)
+void VulkanRayTracingModifier::Process_vkAllocateMemory(const ApiCallInfo& call_info, args::AllocateMemory& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    format::HandleId handle                           = *pMemory->GetPointer();
+    format::HandleId handle                           = *args.pMemory.GetPointer();
     memory_binding_entries_[handle].handle            = handle;
-    memory_binding_entries_[handle].size              = pAllocateInfo->GetPointer()->allocationSize;
-    memory_binding_entries_[handle].type_index        = pAllocateInfo->GetPointer()->memoryTypeIndex;
+    memory_binding_entries_[handle].size              = args.pAllocateInfo.GetPointer()->allocationSize;
+    memory_binding_entries_[handle].type_index        = args.pAllocateInfo.GetPointer()->memoryTypeIndex;
     memory_binding_entries_[handle].creation_index    = call_info.index;
     memory_binding_entries_[handle].destruction_index = UINT64_MAX;
-    if (pAllocateInfo->GetPointer()->pNext)
+    if (args.pAllocateInfo.GetPointer()->pNext)
     {
-        VkMemoryAllocateFlagsInfo* info = (VkMemoryAllocateFlagsInfo*)(pAllocateInfo->GetPointer()->pNext);
+        VkMemoryAllocateFlagsInfo* info = (VkMemoryAllocateFlagsInfo*)(args.pAllocateInfo.GetPointer()->pNext);
         if (info->sType == VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO)
         {
             memory_binding_entries_[handle].flags = info->flags;
@@ -691,80 +658,50 @@ void VulkanRayTracingModifier::Process_vkAllocateMemory(
     }
 }
 
-void VulkanRayTracingModifier::Process_vkFreeMemory(const ApiCallInfo&                                   call_info,
-                                                    format::HandleId                                     device,
-                                                    format::HandleId                                     memory,
-                                                    StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator)
+void VulkanRayTracingModifier::Process_vkFreeMemory(const ApiCallInfo& call_info, args::FreeMemory& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    if (memory_binding_entries_.find(memory) != memory_binding_entries_.end())
+    if (memory_binding_entries_.find(args.memory) != memory_binding_entries_.end())
     {
-        memory_binding_entries_[memory].destruction_index = call_info.index;
+        memory_binding_entries_[args.memory].destruction_index = call_info.index;
     }
 }
 
-void VulkanRayTracingModifier::Process_vkBindBufferMemory(const ApiCallInfo& call_info,
-                                                          VkResult           returnValue,
-                                                          format::HandleId   device,
-                                                          format::HandleId   buffer,
-                                                          format::HandleId   memory,
-                                                          VkDeviceSize       memory_offset)
+void VulkanRayTracingModifier::Process_vkBindBufferMemory(const ApiCallInfo& call_info, args::BindBufferMemory& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    if (memory_binding_entries_.find(memory) != memory_binding_entries_.end())
+    if (memory_binding_entries_.find(args.memory) != memory_binding_entries_.end())
     {
-        memory_binding_entries_[memory].memory_binding_records_.push_back({ buffer, true, memory_offset });
+        memory_binding_entries_[args.memory].memory_binding_records_.push_back(
+            { args.buffer, true, args.memoryOffset });
     }
 
-    auto buffer_entry = buffer_entries_.find(buffer);
+    auto buffer_entry = buffer_entries_.find(args.buffer);
     GFXRECON_ASSERT(buffer_entry != buffer_entries_.end());
     GFXRECON_ASSERT(buffer_entry->second.memory_handle_id == 0);
-    buffer_entry->second.memory_handle_id = memory;
-    buffer_entry->second.memory_offset    = memory_offset;
+    buffer_entry->second.memory_handle_id = args.memory;
+    buffer_entry->second.memory_offset    = args.memoryOffset;
 }
 
-void VulkanRayTracingModifier::Process_vkBindImageMemory(const ApiCallInfo& call_info,
-                                                         VkResult           returnValue,
-                                                         format::HandleId   device,
-                                                         format::HandleId   image,
-                                                         format::HandleId   memory,
-                                                         VkDeviceSize       memory_offset)
+void VulkanRayTracingModifier::Process_vkBindBufferMemory2(const ApiCallInfo& call_info, args::BindBufferMemory2& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    if (memory_binding_entries_.find(memory) != memory_binding_entries_.end())
-    {
-        memory_binding_entries_[memory].memory_binding_records_.push_back({ image, false, memory_offset });
-    }
-}
+    const VkBindBufferMemoryInfo*         bind_infos      = args.pBindInfos.GetPointer();
+    const Decoded_VkBindBufferMemoryInfo* bind_meta_infos = args.pBindInfos.GetMetaStructPointer();
 
-void VulkanRayTracingModifier::Process_vkBindBufferMemory2(
-    const ApiCallInfo&                                    call_info,
-    VkResult                                              returnValue,
-    format::HandleId                                      device,
-    uint32_t                                              bindInfoCount,
-    StructPointerDecoder<Decoded_VkBindBufferMemoryInfo>* pBindInfos)
-{
-    if (IsModificationPass())
-    {
-        return;
-    }
-
-    const VkBindBufferMemoryInfo*         bind_infos      = pBindInfos->GetPointer();
-    const Decoded_VkBindBufferMemoryInfo* bind_meta_infos = pBindInfos->GetMetaStructPointer();
-
-    for (uint32_t i = 0; i < bindInfoCount; ++i)
+    for (uint32_t i = 0; i < args.bindInfoCount; ++i)
     {
         if (memory_binding_entries_.find(bind_meta_infos[i].memory) != memory_binding_entries_.end())
         {
@@ -780,32 +717,58 @@ void VulkanRayTracingModifier::Process_vkBindBufferMemory2(
     }
 }
 
-void VulkanRayTracingModifier::Process_vkBindBufferMemory2KHR(
-    const ApiCallInfo&                                    call_info,
-    VkResult                                              returnValue,
-    format::HandleId                                      device,
-    uint32_t                                              bindInfoCount,
-    StructPointerDecoder<Decoded_VkBindBufferMemoryInfo>* pBindInfos)
-{
-    Process_vkBindBufferMemory2(call_info, returnValue, device, bindInfoCount, pBindInfos);
-}
-
-void VulkanRayTracingModifier::Process_vkBindImageMemory2(
-    const ApiCallInfo&                                   call_info,
-    VkResult                                             returnValue,
-    format::HandleId                                     device,
-    uint32_t                                             bindInfoCount,
-    StructPointerDecoder<Decoded_VkBindImageMemoryInfo>* pBindInfos)
+void VulkanRayTracingModifier::Process_vkBindBufferMemory2KHR(const ApiCallInfo&          call_info,
+                                                              args::BindBufferMemory2KHR& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    const VkBindImageMemoryInfo*         bind_infos      = pBindInfos->GetPointer();
-    const Decoded_VkBindImageMemoryInfo* bind_meta_infos = pBindInfos->GetMetaStructPointer();
+    const VkBindBufferMemoryInfo*         bind_infos      = args.pBindInfos.GetPointer();
+    const Decoded_VkBindBufferMemoryInfo* bind_meta_infos = args.pBindInfos.GetMetaStructPointer();
 
-    for (uint32_t i = 0; i < bindInfoCount; ++i)
+    for (uint32_t i = 0; i < args.bindInfoCount; ++i)
+    {
+        if (memory_binding_entries_.find(bind_meta_infos[i].memory) != memory_binding_entries_.end())
+        {
+            memory_binding_entries_[bind_meta_infos[i].memory].memory_binding_records_.push_back(
+                { bind_meta_infos[i].buffer, true, bind_infos[i].memoryOffset });
+        }
+
+        auto buffer_entry = buffer_entries_.find(bind_meta_infos[i].buffer);
+        GFXRECON_ASSERT(buffer_entry != buffer_entries_.end());
+        GFXRECON_ASSERT(buffer_entry->second.memory_handle_id == 0);
+        buffer_entry->second.memory_handle_id = bind_meta_infos[i].memory;
+        buffer_entry->second.memory_offset    = bind_infos[i].memoryOffset;
+    }
+}
+
+void VulkanRayTracingModifier::Process_vkBindImageMemory(const ApiCallInfo& call_info, args::BindImageMemory& args)
+{
+    if (IsModificationPass())
+    {
+        return;
+    }
+
+    if (memory_binding_entries_.find(args.memory) != memory_binding_entries_.end())
+    {
+        memory_binding_entries_[args.memory].memory_binding_records_.push_back(
+            { args.image, false, args.memoryOffset });
+    }
+}
+
+void VulkanRayTracingModifier::Process_vkBindImageMemory2(const ApiCallInfo& call_info, args::BindImageMemory2& args)
+{
+    if (IsModificationPass())
+    {
+        return;
+    }
+
+    const VkBindImageMemoryInfo*         bind_infos      = args.pBindInfos.GetPointer();
+    const Decoded_VkBindImageMemoryInfo* bind_meta_infos = args.pBindInfos.GetMetaStructPointer();
+
+    for (uint32_t i = 0; i < args.bindInfoCount; ++i)
     {
         if (memory_binding_entries_.find(bind_meta_infos[i].memory) != memory_binding_entries_.end())
         {
@@ -815,28 +778,23 @@ void VulkanRayTracingModifier::Process_vkBindImageMemory2(
     }
 }
 
-void VulkanRayTracingModifier::Process_vkCreateAccelerationStructureKHR(
-    const ApiCallInfo&                                                  call_info,
-    VkResult                                                            returnValue,
-    format::HandleId                                                    device,
-    StructPointerDecoder<Decoded_VkAccelerationStructureCreateInfoKHR>* pCreateInfo,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>*                pAllocator,
-    HandlePointerDecoder<VkAccelerationStructureKHR>*                   pAccelerationStructure)
+void VulkanRayTracingModifier::Process_vkCreateAccelerationStructureKHR(const ApiCallInfo&                    call_info,
+                                                                        args::CreateAccelerationStructureKHR& args)
 {
-    format::HandleId handle = *pAccelerationStructure->GetPointer();
+    format::HandleId handle = *args.pAccelerationStructure.GetPointer();
     if (!IsModificationPass())
     {
         auto [it, inserted]          = acceleration_structure_entries_.try_emplace(handle, AccelerationStructureInfo{});
         it->second.as_handle         = handle;
-        it->second.buf_handle        = pCreateInfo->GetMetaStructPointer()->buffer;
-        it->second.size              = pCreateInfo->GetPointer()->size;
-        it->second.offset            = pCreateInfo->GetPointer()->offset;
-        it->second.type              = pCreateInfo->GetPointer()->type;
+        it->second.buf_handle        = args.pCreateInfo.GetMetaStructPointer()->buffer;
+        it->second.size              = args.pCreateInfo.GetPointer()->size;
+        it->second.offset            = args.pCreateInfo.GetPointer()->offset;
+        it->second.type              = args.pCreateInfo.GetPointer()->type;
         it->second.bind_descriptor   = false;
         it->second.creation_index    = call_info.index;
         it->second.destruction_index = UINT64_MAX;
         VkDeviceAddress storage_buffer_address =
-            buffer_entries_[pCreateInfo->GetMetaStructPointer()->buffer].device_address;
+            buffer_entries_[args.pCreateInfo.GetMetaStructPointer()->buffer].device_address;
         if (storage_buffer_address != 0)
         {
             it->second.device_address = storage_buffer_address + it->second.offset;
@@ -900,7 +858,7 @@ void VulkanRayTracingModifier::Process_vkCreateAccelerationStructureKHR(
         if (total > 0 && !prim_counts_quieried.contains(total))
         {
             prim_counts_quieried.insert(total);
-            EncodeVkGetAccelerationStructureBuildSizesKHR(device, build_info_candidate->second);
+            EncodeVkGetAccelerationStructureBuildSizesKHR(args.device, build_info_candidate->second);
         }
     }
 
@@ -912,7 +870,7 @@ void VulkanRayTracingModifier::Process_vkCreateAccelerationStructureKHR(
 
     if (build_info->second.is_first_built)
     {
-        EncodeVkGetAccelerationStructureBuildSizesKHR(device, build_info->second);
+        EncodeVkGetAccelerationStructureBuildSizesKHR(args.device, build_info->second);
         return;
     }
 
@@ -922,21 +880,23 @@ void VulkanRayTracingModifier::Process_vkCreateAccelerationStructureKHR(
         // it will be inserted new AS function before ProcessVulkanCopyAccelerationStructuresCommand
         SetDeleteCurrentCall();
 
+        auto* pCreateInfoDec = args.pCreateInfo.GetPointer();
+
         gfxrecon::encode::ParameterEncoder encoder(
             &acceleration_structure_build_infos_[handle].create_parameter_buffer);
-        encoder.EncodeHandleIdValue(device);
-        encoder.EncodeStructPtrPreamble(pCreateInfo->GetPointer());
-        encoder.EncodeEnumValue(pCreateInfo->GetPointer()->sType);
-        encode::EncodePNextStruct(&encoder, pCreateInfo->GetPointer()->pNext);
-        encoder.EncodeFlagsValue(pCreateInfo->GetPointer()->createFlags);
-        encoder.EncodeHandleIdValue(pCreateInfo->GetMetaStructPointer()->buffer);
-        encoder.EncodeUInt64Value(pCreateInfo->GetPointer()->offset);
-        encoder.EncodeUInt64Value(pCreateInfo->GetPointer()->size);
-        encoder.EncodeEnumValue(pCreateInfo->GetPointer()->type);
-        encoder.EncodeUInt64Value(pCreateInfo->GetPointer()->deviceAddress);
-        encode::EncodeStructPtr(&encoder, pAllocator->GetPointer());
-        encoder.EncodeHandleIdPtr(pAccelerationStructure->GetPointer());
-        encoder.EncodeEnumValue(returnValue);
+        encoder.EncodeHandleIdValue(args.device);
+        encoder.EncodeStructPtrPreamble(pCreateInfoDec);
+        encoder.EncodeEnumValue(pCreateInfoDec->sType);
+        encode::EncodePNextStruct(&encoder, pCreateInfoDec->pNext);
+        encoder.EncodeFlagsValue(pCreateInfoDec->createFlags);
+        encoder.EncodeHandleIdValue(args.pCreateInfo.GetMetaStructPointer()->buffer);
+        encoder.EncodeUInt64Value(pCreateInfoDec->offset);
+        encoder.EncodeUInt64Value(pCreateInfoDec->size);
+        encoder.EncodeEnumValue(pCreateInfoDec->type);
+        encoder.EncodeUInt64Value(pCreateInfoDec->deviceAddress);
+        encode::EncodeStructPtr(&encoder, args.pAllocator.GetPointer());
+        encoder.EncodeHandleIdPtr(args.pAccelerationStructure.GetPointer());
+        encoder.EncodeEnumValue(args.result);
         return;
     }
 
@@ -963,12 +923,7 @@ void VulkanRayTracingModifier::Process_vkCreateAccelerationStructureKHR(
 }
 
 void VulkanRayTracingModifier::Process_vkGetAccelerationStructureBuildSizesKHR(
-    const ApiCallInfo&                                                         call_info,
-    format::HandleId                                                           device,
-    VkAccelerationStructureBuildTypeKHR                                        buildType,
-    StructPointerDecoder<Decoded_VkAccelerationStructureBuildGeometryInfoKHR>* pBuildInfo,
-    PointerDecoder<uint32_t>*                                                  pMaxPrimitiveCounts,
-    StructPointerDecoder<Decoded_VkAccelerationStructureBuildSizesInfoKHR>*    pSizeInfo)
+    const ApiCallInfo& call_info, args::GetAccelerationStructureBuildSizesKHR& args)
 {
     if (IsModificationPass())
     {
@@ -976,11 +931,8 @@ void VulkanRayTracingModifier::Process_vkGetAccelerationStructureBuildSizesKHR(
     }
 }
 
-void VulkanRayTracingModifier::Process_vkDestroyAccelerationStructureKHR(
-    const ApiCallInfo&                                   call_info,
-    format::HandleId                                     device,
-    format::HandleId                                     accelerationStructure,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator)
+void VulkanRayTracingModifier::Process_vkDestroyAccelerationStructureKHR(const ApiCallInfo& call_info,
+                                                                         args::DestroyAccelerationStructureKHR& args)
 {
     if (IsModificationPass())
     {
@@ -992,32 +944,17 @@ void VulkanRayTracingModifier::Process_vkDestroyAccelerationStructureKHR(
         return;
     }
 
-    if (acceleration_structure_entries_.find(accelerationStructure) != acceleration_structure_entries_.end())
+    if (acceleration_structure_entries_.find(args.accelerationStructure) != acceleration_structure_entries_.end())
     {
-        acceleration_structure_entries_[accelerationStructure].destruction_index = call_info.index;
+        acceleration_structure_entries_[args.accelerationStructure].destruction_index = call_info.index;
     }
 }
 
-void VulkanRayTracingModifier::Process_vkCmdBuildAccelerationStructuresKHR(
-    const ApiCallInfo&                                                         call_info,
-    format::HandleId                                                           commandBuffer,
+void VulkanRayTracingModifier::ProcessBuildAccelerationStructures(
     uint32_t                                                                   infoCount,
     StructPointerDecoder<Decoded_VkAccelerationStructureBuildGeometryInfoKHR>* pInfos,
     StructPointerDecoder<Decoded_VkAccelerationStructureBuildRangeInfoKHR*>*   ppBuildRangeInfos)
 {
-    GFXRECON_UNREFERENCED_PARAMETER(call_info);
-    GFXRECON_UNREFERENCED_PARAMETER(commandBuffer);
-
-    if (IsModificationPass())
-    {
-        if (options_.remove_rt)
-        {
-            SetDeleteCurrentCall();
-            return;
-        }
-        return;
-    }
-
     for (uint32_t info_index = 0; info_index < infoCount; ++info_index)
     {
         const VkAccelerationStructureBuildGeometryInfoKHR& geometry_info = pInfos->GetPointer()[info_index];
@@ -1118,11 +1055,11 @@ void VulkanRayTracingModifier::Process_vkCmdBuildAccelerationStructuresKHR(
     }
 }
 
-void VulkanRayTracingModifier::Process_vkCmdCopyAccelerationStructureKHR(
-    const ApiCallInfo&                                                call_info,
-    format::HandleId                                                  commandBuffer,
-    StructPointerDecoder<Decoded_VkCopyAccelerationStructureInfoKHR>* pInfo)
+void VulkanRayTracingModifier::Process_vkCmdBuildAccelerationStructuresKHR(
+    const ApiCallInfo& call_info, args::CmdBuildAccelerationStructuresKHR& args)
 {
+    GFXRECON_UNREFERENCED_PARAMETER(call_info);
+
     if (IsModificationPass())
     {
         if (options_.remove_rt)
@@ -1133,30 +1070,7 @@ void VulkanRayTracingModifier::Process_vkCmdCopyAccelerationStructureKHR(
         return;
     }
 
-    const auto& info = pInfo->GetMetaStructPointer();
-    if (acceleration_structure_build_infos_.count(info->src) != 0)
-    {
-        if (acceleration_structure_build_infos_.count(info->dst) == 0)
-        {
-            if (info->decoded_value->mode == VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_KHR)
-            {
-                acceleration_structure_build_infos_[info->dst].info                       = {};
-                acceleration_structure_build_infos_[info->dst].geometries                 = {};
-                acceleration_structure_build_infos_[info->dst].omm_infos                  = {};
-                acceleration_structure_build_infos_[info->dst].usage_infos                = {};
-                acceleration_structure_build_infos_[info->dst].primitive_counts           = {};
-                acceleration_structure_build_infos_[info->dst].is_first_built             = false;
-                acceleration_structure_build_infos_[info->dst].is_meta_copy               = false;
-                acceleration_structure_build_infos_[info->dst].process_compacted_as_index = 0;
-                acceleration_structure_build_infos_[info->dst].source_of_compaction       = info->src;
-            }
-            else
-            {
-                acceleration_structure_build_infos_.emplace(
-                    std::make_pair(info->dst, acceleration_structure_build_infos_[info->src]));
-            }
-        }
-    }
+    ProcessBuildAccelerationStructures(args.infoCount, &args.pInfos, &args.ppBuildRangeInfos);
 }
 
 void VulkanRayTracingModifier::ProcessVulkanBuildAccelerationStructuresCommand(
@@ -1180,7 +1094,46 @@ void VulkanRayTracingModifier::ProcessVulkanBuildAccelerationStructuresCommand(
         return;
     }
 
-    Process_vkCmdBuildAccelerationStructuresKHR({}, format::kNullHandleId, info_count, geometry_infos, range_infos);
+    ProcessBuildAccelerationStructures(info_count, geometry_infos, range_infos);
+}
+
+void VulkanRayTracingModifier::Process_vkCmdCopyAccelerationStructureKHR(const ApiCallInfo& call_info,
+                                                                         args::CmdCopyAccelerationStructureKHR& args)
+{
+    if (IsModificationPass())
+    {
+        if (options_.remove_rt)
+        {
+            SetDeleteCurrentCall();
+            return;
+        }
+        return;
+    }
+
+    const auto& info = args.pInfo.GetMetaStructPointer();
+    if (acceleration_structure_build_infos_.count(info->src) != 0)
+    {
+        if (acceleration_structure_build_infos_.count(info->dst) == 0)
+        {
+            if (info->decoded_value->mode == VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_KHR)
+            {
+                acceleration_structure_build_infos_[info->dst].info                       = {};
+                acceleration_structure_build_infos_[info->dst].geometries                 = {};
+                acceleration_structure_build_infos_[info->dst].omm_infos                  = {};
+                acceleration_structure_build_infos_[info->dst].usage_infos                = {};
+                acceleration_structure_build_infos_[info->dst].primitive_counts           = {};
+                acceleration_structure_build_infos_[info->dst].is_first_built             = false;
+                acceleration_structure_build_infos_[info->dst].is_meta_copy               = false;
+                acceleration_structure_build_infos_[info->dst].process_compacted_as_index = 0;
+                acceleration_structure_build_infos_[info->dst].source_of_compaction       = info->src;
+            }
+            else
+            {
+                acceleration_structure_build_infos_.emplace(
+                    std::make_pair(info->dst, acceleration_structure_build_infos_[info->src]));
+            }
+        }
+    }
 }
 
 void VulkanRayTracingModifier::ProcessVulkanCopyAccelerationStructuresCommand(
@@ -1290,20 +1243,13 @@ void VulkanRayTracingModifier::ProcessVulkanCopyAccelerationStructuresCommand(
     }
 }
 
-void VulkanRayTracingModifier::Process_vkCreateComputePipelines(
-    const ApiCallInfo&                                         call_info,
-    VkResult                                                   returnValue,
-    format::HandleId                                           device,
-    format::HandleId                                           pipelineCache,
-    uint32_t                                                   createInfoCount,
-    StructPointerDecoder<Decoded_VkComputePipelineCreateInfo>* pCreateInfos,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>*       pAllocator,
-    HandlePointerDecoder<VkPipeline>*                          pPipelines)
+void VulkanRayTracingModifier::Process_vkCreateComputePipelines(const ApiCallInfo&            call_info,
+                                                                args::CreateComputePipelines& args)
 {
     if (IsModificationPass())
     {
-        auto in_p_create_infos = pCreateInfos->GetPointer();
-        for (uint32_t i = 0; i < createInfoCount; i++)
+        auto in_p_create_infos = args.pCreateInfos.GetPointer();
+        for (uint32_t i = 0; i < args.createInfoCount; i++)
         {
             auto adress_offset_arm =
                 graphics::vulkan_struct_get_pnext<VkMarkedOffsetsARM>(&(in_p_create_infos[i].stage));
@@ -1316,93 +1262,66 @@ void VulkanRayTracingModifier::Process_vkCreateComputePipelines(
         return;
     }
 
-    for (uint32_t i = 0; i < createInfoCount; i++)
+    for (uint32_t i = 0; i < args.createInfoCount; i++)
     {
-        format::HandleId handle = pPipelines->GetPointer()[i];
+        format::HandleId handle = args.pPipelines.GetPointer()[i];
     }
 }
 
-void VulkanRayTracingModifier::Process_vkDestroyPipeline(
-    const ApiCallInfo&                                   call_info,
-    format::HandleId                                     device,
-    format::HandleId                                     pipeline,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator)
-{
-    if (IsModificationPass())
-    {
-        return;
-    }
-}
-
-void VulkanRayTracingModifier::Process_vkAllocateCommandBuffers(
-    const ApiCallInfo&                                         call_info,
-    VkResult                                                   returnValue,
-    format::HandleId                                           device,
-    StructPointerDecoder<Decoded_VkCommandBufferAllocateInfo>* pAllocateInfo,
-    HandlePointerDecoder<VkCommandBuffer>*                     pCommandBuffers)
+void VulkanRayTracingModifier::Process_vkAllocateCommandBuffers(const ApiCallInfo&            call_info,
+                                                                args::AllocateCommandBuffers& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    const VkCommandBufferAllocateInfo* allocate_info = pAllocateInfo->GetPointer();
+    const VkCommandBufferAllocateInfo* allocate_info = args.pAllocateInfo.GetPointer();
     for (uint32_t i = 0; i < allocate_info->commandBufferCount; i++)
     {
-        format::HandleId handle = pCommandBuffers->GetPointer()[i];
-        command_buffer_entries_.try_emplace(handle, handle, device, allocate_info->level, 0, call_info.index);
+        format::HandleId handle = args.pCommandBuffers.GetPointer()[i];
+        command_buffer_entries_.try_emplace(handle, handle, args.device, allocate_info->level, 0, call_info.index);
     }
 }
 
-void VulkanRayTracingModifier::Process_vkBeginCommandBuffer(
-    const ApiCallInfo&                                      call_info,
-    VkResult                                                returnValue,
-    format::HandleId                                        commandBuffer,
-    StructPointerDecoder<Decoded_VkCommandBufferBeginInfo>* pBeginInfo)
+void VulkanRayTracingModifier::Process_vkBeginCommandBuffer(const ApiCallInfo&        call_info,
+                                                            args::BeginCommandBuffer& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    const VkCommandBufferBeginInfo* begin_info       = pBeginInfo->GetPointer();
-    command_buffer_entries_.at(commandBuffer).usage_ = begin_info->flags;
+    const VkCommandBufferBeginInfo* begin_info            = args.pBeginInfo.GetPointer();
+    command_buffer_entries_.at(args.commandBuffer).usage_ = begin_info->flags;
 }
 
-void VulkanRayTracingModifier::Process_vkCmdBindPipeline(const ApiCallInfo&  call_info,
-                                                         format::HandleId    commandBuffer,
-                                                         VkPipelineBindPoint pipelineBindPoint,
-                                                         format::HandleId    pipeline)
+void VulkanRayTracingModifier::Process_vkCmdBindPipeline(const ApiCallInfo& call_info, args::CmdBindPipeline& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_COMPUTE)
+    if (args.pipelineBindPoint == VK_PIPELINE_BIND_POINT_COMPUTE)
     {
-        command_buffers_with_compute_.insert(commandBuffer);
+        command_buffers_with_compute_.insert(args.commandBuffer);
     }
 }
 
-void VulkanRayTracingModifier::Process_vkUpdateDescriptorSets(
-    const ApiCallInfo&                                  call_info,
-    format::HandleId                                    device,
-    uint32_t                                            descriptorWriteCount,
-    StructPointerDecoder<Decoded_VkWriteDescriptorSet>* pDescriptorWrites,
-    uint32_t                                            descriptorCopyCount,
-    StructPointerDecoder<Decoded_VkCopyDescriptorSet>*  pDescriptorCopies)
+void VulkanRayTracingModifier::Process_vkUpdateDescriptorSets(const ApiCallInfo&          call_info,
+                                                              args::UpdateDescriptorSets& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    const VkWriteDescriptorSet* writes = pDescriptorWrites->GetPointer();
-    for (uint32_t i = 0; i < descriptorWriteCount; i++)
+    const VkWriteDescriptorSet* writes = args.pDescriptorWrites.GetPointer();
+    for (uint32_t i = 0; i < args.descriptorWriteCount; i++)
     {
-        const auto& write      = pDescriptorWrites->GetPointer()[i];
-        const auto& meta_write = pDescriptorWrites->GetMetaStructPointer()[i];
+        const auto& write      = args.pDescriptorWrites.GetPointer()[i];
+        const auto& meta_write = args.pDescriptorWrites.GetMetaStructPointer()[i];
 
         for (uint32_t index = 0; index < write.descriptorCount; index++)
         {
@@ -1451,38 +1370,26 @@ void VulkanRayTracingModifier::Process_vkUpdateDescriptorSets(
     }
 }
 
-void VulkanRayTracingModifier::Process_vkCmdBindDescriptorSets(const ApiCallInfo&  call_info,
-                                                               format::HandleId    commandBuffer,
-                                                               VkPipelineBindPoint pipelineBindPoint,
-                                                               format::HandleId    layout,
-                                                               uint32_t            firstSet,
-                                                               uint32_t            descriptorSetCount,
-                                                               HandlePointerDecoder<VkDescriptorSet>* pDescriptorSets,
-                                                               uint32_t                  dynamicOffsetCount,
-                                                               PointerDecoder<uint32_t>* pDynamicOffsets)
+void VulkanRayTracingModifier::Process_vkCmdBindDescriptorSets(const ApiCallInfo&           call_info,
+                                                               args::CmdBindDescriptorSets& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    if (pipelineBindPoint != VK_PIPELINE_BIND_POINT_COMPUTE)
+    if (args.pipelineBindPoint != VK_PIPELINE_BIND_POINT_COMPUTE)
     {
         return;
     }
 
-    for (uint32_t i = 0; i < descriptorSetCount; i++)
+    for (uint32_t i = 0; i < args.descriptorSetCount; i++)
     {
-        format::HandleId handle = pDescriptorSets->GetPointer()[i];
+        format::HandleId handle = args.pDescriptorSets.GetPointer()[i];
     }
 }
 
-void VulkanRayTracingModifier::Process_vkCmdCopyBuffer(const ApiCallInfo&                          call_info,
-                                                       format::HandleId                            commandBuffer,
-                                                       format::HandleId                            srcBuffer,
-                                                       format::HandleId                            dstBuffer,
-                                                       uint32_t                                    regionCount,
-                                                       StructPointerDecoder<Decoded_VkBufferCopy>* pRegions)
+void VulkanRayTracingModifier::Process_vkCmdCopyBuffer(const ApiCallInfo& call_info, args::CmdCopyBuffer& args)
 {
     if (IsModificationPass())
     {
@@ -1490,12 +1397,12 @@ void VulkanRayTracingModifier::Process_vkCmdCopyBuffer(const ApiCallInfo&       
     }
     else
     {
-        const BufferInfo& dst_entry = buffer_entries_.at(dstBuffer);
+        const BufferInfo& dst_entry = buffer_entries_.at(args.dstBuffer);
         if (dst_entry.device_address != 0)
         {
-            for (uint32_t i = 0; i < regionCount; ++i)
+            for (uint32_t i = 0; i < args.regionCount; ++i)
             {
-                const VkBufferCopy& r = pRegions->GetPointer()[i];
+                const VkBufferCopy& r = args.pRegions.GetPointer()[i];
                 transfer_ranges_.emplace(dst_entry.device_address + r.dstOffset,
                                          dst_entry.device_address + r.dstOffset + r.size);
             }
@@ -1503,10 +1410,7 @@ void VulkanRayTracingModifier::Process_vkCmdCopyBuffer(const ApiCallInfo&       
     }
 }
 
-void VulkanRayTracingModifier::Process_vkCmdCopyBuffer2(
-    const ApiCallInfo&                               call_info,
-    format::HandleId                                 commandBuffer,
-    StructPointerDecoder<Decoded_VkCopyBufferInfo2>* pCopyBufferInfo)
+void VulkanRayTracingModifier::Process_vkCmdCopyBuffer2(const ApiCallInfo& call_info, args::CmdCopyBuffer2& args)
 {
     if (IsModificationPass())
     {
@@ -1514,8 +1418,8 @@ void VulkanRayTracingModifier::Process_vkCmdCopyBuffer2(
     }
     else
     {
-        const VkCopyBufferInfo2* copy_info      = pCopyBufferInfo->GetPointer();
-        const auto*              meta_copy_info = pCopyBufferInfo->GetMetaStructPointer();
+        const VkCopyBufferInfo2* copy_info      = args.pCopyBufferInfo.GetPointer();
+        const auto*              meta_copy_info = args.pCopyBufferInfo.GetMetaStructPointer();
 
         const BufferInfo& dst_entry = buffer_entries_.at(meta_copy_info->dstBuffer);
         if (dst_entry.device_address != 0)
@@ -1530,10 +1434,7 @@ void VulkanRayTracingModifier::Process_vkCmdCopyBuffer2(
     }
 }
 
-void VulkanRayTracingModifier::Process_vkCmdCopyBuffer2KHR(
-    const ApiCallInfo&                               call_info,
-    format::HandleId                                 commandBuffer,
-    StructPointerDecoder<Decoded_VkCopyBufferInfo2>* pCopyBufferInfo)
+void VulkanRayTracingModifier::Process_vkCmdCopyBuffer2KHR(const ApiCallInfo& call_info, args::CmdCopyBuffer2KHR& args)
 {
     if (IsModificationPass())
     {
@@ -1541,8 +1442,8 @@ void VulkanRayTracingModifier::Process_vkCmdCopyBuffer2KHR(
     }
     else
     {
-        const VkCopyBufferInfo2KHR* copy_info      = pCopyBufferInfo->GetPointer();
-        const auto*                 meta_copy_info = pCopyBufferInfo->GetMetaStructPointer();
+        const VkCopyBufferInfo2KHR* copy_info      = args.pCopyBufferInfo.GetPointer();
+        const auto*                 meta_copy_info = args.pCopyBufferInfo.GetMetaStructPointer();
 
         const BufferInfo& dst_entry = buffer_entries_.at(meta_copy_info->dstBuffer);
         if (dst_entry.device_address != 0)
@@ -1557,36 +1458,31 @@ void VulkanRayTracingModifier::Process_vkCmdCopyBuffer2KHR(
     }
 }
 
-void VulkanRayTracingModifier::Process_vkCmdExecuteCommands(const ApiCallInfo&                     call_info,
-                                                            format::HandleId                       commandBuffer,
-                                                            uint32_t                               commandBufferCount,
-                                                            HandlePointerDecoder<VkCommandBuffer>* pCommandBuffers)
+void VulkanRayTracingModifier::Process_vkCmdExecuteCommands(const ApiCallInfo&        call_info,
+                                                            args::CmdExecuteCommands& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    for (uint32_t i = 0; i < commandBufferCount; i++)
+    for (uint32_t i = 0; i < args.commandBufferCount; i++)
     {
-        format::HandleId handle = pCommandBuffers->GetPointer()[i];
+        format::HandleId handle = args.pCommandBuffers.GetPointer()[i];
     }
 }
 
-void VulkanRayTracingModifier::Process_vkFreeCommandBuffers(const ApiCallInfo&                     call_info,
-                                                            format::HandleId                       device,
-                                                            format::HandleId                       commandPool,
-                                                            uint32_t                               commandBufferCount,
-                                                            HandlePointerDecoder<VkCommandBuffer>* pCommandBuffers)
+void VulkanRayTracingModifier::Process_vkFreeCommandBuffers(const ApiCallInfo&        call_info,
+                                                            args::FreeCommandBuffers& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    for (uint32_t i = 0; i < commandBufferCount; i++)
+    for (uint32_t i = 0; i < args.commandBufferCount; i++)
     {
-        format::HandleId handle = pCommandBuffers->GetPointer()[i];
+        format::HandleId handle = args.pCommandBuffers.GetPointer()[i];
         if (handle == format::kNullHandleId)
         {
             GFXRECON_LOG_WARNING("Skipping vkFreeCommandBuffers for null command buffer handle at call index %" PRIu64
@@ -1610,24 +1506,19 @@ void VulkanRayTracingModifier::Process_vkFreeCommandBuffers(const ApiCallInfo&  
     }
 }
 
-void VulkanRayTracingModifier::Process_vkCmdUpdateBuffer(const ApiCallInfo&       call_info,
-                                                         format::HandleId         commandBuffer,
-                                                         format::HandleId         dstBuffer,
-                                                         VkDeviceSize             dstOffset,
-                                                         VkDeviceSize             dataSize,
-                                                         PointerDecoder<uint8_t>* pData)
+void VulkanRayTracingModifier::Process_vkCmdUpdateBuffer(const ApiCallInfo& call_info, args::CmdUpdateBuffer& args)
 {
     if (!IsModificationPass())
     {
         return;
     }
 
-    const CommandBufferInfo& command_buffer_info = command_buffer_entries_.at(commandBuffer);
+    const CommandBufferInfo& command_buffer_info = command_buffer_entries_.at(args.commandBuffer);
 
     format::HandleId device_id = command_buffer_info.device_id_;
-    auto             data      = pData->GetPointer();
+    auto             data      = args.pData.GetPointer();
     // Find shader group handle values inside data parameter, and generate FixShaderGroupHandleCommand meta block
-    auto shader_handle_locations = GetShaderGroupHandlesInFillMemory(data, dataSize);
+    auto shader_handle_locations = GetShaderGroupHandlesInFillMemory(data, args.dataSize);
     if (shader_handle_locations.size())
     {
         WriteFixShaderGroupHandleCmd(device_id, shader_handle_locations.size(), shader_handle_locations.data());
@@ -1635,9 +1526,9 @@ void VulkanRayTracingModifier::Process_vkCmdUpdateBuffer(const ApiCallInfo&     
 
     // Find as and buffer device address values inside data parameter, and generate FixDeviceAddressCommand meta block
     std::vector<format::AddressLocationInfo> as_address_locations =
-        GetAccelerationStructureDeviceAddressesInFillMemory(data, dataSize);
+        GetAccelerationStructureDeviceAddressesInFillMemory(data, args.dataSize);
     std::vector<format::AddressLocationInfo> buffer_address_locations =
-        GetBufferDeviceAddressesInFillMemory(as_address_locations, data, dataSize);
+        GetBufferDeviceAddressesInFillMemory(as_address_locations, data, args.dataSize);
     if (as_address_locations.size() || buffer_address_locations.size())
     {
         WriteFixDeviceAddressCmd(device_id,
@@ -1648,18 +1539,13 @@ void VulkanRayTracingModifier::Process_vkCmdUpdateBuffer(const ApiCallInfo&     
     }
 }
 
-void VulkanRayTracingModifier::Process_vkCmdPushConstants(const ApiCallInfo&       call_info,
-                                                          format::HandleId         commandBuffer,
-                                                          format::HandleId         layout,
-                                                          VkShaderStageFlags       stageFlags,
-                                                          uint32_t                 offset,
-                                                          uint32_t                 size,
-                                                          PointerDecoder<uint8_t>* pValues)
+void VulkanRayTracingModifier::ProcessCmdPushConstants(format::HandleId         commandBuffer,
+                                                       format::HandleId         layout,
+                                                       VkShaderStageFlags       stageFlags,
+                                                       uint32_t                 offset,
+                                                       uint32_t                 size,
+                                                       PointerDecoder<uint8_t>* pValues)
 {
-    if (!IsModificationPass())
-    {
-        return;
-    }
     const CommandBufferInfo& command_buffer_info = command_buffer_entries_.at(commandBuffer);
 
     format::HandleId device_id = command_buffer_info.device_id_;
@@ -1686,13 +1572,20 @@ void VulkanRayTracingModifier::Process_vkCmdPushConstants(const ApiCallInfo&    
     }
 }
 
-void VulkanRayTracingModifier::Process_vkCmdPushConstants2(
-    const ApiCallInfo&                                 call_info,
-    format::HandleId                                   commandBuffer,
-    StructPointerDecoder<Decoded_VkPushConstantsInfo>* pPushConstantsInfo)
+void VulkanRayTracingModifier::Process_vkCmdPushConstants(const ApiCallInfo& call_info, args::CmdPushConstants& args)
 {
-    Decoded_VkPushConstantsInfo* meta_info = pPushConstantsInfo->GetMetaStructPointer();
-    VkPushConstantsInfo*         info      = pPushConstantsInfo->GetPointer();
+    if (!IsModificationPass())
+    {
+        return;
+    }
+
+    ProcessCmdPushConstants(args.commandBuffer, args.layout, args.stageFlags, args.offset, args.size, &args.pValues);
+}
+
+void VulkanRayTracingModifier::Process_vkCmdPushConstants2(const ApiCallInfo& call_info, args::CmdPushConstants2& args)
+{
+    Decoded_VkPushConstantsInfo* meta_info = args.pPushConstantsInfo.GetMetaStructPointer();
+    VkPushConstantsInfo*         info      = args.pPushConstantsInfo.GetPointer();
     GFXRECON_ASSERT(meta_info != nullptr && info != nullptr);
 
     if (!IsModificationPass())
@@ -1702,31 +1595,42 @@ void VulkanRayTracingModifier::Process_vkCmdPushConstants2(
         {
             skip_address_replacement = true;
         }
+
+        return;
     }
 
-    Process_vkCmdPushConstants(
-        call_info, commandBuffer, meta_info->layout, info->stageFlags, info->offset, info->size, &meta_info->pValues);
+    ProcessCmdPushConstants(
+        args.commandBuffer, meta_info->layout, info->stageFlags, info->offset, info->size, &meta_info->pValues);
 }
 
-void VulkanRayTracingModifier::Process_vkCmdPushConstants2KHR(
-    const ApiCallInfo&                                 call_info,
-    format::HandleId                                   commandBuffer,
-    StructPointerDecoder<Decoded_VkPushConstantsInfo>* pPushConstantsInfo)
+void VulkanRayTracingModifier::Process_vkCmdPushConstants2KHR(const ApiCallInfo&          call_info,
+                                                              args::CmdPushConstants2KHR& args)
 {
-    Process_vkCmdPushConstants2(call_info, commandBuffer, pPushConstantsInfo);
-}
+    Decoded_VkPushConstantsInfo* meta_info = args.pPushConstantsInfo.GetMetaStructPointer();
+    VkPushConstantsInfo*         info      = args.pPushConstantsInfo.GetPointer();
+    GFXRECON_ASSERT(meta_info != nullptr && info != nullptr);
 
-void VulkanRayTracingModifier::Process_vkQueueSubmit(const ApiCallInfo&                          call_info,
-                                                     VkResult                                    returnValue,
-                                                     format::HandleId                            queue,
-                                                     uint32_t                                    submitCount,
-                                                     StructPointerDecoder<Decoded_VkSubmitInfo>* pSubmits,
-                                                     format::HandleId                            fence)
-{
-    for (uint32_t info_index = 0; info_index < submitCount; info_index++)
+    if (!IsModificationPass())
     {
-        const auto& submit_info      = pSubmits->GetPointer()[info_index];
-        const auto& submit_meta_info = pSubmits->GetMetaStructPointer()[info_index];
+        if (auto address_offset_arm = gfxrecon::graphics::vulkan_struct_get_pnext<VkMarkedOffsetsARM>(info);
+            address_offset_arm != nullptr)
+        {
+            skip_address_replacement = true;
+        }
+
+        return;
+    }
+
+    ProcessCmdPushConstants(
+        args.commandBuffer, meta_info->layout, info->stageFlags, info->offset, info->size, &meta_info->pValues);
+}
+
+void VulkanRayTracingModifier::Process_vkQueueSubmit(const ApiCallInfo& call_info, args::QueueSubmit& args)
+{
+    for (uint32_t info_index = 0; info_index < args.submitCount; info_index++)
+    {
+        const auto& submit_info      = args.pSubmits.GetPointer()[info_index];
+        const auto& submit_meta_info = args.pSubmits.GetMetaStructPointer()[info_index];
 
         bool should_inspect = false;
         for (uint32_t cmd_buffer_index = 0; cmd_buffer_index < submit_info.commandBufferCount; cmd_buffer_index++)
@@ -1748,22 +1652,17 @@ void VulkanRayTracingModifier::Process_vkQueueSubmit(const ApiCallInfo&         
     fill_memory_indices_per_submit_.clear();
 }
 
-void VulkanRayTracingModifier::Process_vkQueueSubmit2(const ApiCallInfo&                           call_info,
-                                                      VkResult                                     returnValue,
-                                                      format::HandleId                             queue,
-                                                      uint32_t                                     submitCount,
-                                                      StructPointerDecoder<Decoded_VkSubmitInfo2>* pSubmits,
-                                                      format::HandleId                             fence)
+void VulkanRayTracingModifier::Process_vkQueueSubmit2(const ApiCallInfo& call_info, args::QueueSubmit2& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    for (uint32_t info_index = 0; info_index < submitCount; info_index++)
+    for (uint32_t info_index = 0; info_index < args.submitCount; info_index++)
     {
-        auto& submit_info      = pSubmits->GetPointer()[info_index];
-        auto& submit_meta_info = pSubmits->GetMetaStructPointer()[info_index];
+        auto& submit_info      = args.pSubmits.GetPointer()[info_index];
+        auto& submit_meta_info = args.pSubmits.GetMetaStructPointer()[info_index];
 
         bool should_inspect = false;
         for (uint32_t cmd_buffer_index = 0; cmd_buffer_index < submit_info.commandBufferInfoCount; cmd_buffer_index++)
@@ -1786,22 +1685,17 @@ void VulkanRayTracingModifier::Process_vkQueueSubmit2(const ApiCallInfo&        
     fill_memory_indices_per_submit_.clear();
 }
 
-void VulkanRayTracingModifier::Process_vkQueueSubmit2KHR(const ApiCallInfo&                           call_info,
-                                                         VkResult                                     returnValue,
-                                                         format::HandleId                             queue,
-                                                         uint32_t                                     submitCount,
-                                                         StructPointerDecoder<Decoded_VkSubmitInfo2>* pSubmits,
-                                                         format::HandleId                             fence)
+void VulkanRayTracingModifier::Process_vkQueueSubmit2KHR(const ApiCallInfo& call_info, args::QueueSubmit2KHR& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    for (uint32_t info_index = 0; info_index < submitCount; info_index++)
+    for (uint32_t info_index = 0; info_index < args.submitCount; info_index++)
     {
-        auto& submit_info      = pSubmits->GetPointer()[info_index];
-        auto& submit_meta_info = pSubmits->GetMetaStructPointer()[info_index];
+        auto& submit_info      = args.pSubmits.GetPointer()[info_index];
+        auto& submit_meta_info = args.pSubmits.GetMetaStructPointer()[info_index];
 
         bool should_inspect = false;
         for (uint32_t cmd_buffer_index = 0; cmd_buffer_index < submit_info.commandBufferInfoCount; cmd_buffer_index++)
@@ -1825,13 +1719,7 @@ void VulkanRayTracingModifier::Process_vkQueueSubmit2KHR(const ApiCallInfo&     
 }
 
 void VulkanRayTracingModifier::Process_vkCmdWriteAccelerationStructuresPropertiesKHR(
-    const ApiCallInfo&                                call_info,
-    format::HandleId                                  commandBuffer,
-    uint32_t                                          accelerationStructureCount,
-    HandlePointerDecoder<VkAccelerationStructureKHR>* pAccelerationStructures,
-    VkQueryType                                       queryType,
-    format::HandleId                                  queryPool,
-    uint32_t                                          firstQuery)
+    const ApiCallInfo& call_info, args::CmdWriteAccelerationStructuresPropertiesKHR& args)
 {
     if (IsModificationPass())
     {
@@ -1967,23 +1855,16 @@ void VulkanRayTracingModifier::EncodeVkGetAccelerationStructureBuildSizesKHR(for
     encode::EncodeStructPtr(&encoder, &pSizeInfo);
 }
 
-void VulkanRayTracingModifier::Process_vkCreateRayTracingPipelinesNV(
-    const ApiCallInfo&                                              call_info,
-    VkResult                                                        returnValue,
-    format::HandleId                                                device,
-    format::HandleId                                                pipelineCache,
-    uint32_t                                                        createInfoCount,
-    StructPointerDecoder<Decoded_VkRayTracingPipelineCreateInfoNV>* pCreateInfos,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>*            pAllocator,
-    HandlePointerDecoder<VkPipeline>*                               pPipelines)
+void VulkanRayTracingModifier::Process_vkCreateRayTracingPipelinesNV(const ApiCallInfo&                 call_info,
+                                                                     args::CreateRayTracingPipelinesNV& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    auto in_pCreateInfos = pCreateInfos->GetPointer();
-    for (uint32_t i = 0; i < createInfoCount; i++)
+    auto in_pCreateInfos = args.pCreateInfos.GetPointer();
+    for (uint32_t i = 0; i < args.createInfoCount; i++)
     {
         for (uint32_t j = 0; j < in_pCreateInfos[i].stageCount; j++)
         {
@@ -1998,24 +1879,16 @@ void VulkanRayTracingModifier::Process_vkCreateRayTracingPipelinesNV(
     }
 }
 
-void VulkanRayTracingModifier::Process_vkCreateRayTracingPipelinesKHR(
-    const ApiCallInfo&                                               call_info,
-    VkResult                                                         returnValue,
-    format::HandleId                                                 device,
-    format::HandleId                                                 deferredOperation,
-    format::HandleId                                                 pipelineCache,
-    uint32_t                                                         createInfoCount,
-    StructPointerDecoder<Decoded_VkRayTracingPipelineCreateInfoKHR>* pCreateInfos,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>*             pAllocator,
-    HandlePointerDecoder<VkPipeline>*                                pPipelines)
+void VulkanRayTracingModifier::Process_vkCreateRayTracingPipelinesKHR(const ApiCallInfo&                  call_info,
+                                                                      args::CreateRayTracingPipelinesKHR& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    auto in_pCreateInfos = pCreateInfos->GetPointer();
-    for (uint32_t i = 0; i < createInfoCount; i++)
+    auto in_pCreateInfos = args.pCreateInfos.GetPointer();
+    for (uint32_t i = 0; i < args.createInfoCount; i++)
     {
         for (uint32_t j = 0; j < in_pCreateInfos[i].stageCount; j++)
         {
@@ -2030,23 +1903,16 @@ void VulkanRayTracingModifier::Process_vkCreateRayTracingPipelinesKHR(
     }
 }
 
-void VulkanRayTracingModifier::Process_vkCreateGraphicsPipelines(
-    const ApiCallInfo&                                          call_info,
-    VkResult                                                    returnValue,
-    format::HandleId                                            device,
-    format::HandleId                                            pipelineCache,
-    uint32_t                                                    createInfoCount,
-    StructPointerDecoder<Decoded_VkGraphicsPipelineCreateInfo>* pCreateInfos,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>*        pAllocator,
-    HandlePointerDecoder<VkPipeline>*                           pPipelines)
+void VulkanRayTracingModifier::Process_vkCreateGraphicsPipelines(const ApiCallInfo&             call_info,
+                                                                 args::CreateGraphicsPipelines& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    const VkGraphicsPipelineCreateInfo* in_p_create_infos = pCreateInfos->GetPointer();
-    for (uint32_t i = 0; i < createInfoCount; i++)
+    const VkGraphicsPipelineCreateInfo* in_p_create_infos = args.pCreateInfos.GetPointer();
+    for (uint32_t i = 0; i < args.createInfoCount; i++)
     {
         for (uint32_t j = 0; j < in_p_create_infos[i].stageCount; j++)
         {
@@ -2061,36 +1927,31 @@ void VulkanRayTracingModifier::Process_vkCreateGraphicsPipelines(
     }
 }
 
-void VulkanRayTracingModifier::Process_vkCmdUpdateBuffer2ARM(const ApiCallInfo& call_info,
-                                                             format::HandleId   commandBuffer,
-                                                             StructPointerDecoder<Decoded_VkUpdateBufferInfoARM>* pInfo)
+void VulkanRayTracingModifier::Process_vkCmdUpdateBuffer2ARM(const ApiCallInfo&         call_info,
+                                                             args::CmdUpdateBuffer2ARM& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    VkUpdateBufferInfoARM* in_pInfo = pInfo->GetPointer();
+    VkUpdateBufferInfoARM* in_pInfo = args.pInfo.GetPointer();
     if (auto address_offset_arm = gfxrecon::graphics::vulkan_struct_get_pnext<VkMarkedOffsetsARM>(in_pInfo);
         address_offset_arm != nullptr)
     {
         skip_address_replacement = true;
     }
 }
-void VulkanRayTracingModifier::Process_vkFlushMappedMemoryRanges(
-    const ApiCallInfo&                                 call_info,
-    VkResult                                           returnValue,
-    format::HandleId                                   device,
-    uint32_t                                           memoryRangeCount,
-    StructPointerDecoder<Decoded_VkMappedMemoryRange>* pMemoryRanges)
+void VulkanRayTracingModifier::Process_vkFlushMappedMemoryRanges(const ApiCallInfo&             call_info,
+                                                                 args::FlushMappedMemoryRanges& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    auto in_pMemoryRanges = pMemoryRanges->GetPointer();
-    for (uint32_t i = 0; i < memoryRangeCount; i++)
+    auto in_pMemoryRanges = args.pMemoryRanges.GetPointer();
+    for (uint32_t i = 0; i < args.memoryRangeCount; i++)
     {
         if (auto address_offset_arm =
                 gfxrecon::graphics::vulkan_struct_get_pnext<VkMarkedOffsetsARM>(&(in_pMemoryRanges[i]));

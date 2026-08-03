@@ -64,4950 +64,2862 @@ class VulkanSkiaModifier : public util::VulkanModifierBase
     VulkanSkiaModifier() { }
 
     virtual ~VulkanSkiaModifier() override { }
-    virtual void Process_vkCreateInstance(
+    void Process_vkCreateInstance(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        StructPointerDecoder<Decoded_VkInstanceCreateInfo>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkInstance>*           pInstance);
+        args::CreateInstance&                       args) override;
 
-    virtual void Process_vkDestroyInstance(
+    void Process_vkDestroyInstance(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            instance,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator);
+        args::DestroyInstance&                      args) override;
 
-    virtual void Process_vkEnumeratePhysicalDevices(
+    void Process_vkEnumeratePhysicalDevices(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            instance,
-        PointerDecoder<uint32_t>*                   pPhysicalDeviceCount,
-        HandlePointerDecoder<VkPhysicalDevice>*     pPhysicalDevices);
+        args::EnumeratePhysicalDevices&             args) override;
 
-    virtual void Process_vkGetPhysicalDeviceFeatures(
+    void Process_vkGetPhysicalDeviceFeatures(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            physicalDevice,
-        StructPointerDecoder<Decoded_VkPhysicalDeviceFeatures>* pFeatures){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceFeatures&            args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkGetPhysicalDeviceFormatProperties(
+    void Process_vkGetPhysicalDeviceFormatProperties(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            physicalDevice,
-        VkFormat                                    format,
-        StructPointerDecoder<Decoded_VkFormatProperties>* pFormatProperties){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceFormatProperties&    args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkGetPhysicalDeviceImageFormatProperties(
+    void Process_vkGetPhysicalDeviceImageFormatProperties(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        VkFormat                                    format,
-        VkImageType                                 type,
-        VkImageTiling                               tiling,
-        VkImageUsageFlags                           usage,
-        VkImageCreateFlags                          flags,
-        StructPointerDecoder<Decoded_VkImageFormatProperties>* pImageFormatProperties){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceImageFormatProperties& args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkGetPhysicalDeviceProperties(
+    void Process_vkGetPhysicalDeviceProperties(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            physicalDevice,
-        StructPointerDecoder<Decoded_VkPhysicalDeviceProperties>* pProperties){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceProperties&          args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkGetPhysicalDeviceQueueFamilyProperties(
+    void Process_vkGetPhysicalDeviceQueueFamilyProperties(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            physicalDevice,
-        PointerDecoder<uint32_t>*                   pQueueFamilyPropertyCount,
-        StructPointerDecoder<Decoded_VkQueueFamilyProperties>* pQueueFamilyProperties){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceQueueFamilyProperties& args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkGetPhysicalDeviceMemoryProperties(
+    void Process_vkGetPhysicalDeviceMemoryProperties(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            physicalDevice,
-        StructPointerDecoder<Decoded_VkPhysicalDeviceMemoryProperties>* pMemoryProperties){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceMemoryProperties&    args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkCreateDevice(
+    void Process_vkCreateDevice(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        StructPointerDecoder<Decoded_VkDeviceCreateInfo>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkDevice>*             pDevice);
+        args::CreateDevice&                         args) override;
 
-    virtual void Process_vkDestroyDevice(
+    void Process_vkDestroyDevice(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator);
+        args::DestroyDevice&                        args) override;
 
-    virtual void Process_vkGetDeviceQueue(
+    void Process_vkGetDeviceQueue(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        uint32_t                                    queueFamilyIndex,
-        uint32_t                                    queueIndex,
-        HandlePointerDecoder<VkQueue>*              pQueue);
+        args::GetDeviceQueue&                       args) override;
 
-    virtual void Process_vkQueueSubmit(
+    void Process_vkQueueSubmit(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            queue,
-        uint32_t                                    submitCount,
-        StructPointerDecoder<Decoded_VkSubmitInfo>* pSubmits,
-        format::HandleId                            fence);
+        args::QueueSubmit&                          args) override;
 
-    virtual void Process_vkQueueWaitIdle(
+    void Process_vkQueueWaitIdle(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            queue){ CheckSkiavk(queue);}
+        args::QueueWaitIdle&                        args) override { CheckSkiavk(args.queue);}
 
-    virtual void Process_vkDeviceWaitIdle(
+    void Process_vkDeviceWaitIdle(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device){ CheckSkiavk(device);}
+        args::DeviceWaitIdle&                       args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkAllocateMemory(
+    void Process_vkAllocateMemory(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkMemoryAllocateInfo>* pAllocateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkDeviceMemory>*       pMemory);
+        args::AllocateMemory&                       args) override;
 
-    virtual void Process_vkFreeMemory(
+    void Process_vkFreeMemory(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            memory,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator);
+        args::FreeMemory&                           args) override;
 
-    virtual void Process_vkMapMemory(
+    void Process_vkMapMemory(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            memory,
-        VkDeviceSize                                offset,
-        VkDeviceSize                                size,
-        VkMemoryMapFlags                            flags,
-        PointerDecoder<uint64_t, void*>*            ppData){ CheckSkiavk(device);}
+        args::MapMemory&                            args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkUnmapMemory(
+    void Process_vkUnmapMemory(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            memory){ CheckSkiavk(device);}
+        args::UnmapMemory&                          args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkFlushMappedMemoryRanges(
+    void Process_vkFlushMappedMemoryRanges(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        uint32_t                                    memoryRangeCount,
-        StructPointerDecoder<Decoded_VkMappedMemoryRange>* pMemoryRanges){ CheckSkiavk(device);}
+        args::FlushMappedMemoryRanges&              args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkInvalidateMappedMemoryRanges(
+    void Process_vkInvalidateMappedMemoryRanges(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        uint32_t                                    memoryRangeCount,
-        StructPointerDecoder<Decoded_VkMappedMemoryRange>* pMemoryRanges){ CheckSkiavk(device);}
+        args::InvalidateMappedMemoryRanges&         args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetDeviceMemoryCommitment(
+    void Process_vkGetDeviceMemoryCommitment(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            memory,
-        PointerDecoder<VkDeviceSize>*               pCommittedMemoryInBytes){ CheckSkiavk(device);}
+        args::GetDeviceMemoryCommitment&            args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkBindBufferMemory(
+    void Process_vkBindBufferMemory(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            buffer,
-        format::HandleId                            memory,
-        VkDeviceSize                                memoryOffset){ CheckSkiavk(device);}
+        args::BindBufferMemory&                     args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkBindImageMemory(
+    void Process_vkBindImageMemory(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            image,
-        format::HandleId                            memory,
-        VkDeviceSize                                memoryOffset){ CheckSkiavk(device);}
+        args::BindImageMemory&                      args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetBufferMemoryRequirements(
+    void Process_vkGetBufferMemoryRequirements(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            buffer,
-        StructPointerDecoder<Decoded_VkMemoryRequirements>* pMemoryRequirements){ CheckSkiavk(device);}
+        args::GetBufferMemoryRequirements&          args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetImageMemoryRequirements(
+    void Process_vkGetImageMemoryRequirements(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            image,
-        StructPointerDecoder<Decoded_VkMemoryRequirements>* pMemoryRequirements){ CheckSkiavk(device);}
+        args::GetImageMemoryRequirements&           args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetImageSparseMemoryRequirements(
+    void Process_vkGetImageSparseMemoryRequirements(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            image,
-        PointerDecoder<uint32_t>*                   pSparseMemoryRequirementCount,
-        StructPointerDecoder<Decoded_VkSparseImageMemoryRequirements>* pSparseMemoryRequirements){ CheckSkiavk(device);}
+        args::GetImageSparseMemoryRequirements&     args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetPhysicalDeviceSparseImageFormatProperties(
+    void Process_vkGetPhysicalDeviceSparseImageFormatProperties(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            physicalDevice,
-        VkFormat                                    format,
-        VkImageType                                 type,
-        VkSampleCountFlagBits                       samples,
-        VkImageUsageFlags                           usage,
-        VkImageTiling                               tiling,
-        PointerDecoder<uint32_t>*                   pPropertyCount,
-        StructPointerDecoder<Decoded_VkSparseImageFormatProperties>* pProperties){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceSparseImageFormatProperties& args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkQueueBindSparse(
+    void Process_vkQueueBindSparse(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            queue,
-        uint32_t                                    bindInfoCount,
-        StructPointerDecoder<Decoded_VkBindSparseInfo>* pBindInfo,
-        format::HandleId                            fence){ CheckSkiavk(queue);}
+        args::QueueBindSparse&                      args) override { CheckSkiavk(args.queue);}
 
-    virtual void Process_vkCreateFence(
+    void Process_vkCreateFence(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkFenceCreateInfo>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkFence>*              pFence){ CheckSkiavk(device);}
+        args::CreateFence&                          args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDestroyFence(
+    void Process_vkDestroyFence(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            fence,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
+        args::DestroyFence&                         args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkResetFences(
+    void Process_vkResetFences(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        uint32_t                                    fenceCount,
-        HandlePointerDecoder<VkFence>*              pFences){ CheckSkiavk(device);}
+        args::ResetFences&                          args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetFenceStatus(
+    void Process_vkGetFenceStatus(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            fence){ CheckSkiavk(device);}
+        args::GetFenceStatus&                       args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkWaitForFences(
+    void Process_vkWaitForFences(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        uint32_t                                    fenceCount,
-        HandlePointerDecoder<VkFence>*              pFences,
-        VkBool32                                    waitAll,
-        uint64_t                                    timeout){ CheckSkiavk(device);}
+        args::WaitForFences&                        args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCreateSemaphore(
+    void Process_vkCreateSemaphore(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkSemaphoreCreateInfo>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkSemaphore>*          pSemaphore){ CheckSkiavk(device);}
+        args::CreateSemaphore&                      args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDestroySemaphore(
+    void Process_vkDestroySemaphore(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            semaphore,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
+        args::DestroySemaphore&                     args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCreateQueryPool(
+    void Process_vkCreateQueryPool(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkQueryPoolCreateInfo>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkQueryPool>*          pQueryPool){ CheckSkiavk(device);}
+        args::CreateQueryPool&                      args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDestroyQueryPool(
+    void Process_vkDestroyQueryPool(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            queryPool,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
+        args::DestroyQueryPool&                     args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetQueryPoolResults(
+    void Process_vkGetQueryPoolResults(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            queryPool,
-        uint32_t                                    firstQuery,
-        uint32_t                                    queryCount,
-        size_t                                      dataSize,
-        PointerDecoder<uint8_t>*                    pData,
-        VkDeviceSize                                stride,
-        VkQueryResultFlags                          flags){ CheckSkiavk(device);}
+        args::GetQueryPoolResults&                  args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCreateBuffer(
+    void Process_vkCreateBuffer(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkBufferCreateInfo>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkBuffer>*             pBuffer);
+        args::CreateBuffer&                         args) override;
 
-    virtual void Process_vkDestroyBuffer(
+    void Process_vkDestroyBuffer(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            buffer,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator);
+        args::DestroyBuffer&                        args) override;
 
-    virtual void Process_vkCreateImage(
+    void Process_vkCreateImage(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkImageCreateInfo>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkImage>*              pImage){ CheckSkiavk(device);}
+        args::CreateImage&                          args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDestroyImage(
+    void Process_vkDestroyImage(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            image,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
+        args::DestroyImage&                         args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetImageSubresourceLayout(
+    void Process_vkGetImageSubresourceLayout(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            image,
-        StructPointerDecoder<Decoded_VkImageSubresource>* pSubresource,
-        StructPointerDecoder<Decoded_VkSubresourceLayout>* pLayout){ CheckSkiavk(device);}
+        args::GetImageSubresourceLayout&            args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCreateImageView(
+    void Process_vkCreateImageView(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkImageViewCreateInfo>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkImageView>*          pView){ CheckSkiavk(device);}
+        args::CreateImageView&                      args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDestroyImageView(
+    void Process_vkDestroyImageView(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            imageView,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
+        args::DestroyImageView&                     args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCreateCommandPool(
+    void Process_vkCreateCommandPool(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkCommandPoolCreateInfo>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkCommandPool>*        pCommandPool);
+        args::CreateCommandPool&                    args) override;
 
-    virtual void Process_vkDestroyCommandPool(
+    void Process_vkDestroyCommandPool(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            commandPool,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator);
+        args::DestroyCommandPool&                   args) override;
 
-    virtual void Process_vkResetCommandPool(
+    void Process_vkResetCommandPool(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            commandPool,
-        VkCommandPoolResetFlags                     flags){ CheckSkiavk(device);}
+        args::ResetCommandPool&                     args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkAllocateCommandBuffers(
+    void Process_vkAllocateCommandBuffers(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkCommandBufferAllocateInfo>* pAllocateInfo,
-        HandlePointerDecoder<VkCommandBuffer>*      pCommandBuffers);
+        args::AllocateCommandBuffers&               args) override;
 
-    virtual void Process_vkFreeCommandBuffers(
+    void Process_vkFreeCommandBuffers(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            commandPool,
-        uint32_t                                    commandBufferCount,
-        HandlePointerDecoder<VkCommandBuffer>*      pCommandBuffers);
+        args::FreeCommandBuffers&                   args) override;
 
-    virtual void Process_vkBeginCommandBuffer(
+    void Process_vkBeginCommandBuffer(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkCommandBufferBeginInfo>* pBeginInfo);
+        args::BeginCommandBuffer&                   args) override;
 
-    virtual void Process_vkEndCommandBuffer(
+    void Process_vkEndCommandBuffer(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            commandBuffer){ CheckSkiavk(commandBuffer);}
+        args::EndCommandBuffer&                     args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkResetCommandBuffer(
+    void Process_vkResetCommandBuffer(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            commandBuffer,
-        VkCommandBufferResetFlags                   flags);
+        args::ResetCommandBuffer&                   args) override;
 
-    virtual void Process_vkCmdCopyBuffer(
+    void Process_vkCmdCopyBuffer(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            srcBuffer,
-        format::HandleId                            dstBuffer,
-        uint32_t                                    regionCount,
-        StructPointerDecoder<Decoded_VkBufferCopy>* pRegions){ CheckSkiavk(commandBuffer);}
+        args::CmdCopyBuffer&                        args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdCopyImage(
+    void Process_vkCmdCopyImage(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            srcImage,
-        VkImageLayout                               srcImageLayout,
-        format::HandleId                            dstImage,
-        VkImageLayout                               dstImageLayout,
-        uint32_t                                    regionCount,
-        StructPointerDecoder<Decoded_VkImageCopy>*  pRegions){ CheckSkiavk(commandBuffer);}
+        args::CmdCopyImage&                         args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdCopyBufferToImage(
+    void Process_vkCmdCopyBufferToImage(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            srcBuffer,
-        format::HandleId                            dstImage,
-        VkImageLayout                               dstImageLayout,
-        uint32_t                                    regionCount,
-        StructPointerDecoder<Decoded_VkBufferImageCopy>* pRegions){ CheckSkiavk(commandBuffer);}
+        args::CmdCopyBufferToImage&                 args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdCopyImageToBuffer(
+    void Process_vkCmdCopyImageToBuffer(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            srcImage,
-        VkImageLayout                               srcImageLayout,
-        format::HandleId                            dstBuffer,
-        uint32_t                                    regionCount,
-        StructPointerDecoder<Decoded_VkBufferImageCopy>* pRegions){ CheckSkiavk(commandBuffer);}
+        args::CmdCopyImageToBuffer&                 args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdUpdateBuffer(
+    void Process_vkCmdUpdateBuffer(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            dstBuffer,
-        VkDeviceSize                                dstOffset,
-        VkDeviceSize                                dataSize,
-        PointerDecoder<uint8_t>*                    pData){ CheckSkiavk(commandBuffer);}
+        args::CmdUpdateBuffer&                      args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdFillBuffer(
+    void Process_vkCmdFillBuffer(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            dstBuffer,
-        VkDeviceSize                                dstOffset,
-        VkDeviceSize                                size,
-        uint32_t                                    data){ CheckSkiavk(commandBuffer);}
+        args::CmdFillBuffer&                        args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdPipelineBarrier(
+    void Process_vkCmdPipelineBarrier(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkPipelineStageFlags                        srcStageMask,
-        VkPipelineStageFlags                        dstStageMask,
-        VkDependencyFlags                           dependencyFlags,
-        uint32_t                                    memoryBarrierCount,
-        StructPointerDecoder<Decoded_VkMemoryBarrier>* pMemoryBarriers,
-        uint32_t                                    bufferMemoryBarrierCount,
-        StructPointerDecoder<Decoded_VkBufferMemoryBarrier>* pBufferMemoryBarriers,
-        uint32_t                                    imageMemoryBarrierCount,
-        StructPointerDecoder<Decoded_VkImageMemoryBarrier>* pImageMemoryBarriers){ CheckSkiavk(commandBuffer);}
+        args::CmdPipelineBarrier&                   args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdBeginQuery(
+    void Process_vkCmdBeginQuery(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            queryPool,
-        uint32_t                                    query,
-        VkQueryControlFlags                         flags){ CheckSkiavk(commandBuffer);}
+        args::CmdBeginQuery&                        args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdEndQuery(
+    void Process_vkCmdEndQuery(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            queryPool,
-        uint32_t                                    query){ CheckSkiavk(commandBuffer);}
+        args::CmdEndQuery&                          args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdResetQueryPool(
+    void Process_vkCmdResetQueryPool(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            queryPool,
-        uint32_t                                    firstQuery,
-        uint32_t                                    queryCount){ CheckSkiavk(commandBuffer);}
+        args::CmdResetQueryPool&                    args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdWriteTimestamp(
+    void Process_vkCmdWriteTimestamp(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkPipelineStageFlagBits                     pipelineStage,
-        format::HandleId                            queryPool,
-        uint32_t                                    query){ CheckSkiavk(commandBuffer);}
+        args::CmdWriteTimestamp&                    args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdCopyQueryPoolResults(
+    void Process_vkCmdCopyQueryPoolResults(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            queryPool,
-        uint32_t                                    firstQuery,
-        uint32_t                                    queryCount,
-        format::HandleId                            dstBuffer,
-        VkDeviceSize                                dstOffset,
-        VkDeviceSize                                stride,
-        VkQueryResultFlags                          flags){ CheckSkiavk(commandBuffer);}
+        args::CmdCopyQueryPoolResults&              args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdExecuteCommands(
+    void Process_vkCmdExecuteCommands(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    commandBufferCount,
-        HandlePointerDecoder<VkCommandBuffer>*      pCommandBuffers){ CheckSkiavk(commandBuffer);}
+        args::CmdExecuteCommands&                   args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCreateEvent(
+    void Process_vkCreateEvent(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkEventCreateInfo>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkEvent>*              pEvent){ CheckSkiavk(device);}
+        args::CreateEvent&                          args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDestroyEvent(
+    void Process_vkDestroyEvent(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            event,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
+        args::DestroyEvent&                         args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetEventStatus(
+    void Process_vkGetEventStatus(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            event){ CheckSkiavk(device);}
+        args::GetEventStatus&                       args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkSetEvent(
+    void Process_vkSetEvent(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            event){ CheckSkiavk(device);}
+        args::SetEvent&                             args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkResetEvent(
+    void Process_vkResetEvent(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            event){ CheckSkiavk(device);}
+        args::ResetEvent&                           args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCreateBufferView(
+    void Process_vkCreateBufferView(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkBufferViewCreateInfo>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkBufferView>*         pView){ CheckSkiavk(device);}
+        args::CreateBufferView&                     args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDestroyBufferView(
+    void Process_vkDestroyBufferView(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            bufferView,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
+        args::DestroyBufferView&                    args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCreateShaderModule(
+    void Process_vkCreateShaderModule(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkShaderModuleCreateInfo>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkShaderModule>*       pShaderModule){ CheckSkiavk(device);}
+        args::CreateShaderModule&                   args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDestroyShaderModule(
+    void Process_vkDestroyShaderModule(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            shaderModule,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
+        args::DestroyShaderModule&                  args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCreatePipelineCache(
+    void Process_vkCreatePipelineCache(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkPipelineCacheCreateInfo>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkPipelineCache>*      pPipelineCache){ CheckSkiavk(device);}
+        args::CreatePipelineCache&                  args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDestroyPipelineCache(
+    void Process_vkDestroyPipelineCache(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            pipelineCache,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
+        args::DestroyPipelineCache&                 args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetPipelineCacheData(
+    void Process_vkGetPipelineCacheData(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            pipelineCache,
-        PointerDecoder<size_t>*                     pDataSize,
-        PointerDecoder<uint8_t>*                    pData){ CheckSkiavk(device);}
+        args::GetPipelineCacheData&                 args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkMergePipelineCaches(
+    void Process_vkMergePipelineCaches(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            dstCache,
-        uint32_t                                    srcCacheCount,
-        HandlePointerDecoder<VkPipelineCache>*      pSrcCaches){ CheckSkiavk(device);}
+        args::MergePipelineCaches&                  args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCreateComputePipelines(
+    void Process_vkCreateComputePipelines(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            pipelineCache,
-        uint32_t                                    createInfoCount,
-        StructPointerDecoder<Decoded_VkComputePipelineCreateInfo>* pCreateInfos,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkPipeline>*           pPipelines){ CheckSkiavk(device);}
+        args::CreateComputePipelines&               args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDestroyPipeline(
+    void Process_vkDestroyPipeline(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            pipeline,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
+        args::DestroyPipeline&                      args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCreatePipelineLayout(
+    void Process_vkCreatePipelineLayout(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkPipelineLayoutCreateInfo>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkPipelineLayout>*     pPipelineLayout){ CheckSkiavk(device);}
+        args::CreatePipelineLayout&                 args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDestroyPipelineLayout(
+    void Process_vkDestroyPipelineLayout(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            pipelineLayout,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
+        args::DestroyPipelineLayout&                args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCreateSampler(
+    void Process_vkCreateSampler(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkSamplerCreateInfo>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkSampler>*            pSampler){ CheckSkiavk(device);}
+        args::CreateSampler&                        args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDestroySampler(
+    void Process_vkDestroySampler(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            sampler,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
+        args::DestroySampler&                       args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCreateDescriptorSetLayout(
+    void Process_vkCreateDescriptorSetLayout(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkDescriptorSetLayoutCreateInfo>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkDescriptorSetLayout>* pSetLayout){ CheckSkiavk(device);}
+        args::CreateDescriptorSetLayout&            args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDestroyDescriptorSetLayout(
+    void Process_vkDestroyDescriptorSetLayout(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            descriptorSetLayout,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
+        args::DestroyDescriptorSetLayout&           args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCreateDescriptorPool(
+    void Process_vkCreateDescriptorPool(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkDescriptorPoolCreateInfo>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkDescriptorPool>*     pDescriptorPool){ CheckSkiavk(device);}
+        args::CreateDescriptorPool&                 args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDestroyDescriptorPool(
+    void Process_vkDestroyDescriptorPool(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            descriptorPool,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
+        args::DestroyDescriptorPool&                args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkResetDescriptorPool(
+    void Process_vkResetDescriptorPool(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            descriptorPool,
-        VkDescriptorPoolResetFlags                  flags){ CheckSkiavk(device);}
+        args::ResetDescriptorPool&                  args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkAllocateDescriptorSets(
+    void Process_vkAllocateDescriptorSets(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkDescriptorSetAllocateInfo>* pAllocateInfo,
-        HandlePointerDecoder<VkDescriptorSet>*      pDescriptorSets){ CheckSkiavk(device);}
+        args::AllocateDescriptorSets&               args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkFreeDescriptorSets(
+    void Process_vkFreeDescriptorSets(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            descriptorPool,
-        uint32_t                                    descriptorSetCount,
-        HandlePointerDecoder<VkDescriptorSet>*      pDescriptorSets){ CheckSkiavk(device);}
+        args::FreeDescriptorSets&                   args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkUpdateDescriptorSets(
+    void Process_vkUpdateDescriptorSets(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        uint32_t                                    descriptorWriteCount,
-        StructPointerDecoder<Decoded_VkWriteDescriptorSet>* pDescriptorWrites,
-        uint32_t                                    descriptorCopyCount,
-        StructPointerDecoder<Decoded_VkCopyDescriptorSet>* pDescriptorCopies){ CheckSkiavk(device);}
+        args::UpdateDescriptorSets&                 args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCmdBindPipeline(
+    void Process_vkCmdBindPipeline(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkPipelineBindPoint                         pipelineBindPoint,
-        format::HandleId                            pipeline){ CheckSkiavk(commandBuffer);}
+        args::CmdBindPipeline&                      args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdBindDescriptorSets(
+    void Process_vkCmdBindDescriptorSets(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkPipelineBindPoint                         pipelineBindPoint,
-        format::HandleId                            layout,
-        uint32_t                                    firstSet,
-        uint32_t                                    descriptorSetCount,
-        HandlePointerDecoder<VkDescriptorSet>*      pDescriptorSets,
-        uint32_t                                    dynamicOffsetCount,
-        PointerDecoder<uint32_t>*                   pDynamicOffsets){ CheckSkiavk(commandBuffer);}
+        args::CmdBindDescriptorSets&                args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdClearColorImage(
+    void Process_vkCmdClearColorImage(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            image,
-        VkImageLayout                               imageLayout,
-        StructPointerDecoder<Decoded_VkClearColorValue>* pColor,
-        uint32_t                                    rangeCount,
-        StructPointerDecoder<Decoded_VkImageSubresourceRange>* pRanges){ CheckSkiavk(commandBuffer);}
+        args::CmdClearColorImage&                   args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdDispatch(
+    void Process_vkCmdDispatch(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    groupCountX,
-        uint32_t                                    groupCountY,
-        uint32_t                                    groupCountZ){ CheckSkiavk(commandBuffer);}
+        args::CmdDispatch&                          args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdDispatchIndirect(
+    void Process_vkCmdDispatchIndirect(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            buffer,
-        VkDeviceSize                                offset){ CheckSkiavk(commandBuffer);}
+        args::CmdDispatchIndirect&                  args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetEvent(
+    void Process_vkCmdSetEvent(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            event,
-        VkPipelineStageFlags                        stageMask){ CheckSkiavk(commandBuffer);}
+        args::CmdSetEvent&                          args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdResetEvent(
+    void Process_vkCmdResetEvent(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            event,
-        VkPipelineStageFlags                        stageMask){ CheckSkiavk(commandBuffer);}
+        args::CmdResetEvent&                        args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdWaitEvents(
+    void Process_vkCmdWaitEvents(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    eventCount,
-        HandlePointerDecoder<VkEvent>*              pEvents,
-        VkPipelineStageFlags                        srcStageMask,
-        VkPipelineStageFlags                        dstStageMask,
-        uint32_t                                    memoryBarrierCount,
-        StructPointerDecoder<Decoded_VkMemoryBarrier>* pMemoryBarriers,
-        uint32_t                                    bufferMemoryBarrierCount,
-        StructPointerDecoder<Decoded_VkBufferMemoryBarrier>* pBufferMemoryBarriers,
-        uint32_t                                    imageMemoryBarrierCount,
-        StructPointerDecoder<Decoded_VkImageMemoryBarrier>* pImageMemoryBarriers){ CheckSkiavk(commandBuffer);}
+        args::CmdWaitEvents&                        args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdPushConstants(
+    void Process_vkCmdPushConstants(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            layout,
-        VkShaderStageFlags                          stageFlags,
-        uint32_t                                    offset,
-        uint32_t                                    size,
-        PointerDecoder<uint8_t>*                    pValues){ CheckSkiavk(commandBuffer);}
+        args::CmdPushConstants&                     args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCreateGraphicsPipelines(
+    void Process_vkCreateGraphicsPipelines(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            pipelineCache,
-        uint32_t                                    createInfoCount,
-        StructPointerDecoder<Decoded_VkGraphicsPipelineCreateInfo>* pCreateInfos,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkPipeline>*           pPipelines){ CheckSkiavk(device);}
+        args::CreateGraphicsPipelines&              args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCreateFramebuffer(
+    void Process_vkCreateFramebuffer(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkFramebufferCreateInfo>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkFramebuffer>*        pFramebuffer){ CheckSkiavk(device);}
+        args::CreateFramebuffer&                    args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDestroyFramebuffer(
+    void Process_vkDestroyFramebuffer(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            framebuffer,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
+        args::DestroyFramebuffer&                   args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCreateRenderPass(
+    void Process_vkCreateRenderPass(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkRenderPassCreateInfo>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkRenderPass>*         pRenderPass){ CheckSkiavk(device);}
+        args::CreateRenderPass&                     args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDestroyRenderPass(
+    void Process_vkDestroyRenderPass(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            renderPass,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
+        args::DestroyRenderPass&                    args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetRenderAreaGranularity(
+    void Process_vkGetRenderAreaGranularity(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            renderPass,
-        StructPointerDecoder<Decoded_VkExtent2D>*   pGranularity){ CheckSkiavk(device);}
+        args::GetRenderAreaGranularity&             args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCmdSetViewport(
+    void Process_vkCmdSetViewport(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    firstViewport,
-        uint32_t                                    viewportCount,
-        StructPointerDecoder<Decoded_VkViewport>*   pViewports){ CheckSkiavk(commandBuffer);}
+        args::CmdSetViewport&                       args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetScissor(
+    void Process_vkCmdSetScissor(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    firstScissor,
-        uint32_t                                    scissorCount,
-        StructPointerDecoder<Decoded_VkRect2D>*     pScissors){ CheckSkiavk(commandBuffer);}
+        args::CmdSetScissor&                        args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetLineWidth(
+    void Process_vkCmdSetLineWidth(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        float                                       lineWidth){ CheckSkiavk(commandBuffer);}
+        args::CmdSetLineWidth&                      args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetDepthBias(
+    void Process_vkCmdSetDepthBias(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        float                                       depthBiasConstantFactor,
-        float                                       depthBiasClamp,
-        float                                       depthBiasSlopeFactor){ CheckSkiavk(commandBuffer);}
+        args::CmdSetDepthBias&                      args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetBlendConstants(
+    void Process_vkCmdSetBlendConstants(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        PointerDecoder<float>*                      blendConstants){ CheckSkiavk(commandBuffer);}
+        args::CmdSetBlendConstants&                 args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetDepthBounds(
+    void Process_vkCmdSetDepthBounds(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        float                                       minDepthBounds,
-        float                                       maxDepthBounds){ CheckSkiavk(commandBuffer);}
+        args::CmdSetDepthBounds&                    args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetStencilCompareMask(
+    void Process_vkCmdSetStencilCompareMask(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkStencilFaceFlags                          faceMask,
-        uint32_t                                    compareMask){ CheckSkiavk(commandBuffer);}
+        args::CmdSetStencilCompareMask&             args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetStencilWriteMask(
+    void Process_vkCmdSetStencilWriteMask(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkStencilFaceFlags                          faceMask,
-        uint32_t                                    writeMask){ CheckSkiavk(commandBuffer);}
+        args::CmdSetStencilWriteMask&               args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetStencilReference(
+    void Process_vkCmdSetStencilReference(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkStencilFaceFlags                          faceMask,
-        uint32_t                                    reference){ CheckSkiavk(commandBuffer);}
+        args::CmdSetStencilReference&               args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdBindIndexBuffer(
+    void Process_vkCmdBindIndexBuffer(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            buffer,
-        VkDeviceSize                                offset,
-        VkIndexType                                 indexType){ CheckSkiavk(commandBuffer);}
+        args::CmdBindIndexBuffer&                   args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdBindVertexBuffers(
+    void Process_vkCmdBindVertexBuffers(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    firstBinding,
-        uint32_t                                    bindingCount,
-        HandlePointerDecoder<VkBuffer>*             pBuffers,
-        PointerDecoder<VkDeviceSize>*               pOffsets){ CheckSkiavk(commandBuffer);}
+        args::CmdBindVertexBuffers&                 args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdDraw(
+    void Process_vkCmdDraw(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    vertexCount,
-        uint32_t                                    instanceCount,
-        uint32_t                                    firstVertex,
-        uint32_t                                    firstInstance){ CheckSkiavk(commandBuffer);}
+        args::CmdDraw&                              args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdDrawIndexed(
+    void Process_vkCmdDrawIndexed(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    indexCount,
-        uint32_t                                    instanceCount,
-        uint32_t                                    firstIndex,
-        int32_t                                     vertexOffset,
-        uint32_t                                    firstInstance){ CheckSkiavk(commandBuffer);}
+        args::CmdDrawIndexed&                       args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdDrawIndirect(
+    void Process_vkCmdDrawIndirect(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            buffer,
-        VkDeviceSize                                offset,
-        uint32_t                                    drawCount,
-        uint32_t                                    stride){ CheckSkiavk(commandBuffer);}
+        args::CmdDrawIndirect&                      args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdDrawIndexedIndirect(
+    void Process_vkCmdDrawIndexedIndirect(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            buffer,
-        VkDeviceSize                                offset,
-        uint32_t                                    drawCount,
-        uint32_t                                    stride){ CheckSkiavk(commandBuffer);}
+        args::CmdDrawIndexedIndirect&               args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdBlitImage(
+    void Process_vkCmdBlitImage(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            srcImage,
-        VkImageLayout                               srcImageLayout,
-        format::HandleId                            dstImage,
-        VkImageLayout                               dstImageLayout,
-        uint32_t                                    regionCount,
-        StructPointerDecoder<Decoded_VkImageBlit>*  pRegions,
-        VkFilter                                    filter){ CheckSkiavk(commandBuffer);}
+        args::CmdBlitImage&                         args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdClearDepthStencilImage(
+    void Process_vkCmdClearDepthStencilImage(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            image,
-        VkImageLayout                               imageLayout,
-        StructPointerDecoder<Decoded_VkClearDepthStencilValue>* pDepthStencil,
-        uint32_t                                    rangeCount,
-        StructPointerDecoder<Decoded_VkImageSubresourceRange>* pRanges){ CheckSkiavk(commandBuffer);}
+        args::CmdClearDepthStencilImage&            args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdClearAttachments(
+    void Process_vkCmdClearAttachments(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    attachmentCount,
-        StructPointerDecoder<Decoded_VkClearAttachment>* pAttachments,
-        uint32_t                                    rectCount,
-        StructPointerDecoder<Decoded_VkClearRect>*  pRects){ CheckSkiavk(commandBuffer);}
+        args::CmdClearAttachments&                  args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdResolveImage(
+    void Process_vkCmdResolveImage(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            srcImage,
-        VkImageLayout                               srcImageLayout,
-        format::HandleId                            dstImage,
-        VkImageLayout                               dstImageLayout,
-        uint32_t                                    regionCount,
-        StructPointerDecoder<Decoded_VkImageResolve>* pRegions){ CheckSkiavk(commandBuffer);}
+        args::CmdResolveImage&                      args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdBeginRenderPass(
+    void Process_vkCmdBeginRenderPass(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkRenderPassBeginInfo>* pRenderPassBegin,
-        VkSubpassContents                           contents){ CheckSkiavk(commandBuffer);}
+        args::CmdBeginRenderPass&                   args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdNextSubpass(
+    void Process_vkCmdNextSubpass(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkSubpassContents                           contents){ CheckSkiavk(commandBuffer);}
+        args::CmdNextSubpass&                       args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdEndRenderPass(
+    void Process_vkCmdEndRenderPass(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkBindBufferMemory2(
+        args::CmdEndRenderPass&                     args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkBindBufferMemory2(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        uint32_t                                    bindInfoCount,
-        StructPointerDecoder<Decoded_VkBindBufferMemoryInfo>* pBindInfos){ CheckSkiavk(device);}
+        args::BindBufferMemory2&                    args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkBindImageMemory2(
+    void Process_vkBindImageMemory2(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        uint32_t                                    bindInfoCount,
-        StructPointerDecoder<Decoded_VkBindImageMemoryInfo>* pBindInfos){ CheckSkiavk(device);}
+        args::BindImageMemory2&                     args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetDeviceGroupPeerMemoryFeatures(
+    void Process_vkGetDeviceGroupPeerMemoryFeatures(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        uint32_t                                    heapIndex,
-        uint32_t                                    localDeviceIndex,
-        uint32_t                                    remoteDeviceIndex,
-        PointerDecoder<VkPeerMemoryFeatureFlags>*   pPeerMemoryFeatures){ CheckSkiavk(device);}
+        args::GetDeviceGroupPeerMemoryFeatures&     args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCmdSetDeviceMask(
+    void Process_vkCmdSetDeviceMask(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    deviceMask){ CheckSkiavk(commandBuffer);}
+        args::CmdSetDeviceMask&                     args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkEnumeratePhysicalDeviceGroups(
+    void Process_vkEnumeratePhysicalDeviceGroups(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            instance,
-        PointerDecoder<uint32_t>*                   pPhysicalDeviceGroupCount,
-        StructPointerDecoder<Decoded_VkPhysicalDeviceGroupProperties>* pPhysicalDeviceGroupProperties){ CheckSkiavk(instance);}
+        args::EnumeratePhysicalDeviceGroups&        args) override { CheckSkiavk(args.instance);}
 
-    virtual void Process_vkGetImageMemoryRequirements2(
+    void Process_vkGetImageMemoryRequirements2(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkImageMemoryRequirementsInfo2>* pInfo,
-        StructPointerDecoder<Decoded_VkMemoryRequirements2>* pMemoryRequirements){ CheckSkiavk(device);}
+        args::GetImageMemoryRequirements2&          args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetBufferMemoryRequirements2(
+    void Process_vkGetBufferMemoryRequirements2(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkBufferMemoryRequirementsInfo2>* pInfo,
-        StructPointerDecoder<Decoded_VkMemoryRequirements2>* pMemoryRequirements){ CheckSkiavk(device);}
+        args::GetBufferMemoryRequirements2&         args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetImageSparseMemoryRequirements2(
+    void Process_vkGetImageSparseMemoryRequirements2(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkImageSparseMemoryRequirementsInfo2>* pInfo,
-        PointerDecoder<uint32_t>*                   pSparseMemoryRequirementCount,
-        StructPointerDecoder<Decoded_VkSparseImageMemoryRequirements2>* pSparseMemoryRequirements){ CheckSkiavk(device);}
+        args::GetImageSparseMemoryRequirements2&    args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetPhysicalDeviceFeatures2(
+    void Process_vkGetPhysicalDeviceFeatures2(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            physicalDevice,
-        StructPointerDecoder<Decoded_VkPhysicalDeviceFeatures2>* pFeatures){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceFeatures2&           args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkGetPhysicalDeviceProperties2(
+    void Process_vkGetPhysicalDeviceProperties2(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            physicalDevice,
-        StructPointerDecoder<Decoded_VkPhysicalDeviceProperties2>* pProperties){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceProperties2&         args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkGetPhysicalDeviceFormatProperties2(
+    void Process_vkGetPhysicalDeviceFormatProperties2(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            physicalDevice,
-        VkFormat                                    format,
-        StructPointerDecoder<Decoded_VkFormatProperties2>* pFormatProperties){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceFormatProperties2&   args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkGetPhysicalDeviceImageFormatProperties2(
+    void Process_vkGetPhysicalDeviceImageFormatProperties2(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        StructPointerDecoder<Decoded_VkPhysicalDeviceImageFormatInfo2>* pImageFormatInfo,
-        StructPointerDecoder<Decoded_VkImageFormatProperties2>* pImageFormatProperties){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceImageFormatProperties2& args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkGetPhysicalDeviceQueueFamilyProperties2(
+    void Process_vkGetPhysicalDeviceQueueFamilyProperties2(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            physicalDevice,
-        PointerDecoder<uint32_t>*                   pQueueFamilyPropertyCount,
-        StructPointerDecoder<Decoded_VkQueueFamilyProperties2>* pQueueFamilyProperties){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceQueueFamilyProperties2& args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkGetPhysicalDeviceMemoryProperties2(
+    void Process_vkGetPhysicalDeviceMemoryProperties2(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            physicalDevice,
-        StructPointerDecoder<Decoded_VkPhysicalDeviceMemoryProperties2>* pMemoryProperties){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceMemoryProperties2&   args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkGetPhysicalDeviceSparseImageFormatProperties2(
+    void Process_vkGetPhysicalDeviceSparseImageFormatProperties2(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            physicalDevice,
-        StructPointerDecoder<Decoded_VkPhysicalDeviceSparseImageFormatInfo2>* pFormatInfo,
-        PointerDecoder<uint32_t>*                   pPropertyCount,
-        StructPointerDecoder<Decoded_VkSparseImageFormatProperties2>* pProperties){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceSparseImageFormatProperties2& args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkTrimCommandPool(
+    void Process_vkTrimCommandPool(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            commandPool,
-        VkCommandPoolTrimFlags                      flags){ CheckSkiavk(device);}
+        args::TrimCommandPool&                      args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetDeviceQueue2(
+    void Process_vkGetDeviceQueue2(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkDeviceQueueInfo2>* pQueueInfo,
-        HandlePointerDecoder<VkQueue>*              pQueue);
+        args::GetDeviceQueue2&                      args) override;
 
-    virtual void Process_vkGetPhysicalDeviceExternalBufferProperties(
+    void Process_vkGetPhysicalDeviceExternalBufferProperties(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            physicalDevice,
-        StructPointerDecoder<Decoded_VkPhysicalDeviceExternalBufferInfo>* pExternalBufferInfo,
-        StructPointerDecoder<Decoded_VkExternalBufferProperties>* pExternalBufferProperties){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceExternalBufferProperties& args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkGetPhysicalDeviceExternalFenceProperties(
+    void Process_vkGetPhysicalDeviceExternalFenceProperties(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            physicalDevice,
-        StructPointerDecoder<Decoded_VkPhysicalDeviceExternalFenceInfo>* pExternalFenceInfo,
-        StructPointerDecoder<Decoded_VkExternalFenceProperties>* pExternalFenceProperties){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceExternalFenceProperties& args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkGetPhysicalDeviceExternalSemaphoreProperties(
+    void Process_vkGetPhysicalDeviceExternalSemaphoreProperties(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            physicalDevice,
-        StructPointerDecoder<Decoded_VkPhysicalDeviceExternalSemaphoreInfo>* pExternalSemaphoreInfo,
-        StructPointerDecoder<Decoded_VkExternalSemaphoreProperties>* pExternalSemaphoreProperties){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceExternalSemaphoreProperties& args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkCmdDispatchBase(
+    void Process_vkCmdDispatchBase(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    baseGroupX,
-        uint32_t                                    baseGroupY,
-        uint32_t                                    baseGroupZ,
-        uint32_t                                    groupCountX,
-        uint32_t                                    groupCountY,
-        uint32_t                                    groupCountZ){ CheckSkiavk(commandBuffer);}
+        args::CmdDispatchBase&                      args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCreateDescriptorUpdateTemplate(
+    void Process_vkCreateDescriptorUpdateTemplate(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkDescriptorUpdateTemplateCreateInfo>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkDescriptorUpdateTemplate>* pDescriptorUpdateTemplate){ CheckSkiavk(device);}
+        args::CreateDescriptorUpdateTemplate&       args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDestroyDescriptorUpdateTemplate(
+    void Process_vkDestroyDescriptorUpdateTemplate(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            descriptorUpdateTemplate,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
+        args::DestroyDescriptorUpdateTemplate&      args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetDescriptorSetLayoutSupport(
+    void Process_vkGetDescriptorSetLayoutSupport(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkDescriptorSetLayoutCreateInfo>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkDescriptorSetLayoutSupport>* pSupport){ CheckSkiavk(device);}
+        args::GetDescriptorSetLayoutSupport&        args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCreateSamplerYcbcrConversion(
+    void Process_vkCreateSamplerYcbcrConversion(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkSamplerYcbcrConversionCreateInfo>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkSamplerYcbcrConversion>* pYcbcrConversion){ CheckSkiavk(device);}
+        args::CreateSamplerYcbcrConversion&         args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDestroySamplerYcbcrConversion(
+    void Process_vkDestroySamplerYcbcrConversion(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            ycbcrConversion,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
-    virtual void Process_vkResetQueryPool(
+        args::DestroySamplerYcbcrConversion&        args) override { CheckSkiavk(args.device);}
+    void Process_vkResetQueryPool(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            queryPool,
-        uint32_t                                    firstQuery,
-        uint32_t                                    queryCount){ CheckSkiavk(device);}
+        args::ResetQueryPool&                       args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetSemaphoreCounterValue(
+    void Process_vkGetSemaphoreCounterValue(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            semaphore,
-        PointerDecoder<uint64_t>*                   pValue){ CheckSkiavk(device);}
+        args::GetSemaphoreCounterValue&             args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkWaitSemaphores(
+    void Process_vkWaitSemaphores(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkSemaphoreWaitInfo>* pWaitInfo,
-        uint64_t                                    timeout){ CheckSkiavk(device);}
+        args::WaitSemaphores&                       args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkSignalSemaphore(
+    void Process_vkSignalSemaphore(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkSemaphoreSignalInfo>* pSignalInfo){ CheckSkiavk(device);}
+        args::SignalSemaphore&                      args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetBufferDeviceAddress(
+    void Process_vkGetBufferDeviceAddress(
         const ApiCallInfo&                          call_info,
-        VkDeviceAddress                             returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkBufferDeviceAddressInfo>* pInfo){ CheckSkiavk(device);}
+        args::GetBufferDeviceAddress&               args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetBufferOpaqueCaptureAddress(
+    void Process_vkGetBufferOpaqueCaptureAddress(
         const ApiCallInfo&                          call_info,
-        uint64_t                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkBufferDeviceAddressInfo>* pInfo){ CheckSkiavk(device);}
+        args::GetBufferOpaqueCaptureAddress&        args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetDeviceMemoryOpaqueCaptureAddress(
+    void Process_vkGetDeviceMemoryOpaqueCaptureAddress(
         const ApiCallInfo&                          call_info,
-        uint64_t                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkDeviceMemoryOpaqueCaptureAddressInfo>* pInfo){ CheckSkiavk(device);}
+        args::GetDeviceMemoryOpaqueCaptureAddress&  args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCmdDrawIndirectCount(
+    void Process_vkCmdDrawIndirectCount(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            buffer,
-        VkDeviceSize                                offset,
-        format::HandleId                            countBuffer,
-        VkDeviceSize                                countBufferOffset,
-        uint32_t                                    maxDrawCount,
-        uint32_t                                    stride){ CheckSkiavk(commandBuffer);}
+        args::CmdDrawIndirectCount&                 args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdDrawIndexedIndirectCount(
+    void Process_vkCmdDrawIndexedIndirectCount(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            buffer,
-        VkDeviceSize                                offset,
-        format::HandleId                            countBuffer,
-        VkDeviceSize                                countBufferOffset,
-        uint32_t                                    maxDrawCount,
-        uint32_t                                    stride){ CheckSkiavk(commandBuffer);}
+        args::CmdDrawIndexedIndirectCount&          args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCreateRenderPass2(
+    void Process_vkCreateRenderPass2(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkRenderPassCreateInfo2>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkRenderPass>*         pRenderPass){ CheckSkiavk(device);}
+        args::CreateRenderPass2&                    args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCmdBeginRenderPass2(
+    void Process_vkCmdBeginRenderPass2(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkRenderPassBeginInfo>* pRenderPassBegin,
-        StructPointerDecoder<Decoded_VkSubpassBeginInfo>* pSubpassBeginInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdBeginRenderPass2&                  args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdNextSubpass2(
+    void Process_vkCmdNextSubpass2(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkSubpassBeginInfo>* pSubpassBeginInfo,
-        StructPointerDecoder<Decoded_VkSubpassEndInfo>* pSubpassEndInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdNextSubpass2&                      args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdEndRenderPass2(
+    void Process_vkCmdEndRenderPass2(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkSubpassEndInfo>* pSubpassEndInfo){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkGetPhysicalDeviceToolProperties(
+        args::CmdEndRenderPass2&                    args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkGetPhysicalDeviceToolProperties(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        PointerDecoder<uint32_t>*                   pToolCount,
-        StructPointerDecoder<Decoded_VkPhysicalDeviceToolProperties>* pToolProperties){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceToolProperties&      args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkCreatePrivateDataSlot(
+    void Process_vkCreatePrivateDataSlot(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkPrivateDataSlotCreateInfo>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkPrivateDataSlot>*    pPrivateDataSlot){ CheckSkiavk(device);}
+        args::CreatePrivateDataSlot&                args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDestroyPrivateDataSlot(
+    void Process_vkDestroyPrivateDataSlot(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            privateDataSlot,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
+        args::DestroyPrivateDataSlot&               args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkSetPrivateData(
+    void Process_vkSetPrivateData(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        VkObjectType                                objectType,
-        uint64_t                                    objectHandle,
-        format::HandleId                            privateDataSlot,
-        uint64_t                                    data){ CheckSkiavk(device);}
+        args::SetPrivateData&                       args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetPrivateData(
+    void Process_vkGetPrivateData(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        VkObjectType                                objectType,
-        uint64_t                                    objectHandle,
-        format::HandleId                            privateDataSlot,
-        PointerDecoder<uint64_t>*                   pData){ CheckSkiavk(device);}
+        args::GetPrivateData&                       args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCmdPipelineBarrier2(
+    void Process_vkCmdPipelineBarrier2(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkDependencyInfo>* pDependencyInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdPipelineBarrier2&                  args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdWriteTimestamp2(
+    void Process_vkCmdWriteTimestamp2(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkPipelineStageFlags2                       stage,
-        format::HandleId                            queryPool,
-        uint32_t                                    query){ CheckSkiavk(commandBuffer);}
+        args::CmdWriteTimestamp2&                   args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkQueueSubmit2(
+    void Process_vkQueueSubmit2(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            queue,
-        uint32_t                                    submitCount,
-        StructPointerDecoder<Decoded_VkSubmitInfo2>* pSubmits,
-        format::HandleId                            fence);
+        args::QueueSubmit2&                         args) override;
 
-    virtual void Process_vkCmdCopyBuffer2(
+    void Process_vkCmdCopyBuffer2(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkCopyBufferInfo2>* pCopyBufferInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdCopyBuffer2&                       args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdCopyImage2(
+    void Process_vkCmdCopyImage2(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkCopyImageInfo2>* pCopyImageInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdCopyImage2&                        args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdCopyBufferToImage2(
+    void Process_vkCmdCopyBufferToImage2(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkCopyBufferToImageInfo2>* pCopyBufferToImageInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdCopyBufferToImage2&                args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdCopyImageToBuffer2(
+    void Process_vkCmdCopyImageToBuffer2(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkCopyImageToBufferInfo2>* pCopyImageToBufferInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdCopyImageToBuffer2&                args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkGetDeviceBufferMemoryRequirements(
+    void Process_vkGetDeviceBufferMemoryRequirements(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkDeviceBufferMemoryRequirements>* pInfo,
-        StructPointerDecoder<Decoded_VkMemoryRequirements2>* pMemoryRequirements){ CheckSkiavk(device);}
+        args::GetDeviceBufferMemoryRequirements&    args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetDeviceImageMemoryRequirements(
+    void Process_vkGetDeviceImageMemoryRequirements(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkDeviceImageMemoryRequirements>* pInfo,
-        StructPointerDecoder<Decoded_VkMemoryRequirements2>* pMemoryRequirements){ CheckSkiavk(device);}
+        args::GetDeviceImageMemoryRequirements&     args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetDeviceImageSparseMemoryRequirements(
+    void Process_vkGetDeviceImageSparseMemoryRequirements(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkDeviceImageMemoryRequirements>* pInfo,
-        PointerDecoder<uint32_t>*                   pSparseMemoryRequirementCount,
-        StructPointerDecoder<Decoded_VkSparseImageMemoryRequirements2>* pSparseMemoryRequirements){ CheckSkiavk(device);}
+        args::GetDeviceImageSparseMemoryRequirements& args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCmdSetEvent2(
+    void Process_vkCmdSetEvent2(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            event,
-        StructPointerDecoder<Decoded_VkDependencyInfo>* pDependencyInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdSetEvent2&                         args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdResetEvent2(
+    void Process_vkCmdResetEvent2(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            event,
-        VkPipelineStageFlags2                       stageMask){ CheckSkiavk(commandBuffer);}
+        args::CmdResetEvent2&                       args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdWaitEvents2(
+    void Process_vkCmdWaitEvents2(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    eventCount,
-        HandlePointerDecoder<VkEvent>*              pEvents,
-        StructPointerDecoder<Decoded_VkDependencyInfo>* pDependencyInfos){ CheckSkiavk(commandBuffer);}
+        args::CmdWaitEvents2&                       args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdBlitImage2(
+    void Process_vkCmdBlitImage2(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkBlitImageInfo2>* pBlitImageInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdBlitImage2&                        args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdResolveImage2(
+    void Process_vkCmdResolveImage2(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkResolveImageInfo2>* pResolveImageInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdResolveImage2&                     args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdBeginRendering(
+    void Process_vkCmdBeginRendering(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkRenderingInfo>* pRenderingInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdBeginRendering&                    args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdEndRendering(
+    void Process_vkCmdEndRendering(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer){ CheckSkiavk(commandBuffer);}
+        args::CmdEndRendering&                      args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetCullMode(
+    void Process_vkCmdSetCullMode(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkCullModeFlags                             cullMode){ CheckSkiavk(commandBuffer);}
+        args::CmdSetCullMode&                       args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetFrontFace(
+    void Process_vkCmdSetFrontFace(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkFrontFace                                 frontFace){ CheckSkiavk(commandBuffer);}
+        args::CmdSetFrontFace&                      args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetPrimitiveTopology(
+    void Process_vkCmdSetPrimitiveTopology(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkPrimitiveTopology                         primitiveTopology){ CheckSkiavk(commandBuffer);}
+        args::CmdSetPrimitiveTopology&              args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetViewportWithCount(
+    void Process_vkCmdSetViewportWithCount(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    viewportCount,
-        StructPointerDecoder<Decoded_VkViewport>*   pViewports){ CheckSkiavk(commandBuffer);}
+        args::CmdSetViewportWithCount&              args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetScissorWithCount(
+    void Process_vkCmdSetScissorWithCount(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    scissorCount,
-        StructPointerDecoder<Decoded_VkRect2D>*     pScissors){ CheckSkiavk(commandBuffer);}
+        args::CmdSetScissorWithCount&               args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdBindVertexBuffers2(
+    void Process_vkCmdBindVertexBuffers2(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    firstBinding,
-        uint32_t                                    bindingCount,
-        HandlePointerDecoder<VkBuffer>*             pBuffers,
-        PointerDecoder<VkDeviceSize>*               pOffsets,
-        PointerDecoder<VkDeviceSize>*               pSizes,
-        PointerDecoder<VkDeviceSize>*               pStrides){ CheckSkiavk(commandBuffer);}
+        args::CmdBindVertexBuffers2&                args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetDepthTestEnable(
+    void Process_vkCmdSetDepthTestEnable(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkBool32                                    depthTestEnable){ CheckSkiavk(commandBuffer);}
+        args::CmdSetDepthTestEnable&                args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetDepthWriteEnable(
+    void Process_vkCmdSetDepthWriteEnable(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkBool32                                    depthWriteEnable){ CheckSkiavk(commandBuffer);}
+        args::CmdSetDepthWriteEnable&               args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetDepthCompareOp(
+    void Process_vkCmdSetDepthCompareOp(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkCompareOp                                 depthCompareOp){ CheckSkiavk(commandBuffer);}
+        args::CmdSetDepthCompareOp&                 args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetDepthBoundsTestEnable(
+    void Process_vkCmdSetDepthBoundsTestEnable(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkBool32                                    depthBoundsTestEnable){ CheckSkiavk(commandBuffer);}
+        args::CmdSetDepthBoundsTestEnable&          args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetStencilTestEnable(
+    void Process_vkCmdSetStencilTestEnable(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkBool32                                    stencilTestEnable){ CheckSkiavk(commandBuffer);}
+        args::CmdSetStencilTestEnable&              args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetStencilOp(
+    void Process_vkCmdSetStencilOp(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkStencilFaceFlags                          faceMask,
-        VkStencilOp                                 failOp,
-        VkStencilOp                                 passOp,
-        VkStencilOp                                 depthFailOp,
-        VkCompareOp                                 compareOp){ CheckSkiavk(commandBuffer);}
+        args::CmdSetStencilOp&                      args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetRasterizerDiscardEnable(
+    void Process_vkCmdSetRasterizerDiscardEnable(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkBool32                                    rasterizerDiscardEnable){ CheckSkiavk(commandBuffer);}
+        args::CmdSetRasterizerDiscardEnable&        args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetDepthBiasEnable(
+    void Process_vkCmdSetDepthBiasEnable(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkBool32                                    depthBiasEnable){ CheckSkiavk(commandBuffer);}
+        args::CmdSetDepthBiasEnable&                args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetPrimitiveRestartEnable(
+    void Process_vkCmdSetPrimitiveRestartEnable(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkBool32                                    primitiveRestartEnable){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkMapMemory2(
+        args::CmdSetPrimitiveRestartEnable&         args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkMapMemory2(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkMemoryMapInfo>* pMemoryMapInfo,
-        PointerDecoder<uint64_t, void*>*            ppData){ CheckSkiavk(device);}
+        args::MapMemory2&                           args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkUnmapMemory2(
+    void Process_vkUnmapMemory2(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkMemoryUnmapInfo>* pMemoryUnmapInfo){ CheckSkiavk(device);}
+        args::UnmapMemory2&                         args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetDeviceImageSubresourceLayout(
+    void Process_vkGetDeviceImageSubresourceLayout(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkDeviceImageSubresourceInfo>* pInfo,
-        StructPointerDecoder<Decoded_VkSubresourceLayout2>* pLayout){ CheckSkiavk(device);}
+        args::GetDeviceImageSubresourceLayout&      args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetImageSubresourceLayout2(
+    void Process_vkGetImageSubresourceLayout2(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            image,
-        StructPointerDecoder<Decoded_VkImageSubresource2>* pSubresource,
-        StructPointerDecoder<Decoded_VkSubresourceLayout2>* pLayout){ CheckSkiavk(device);}
+        args::GetImageSubresourceLayout2&           args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCopyMemoryToImage(
+    void Process_vkCopyMemoryToImage(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkCopyMemoryToImageInfo>* pCopyMemoryToImageInfo){ CheckSkiavk(device);}
+        args::CopyMemoryToImage&                    args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCopyImageToMemory(
+    void Process_vkCopyImageToMemory(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkCopyImageToMemoryInfo>* pCopyImageToMemoryInfo){ CheckSkiavk(device);}
+        args::CopyImageToMemory&                    args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCopyImageToImage(
+    void Process_vkCopyImageToImage(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkCopyImageToImageInfo>* pCopyImageToImageInfo){ CheckSkiavk(device);}
+        args::CopyImageToImage&                     args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkTransitionImageLayout(
+    void Process_vkTransitionImageLayout(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        uint32_t                                    transitionCount,
-        StructPointerDecoder<Decoded_VkHostImageLayoutTransitionInfo>* pTransitions){ CheckSkiavk(device);}
+        args::TransitionImageLayout&                args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCmdPushDescriptorSet(
+    void Process_vkCmdPushDescriptorSet(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkPipelineBindPoint                         pipelineBindPoint,
-        format::HandleId                            layout,
-        uint32_t                                    set,
-        uint32_t                                    descriptorWriteCount,
-        StructPointerDecoder<Decoded_VkWriteDescriptorSet>* pDescriptorWrites){ CheckSkiavk(commandBuffer);}
+        args::CmdPushDescriptorSet&                 args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdBindDescriptorSets2(
+    void Process_vkCmdBindDescriptorSets2(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkBindDescriptorSetsInfo>* pBindDescriptorSetsInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdBindDescriptorSets2&               args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdPushConstants2(
+    void Process_vkCmdPushConstants2(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkPushConstantsInfo>* pPushConstantsInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdPushConstants2&                    args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdPushDescriptorSet2(
+    void Process_vkCmdPushDescriptorSet2(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkPushDescriptorSetInfo>* pPushDescriptorSetInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdPushDescriptorSet2&                args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetLineStipple(
+    void Process_vkCmdSetLineStipple(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    lineStippleFactor,
-        uint16_t                                    lineStipplePattern){ CheckSkiavk(commandBuffer);}
+        args::CmdSetLineStipple&                    args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdBindIndexBuffer2(
+    void Process_vkCmdBindIndexBuffer2(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            buffer,
-        VkDeviceSize                                offset,
-        VkDeviceSize                                size,
-        VkIndexType                                 indexType){ CheckSkiavk(commandBuffer);}
+        args::CmdBindIndexBuffer2&                  args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkGetRenderingAreaGranularity(
+    void Process_vkGetRenderingAreaGranularity(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkRenderingAreaInfo>* pRenderingAreaInfo,
-        StructPointerDecoder<Decoded_VkExtent2D>*   pGranularity){ CheckSkiavk(device);}
+        args::GetRenderingAreaGranularity&          args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCmdSetRenderingAttachmentLocations(
+    void Process_vkCmdSetRenderingAttachmentLocations(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkRenderingAttachmentLocationInfo>* pLocationInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdSetRenderingAttachmentLocations&   args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetRenderingInputAttachmentIndices(
+    void Process_vkCmdSetRenderingInputAttachmentIndices(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkRenderingInputAttachmentIndexInfo>* pInputAttachmentIndexInfo){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkDestroySurfaceKHR(
+        args::CmdSetRenderingInputAttachmentIndices& args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkDestroySurfaceKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            instance,
-        format::HandleId                            surface,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(instance);}
+        args::DestroySurfaceKHR&                    args) override { CheckSkiavk(args.instance);}
 
-    virtual void Process_vkGetPhysicalDeviceSurfaceSupportKHR(
+    void Process_vkGetPhysicalDeviceSurfaceSupportKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        uint32_t                                    queueFamilyIndex,
-        format::HandleId                            surface,
-        PointerDecoder<VkBool32>*                   pSupported){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceSurfaceSupportKHR&   args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
+    void Process_vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        format::HandleId                            surface,
-        StructPointerDecoder<Decoded_VkSurfaceCapabilitiesKHR>* pSurfaceCapabilities){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceSurfaceCapabilitiesKHR& args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkGetPhysicalDeviceSurfaceFormatsKHR(
+    void Process_vkGetPhysicalDeviceSurfaceFormatsKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        format::HandleId                            surface,
-        PointerDecoder<uint32_t>*                   pSurfaceFormatCount,
-        StructPointerDecoder<Decoded_VkSurfaceFormatKHR>* pSurfaceFormats){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceSurfaceFormatsKHR&   args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkGetPhysicalDeviceSurfacePresentModesKHR(
+    void Process_vkGetPhysicalDeviceSurfacePresentModesKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        format::HandleId                            surface,
-        PointerDecoder<uint32_t>*                   pPresentModeCount,
-        PointerDecoder<VkPresentModeKHR>*           pPresentModes){ CheckSkiavk(physicalDevice);}
-    virtual void Process_vkCreateSwapchainKHR(
+        args::GetPhysicalDeviceSurfacePresentModesKHR& args) override { CheckSkiavk(args.physicalDevice);}
+    void Process_vkCreateSwapchainKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkSwapchainCreateInfoKHR>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkSwapchainKHR>*       pSwapchain){ CheckSkiavk(device);}
+        args::CreateSwapchainKHR&                   args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDestroySwapchainKHR(
+    void Process_vkDestroySwapchainKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            swapchain,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
+        args::DestroySwapchainKHR&                  args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetSwapchainImagesKHR(
+    void Process_vkGetSwapchainImagesKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            swapchain,
-        PointerDecoder<uint32_t>*                   pSwapchainImageCount,
-        HandlePointerDecoder<VkImage>*              pSwapchainImages){ CheckSkiavk(device);}
+        args::GetSwapchainImagesKHR&                args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkAcquireNextImageKHR(
+    void Process_vkAcquireNextImageKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            swapchain,
-        uint64_t                                    timeout,
-        format::HandleId                            semaphore,
-        format::HandleId                            fence,
-        PointerDecoder<uint32_t>*                   pImageIndex){ CheckSkiavk(device);}
+        args::AcquireNextImageKHR&                  args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkQueuePresentKHR(
+    void Process_vkQueuePresentKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            queue,
-        StructPointerDecoder<Decoded_VkPresentInfoKHR>* pPresentInfo);
+        args::QueuePresentKHR&                      args) override;
 
-    virtual void Process_vkGetDeviceGroupPresentCapabilitiesKHR(
+    void Process_vkGetDeviceGroupPresentCapabilitiesKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkDeviceGroupPresentCapabilitiesKHR>* pDeviceGroupPresentCapabilities){ CheckSkiavk(device);}
+        args::GetDeviceGroupPresentCapabilitiesKHR& args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetDeviceGroupSurfacePresentModesKHR(
+    void Process_vkGetDeviceGroupSurfacePresentModesKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            surface,
-        PointerDecoder<VkDeviceGroupPresentModeFlagsKHR>* pModes){ CheckSkiavk(device);}
+        args::GetDeviceGroupSurfacePresentModesKHR& args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetPhysicalDevicePresentRectanglesKHR(
+    void Process_vkGetPhysicalDevicePresentRectanglesKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        format::HandleId                            surface,
-        PointerDecoder<uint32_t>*                   pRectCount,
-        StructPointerDecoder<Decoded_VkRect2D>*     pRects){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDevicePresentRectanglesKHR& args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkAcquireNextImage2KHR(
+    void Process_vkAcquireNextImage2KHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkAcquireNextImageInfoKHR>* pAcquireInfo,
-        PointerDecoder<uint32_t>*                   pImageIndex){ CheckSkiavk(device);}
-    virtual void Process_vkGetPhysicalDeviceDisplayPropertiesKHR(
+        args::AcquireNextImage2KHR&                 args) override { CheckSkiavk(args.device);}
+    void Process_vkGetPhysicalDeviceDisplayPropertiesKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        PointerDecoder<uint32_t>*                   pPropertyCount,
-        StructPointerDecoder<Decoded_VkDisplayPropertiesKHR>* pProperties){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceDisplayPropertiesKHR& args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkGetPhysicalDeviceDisplayPlanePropertiesKHR(
+    void Process_vkGetPhysicalDeviceDisplayPlanePropertiesKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        PointerDecoder<uint32_t>*                   pPropertyCount,
-        StructPointerDecoder<Decoded_VkDisplayPlanePropertiesKHR>* pProperties){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceDisplayPlanePropertiesKHR& args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkGetDisplayPlaneSupportedDisplaysKHR(
+    void Process_vkGetDisplayPlaneSupportedDisplaysKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        uint32_t                                    planeIndex,
-        PointerDecoder<uint32_t>*                   pDisplayCount,
-        HandlePointerDecoder<VkDisplayKHR>*         pDisplays){ CheckSkiavk(physicalDevice);}
+        args::GetDisplayPlaneSupportedDisplaysKHR&  args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkGetDisplayModePropertiesKHR(
+    void Process_vkGetDisplayModePropertiesKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        format::HandleId                            display,
-        PointerDecoder<uint32_t>*                   pPropertyCount,
-        StructPointerDecoder<Decoded_VkDisplayModePropertiesKHR>* pProperties){ CheckSkiavk(physicalDevice);}
+        args::GetDisplayModePropertiesKHR&          args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkCreateDisplayModeKHR(
+    void Process_vkCreateDisplayModeKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        format::HandleId                            display,
-        StructPointerDecoder<Decoded_VkDisplayModeCreateInfoKHR>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkDisplayModeKHR>*     pMode){ CheckSkiavk(physicalDevice);}
+        args::CreateDisplayModeKHR&                 args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkGetDisplayPlaneCapabilitiesKHR(
+    void Process_vkGetDisplayPlaneCapabilitiesKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        format::HandleId                            mode,
-        uint32_t                                    planeIndex,
-        StructPointerDecoder<Decoded_VkDisplayPlaneCapabilitiesKHR>* pCapabilities){ CheckSkiavk(physicalDevice);}
+        args::GetDisplayPlaneCapabilitiesKHR&       args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkCreateDisplayPlaneSurfaceKHR(
+    void Process_vkCreateDisplayPlaneSurfaceKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            instance,
-        StructPointerDecoder<Decoded_VkDisplaySurfaceCreateInfoKHR>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkSurfaceKHR>*         pSurface){ CheckSkiavk(instance);}
-    virtual void Process_vkCreateSharedSwapchainsKHR(
+        args::CreateDisplayPlaneSurfaceKHR&         args) override { CheckSkiavk(args.instance);}
+    void Process_vkCreateSharedSwapchainsKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        uint32_t                                    swapchainCount,
-        StructPointerDecoder<Decoded_VkSwapchainCreateInfoKHR>* pCreateInfos,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkSwapchainKHR>*       pSwapchains){ CheckSkiavk(device);}
-    virtual void Process_vkCreateXlibSurfaceKHR(
+        args::CreateSharedSwapchainsKHR&            args) override { CheckSkiavk(args.device);}
+    void Process_vkCreateXlibSurfaceKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            instance,
-        StructPointerDecoder<Decoded_VkXlibSurfaceCreateInfoKHR>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkSurfaceKHR>*         pSurface){ CheckSkiavk(instance);}
+        args::CreateXlibSurfaceKHR&                 args) override { CheckSkiavk(args.instance);}
 
-    virtual void Process_vkGetPhysicalDeviceXlibPresentationSupportKHR(
+    void Process_vkGetPhysicalDeviceXlibPresentationSupportKHR(
         const ApiCallInfo&                          call_info,
-        VkBool32                                    returnValue,
-        format::HandleId                            physicalDevice,
-        uint32_t                                    queueFamilyIndex,
-        uint64_t                                    dpy,
-        size_t                                      visualID){ CheckSkiavk(physicalDevice);}
-    virtual void Process_vkCreateXcbSurfaceKHR(
+        args::GetPhysicalDeviceXlibPresentationSupportKHR& args) override { CheckSkiavk(args.physicalDevice);}
+    void Process_vkCreateXcbSurfaceKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            instance,
-        StructPointerDecoder<Decoded_VkXcbSurfaceCreateInfoKHR>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkSurfaceKHR>*         pSurface){ CheckSkiavk(instance);}
+        args::CreateXcbSurfaceKHR&                  args) override { CheckSkiavk(args.instance);}
 
-    virtual void Process_vkGetPhysicalDeviceXcbPresentationSupportKHR(
+    void Process_vkGetPhysicalDeviceXcbPresentationSupportKHR(
         const ApiCallInfo&                          call_info,
-        VkBool32                                    returnValue,
-        format::HandleId                            physicalDevice,
-        uint32_t                                    queueFamilyIndex,
-        uint64_t                                    connection,
-        uint32_t                                    visual_id){ CheckSkiavk(physicalDevice);}
-    virtual void Process_vkCreateWaylandSurfaceKHR(
+        args::GetPhysicalDeviceXcbPresentationSupportKHR& args) override { CheckSkiavk(args.physicalDevice);}
+    void Process_vkCreateWaylandSurfaceKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            instance,
-        StructPointerDecoder<Decoded_VkWaylandSurfaceCreateInfoKHR>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkSurfaceKHR>*         pSurface){ CheckSkiavk(instance);}
+        args::CreateWaylandSurfaceKHR&              args) override { CheckSkiavk(args.instance);}
 
-    virtual void Process_vkGetPhysicalDeviceWaylandPresentationSupportKHR(
+    void Process_vkGetPhysicalDeviceWaylandPresentationSupportKHR(
         const ApiCallInfo&                          call_info,
-        VkBool32                                    returnValue,
-        format::HandleId                            physicalDevice,
-        uint32_t                                    queueFamilyIndex,
-        uint64_t                                    display){ CheckSkiavk(physicalDevice);}
-    virtual void Process_vkCreateAndroidSurfaceKHR(
+        args::GetPhysicalDeviceWaylandPresentationSupportKHR& args) override { CheckSkiavk(args.physicalDevice);}
+    void Process_vkCreateAndroidSurfaceKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            instance,
-        StructPointerDecoder<Decoded_VkAndroidSurfaceCreateInfoKHR>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkSurfaceKHR>*         pSurface);
-    virtual void Process_vkCreateWin32SurfaceKHR(
+        args::CreateAndroidSurfaceKHR&              args) override;
+    void Process_vkCreateWin32SurfaceKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            instance,
-        StructPointerDecoder<Decoded_VkWin32SurfaceCreateInfoKHR>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkSurfaceKHR>*         pSurface){ CheckSkiavk(instance);}
+        args::CreateWin32SurfaceKHR&                args) override { CheckSkiavk(args.instance);}
 
-    virtual void Process_vkGetPhysicalDeviceWin32PresentationSupportKHR(
+    void Process_vkGetPhysicalDeviceWin32PresentationSupportKHR(
         const ApiCallInfo&                          call_info,
-        VkBool32                                    returnValue,
-        format::HandleId                            physicalDevice,
-        uint32_t                                    queueFamilyIndex){ CheckSkiavk(physicalDevice);}
-    virtual void Process_vkGetPhysicalDeviceVideoCapabilitiesKHR(
+        args::GetPhysicalDeviceWin32PresentationSupportKHR& args) override { CheckSkiavk(args.physicalDevice);}
+    void Process_vkGetPhysicalDeviceVideoCapabilitiesKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        StructPointerDecoder<Decoded_VkVideoProfileInfoKHR>* pVideoProfile,
-        StructPointerDecoder<Decoded_VkVideoCapabilitiesKHR>* pCapabilities){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceVideoCapabilitiesKHR& args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkGetPhysicalDeviceVideoFormatPropertiesKHR(
+    void Process_vkGetPhysicalDeviceVideoFormatPropertiesKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        StructPointerDecoder<Decoded_VkPhysicalDeviceVideoFormatInfoKHR>* pVideoFormatInfo,
-        PointerDecoder<uint32_t>*                   pVideoFormatPropertyCount,
-        StructPointerDecoder<Decoded_VkVideoFormatPropertiesKHR>* pVideoFormatProperties){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceVideoFormatPropertiesKHR& args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkCreateVideoSessionKHR(
+    void Process_vkCreateVideoSessionKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkVideoSessionCreateInfoKHR>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkVideoSessionKHR>*    pVideoSession){ CheckSkiavk(device);}
+        args::CreateVideoSessionKHR&                args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDestroyVideoSessionKHR(
+    void Process_vkDestroyVideoSessionKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            videoSession,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
+        args::DestroyVideoSessionKHR&               args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetVideoSessionMemoryRequirementsKHR(
+    void Process_vkGetVideoSessionMemoryRequirementsKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            videoSession,
-        PointerDecoder<uint32_t>*                   pMemoryRequirementsCount,
-        StructPointerDecoder<Decoded_VkVideoSessionMemoryRequirementsKHR>* pMemoryRequirements){ CheckSkiavk(device);}
+        args::GetVideoSessionMemoryRequirementsKHR& args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkBindVideoSessionMemoryKHR(
+    void Process_vkBindVideoSessionMemoryKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            videoSession,
-        uint32_t                                    bindSessionMemoryInfoCount,
-        StructPointerDecoder<Decoded_VkBindVideoSessionMemoryInfoKHR>* pBindSessionMemoryInfos){ CheckSkiavk(device);}
+        args::BindVideoSessionMemoryKHR&            args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCreateVideoSessionParametersKHR(
+    void Process_vkCreateVideoSessionParametersKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkVideoSessionParametersCreateInfoKHR>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkVideoSessionParametersKHR>* pVideoSessionParameters){ CheckSkiavk(device);}
+        args::CreateVideoSessionParametersKHR&      args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkUpdateVideoSessionParametersKHR(
+    void Process_vkUpdateVideoSessionParametersKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            videoSessionParameters,
-        StructPointerDecoder<Decoded_VkVideoSessionParametersUpdateInfoKHR>* pUpdateInfo){ CheckSkiavk(device);}
+        args::UpdateVideoSessionParametersKHR&      args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDestroyVideoSessionParametersKHR(
+    void Process_vkDestroyVideoSessionParametersKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            videoSessionParameters,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
+        args::DestroyVideoSessionParametersKHR&     args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCmdBeginVideoCodingKHR(
+    void Process_vkCmdBeginVideoCodingKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkVideoBeginCodingInfoKHR>* pBeginInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdBeginVideoCodingKHR&               args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdEndVideoCodingKHR(
+    void Process_vkCmdEndVideoCodingKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkVideoEndCodingInfoKHR>* pEndCodingInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdEndVideoCodingKHR&                 args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdControlVideoCodingKHR(
+    void Process_vkCmdControlVideoCodingKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkVideoCodingControlInfoKHR>* pCodingControlInfo){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkCmdDecodeVideoKHR(
+        args::CmdControlVideoCodingKHR&             args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkCmdDecodeVideoKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkVideoDecodeInfoKHR>* pDecodeInfo){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkCmdBeginRenderingKHR(
+        args::CmdDecodeVideoKHR&                    args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkCmdBeginRenderingKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkRenderingInfo>* pRenderingInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdBeginRenderingKHR&                 args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdEndRenderingKHR(
+    void Process_vkCmdEndRenderingKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkGetPhysicalDeviceFeatures2KHR(
+        args::CmdEndRenderingKHR&                   args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkGetPhysicalDeviceFeatures2KHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            physicalDevice,
-        StructPointerDecoder<Decoded_VkPhysicalDeviceFeatures2>* pFeatures){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceFeatures2KHR&        args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkGetPhysicalDeviceProperties2KHR(
+    void Process_vkGetPhysicalDeviceProperties2KHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            physicalDevice,
-        StructPointerDecoder<Decoded_VkPhysicalDeviceProperties2>* pProperties){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceProperties2KHR&      args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkGetPhysicalDeviceFormatProperties2KHR(
+    void Process_vkGetPhysicalDeviceFormatProperties2KHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            physicalDevice,
-        VkFormat                                    format,
-        StructPointerDecoder<Decoded_VkFormatProperties2>* pFormatProperties){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceFormatProperties2KHR& args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkGetPhysicalDeviceImageFormatProperties2KHR(
+    void Process_vkGetPhysicalDeviceImageFormatProperties2KHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        StructPointerDecoder<Decoded_VkPhysicalDeviceImageFormatInfo2>* pImageFormatInfo,
-        StructPointerDecoder<Decoded_VkImageFormatProperties2>* pImageFormatProperties){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceImageFormatProperties2KHR& args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkGetPhysicalDeviceQueueFamilyProperties2KHR(
+    void Process_vkGetPhysicalDeviceQueueFamilyProperties2KHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            physicalDevice,
-        PointerDecoder<uint32_t>*                   pQueueFamilyPropertyCount,
-        StructPointerDecoder<Decoded_VkQueueFamilyProperties2>* pQueueFamilyProperties){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceQueueFamilyProperties2KHR& args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkGetPhysicalDeviceMemoryProperties2KHR(
+    void Process_vkGetPhysicalDeviceMemoryProperties2KHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            physicalDevice,
-        StructPointerDecoder<Decoded_VkPhysicalDeviceMemoryProperties2>* pMemoryProperties){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceMemoryProperties2KHR& args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkGetPhysicalDeviceSparseImageFormatProperties2KHR(
+    void Process_vkGetPhysicalDeviceSparseImageFormatProperties2KHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            physicalDevice,
-        StructPointerDecoder<Decoded_VkPhysicalDeviceSparseImageFormatInfo2>* pFormatInfo,
-        PointerDecoder<uint32_t>*                   pPropertyCount,
-        StructPointerDecoder<Decoded_VkSparseImageFormatProperties2>* pProperties){ CheckSkiavk(physicalDevice);}
-    virtual void Process_vkGetDeviceGroupPeerMemoryFeaturesKHR(
+        args::GetPhysicalDeviceSparseImageFormatProperties2KHR& args) override { CheckSkiavk(args.physicalDevice);}
+    void Process_vkGetDeviceGroupPeerMemoryFeaturesKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        uint32_t                                    heapIndex,
-        uint32_t                                    localDeviceIndex,
-        uint32_t                                    remoteDeviceIndex,
-        PointerDecoder<VkPeerMemoryFeatureFlags>*   pPeerMemoryFeatures){ CheckSkiavk(device);}
+        args::GetDeviceGroupPeerMemoryFeaturesKHR&  args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCmdSetDeviceMaskKHR(
+    void Process_vkCmdSetDeviceMaskKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    deviceMask){ CheckSkiavk(commandBuffer);}
+        args::CmdSetDeviceMaskKHR&                  args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdDispatchBaseKHR(
+    void Process_vkCmdDispatchBaseKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    baseGroupX,
-        uint32_t                                    baseGroupY,
-        uint32_t                                    baseGroupZ,
-        uint32_t                                    groupCountX,
-        uint32_t                                    groupCountY,
-        uint32_t                                    groupCountZ){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkTrimCommandPoolKHR(
+        args::CmdDispatchBaseKHR&                   args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkTrimCommandPoolKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            commandPool,
-        VkCommandPoolTrimFlags                      flags){ CheckSkiavk(device);}
-    virtual void Process_vkEnumeratePhysicalDeviceGroupsKHR(
+        args::TrimCommandPoolKHR&                   args) override { CheckSkiavk(args.device);}
+    void Process_vkEnumeratePhysicalDeviceGroupsKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            instance,
-        PointerDecoder<uint32_t>*                   pPhysicalDeviceGroupCount,
-        StructPointerDecoder<Decoded_VkPhysicalDeviceGroupProperties>* pPhysicalDeviceGroupProperties){ CheckSkiavk(instance);}
-    virtual void Process_vkGetPhysicalDeviceExternalBufferPropertiesKHR(
+        args::EnumeratePhysicalDeviceGroupsKHR&     args) override { CheckSkiavk(args.instance);}
+    void Process_vkGetPhysicalDeviceExternalBufferPropertiesKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            physicalDevice,
-        StructPointerDecoder<Decoded_VkPhysicalDeviceExternalBufferInfo>* pExternalBufferInfo,
-        StructPointerDecoder<Decoded_VkExternalBufferProperties>* pExternalBufferProperties){ CheckSkiavk(physicalDevice);}
-    virtual void Process_vkGetMemoryWin32HandleKHR(
+        args::GetPhysicalDeviceExternalBufferPropertiesKHR& args) override { CheckSkiavk(args.physicalDevice);}
+    void Process_vkGetMemoryWin32HandleKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkMemoryGetWin32HandleInfoKHR>* pGetWin32HandleInfo,
-        PointerDecoder<uint64_t, void*>*            pHandle){ CheckSkiavk(device);}
+        args::GetMemoryWin32HandleKHR&              args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetMemoryWin32HandlePropertiesKHR(
+    void Process_vkGetMemoryWin32HandlePropertiesKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        VkExternalMemoryHandleTypeFlagBits          handleType,
-        uint64_t                                    handle,
-        StructPointerDecoder<Decoded_VkMemoryWin32HandlePropertiesKHR>* pMemoryWin32HandleProperties){ CheckSkiavk(device);}
-    virtual void Process_vkGetMemoryFdKHR(
+        args::GetMemoryWin32HandlePropertiesKHR&    args) override { CheckSkiavk(args.device);}
+    void Process_vkGetMemoryFdKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkMemoryGetFdInfoKHR>* pGetFdInfo,
-        PointerDecoder<int>*                        pFd){ CheckSkiavk(device);}
+        args::GetMemoryFdKHR&                       args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetMemoryFdPropertiesKHR(
+    void Process_vkGetMemoryFdPropertiesKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        VkExternalMemoryHandleTypeFlagBits          handleType,
-        int                                         fd,
-        StructPointerDecoder<Decoded_VkMemoryFdPropertiesKHR>* pMemoryFdProperties){ CheckSkiavk(device);}
-    virtual void Process_vkGetPhysicalDeviceExternalSemaphorePropertiesKHR(
+        args::GetMemoryFdPropertiesKHR&             args) override { CheckSkiavk(args.device);}
+    void Process_vkGetPhysicalDeviceExternalSemaphorePropertiesKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            physicalDevice,
-        StructPointerDecoder<Decoded_VkPhysicalDeviceExternalSemaphoreInfo>* pExternalSemaphoreInfo,
-        StructPointerDecoder<Decoded_VkExternalSemaphoreProperties>* pExternalSemaphoreProperties){ CheckSkiavk(physicalDevice);}
-    virtual void Process_vkImportSemaphoreWin32HandleKHR(
+        args::GetPhysicalDeviceExternalSemaphorePropertiesKHR& args) override { CheckSkiavk(args.physicalDevice);}
+    void Process_vkImportSemaphoreWin32HandleKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkImportSemaphoreWin32HandleInfoKHR>* pImportSemaphoreWin32HandleInfo){ CheckSkiavk(device);}
+        args::ImportSemaphoreWin32HandleKHR&        args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetSemaphoreWin32HandleKHR(
+    void Process_vkGetSemaphoreWin32HandleKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkSemaphoreGetWin32HandleInfoKHR>* pGetWin32HandleInfo,
-        PointerDecoder<uint64_t, void*>*            pHandle){ CheckSkiavk(device);}
-    virtual void Process_vkImportSemaphoreFdKHR(
+        args::GetSemaphoreWin32HandleKHR&           args) override { CheckSkiavk(args.device);}
+    void Process_vkImportSemaphoreFdKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkImportSemaphoreFdInfoKHR>* pImportSemaphoreFdInfo){ CheckSkiavk(device);}
+        args::ImportSemaphoreFdKHR&                 args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetSemaphoreFdKHR(
+    void Process_vkGetSemaphoreFdKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkSemaphoreGetFdInfoKHR>* pGetFdInfo,
-        PointerDecoder<int>*                        pFd){ CheckSkiavk(device);}
-    virtual void Process_vkCmdPushDescriptorSetKHR(
+        args::GetSemaphoreFdKHR&                    args) override { CheckSkiavk(args.device);}
+    void Process_vkCmdPushDescriptorSetKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkPipelineBindPoint                         pipelineBindPoint,
-        format::HandleId                            layout,
-        uint32_t                                    set,
-        uint32_t                                    descriptorWriteCount,
-        StructPointerDecoder<Decoded_VkWriteDescriptorSet>* pDescriptorWrites){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkCreateDescriptorUpdateTemplateKHR(
+        args::CmdPushDescriptorSetKHR&              args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkCreateDescriptorUpdateTemplateKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkDescriptorUpdateTemplateCreateInfo>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkDescriptorUpdateTemplate>* pDescriptorUpdateTemplate){ CheckSkiavk(device);}
+        args::CreateDescriptorUpdateTemplateKHR&    args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDestroyDescriptorUpdateTemplateKHR(
+    void Process_vkDestroyDescriptorUpdateTemplateKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            descriptorUpdateTemplate,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
-    virtual void Process_vkCreateRenderPass2KHR(
+        args::DestroyDescriptorUpdateTemplateKHR&   args) override { CheckSkiavk(args.device);}
+    void Process_vkCreateRenderPass2KHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkRenderPassCreateInfo2>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkRenderPass>*         pRenderPass){ CheckSkiavk(device);}
+        args::CreateRenderPass2KHR&                 args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCmdBeginRenderPass2KHR(
+    void Process_vkCmdBeginRenderPass2KHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkRenderPassBeginInfo>* pRenderPassBegin,
-        StructPointerDecoder<Decoded_VkSubpassBeginInfo>* pSubpassBeginInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdBeginRenderPass2KHR&               args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdNextSubpass2KHR(
+    void Process_vkCmdNextSubpass2KHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkSubpassBeginInfo>* pSubpassBeginInfo,
-        StructPointerDecoder<Decoded_VkSubpassEndInfo>* pSubpassEndInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdNextSubpass2KHR&                   args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdEndRenderPass2KHR(
+    void Process_vkCmdEndRenderPass2KHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkSubpassEndInfo>* pSubpassEndInfo){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkGetSwapchainStatusKHR(
+        args::CmdEndRenderPass2KHR&                 args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkGetSwapchainStatusKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            swapchain){ CheckSkiavk(device);}
-    virtual void Process_vkGetPhysicalDeviceExternalFencePropertiesKHR(
+        args::GetSwapchainStatusKHR&                args) override { CheckSkiavk(args.device);}
+    void Process_vkGetPhysicalDeviceExternalFencePropertiesKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            physicalDevice,
-        StructPointerDecoder<Decoded_VkPhysicalDeviceExternalFenceInfo>* pExternalFenceInfo,
-        StructPointerDecoder<Decoded_VkExternalFenceProperties>* pExternalFenceProperties){ CheckSkiavk(physicalDevice);}
-    virtual void Process_vkImportFenceWin32HandleKHR(
+        args::GetPhysicalDeviceExternalFencePropertiesKHR& args) override { CheckSkiavk(args.physicalDevice);}
+    void Process_vkImportFenceWin32HandleKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkImportFenceWin32HandleInfoKHR>* pImportFenceWin32HandleInfo){ CheckSkiavk(device);}
+        args::ImportFenceWin32HandleKHR&            args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetFenceWin32HandleKHR(
+    void Process_vkGetFenceWin32HandleKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkFenceGetWin32HandleInfoKHR>* pGetWin32HandleInfo,
-        PointerDecoder<uint64_t, void*>*            pHandle){ CheckSkiavk(device);}
-    virtual void Process_vkImportFenceFdKHR(
+        args::GetFenceWin32HandleKHR&               args) override { CheckSkiavk(args.device);}
+    void Process_vkImportFenceFdKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkImportFenceFdInfoKHR>* pImportFenceFdInfo){ CheckSkiavk(device);}
+        args::ImportFenceFdKHR&                     args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetFenceFdKHR(
+    void Process_vkGetFenceFdKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkFenceGetFdInfoKHR>* pGetFdInfo,
-        PointerDecoder<int>*                        pFd){ CheckSkiavk(device);}
-    virtual void Process_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(
+        args::GetFenceFdKHR&                        args) override { CheckSkiavk(args.device);}
+    void Process_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        uint32_t                                    queueFamilyIndex,
-        PointerDecoder<uint32_t>*                   pCounterCount,
-        StructPointerDecoder<Decoded_VkPerformanceCounterKHR>* pCounters,
-        StructPointerDecoder<Decoded_VkPerformanceCounterDescriptionKHR>* pCounterDescriptions){ CheckSkiavk(physicalDevice);}
+        args::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR& args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR(
+    void Process_vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            physicalDevice,
-        StructPointerDecoder<Decoded_VkQueryPoolPerformanceCreateInfoKHR>* pPerformanceQueryCreateInfo,
-        PointerDecoder<uint32_t>*                   pNumPasses){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR& args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkAcquireProfilingLockKHR(
+    void Process_vkAcquireProfilingLockKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkAcquireProfilingLockInfoKHR>* pInfo){ CheckSkiavk(device);}
+        args::AcquireProfilingLockKHR&              args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkReleaseProfilingLockKHR(
+    void Process_vkReleaseProfilingLockKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device){ CheckSkiavk(device);}
-    virtual void Process_vkGetPhysicalDeviceSurfaceCapabilities2KHR(
+        args::ReleaseProfilingLockKHR&              args) override { CheckSkiavk(args.device);}
+    void Process_vkGetPhysicalDeviceSurfaceCapabilities2KHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        StructPointerDecoder<Decoded_VkPhysicalDeviceSurfaceInfo2KHR>* pSurfaceInfo,
-        StructPointerDecoder<Decoded_VkSurfaceCapabilities2KHR>* pSurfaceCapabilities){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceSurfaceCapabilities2KHR& args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkGetPhysicalDeviceSurfaceFormats2KHR(
+    void Process_vkGetPhysicalDeviceSurfaceFormats2KHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        StructPointerDecoder<Decoded_VkPhysicalDeviceSurfaceInfo2KHR>* pSurfaceInfo,
-        PointerDecoder<uint32_t>*                   pSurfaceFormatCount,
-        StructPointerDecoder<Decoded_VkSurfaceFormat2KHR>* pSurfaceFormats){ CheckSkiavk(physicalDevice);}
-    virtual void Process_vkGetPhysicalDeviceDisplayProperties2KHR(
+        args::GetPhysicalDeviceSurfaceFormats2KHR&  args) override { CheckSkiavk(args.physicalDevice);}
+    void Process_vkGetPhysicalDeviceDisplayProperties2KHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        PointerDecoder<uint32_t>*                   pPropertyCount,
-        StructPointerDecoder<Decoded_VkDisplayProperties2KHR>* pProperties){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceDisplayProperties2KHR& args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkGetPhysicalDeviceDisplayPlaneProperties2KHR(
+    void Process_vkGetPhysicalDeviceDisplayPlaneProperties2KHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        PointerDecoder<uint32_t>*                   pPropertyCount,
-        StructPointerDecoder<Decoded_VkDisplayPlaneProperties2KHR>* pProperties){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceDisplayPlaneProperties2KHR& args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkGetDisplayModeProperties2KHR(
+    void Process_vkGetDisplayModeProperties2KHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        format::HandleId                            display,
-        PointerDecoder<uint32_t>*                   pPropertyCount,
-        StructPointerDecoder<Decoded_VkDisplayModeProperties2KHR>* pProperties){ CheckSkiavk(physicalDevice);}
+        args::GetDisplayModeProperties2KHR&         args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkGetDisplayPlaneCapabilities2KHR(
+    void Process_vkGetDisplayPlaneCapabilities2KHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        StructPointerDecoder<Decoded_VkDisplayPlaneInfo2KHR>* pDisplayPlaneInfo,
-        StructPointerDecoder<Decoded_VkDisplayPlaneCapabilities2KHR>* pCapabilities){ CheckSkiavk(physicalDevice);}
-    virtual void Process_vkGetImageMemoryRequirements2KHR(
+        args::GetDisplayPlaneCapabilities2KHR&      args) override { CheckSkiavk(args.physicalDevice);}
+    void Process_vkGetImageMemoryRequirements2KHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkImageMemoryRequirementsInfo2>* pInfo,
-        StructPointerDecoder<Decoded_VkMemoryRequirements2>* pMemoryRequirements){ CheckSkiavk(device);}
+        args::GetImageMemoryRequirements2KHR&       args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetBufferMemoryRequirements2KHR(
+    void Process_vkGetBufferMemoryRequirements2KHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkBufferMemoryRequirementsInfo2>* pInfo,
-        StructPointerDecoder<Decoded_VkMemoryRequirements2>* pMemoryRequirements){ CheckSkiavk(device);}
+        args::GetBufferMemoryRequirements2KHR&      args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetImageSparseMemoryRequirements2KHR(
+    void Process_vkGetImageSparseMemoryRequirements2KHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkImageSparseMemoryRequirementsInfo2>* pInfo,
-        PointerDecoder<uint32_t>*                   pSparseMemoryRequirementCount,
-        StructPointerDecoder<Decoded_VkSparseImageMemoryRequirements2>* pSparseMemoryRequirements){ CheckSkiavk(device);}
-    virtual void Process_vkCreateSamplerYcbcrConversionKHR(
+        args::GetImageSparseMemoryRequirements2KHR& args) override { CheckSkiavk(args.device);}
+    void Process_vkCreateSamplerYcbcrConversionKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkSamplerYcbcrConversionCreateInfo>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkSamplerYcbcrConversion>* pYcbcrConversion){ CheckSkiavk(device);}
+        args::CreateSamplerYcbcrConversionKHR&      args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDestroySamplerYcbcrConversionKHR(
+    void Process_vkDestroySamplerYcbcrConversionKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            ycbcrConversion,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
-    virtual void Process_vkBindBufferMemory2KHR(
+        args::DestroySamplerYcbcrConversionKHR&     args) override { CheckSkiavk(args.device);}
+    void Process_vkBindBufferMemory2KHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        uint32_t                                    bindInfoCount,
-        StructPointerDecoder<Decoded_VkBindBufferMemoryInfo>* pBindInfos){ CheckSkiavk(device);}
+        args::BindBufferMemory2KHR&                 args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkBindImageMemory2KHR(
+    void Process_vkBindImageMemory2KHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        uint32_t                                    bindInfoCount,
-        StructPointerDecoder<Decoded_VkBindImageMemoryInfo>* pBindInfos){ CheckSkiavk(device);}
-    virtual void Process_vkGetDescriptorSetLayoutSupportKHR(
+        args::BindImageMemory2KHR&                  args) override { CheckSkiavk(args.device);}
+    void Process_vkGetDescriptorSetLayoutSupportKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkDescriptorSetLayoutCreateInfo>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkDescriptorSetLayoutSupport>* pSupport){ CheckSkiavk(device);}
-    virtual void Process_vkCmdDrawIndirectCountKHR(
+        args::GetDescriptorSetLayoutSupportKHR&     args) override { CheckSkiavk(args.device);}
+    void Process_vkCmdDrawIndirectCountKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            buffer,
-        VkDeviceSize                                offset,
-        format::HandleId                            countBuffer,
-        VkDeviceSize                                countBufferOffset,
-        uint32_t                                    maxDrawCount,
-        uint32_t                                    stride){ CheckSkiavk(commandBuffer);}
+        args::CmdDrawIndirectCountKHR&              args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdDrawIndexedIndirectCountKHR(
+    void Process_vkCmdDrawIndexedIndirectCountKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            buffer,
-        VkDeviceSize                                offset,
-        format::HandleId                            countBuffer,
-        VkDeviceSize                                countBufferOffset,
-        uint32_t                                    maxDrawCount,
-        uint32_t                                    stride){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkGetSemaphoreCounterValueKHR(
+        args::CmdDrawIndexedIndirectCountKHR&       args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkGetSemaphoreCounterValueKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            semaphore,
-        PointerDecoder<uint64_t>*                   pValue){ CheckSkiavk(device);}
+        args::GetSemaphoreCounterValueKHR&          args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkWaitSemaphoresKHR(
+    void Process_vkWaitSemaphoresKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkSemaphoreWaitInfo>* pWaitInfo,
-        uint64_t                                    timeout){ CheckSkiavk(device);}
+        args::WaitSemaphoresKHR&                    args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkSignalSemaphoreKHR(
+    void Process_vkSignalSemaphoreKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkSemaphoreSignalInfo>* pSignalInfo){ CheckSkiavk(device);}
-    virtual void Process_vkGetPhysicalDeviceFragmentShadingRatesKHR(
+        args::SignalSemaphoreKHR&                   args) override { CheckSkiavk(args.device);}
+    void Process_vkGetPhysicalDeviceFragmentShadingRatesKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        PointerDecoder<uint32_t>*                   pFragmentShadingRateCount,
-        StructPointerDecoder<Decoded_VkPhysicalDeviceFragmentShadingRateKHR>* pFragmentShadingRates){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceFragmentShadingRatesKHR& args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkCmdSetFragmentShadingRateKHR(
+    void Process_vkCmdSetFragmentShadingRateKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkExtent2D>*   pFragmentSize,
-        PointerDecoder<VkFragmentShadingRateCombinerOpKHR>* combinerOps){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkCmdSetRenderingAttachmentLocationsKHR(
+        args::CmdSetFragmentShadingRateKHR&         args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkCmdSetRenderingAttachmentLocationsKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkRenderingAttachmentLocationInfo>* pLocationInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdSetRenderingAttachmentLocationsKHR& args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetRenderingInputAttachmentIndicesKHR(
+    void Process_vkCmdSetRenderingInputAttachmentIndicesKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkRenderingInputAttachmentIndexInfo>* pInputAttachmentIndexInfo){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkWaitForPresentKHR(
+        args::CmdSetRenderingInputAttachmentIndicesKHR& args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkWaitForPresentKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            swapchain,
-        uint64_t                                    presentId,
-        uint64_t                                    timeout){ CheckSkiavk(device);}
-    virtual void Process_vkGetBufferDeviceAddressKHR(
+        args::WaitForPresentKHR&                    args) override { CheckSkiavk(args.device);}
+    void Process_vkGetBufferDeviceAddressKHR(
         const ApiCallInfo&                          call_info,
-        VkDeviceAddress                             returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkBufferDeviceAddressInfo>* pInfo){ CheckSkiavk(device);}
+        args::GetBufferDeviceAddressKHR&            args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetBufferOpaqueCaptureAddressKHR(
+    void Process_vkGetBufferOpaqueCaptureAddressKHR(
         const ApiCallInfo&                          call_info,
-        uint64_t                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkBufferDeviceAddressInfo>* pInfo){ CheckSkiavk(device);}
+        args::GetBufferOpaqueCaptureAddressKHR&     args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetDeviceMemoryOpaqueCaptureAddressKHR(
+    void Process_vkGetDeviceMemoryOpaqueCaptureAddressKHR(
         const ApiCallInfo&                          call_info,
-        uint64_t                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkDeviceMemoryOpaqueCaptureAddressInfo>* pInfo){ CheckSkiavk(device);}
-    virtual void Process_vkCreateDeferredOperationKHR(
+        args::GetDeviceMemoryOpaqueCaptureAddressKHR& args) override { CheckSkiavk(args.device);}
+    void Process_vkCreateDeferredOperationKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkDeferredOperationKHR>* pDeferredOperation){ CheckSkiavk(device);}
+        args::CreateDeferredOperationKHR&           args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDestroyDeferredOperationKHR(
+    void Process_vkDestroyDeferredOperationKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            operation,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
+        args::DestroyDeferredOperationKHR&          args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetDeferredOperationMaxConcurrencyKHR(
+    void Process_vkGetDeferredOperationMaxConcurrencyKHR(
         const ApiCallInfo&                          call_info,
-        uint32_t                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            operation){ CheckSkiavk(device);}
+        args::GetDeferredOperationMaxConcurrencyKHR& args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetDeferredOperationResultKHR(
+    void Process_vkGetDeferredOperationResultKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            operation){ CheckSkiavk(device);}
+        args::GetDeferredOperationResultKHR&        args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDeferredOperationJoinKHR(
+    void Process_vkDeferredOperationJoinKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            operation){ CheckSkiavk(device);}
-    virtual void Process_vkGetPipelineExecutablePropertiesKHR(
+        args::DeferredOperationJoinKHR&             args) override { CheckSkiavk(args.device);}
+    void Process_vkGetPipelineExecutablePropertiesKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkPipelineInfoKHR>* pPipelineInfo,
-        PointerDecoder<uint32_t>*                   pExecutableCount,
-        StructPointerDecoder<Decoded_VkPipelineExecutablePropertiesKHR>* pProperties){ CheckSkiavk(device);}
+        args::GetPipelineExecutablePropertiesKHR&   args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetPipelineExecutableStatisticsKHR(
+    void Process_vkGetPipelineExecutableStatisticsKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkPipelineExecutableInfoKHR>* pExecutableInfo,
-        PointerDecoder<uint32_t>*                   pStatisticCount,
-        StructPointerDecoder<Decoded_VkPipelineExecutableStatisticKHR>* pStatistics){ CheckSkiavk(device);}
+        args::GetPipelineExecutableStatisticsKHR&   args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetPipelineExecutableInternalRepresentationsKHR(
+    void Process_vkGetPipelineExecutableInternalRepresentationsKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkPipelineExecutableInfoKHR>* pExecutableInfo,
-        PointerDecoder<uint32_t>*                   pInternalRepresentationCount,
-        StructPointerDecoder<Decoded_VkPipelineExecutableInternalRepresentationKHR>* pInternalRepresentations){ CheckSkiavk(device);}
-    virtual void Process_vkMapMemory2KHR(
+        args::GetPipelineExecutableInternalRepresentationsKHR& args) override { CheckSkiavk(args.device);}
+    void Process_vkMapMemory2KHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkMemoryMapInfo>* pMemoryMapInfo,
-        PointerDecoder<uint64_t, void*>*            ppData){ CheckSkiavk(device);}
+        args::MapMemory2KHR&                        args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkUnmapMemory2KHR(
+    void Process_vkUnmapMemory2KHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkMemoryUnmapInfo>* pMemoryUnmapInfo){ CheckSkiavk(device);}
-    virtual void Process_vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
+        args::UnmapMemory2KHR&                      args) override { CheckSkiavk(args.device);}
+    void Process_vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        StructPointerDecoder<Decoded_VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR>* pQualityLevelInfo,
-        StructPointerDecoder<Decoded_VkVideoEncodeQualityLevelPropertiesKHR>* pQualityLevelProperties){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR& args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkGetEncodedVideoSessionParametersKHR(
+    void Process_vkGetEncodedVideoSessionParametersKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkVideoEncodeSessionParametersGetInfoKHR>* pVideoSessionParametersInfo,
-        StructPointerDecoder<Decoded_VkVideoEncodeSessionParametersFeedbackInfoKHR>* pFeedbackInfo,
-        PointerDecoder<size_t>*                     pDataSize,
-        PointerDecoder<uint8_t>*                    pData){ CheckSkiavk(device);}
+        args::GetEncodedVideoSessionParametersKHR&  args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCmdEncodeVideoKHR(
+    void Process_vkCmdEncodeVideoKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkVideoEncodeInfoKHR>* pEncodeInfo){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkCmdSetEvent2KHR(
+        args::CmdEncodeVideoKHR&                    args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkCmdSetEvent2KHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            event,
-        StructPointerDecoder<Decoded_VkDependencyInfo>* pDependencyInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdSetEvent2KHR&                      args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdResetEvent2KHR(
+    void Process_vkCmdResetEvent2KHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            event,
-        VkPipelineStageFlags2                       stageMask){ CheckSkiavk(commandBuffer);}
+        args::CmdResetEvent2KHR&                    args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdWaitEvents2KHR(
+    void Process_vkCmdWaitEvents2KHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    eventCount,
-        HandlePointerDecoder<VkEvent>*              pEvents,
-        StructPointerDecoder<Decoded_VkDependencyInfo>* pDependencyInfos){ CheckSkiavk(commandBuffer);}
+        args::CmdWaitEvents2KHR&                    args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdPipelineBarrier2KHR(
+    void Process_vkCmdPipelineBarrier2KHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkDependencyInfo>* pDependencyInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdPipelineBarrier2KHR&               args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdWriteTimestamp2KHR(
+    void Process_vkCmdWriteTimestamp2KHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkPipelineStageFlags2                       stage,
-        format::HandleId                            queryPool,
-        uint32_t                                    query){ CheckSkiavk(commandBuffer);}
+        args::CmdWriteTimestamp2KHR&                args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkQueueSubmit2KHR(
+    void Process_vkQueueSubmit2KHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            queue,
-        uint32_t                                    submitCount,
-        StructPointerDecoder<Decoded_VkSubmitInfo2>* pSubmits,
-        format::HandleId                            fence);
-    virtual void Process_vkCmdBindIndexBuffer3KHR(
+        args::QueueSubmit2KHR&                      args) override;
+    void Process_vkCmdBindIndexBuffer3KHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkBindIndexBuffer3InfoKHR>* pInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdBindIndexBuffer3KHR&               args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdBindVertexBuffers3KHR(
+    void Process_vkCmdBindVertexBuffers3KHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    firstBinding,
-        uint32_t                                    bindingCount,
-        StructPointerDecoder<Decoded_VkBindVertexBuffer3InfoKHR>* pBindingInfos){ CheckSkiavk(commandBuffer);}
+        args::CmdBindVertexBuffers3KHR&             args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdDrawIndirect2KHR(
+    void Process_vkCmdDrawIndirect2KHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkDrawIndirect2InfoKHR>* pInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdDrawIndirect2KHR&                  args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdDrawIndexedIndirect2KHR(
+    void Process_vkCmdDrawIndexedIndirect2KHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkDrawIndirect2InfoKHR>* pInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdDrawIndexedIndirect2KHR&           args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdDispatchIndirect2KHR(
+    void Process_vkCmdDispatchIndirect2KHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkDispatchIndirect2InfoKHR>* pInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdDispatchIndirect2KHR&              args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdCopyMemoryKHR(
+    void Process_vkCmdCopyMemoryKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkCopyDeviceMemoryInfoKHR>* pCopyMemoryInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdCopyMemoryKHR&                     args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdCopyMemoryToImageKHR(
+    void Process_vkCmdCopyMemoryToImageKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkCopyDeviceMemoryImageInfoKHR>* pCopyMemoryInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdCopyMemoryToImageKHR&              args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdCopyImageToMemoryKHR(
+    void Process_vkCmdCopyImageToMemoryKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkCopyDeviceMemoryImageInfoKHR>* pCopyMemoryInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdCopyImageToMemoryKHR&              args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdUpdateMemoryKHR(
+    void Process_vkCmdUpdateMemoryKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkDeviceAddressRangeKHR>* pDstRange,
-        VkAddressCommandFlagsKHR                    dstFlags,
-        VkDeviceSize                                dataSize,
-        PointerDecoder<uint8_t>*                    pData){ CheckSkiavk(commandBuffer);}
+        args::CmdUpdateMemoryKHR&                   args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdFillMemoryKHR(
+    void Process_vkCmdFillMemoryKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkDeviceAddressRangeKHR>* pDstRange,
-        VkAddressCommandFlagsKHR                    dstFlags,
-        uint32_t                                    data){ CheckSkiavk(commandBuffer);}
+        args::CmdFillMemoryKHR&                     args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdCopyQueryPoolResultsToMemoryKHR(
+    void Process_vkCmdCopyQueryPoolResultsToMemoryKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            queryPool,
-        uint32_t                                    firstQuery,
-        uint32_t                                    queryCount,
-        StructPointerDecoder<Decoded_VkStridedDeviceAddressRangeKHR>* pDstRange,
-        VkAddressCommandFlagsKHR                    dstFlags,
-        VkQueryResultFlags                          queryResultFlags){ CheckSkiavk(commandBuffer);}
+        args::CmdCopyQueryPoolResultsToMemoryKHR&   args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdDrawIndirectCount2KHR(
+    void Process_vkCmdDrawIndirectCount2KHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkDrawIndirectCount2InfoKHR>* pInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdDrawIndirectCount2KHR&             args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdDrawIndexedIndirectCount2KHR(
+    void Process_vkCmdDrawIndexedIndirectCount2KHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkDrawIndirectCount2InfoKHR>* pInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdDrawIndexedIndirectCount2KHR&      args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdBeginConditionalRendering2EXT(
+    void Process_vkCmdBeginConditionalRendering2EXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkConditionalRenderingBeginInfo2EXT>* pConditionalRenderingBegin){ CheckSkiavk(commandBuffer);}
+        args::CmdBeginConditionalRendering2EXT&     args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdBindTransformFeedbackBuffers2EXT(
+    void Process_vkCmdBindTransformFeedbackBuffers2EXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    firstBinding,
-        uint32_t                                    bindingCount,
-        StructPointerDecoder<Decoded_VkBindTransformFeedbackBuffer2InfoEXT>* pBindingInfos){ CheckSkiavk(commandBuffer);}
+        args::CmdBindTransformFeedbackBuffers2EXT&  args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdBeginTransformFeedback2EXT(
+    void Process_vkCmdBeginTransformFeedback2EXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    firstCounterRange,
-        uint32_t                                    counterRangeCount,
-        StructPointerDecoder<Decoded_VkBindTransformFeedbackBuffer2InfoEXT>* pCounterInfos){ CheckSkiavk(commandBuffer);}
+        args::CmdBeginTransformFeedback2EXT&        args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdEndTransformFeedback2EXT(
+    void Process_vkCmdEndTransformFeedback2EXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    firstCounterRange,
-        uint32_t                                    counterRangeCount,
-        StructPointerDecoder<Decoded_VkBindTransformFeedbackBuffer2InfoEXT>* pCounterInfos){ CheckSkiavk(commandBuffer);}
+        args::CmdEndTransformFeedback2EXT&          args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdDrawIndirectByteCount2EXT(
+    void Process_vkCmdDrawIndirectByteCount2EXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    instanceCount,
-        uint32_t                                    firstInstance,
-        StructPointerDecoder<Decoded_VkBindTransformFeedbackBuffer2InfoEXT>* pCounterInfo,
-        uint32_t                                    counterOffset,
-        uint32_t                                    vertexStride){ CheckSkiavk(commandBuffer);}
+        args::CmdDrawIndirectByteCount2EXT&         args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdDrawMeshTasksIndirect2EXT(
+    void Process_vkCmdDrawMeshTasksIndirect2EXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkDrawIndirect2InfoKHR>* pInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdDrawMeshTasksIndirect2EXT&         args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdDrawMeshTasksIndirectCount2EXT(
+    void Process_vkCmdDrawMeshTasksIndirectCount2EXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkDrawIndirectCount2InfoKHR>* pInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdDrawMeshTasksIndirectCount2EXT&    args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdWriteMarkerToMemoryAMD(
+    void Process_vkCmdWriteMarkerToMemoryAMD(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkMemoryMarkerInfoAMD>* pInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdWriteMarkerToMemoryAMD&            args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCreateAccelerationStructure2KHR(
+    void Process_vkCreateAccelerationStructure2KHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkAccelerationStructureCreateInfo2KHR>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkAccelerationStructureKHR>* pAccelerationStructure){ CheckSkiavk(device);}
-    virtual void Process_vkCmdCopyBuffer2KHR(
+        args::CreateAccelerationStructure2KHR&      args) override { CheckSkiavk(args.device);}
+    void Process_vkCmdCopyBuffer2KHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkCopyBufferInfo2>* pCopyBufferInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdCopyBuffer2KHR&                    args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdCopyImage2KHR(
+    void Process_vkCmdCopyImage2KHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkCopyImageInfo2>* pCopyImageInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdCopyImage2KHR&                     args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdCopyBufferToImage2KHR(
+    void Process_vkCmdCopyBufferToImage2KHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkCopyBufferToImageInfo2>* pCopyBufferToImageInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdCopyBufferToImage2KHR&             args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdCopyImageToBuffer2KHR(
+    void Process_vkCmdCopyImageToBuffer2KHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkCopyImageToBufferInfo2>* pCopyImageToBufferInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdCopyImageToBuffer2KHR&             args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdBlitImage2KHR(
+    void Process_vkCmdBlitImage2KHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkBlitImageInfo2>* pBlitImageInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdBlitImage2KHR&                     args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdResolveImage2KHR(
+    void Process_vkCmdResolveImage2KHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkResolveImageInfo2>* pResolveImageInfo){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkCmdTraceRaysIndirect2KHR(
+        args::CmdResolveImage2KHR&                  args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkCmdTraceRaysIndirect2KHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkDeviceAddress                             indirectDeviceAddress){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkGetDeviceBufferMemoryRequirementsKHR(
+        args::CmdTraceRaysIndirect2KHR&             args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkGetDeviceBufferMemoryRequirementsKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkDeviceBufferMemoryRequirements>* pInfo,
-        StructPointerDecoder<Decoded_VkMemoryRequirements2>* pMemoryRequirements){ CheckSkiavk(device);}
+        args::GetDeviceBufferMemoryRequirementsKHR& args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetDeviceImageMemoryRequirementsKHR(
+    void Process_vkGetDeviceImageMemoryRequirementsKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkDeviceImageMemoryRequirements>* pInfo,
-        StructPointerDecoder<Decoded_VkMemoryRequirements2>* pMemoryRequirements){ CheckSkiavk(device);}
+        args::GetDeviceImageMemoryRequirementsKHR&  args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetDeviceImageSparseMemoryRequirementsKHR(
+    void Process_vkGetDeviceImageSparseMemoryRequirementsKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkDeviceImageMemoryRequirements>* pInfo,
-        PointerDecoder<uint32_t>*                   pSparseMemoryRequirementCount,
-        StructPointerDecoder<Decoded_VkSparseImageMemoryRequirements2>* pSparseMemoryRequirements){ CheckSkiavk(device);}
-    virtual void Process_vkCmdBindIndexBuffer2KHR(
+        args::GetDeviceImageSparseMemoryRequirementsKHR& args) override { CheckSkiavk(args.device);}
+    void Process_vkCmdBindIndexBuffer2KHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            buffer,
-        VkDeviceSize                                offset,
-        VkDeviceSize                                size,
-        VkIndexType                                 indexType){ CheckSkiavk(commandBuffer);}
+        args::CmdBindIndexBuffer2KHR&               args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkGetRenderingAreaGranularityKHR(
+    void Process_vkGetRenderingAreaGranularityKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkRenderingAreaInfo>* pRenderingAreaInfo,
-        StructPointerDecoder<Decoded_VkExtent2D>*   pGranularity){ CheckSkiavk(device);}
+        args::GetRenderingAreaGranularityKHR&       args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetDeviceImageSubresourceLayoutKHR(
+    void Process_vkGetDeviceImageSubresourceLayoutKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkDeviceImageSubresourceInfo>* pInfo,
-        StructPointerDecoder<Decoded_VkSubresourceLayout2>* pLayout){ CheckSkiavk(device);}
+        args::GetDeviceImageSubresourceLayoutKHR&   args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetImageSubresourceLayout2KHR(
+    void Process_vkGetImageSubresourceLayout2KHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            image,
-        StructPointerDecoder<Decoded_VkImageSubresource2>* pSubresource,
-        StructPointerDecoder<Decoded_VkSubresourceLayout2>* pLayout){ CheckSkiavk(device);}
-    virtual void Process_vkWaitForPresent2KHR(
+        args::GetImageSubresourceLayout2KHR&        args) override { CheckSkiavk(args.device);}
+    void Process_vkWaitForPresent2KHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            swapchain,
-        StructPointerDecoder<Decoded_VkPresentWait2InfoKHR>* pPresentWait2Info){ CheckSkiavk(device);}
-    virtual void Process_vkCreatePipelineBinariesKHR(
+        args::WaitForPresent2KHR&                   args) override { CheckSkiavk(args.device);}
+    void Process_vkCreatePipelineBinariesKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkPipelineBinaryCreateInfoKHR>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        StructPointerDecoder<Decoded_VkPipelineBinaryHandlesInfoKHR>* pBinaries){ CheckSkiavk(device);}
+        args::CreatePipelineBinariesKHR&            args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDestroyPipelineBinaryKHR(
+    void Process_vkDestroyPipelineBinaryKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            pipelineBinary,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
+        args::DestroyPipelineBinaryKHR&             args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetPipelineKeyKHR(
+    void Process_vkGetPipelineKeyKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkPipelineCreateInfoKHR>* pPipelineCreateInfo,
-        StructPointerDecoder<Decoded_VkPipelineBinaryKeyKHR>* pPipelineKey){ CheckSkiavk(device);}
+        args::GetPipelineKeyKHR&                    args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetPipelineBinaryDataKHR(
+    void Process_vkGetPipelineBinaryDataKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkPipelineBinaryDataInfoKHR>* pInfo,
-        StructPointerDecoder<Decoded_VkPipelineBinaryKeyKHR>* pPipelineBinaryKey,
-        PointerDecoder<size_t>*                     pPipelineBinaryDataSize,
-        PointerDecoder<uint8_t>*                    pPipelineBinaryData){ CheckSkiavk(device);}
+        args::GetPipelineBinaryDataKHR&             args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkReleaseCapturedPipelineDataKHR(
+    void Process_vkReleaseCapturedPipelineDataKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkReleaseCapturedPipelineDataInfoKHR>* pInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
-    virtual void Process_vkReleaseSwapchainImagesKHR(
+        args::ReleaseCapturedPipelineDataKHR&       args) override { CheckSkiavk(args.device);}
+    void Process_vkReleaseSwapchainImagesKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkReleaseSwapchainImagesInfoKHR>* pReleaseInfo){ CheckSkiavk(device);}
-    virtual void Process_vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR(
+        args::ReleaseSwapchainImagesKHR&            args) override { CheckSkiavk(args.device);}
+    void Process_vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        PointerDecoder<uint32_t>*                   pPropertyCount,
-        StructPointerDecoder<Decoded_VkCooperativeMatrixPropertiesKHR>* pProperties){ CheckSkiavk(physicalDevice);}
-    virtual void Process_vkCmdSetLineStippleKHR(
+        args::GetPhysicalDeviceCooperativeMatrixPropertiesKHR& args) override { CheckSkiavk(args.physicalDevice);}
+    void Process_vkCmdSetLineStippleKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    lineStippleFactor,
-        uint16_t                                    lineStipplePattern){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkGetPhysicalDeviceCalibrateableTimeDomainsKHR(
+        args::CmdSetLineStippleKHR&                 args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkGetPhysicalDeviceCalibrateableTimeDomainsKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        PointerDecoder<uint32_t>*                   pTimeDomainCount,
-        PointerDecoder<VkTimeDomainKHR>*            pTimeDomains){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceCalibrateableTimeDomainsKHR& args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkGetCalibratedTimestampsKHR(
+    void Process_vkGetCalibratedTimestampsKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        uint32_t                                    timestampCount,
-        StructPointerDecoder<Decoded_VkCalibratedTimestampInfoKHR>* pTimestampInfos,
-        PointerDecoder<uint64_t>*                   pTimestamps,
-        PointerDecoder<uint64_t>*                   pMaxDeviation){ CheckSkiavk(device);}
-    virtual void Process_vkCmdBindDescriptorSets2KHR(
+        args::GetCalibratedTimestampsKHR&           args) override { CheckSkiavk(args.device);}
+    void Process_vkCmdBindDescriptorSets2KHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkBindDescriptorSetsInfo>* pBindDescriptorSetsInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdBindDescriptorSets2KHR&            args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdPushConstants2KHR(
+    void Process_vkCmdPushConstants2KHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkPushConstantsInfo>* pPushConstantsInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdPushConstants2KHR&                 args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdPushDescriptorSet2KHR(
+    void Process_vkCmdPushDescriptorSet2KHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkPushDescriptorSetInfo>* pPushDescriptorSetInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdPushDescriptorSet2KHR&             args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetDescriptorBufferOffsets2EXT(
+    void Process_vkCmdSetDescriptorBufferOffsets2EXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkSetDescriptorBufferOffsetsInfoEXT>* pSetDescriptorBufferOffsetsInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdSetDescriptorBufferOffsets2EXT&    args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdBindDescriptorBufferEmbeddedSamplers2EXT(
+    void Process_vkCmdBindDescriptorBufferEmbeddedSamplers2EXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkBindDescriptorBufferEmbeddedSamplersInfoEXT>* pBindDescriptorBufferEmbeddedSamplersInfo){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkCmdCopyMemoryIndirectKHR(
+        args::CmdBindDescriptorBufferEmbeddedSamplers2EXT& args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkCmdCopyMemoryIndirectKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkCopyMemoryIndirectInfoKHR>* pCopyMemoryIndirectInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdCopyMemoryIndirectKHR&             args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdCopyMemoryToImageIndirectKHR(
+    void Process_vkCmdCopyMemoryToImageIndirectKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkCopyMemoryToImageIndirectInfoKHR>* pCopyMemoryToImageIndirectInfo){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkGetDeviceFaultReportsKHR(
+        args::CmdCopyMemoryToImageIndirectKHR&      args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkGetDeviceFaultReportsKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        uint64_t                                    timeout,
-        PointerDecoder<uint32_t>*                   pFaultCounts,
-        StructPointerDecoder<Decoded_VkDeviceFaultInfoKHR>* pFaultInfo){ CheckSkiavk(device);}
+        args::GetDeviceFaultReportsKHR&             args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetDeviceFaultDebugInfoKHR(
+    void Process_vkGetDeviceFaultDebugInfoKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkDeviceFaultDebugInfoKHR>* pDebugInfo){ CheckSkiavk(device);}
-    virtual void Process_vkCmdEndRendering2KHR(
+        args::GetDeviceFaultDebugInfoKHR&           args) override { CheckSkiavk(args.device);}
+    void Process_vkCmdEndRendering2KHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkRenderingEndInfoKHR>* pRenderingEndInfo){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkFrameBoundaryANDROID(
+        args::CmdEndRendering2KHR&                  args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkFrameBoundaryANDROID(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            semaphore,
-        format::HandleId                            image);
-    virtual void Process_vkCreateDebugReportCallbackEXT(
+        args::FrameBoundaryANDROID&                 args) override;
+    void Process_vkCreateDebugReportCallbackEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            instance,
-        StructPointerDecoder<Decoded_VkDebugReportCallbackCreateInfoEXT>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkDebugReportCallbackEXT>* pCallback){ CheckSkiavk(instance);}
+        args::CreateDebugReportCallbackEXT&         args) override { CheckSkiavk(args.instance);}
 
-    virtual void Process_vkDestroyDebugReportCallbackEXT(
+    void Process_vkDestroyDebugReportCallbackEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            instance,
-        format::HandleId                            callback,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(instance);}
+        args::DestroyDebugReportCallbackEXT&        args) override { CheckSkiavk(args.instance);}
 
-    virtual void Process_vkDebugReportMessageEXT(
+    void Process_vkDebugReportMessageEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            instance,
-        VkDebugReportFlagsEXT                       flags,
-        VkDebugReportObjectTypeEXT                  objectType,
-        uint64_t                                    object,
-        size_t                                      location,
-        int32_t                                     messageCode,
-        StringDecoder*                              pLayerPrefix,
-        StringDecoder*                              pMessage){ CheckSkiavk(instance);}
-    virtual void Process_vkDebugMarkerSetObjectTagEXT(
+        args::DebugReportMessageEXT&                args) override { CheckSkiavk(args.instance);}
+    void Process_vkDebugMarkerSetObjectTagEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkDebugMarkerObjectTagInfoEXT>* pTagInfo){ CheckSkiavk(device);}
+        args::DebugMarkerSetObjectTagEXT&           args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDebugMarkerSetObjectNameEXT(
+    void Process_vkDebugMarkerSetObjectNameEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkDebugMarkerObjectNameInfoEXT>* pNameInfo){ CheckSkiavk(device);}
+        args::DebugMarkerSetObjectNameEXT&          args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCmdDebugMarkerBeginEXT(
+    void Process_vkCmdDebugMarkerBeginEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkDebugMarkerMarkerInfoEXT>* pMarkerInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdDebugMarkerBeginEXT&               args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdDebugMarkerEndEXT(
+    void Process_vkCmdDebugMarkerEndEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer){ CheckSkiavk(commandBuffer);}
+        args::CmdDebugMarkerEndEXT&                 args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdDebugMarkerInsertEXT(
+    void Process_vkCmdDebugMarkerInsertEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkDebugMarkerMarkerInfoEXT>* pMarkerInfo);
-    virtual void Process_vkCmdBindTransformFeedbackBuffersEXT(
+        args::CmdDebugMarkerInsertEXT&              args) override;
+    void Process_vkCmdBindTransformFeedbackBuffersEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    firstBinding,
-        uint32_t                                    bindingCount,
-        HandlePointerDecoder<VkBuffer>*             pBuffers,
-        PointerDecoder<VkDeviceSize>*               pOffsets,
-        PointerDecoder<VkDeviceSize>*               pSizes){ CheckSkiavk(commandBuffer);}
+        args::CmdBindTransformFeedbackBuffersEXT&   args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdBeginTransformFeedbackEXT(
+    void Process_vkCmdBeginTransformFeedbackEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    firstCounterBuffer,
-        uint32_t                                    counterBufferCount,
-        HandlePointerDecoder<VkBuffer>*             pCounterBuffers,
-        PointerDecoder<VkDeviceSize>*               pCounterBufferOffsets){ CheckSkiavk(commandBuffer);}
+        args::CmdBeginTransformFeedbackEXT&         args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdEndTransformFeedbackEXT(
+    void Process_vkCmdEndTransformFeedbackEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    firstCounterBuffer,
-        uint32_t                                    counterBufferCount,
-        HandlePointerDecoder<VkBuffer>*             pCounterBuffers,
-        PointerDecoder<VkDeviceSize>*               pCounterBufferOffsets){ CheckSkiavk(commandBuffer);}
+        args::CmdEndTransformFeedbackEXT&           args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdBeginQueryIndexedEXT(
+    void Process_vkCmdBeginQueryIndexedEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            queryPool,
-        uint32_t                                    query,
-        VkQueryControlFlags                         flags,
-        uint32_t                                    index){ CheckSkiavk(commandBuffer);}
+        args::CmdBeginQueryIndexedEXT&              args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdEndQueryIndexedEXT(
+    void Process_vkCmdEndQueryIndexedEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            queryPool,
-        uint32_t                                    query,
-        uint32_t                                    index){ CheckSkiavk(commandBuffer);}
+        args::CmdEndQueryIndexedEXT&                args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdDrawIndirectByteCountEXT(
+    void Process_vkCmdDrawIndirectByteCountEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    instanceCount,
-        uint32_t                                    firstInstance,
-        format::HandleId                            counterBuffer,
-        VkDeviceSize                                counterBufferOffset,
-        uint32_t                                    counterOffset,
-        uint32_t                                    vertexStride){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkGetImageViewHandleNVX(
+        args::CmdDrawIndirectByteCountEXT&          args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkGetImageViewHandleNVX(
         const ApiCallInfo&                          call_info,
-        uint32_t                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkImageViewHandleInfoNVX>* pInfo){ CheckSkiavk(device);}
+        args::GetImageViewHandleNVX&                args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetImageViewHandle64NVX(
+    void Process_vkGetImageViewHandle64NVX(
         const ApiCallInfo&                          call_info,
-        uint64_t                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkImageViewHandleInfoNVX>* pInfo){ CheckSkiavk(device);}
+        args::GetImageViewHandle64NVX&              args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetImageViewAddressNVX(
+    void Process_vkGetImageViewAddressNVX(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            imageView,
-        StructPointerDecoder<Decoded_VkImageViewAddressPropertiesNVX>* pProperties){ CheckSkiavk(device);}
+        args::GetImageViewAddressNVX&               args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetDeviceCombinedImageSamplerIndexNVX(
+    void Process_vkGetDeviceCombinedImageSamplerIndexNVX(
         const ApiCallInfo&                          call_info,
-        uint64_t                                    returnValue,
-        format::HandleId                            device,
-        uint64_t                                    imageViewIndex,
-        uint64_t                                    samplerIndex){ CheckSkiavk(device);}
-    virtual void Process_vkCmdDrawIndirectCountAMD(
+        args::GetDeviceCombinedImageSamplerIndexNVX& args) override { CheckSkiavk(args.device);}
+    void Process_vkCmdDrawIndirectCountAMD(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            buffer,
-        VkDeviceSize                                offset,
-        format::HandleId                            countBuffer,
-        VkDeviceSize                                countBufferOffset,
-        uint32_t                                    maxDrawCount,
-        uint32_t                                    stride){ CheckSkiavk(commandBuffer);}
+        args::CmdDrawIndirectCountAMD&              args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdDrawIndexedIndirectCountAMD(
+    void Process_vkCmdDrawIndexedIndirectCountAMD(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            buffer,
-        VkDeviceSize                                offset,
-        format::HandleId                            countBuffer,
-        VkDeviceSize                                countBufferOffset,
-        uint32_t                                    maxDrawCount,
-        uint32_t                                    stride){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkGetShaderInfoAMD(
+        args::CmdDrawIndexedIndirectCountAMD&       args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkGetShaderInfoAMD(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            pipeline,
-        VkShaderStageFlagBits                       shaderStage,
-        VkShaderInfoTypeAMD                         infoType,
-        PointerDecoder<size_t>*                     pInfoSize,
-        PointerDecoder<uint8_t>*                    pInfo){ CheckSkiavk(device);}
-    virtual void Process_vkCreateStreamDescriptorSurfaceGGP(
+        args::GetShaderInfoAMD&                     args) override { CheckSkiavk(args.device);}
+    void Process_vkCreateStreamDescriptorSurfaceGGP(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            instance,
-        StructPointerDecoder<Decoded_VkStreamDescriptorSurfaceCreateInfoGGP>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkSurfaceKHR>*         pSurface){ CheckSkiavk(instance);}
-    virtual void Process_vkGetPhysicalDeviceExternalImageFormatPropertiesNV(
+        args::CreateStreamDescriptorSurfaceGGP&     args) override { CheckSkiavk(args.instance);}
+    void Process_vkGetPhysicalDeviceExternalImageFormatPropertiesNV(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        VkFormat                                    format,
-        VkImageType                                 type,
-        VkImageTiling                               tiling,
-        VkImageUsageFlags                           usage,
-        VkImageCreateFlags                          flags,
-        VkExternalMemoryHandleTypeFlagsNV           externalHandleType,
-        StructPointerDecoder<Decoded_VkExternalImageFormatPropertiesNV>* pExternalImageFormatProperties){ CheckSkiavk(physicalDevice);}
-    virtual void Process_vkGetMemoryWin32HandleNV(
+        args::GetPhysicalDeviceExternalImageFormatPropertiesNV& args) override { CheckSkiavk(args.physicalDevice);}
+    void Process_vkGetMemoryWin32HandleNV(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            memory,
-        VkExternalMemoryHandleTypeFlagsNV           handleType,
-        PointerDecoder<uint64_t, void*>*            pHandle){ CheckSkiavk(device);}
-    virtual void Process_vkCreateViSurfaceNN(
+        args::GetMemoryWin32HandleNV&               args) override { CheckSkiavk(args.device);}
+    void Process_vkCreateViSurfaceNN(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            instance,
-        StructPointerDecoder<Decoded_VkViSurfaceCreateInfoNN>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkSurfaceKHR>*         pSurface){ CheckSkiavk(instance);}
-    virtual void Process_vkCmdBeginConditionalRenderingEXT(
+        args::CreateViSurfaceNN&                    args) override { CheckSkiavk(args.instance);}
+    void Process_vkCmdBeginConditionalRenderingEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkConditionalRenderingBeginInfoEXT>* pConditionalRenderingBegin){ CheckSkiavk(commandBuffer);}
+        args::CmdBeginConditionalRenderingEXT&      args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdEndConditionalRenderingEXT(
+    void Process_vkCmdEndConditionalRenderingEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkCmdSetViewportWScalingNV(
+        args::CmdEndConditionalRenderingEXT&        args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkCmdSetViewportWScalingNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    firstViewport,
-        uint32_t                                    viewportCount,
-        StructPointerDecoder<Decoded_VkViewportWScalingNV>* pViewportWScalings){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkReleaseDisplayEXT(
+        args::CmdSetViewportWScalingNV&             args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkReleaseDisplayEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        format::HandleId                            display){ CheckSkiavk(physicalDevice);}
-    virtual void Process_vkAcquireXlibDisplayEXT(
+        args::ReleaseDisplayEXT&                    args) override { CheckSkiavk(args.physicalDevice);}
+    void Process_vkAcquireXlibDisplayEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        uint64_t                                    dpy,
-        format::HandleId                            display){ CheckSkiavk(physicalDevice);}
+        args::AcquireXlibDisplayEXT&                args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkGetRandROutputDisplayEXT(
+    void Process_vkGetRandROutputDisplayEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        uint64_t                                    dpy,
-        size_t                                      rrOutput,
-        HandlePointerDecoder<VkDisplayKHR>*         pDisplay){ CheckSkiavk(physicalDevice);}
-    virtual void Process_vkGetPhysicalDeviceSurfaceCapabilities2EXT(
+        args::GetRandROutputDisplayEXT&             args) override { CheckSkiavk(args.physicalDevice);}
+    void Process_vkGetPhysicalDeviceSurfaceCapabilities2EXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        format::HandleId                            surface,
-        StructPointerDecoder<Decoded_VkSurfaceCapabilities2EXT>* pSurfaceCapabilities){ CheckSkiavk(physicalDevice);}
-    virtual void Process_vkDisplayPowerControlEXT(
+        args::GetPhysicalDeviceSurfaceCapabilities2EXT& args) override { CheckSkiavk(args.physicalDevice);}
+    void Process_vkDisplayPowerControlEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            display,
-        StructPointerDecoder<Decoded_VkDisplayPowerInfoEXT>* pDisplayPowerInfo){ CheckSkiavk(device);}
+        args::DisplayPowerControlEXT&               args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkRegisterDeviceEventEXT(
+    void Process_vkRegisterDeviceEventEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkDeviceEventInfoEXT>* pDeviceEventInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkFence>*              pFence){ CheckSkiavk(device);}
+        args::RegisterDeviceEventEXT&               args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkRegisterDisplayEventEXT(
+    void Process_vkRegisterDisplayEventEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            display,
-        StructPointerDecoder<Decoded_VkDisplayEventInfoEXT>* pDisplayEventInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkFence>*              pFence){ CheckSkiavk(device);}
+        args::RegisterDisplayEventEXT&              args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetSwapchainCounterEXT(
+    void Process_vkGetSwapchainCounterEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            swapchain,
-        VkSurfaceCounterFlagBitsEXT                 counter,
-        PointerDecoder<uint64_t>*                   pCounterValue){ CheckSkiavk(device);}
-    virtual void Process_vkGetRefreshCycleDurationGOOGLE(
+        args::GetSwapchainCounterEXT&               args) override { CheckSkiavk(args.device);}
+    void Process_vkGetRefreshCycleDurationGOOGLE(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            swapchain,
-        StructPointerDecoder<Decoded_VkRefreshCycleDurationGOOGLE>* pDisplayTimingProperties){ CheckSkiavk(device);}
+        args::GetRefreshCycleDurationGOOGLE&        args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetPastPresentationTimingGOOGLE(
+    void Process_vkGetPastPresentationTimingGOOGLE(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            swapchain,
-        PointerDecoder<uint32_t>*                   pPresentationTimingCount,
-        StructPointerDecoder<Decoded_VkPastPresentationTimingGOOGLE>* pPresentationTimings){ CheckSkiavk(device);}
-    virtual void Process_vkCmdSetDiscardRectangleEXT(
+        args::GetPastPresentationTimingGOOGLE&      args) override { CheckSkiavk(args.device);}
+    void Process_vkCmdSetDiscardRectangleEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    firstDiscardRectangle,
-        uint32_t                                    discardRectangleCount,
-        StructPointerDecoder<Decoded_VkRect2D>*     pDiscardRectangles){ CheckSkiavk(commandBuffer);}
+        args::CmdSetDiscardRectangleEXT&            args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetDiscardRectangleEnableEXT(
+    void Process_vkCmdSetDiscardRectangleEnableEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkBool32                                    discardRectangleEnable){ CheckSkiavk(commandBuffer);}
+        args::CmdSetDiscardRectangleEnableEXT&      args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetDiscardRectangleModeEXT(
+    void Process_vkCmdSetDiscardRectangleModeEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkDiscardRectangleModeEXT                   discardRectangleMode){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkSetHdrMetadataEXT(
+        args::CmdSetDiscardRectangleModeEXT&        args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkSetHdrMetadataEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        uint32_t                                    swapchainCount,
-        HandlePointerDecoder<VkSwapchainKHR>*       pSwapchains,
-        StructPointerDecoder<Decoded_VkHdrMetadataEXT>* pMetadata){ CheckSkiavk(device);}
-    virtual void Process_vkCreateIOSSurfaceMVK(
+        args::SetHdrMetadataEXT&                    args) override { CheckSkiavk(args.device);}
+    void Process_vkCreateIOSSurfaceMVK(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            instance,
-        StructPointerDecoder<Decoded_VkIOSSurfaceCreateInfoMVK>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkSurfaceKHR>*         pSurface){ CheckSkiavk(instance);}
-    virtual void Process_vkCreateMacOSSurfaceMVK(
+        args::CreateIOSSurfaceMVK&                  args) override { CheckSkiavk(args.instance);}
+    void Process_vkCreateMacOSSurfaceMVK(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            instance,
-        StructPointerDecoder<Decoded_VkMacOSSurfaceCreateInfoMVK>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkSurfaceKHR>*         pSurface){ CheckSkiavk(instance);}
-    virtual void Process_vkSetDebugUtilsObjectNameEXT(
+        args::CreateMacOSSurfaceMVK&                args) override { CheckSkiavk(args.instance);}
+    void Process_vkSetDebugUtilsObjectNameEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkDebugUtilsObjectNameInfoEXT>* pNameInfo){ CheckSkiavk(device);}
+        args::SetDebugUtilsObjectNameEXT&           args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkSetDebugUtilsObjectTagEXT(
+    void Process_vkSetDebugUtilsObjectTagEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkDebugUtilsObjectTagInfoEXT>* pTagInfo){ CheckSkiavk(device);}
+        args::SetDebugUtilsObjectTagEXT&            args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkQueueBeginDebugUtilsLabelEXT(
+    void Process_vkQueueBeginDebugUtilsLabelEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            queue,
-        StructPointerDecoder<Decoded_VkDebugUtilsLabelEXT>* pLabelInfo){ CheckSkiavk(queue);}
+        args::QueueBeginDebugUtilsLabelEXT&         args) override { CheckSkiavk(args.queue);}
 
-    virtual void Process_vkQueueEndDebugUtilsLabelEXT(
+    void Process_vkQueueEndDebugUtilsLabelEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            queue){ CheckSkiavk(queue);}
+        args::QueueEndDebugUtilsLabelEXT&           args) override { CheckSkiavk(args.queue);}
 
-    virtual void Process_vkQueueInsertDebugUtilsLabelEXT(
+    void Process_vkQueueInsertDebugUtilsLabelEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            queue,
-        StructPointerDecoder<Decoded_VkDebugUtilsLabelEXT>* pLabelInfo){ CheckSkiavk(queue);}
+        args::QueueInsertDebugUtilsLabelEXT&        args) override { CheckSkiavk(args.queue);}
 
-    virtual void Process_vkCmdBeginDebugUtilsLabelEXT(
+    void Process_vkCmdBeginDebugUtilsLabelEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkDebugUtilsLabelEXT>* pLabelInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdBeginDebugUtilsLabelEXT&           args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdEndDebugUtilsLabelEXT(
+    void Process_vkCmdEndDebugUtilsLabelEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer){ CheckSkiavk(commandBuffer);}
+        args::CmdEndDebugUtilsLabelEXT&             args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdInsertDebugUtilsLabelEXT(
+    void Process_vkCmdInsertDebugUtilsLabelEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkDebugUtilsLabelEXT>* pLabelInfo);
+        args::CmdInsertDebugUtilsLabelEXT&          args) override;
 
-    virtual void Process_vkCreateDebugUtilsMessengerEXT(
+    void Process_vkCreateDebugUtilsMessengerEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            instance,
-        StructPointerDecoder<Decoded_VkDebugUtilsMessengerCreateInfoEXT>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkDebugUtilsMessengerEXT>* pMessenger){ CheckSkiavk(instance);}
+        args::CreateDebugUtilsMessengerEXT&         args) override { CheckSkiavk(args.instance);}
 
-    virtual void Process_vkDestroyDebugUtilsMessengerEXT(
+    void Process_vkDestroyDebugUtilsMessengerEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            instance,
-        format::HandleId                            messenger,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(instance);}
+        args::DestroyDebugUtilsMessengerEXT&        args) override { CheckSkiavk(args.instance);}
 
-    virtual void Process_vkSubmitDebugUtilsMessageEXT(
+    void Process_vkSubmitDebugUtilsMessageEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            instance,
-        VkDebugUtilsMessageSeverityFlagBitsEXT      messageSeverity,
-        VkDebugUtilsMessageTypeFlagsEXT             messageTypes,
-        StructPointerDecoder<Decoded_VkDebugUtilsMessengerCallbackDataEXT>* pCallbackData){ CheckSkiavk(instance);}
-    virtual void Process_vkGetAndroidHardwareBufferPropertiesANDROID(
+        args::SubmitDebugUtilsMessageEXT&           args) override { CheckSkiavk(args.instance);}
+    void Process_vkGetAndroidHardwareBufferPropertiesANDROID(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        uint64_t                                    buffer,
-        StructPointerDecoder<Decoded_VkAndroidHardwareBufferPropertiesANDROID>* pProperties){ CheckSkiavk(device);}
+        args::GetAndroidHardwareBufferPropertiesANDROID& args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetMemoryAndroidHardwareBufferANDROID(
+    void Process_vkGetMemoryAndroidHardwareBufferANDROID(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkMemoryGetAndroidHardwareBufferInfoANDROID>* pInfo,
-        PointerDecoder<uint64_t, void*>*            pBuffer){ CheckSkiavk(device);}
-    virtual void Process_vkCreateGpaSessionAMD(
+        args::GetMemoryAndroidHardwareBufferANDROID& args) override { CheckSkiavk(args.device);}
+    void Process_vkCreateGpaSessionAMD(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkGpaSessionCreateInfoAMD>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkGpaSessionAMD>*      pGpaSession){ CheckSkiavk(device);}
+        args::CreateGpaSessionAMD&                  args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDestroyGpaSessionAMD(
+    void Process_vkDestroyGpaSessionAMD(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            gpaSession,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
+        args::DestroyGpaSessionAMD&                 args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkSetGpaDeviceClockModeAMD(
+    void Process_vkSetGpaDeviceClockModeAMD(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkGpaDeviceClockModeInfoAMD>* pInfo){ CheckSkiavk(device);}
+        args::SetGpaDeviceClockModeAMD&             args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetGpaDeviceClockInfoAMD(
+    void Process_vkGetGpaDeviceClockInfoAMD(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkGpaDeviceGetClockInfoAMD>* pInfo){ CheckSkiavk(device);}
+        args::GetGpaDeviceClockInfoAMD&             args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCmdBeginGpaSessionAMD(
+    void Process_vkCmdBeginGpaSessionAMD(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            gpaSession){ CheckSkiavk(commandBuffer);}
+        args::CmdBeginGpaSessionAMD&                args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdEndGpaSessionAMD(
+    void Process_vkCmdEndGpaSessionAMD(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            gpaSession){ CheckSkiavk(commandBuffer);}
+        args::CmdEndGpaSessionAMD&                  args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdBeginGpaSampleAMD(
+    void Process_vkCmdBeginGpaSampleAMD(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            gpaSession,
-        StructPointerDecoder<Decoded_VkGpaSampleBeginInfoAMD>* pGpaSampleBeginInfo,
-        PointerDecoder<uint32_t>*                   pSampleID){ CheckSkiavk(commandBuffer);}
+        args::CmdBeginGpaSampleAMD&                 args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdEndGpaSampleAMD(
+    void Process_vkCmdEndGpaSampleAMD(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            gpaSession,
-        uint32_t                                    sampleID){ CheckSkiavk(commandBuffer);}
+        args::CmdEndGpaSampleAMD&                   args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkGetGpaSessionStatusAMD(
+    void Process_vkGetGpaSessionStatusAMD(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            gpaSession){ CheckSkiavk(device);}
+        args::GetGpaSessionStatusAMD&               args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetGpaSessionResultsAMD(
+    void Process_vkGetGpaSessionResultsAMD(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            gpaSession,
-        uint32_t                                    sampleID,
-        PointerDecoder<size_t>*                     pSizeInBytes,
-        PointerDecoder<uint8_t>*                    pData){ CheckSkiavk(device);}
+        args::GetGpaSessionResultsAMD&              args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkResetGpaSessionAMD(
+    void Process_vkResetGpaSessionAMD(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            gpaSession){ CheckSkiavk(device);}
+        args::ResetGpaSessionAMD&                   args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCmdCopyGpaSessionResultsAMD(
+    void Process_vkCmdCopyGpaSessionResultsAMD(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            gpaSession){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkCmdSetSampleLocationsEXT(
+        args::CmdCopyGpaSessionResultsAMD&          args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkCmdSetSampleLocationsEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkSampleLocationsInfoEXT>* pSampleLocationsInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdSetSampleLocationsEXT&             args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkGetPhysicalDeviceMultisamplePropertiesEXT(
+    void Process_vkGetPhysicalDeviceMultisamplePropertiesEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            physicalDevice,
-        VkSampleCountFlagBits                       samples,
-        StructPointerDecoder<Decoded_VkMultisamplePropertiesEXT>* pMultisampleProperties){ CheckSkiavk(physicalDevice);}
-    virtual void Process_vkGetImageDrmFormatModifierPropertiesEXT(
+        args::GetPhysicalDeviceMultisamplePropertiesEXT& args) override { CheckSkiavk(args.physicalDevice);}
+    void Process_vkGetImageDrmFormatModifierPropertiesEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            image,
-        StructPointerDecoder<Decoded_VkImageDrmFormatModifierPropertiesEXT>* pProperties){ CheckSkiavk(device);}
-    virtual void Process_vkCreateValidationCacheEXT(
+        args::GetImageDrmFormatModifierPropertiesEXT& args) override { CheckSkiavk(args.device);}
+    void Process_vkCreateValidationCacheEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkValidationCacheCreateInfoEXT>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkValidationCacheEXT>* pValidationCache){ CheckSkiavk(device);}
+        args::CreateValidationCacheEXT&             args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDestroyValidationCacheEXT(
+    void Process_vkDestroyValidationCacheEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            validationCache,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
+        args::DestroyValidationCacheEXT&            args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkMergeValidationCachesEXT(
+    void Process_vkMergeValidationCachesEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            dstCache,
-        uint32_t                                    srcCacheCount,
-        HandlePointerDecoder<VkValidationCacheEXT>* pSrcCaches){ CheckSkiavk(device);}
+        args::MergeValidationCachesEXT&             args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetValidationCacheDataEXT(
+    void Process_vkGetValidationCacheDataEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            validationCache,
-        PointerDecoder<size_t>*                     pDataSize,
-        PointerDecoder<uint8_t>*                    pData){ CheckSkiavk(device);}
-    virtual void Process_vkCmdBindShadingRateImageNV(
+        args::GetValidationCacheDataEXT&            args) override { CheckSkiavk(args.device);}
+    void Process_vkCmdBindShadingRateImageNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            imageView,
-        VkImageLayout                               imageLayout){ CheckSkiavk(commandBuffer);}
+        args::CmdBindShadingRateImageNV&            args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetViewportShadingRatePaletteNV(
+    void Process_vkCmdSetViewportShadingRatePaletteNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    firstViewport,
-        uint32_t                                    viewportCount,
-        StructPointerDecoder<Decoded_VkShadingRatePaletteNV>* pShadingRatePalettes){ CheckSkiavk(commandBuffer);}
+        args::CmdSetViewportShadingRatePaletteNV&   args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetCoarseSampleOrderNV(
+    void Process_vkCmdSetCoarseSampleOrderNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkCoarseSampleOrderTypeNV                   sampleOrderType,
-        uint32_t                                    customSampleOrderCount,
-        StructPointerDecoder<Decoded_VkCoarseSampleOrderCustomNV>* pCustomSampleOrders){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkCreateAccelerationStructureNV(
+        args::CmdSetCoarseSampleOrderNV&            args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkCreateAccelerationStructureNV(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkAccelerationStructureCreateInfoNV>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkAccelerationStructureNV>* pAccelerationStructure){ CheckSkiavk(device);}
+        args::CreateAccelerationStructureNV&        args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDestroyAccelerationStructureNV(
+    void Process_vkDestroyAccelerationStructureNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            accelerationStructure,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
+        args::DestroyAccelerationStructureNV&       args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetAccelerationStructureMemoryRequirementsNV(
+    void Process_vkGetAccelerationStructureMemoryRequirementsNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkAccelerationStructureMemoryRequirementsInfoNV>* pInfo,
-        StructPointerDecoder<Decoded_VkMemoryRequirements2>* pMemoryRequirements){ CheckSkiavk(device);}
+        args::GetAccelerationStructureMemoryRequirementsNV& args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkBindAccelerationStructureMemoryNV(
+    void Process_vkBindAccelerationStructureMemoryNV(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        uint32_t                                    bindInfoCount,
-        StructPointerDecoder<Decoded_VkBindAccelerationStructureMemoryInfoNV>* pBindInfos){ CheckSkiavk(device);}
+        args::BindAccelerationStructureMemoryNV&    args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCmdBuildAccelerationStructureNV(
+    void Process_vkCmdBuildAccelerationStructureNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkAccelerationStructureInfoNV>* pInfo,
-        format::HandleId                            instanceData,
-        VkDeviceSize                                instanceOffset,
-        VkBool32                                    update,
-        format::HandleId                            dst,
-        format::HandleId                            src,
-        format::HandleId                            scratch,
-        VkDeviceSize                                scratchOffset){ CheckSkiavk(commandBuffer);}
+        args::CmdBuildAccelerationStructureNV&      args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdCopyAccelerationStructureNV(
+    void Process_vkCmdCopyAccelerationStructureNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            dst,
-        format::HandleId                            src,
-        VkCopyAccelerationStructureModeKHR          mode){ CheckSkiavk(commandBuffer);}
+        args::CmdCopyAccelerationStructureNV&       args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdTraceRaysNV(
+    void Process_vkCmdTraceRaysNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            raygenShaderBindingTableBuffer,
-        VkDeviceSize                                raygenShaderBindingOffset,
-        format::HandleId                            missShaderBindingTableBuffer,
-        VkDeviceSize                                missShaderBindingOffset,
-        VkDeviceSize                                missShaderBindingStride,
-        format::HandleId                            hitShaderBindingTableBuffer,
-        VkDeviceSize                                hitShaderBindingOffset,
-        VkDeviceSize                                hitShaderBindingStride,
-        format::HandleId                            callableShaderBindingTableBuffer,
-        VkDeviceSize                                callableShaderBindingOffset,
-        VkDeviceSize                                callableShaderBindingStride,
-        uint32_t                                    width,
-        uint32_t                                    height,
-        uint32_t                                    depth){ CheckSkiavk(commandBuffer);}
+        args::CmdTraceRaysNV&                       args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCreateRayTracingPipelinesNV(
+    void Process_vkCreateRayTracingPipelinesNV(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            pipelineCache,
-        uint32_t                                    createInfoCount,
-        StructPointerDecoder<Decoded_VkRayTracingPipelineCreateInfoNV>* pCreateInfos,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkPipeline>*           pPipelines){ CheckSkiavk(device);}
+        args::CreateRayTracingPipelinesNV&          args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetRayTracingShaderGroupHandlesKHR(
+    void Process_vkGetRayTracingShaderGroupHandlesKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            pipeline,
-        uint32_t                                    firstGroup,
-        uint32_t                                    groupCount,
-        size_t                                      dataSize,
-        PointerDecoder<uint8_t>*                    pData){ CheckSkiavk(device);}
+        args::GetRayTracingShaderGroupHandlesKHR&   args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetRayTracingShaderGroupHandlesNV(
+    void Process_vkGetRayTracingShaderGroupHandlesNV(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            pipeline,
-        uint32_t                                    firstGroup,
-        uint32_t                                    groupCount,
-        size_t                                      dataSize,
-        PointerDecoder<uint8_t>*                    pData){ CheckSkiavk(device);}
+        args::GetRayTracingShaderGroupHandlesNV&    args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetAccelerationStructureHandleNV(
+    void Process_vkGetAccelerationStructureHandleNV(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            accelerationStructure,
-        size_t                                      dataSize,
-        PointerDecoder<uint8_t>*                    pData){ CheckSkiavk(device);}
+        args::GetAccelerationStructureHandleNV&     args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCmdWriteAccelerationStructuresPropertiesNV(
+    void Process_vkCmdWriteAccelerationStructuresPropertiesNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    accelerationStructureCount,
-        HandlePointerDecoder<VkAccelerationStructureNV>* pAccelerationStructures,
-        VkQueryType                                 queryType,
-        format::HandleId                            queryPool,
-        uint32_t                                    firstQuery){ CheckSkiavk(commandBuffer);}
+        args::CmdWriteAccelerationStructuresPropertiesNV& args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCompileDeferredNV(
+    void Process_vkCompileDeferredNV(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            pipeline,
-        uint32_t                                    shader){ CheckSkiavk(device);}
-    virtual void Process_vkGetMemoryHostPointerPropertiesEXT(
+        args::CompileDeferredNV&                    args) override { CheckSkiavk(args.device);}
+    void Process_vkGetMemoryHostPointerPropertiesEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        VkExternalMemoryHandleTypeFlagBits          handleType,
-        uint64_t                                    pHostPointer,
-        StructPointerDecoder<Decoded_VkMemoryHostPointerPropertiesEXT>* pMemoryHostPointerProperties){ CheckSkiavk(device);}
-    virtual void Process_vkCmdWriteBufferMarkerAMD(
+        args::GetMemoryHostPointerPropertiesEXT&    args) override { CheckSkiavk(args.device);}
+    void Process_vkCmdWriteBufferMarkerAMD(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkPipelineStageFlagBits                     pipelineStage,
-        format::HandleId                            dstBuffer,
-        VkDeviceSize                                dstOffset,
-        uint32_t                                    marker){ CheckSkiavk(commandBuffer);}
+        args::CmdWriteBufferMarkerAMD&              args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdWriteBufferMarker2AMD(
+    void Process_vkCmdWriteBufferMarker2AMD(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkPipelineStageFlags2                       stage,
-        format::HandleId                            dstBuffer,
-        VkDeviceSize                                dstOffset,
-        uint32_t                                    marker){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT(
+        args::CmdWriteBufferMarker2AMD&             args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        PointerDecoder<uint32_t>*                   pTimeDomainCount,
-        PointerDecoder<VkTimeDomainKHR>*            pTimeDomains){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceCalibrateableTimeDomainsEXT& args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkGetCalibratedTimestampsEXT(
+    void Process_vkGetCalibratedTimestampsEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        uint32_t                                    timestampCount,
-        StructPointerDecoder<Decoded_VkCalibratedTimestampInfoKHR>* pTimestampInfos,
-        PointerDecoder<uint64_t>*                   pTimestamps,
-        PointerDecoder<uint64_t>*                   pMaxDeviation){ CheckSkiavk(device);}
-    virtual void Process_vkCmdDrawMeshTasksNV(
+        args::GetCalibratedTimestampsEXT&           args) override { CheckSkiavk(args.device);}
+    void Process_vkCmdDrawMeshTasksNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    taskCount,
-        uint32_t                                    firstTask){ CheckSkiavk(commandBuffer);}
+        args::CmdDrawMeshTasksNV&                   args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdDrawMeshTasksIndirectNV(
+    void Process_vkCmdDrawMeshTasksIndirectNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            buffer,
-        VkDeviceSize                                offset,
-        uint32_t                                    drawCount,
-        uint32_t                                    stride){ CheckSkiavk(commandBuffer);}
+        args::CmdDrawMeshTasksIndirectNV&           args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdDrawMeshTasksIndirectCountNV(
+    void Process_vkCmdDrawMeshTasksIndirectCountNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            buffer,
-        VkDeviceSize                                offset,
-        format::HandleId                            countBuffer,
-        VkDeviceSize                                countBufferOffset,
-        uint32_t                                    maxDrawCount,
-        uint32_t                                    stride){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkCmdSetExclusiveScissorEnableNV(
+        args::CmdDrawMeshTasksIndirectCountNV&      args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkCmdSetExclusiveScissorEnableNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    firstExclusiveScissor,
-        uint32_t                                    exclusiveScissorCount,
-        PointerDecoder<VkBool32>*                   pExclusiveScissorEnables){ CheckSkiavk(commandBuffer);}
+        args::CmdSetExclusiveScissorEnableNV&       args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetExclusiveScissorNV(
+    void Process_vkCmdSetExclusiveScissorNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    firstExclusiveScissor,
-        uint32_t                                    exclusiveScissorCount,
-        StructPointerDecoder<Decoded_VkRect2D>*     pExclusiveScissors){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkCmdSetCheckpointNV(
+        args::CmdSetExclusiveScissorNV&             args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkCmdSetCheckpointNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint64_t                                    pCheckpointMarker){ CheckSkiavk(commandBuffer);}
+        args::CmdSetCheckpointNV&                   args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkGetQueueCheckpointDataNV(
+    void Process_vkGetQueueCheckpointDataNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            queue,
-        PointerDecoder<uint32_t>*                   pCheckpointDataCount,
-        StructPointerDecoder<Decoded_VkCheckpointDataNV>* pCheckpointData){ CheckSkiavk(queue);}
+        args::GetQueueCheckpointDataNV&             args) override { CheckSkiavk(args.queue);}
 
-    virtual void Process_vkGetQueueCheckpointData2NV(
+    void Process_vkGetQueueCheckpointData2NV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            queue,
-        PointerDecoder<uint32_t>*                   pCheckpointDataCount,
-        StructPointerDecoder<Decoded_VkCheckpointData2NV>* pCheckpointData){ CheckSkiavk(queue);}
-    virtual void Process_vkSetSwapchainPresentTimingQueueSizeEXT(
+        args::GetQueueCheckpointData2NV&            args) override { CheckSkiavk(args.queue);}
+    void Process_vkSetSwapchainPresentTimingQueueSizeEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            swapchain,
-        uint32_t                                    size){ CheckSkiavk(device);}
+        args::SetSwapchainPresentTimingQueueSizeEXT& args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetSwapchainTimingPropertiesEXT(
+    void Process_vkGetSwapchainTimingPropertiesEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            swapchain,
-        StructPointerDecoder<Decoded_VkSwapchainTimingPropertiesEXT>* pSwapchainTimingProperties,
-        PointerDecoder<uint64_t>*                   pSwapchainTimingPropertiesCounter){ CheckSkiavk(device);}
+        args::GetSwapchainTimingPropertiesEXT&      args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetSwapchainTimeDomainPropertiesEXT(
+    void Process_vkGetSwapchainTimeDomainPropertiesEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            swapchain,
-        StructPointerDecoder<Decoded_VkSwapchainTimeDomainPropertiesEXT>* pSwapchainTimeDomainProperties,
-        PointerDecoder<uint64_t>*                   pTimeDomainsCounter){ CheckSkiavk(device);}
+        args::GetSwapchainTimeDomainPropertiesEXT&  args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetPastPresentationTimingEXT(
+    void Process_vkGetPastPresentationTimingEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkPastPresentationTimingInfoEXT>* pPastPresentationTimingInfo,
-        StructPointerDecoder<Decoded_VkPastPresentationTimingPropertiesEXT>* pPastPresentationTimingProperties){ CheckSkiavk(device);}
-    virtual void Process_vkInitializePerformanceApiINTEL(
+        args::GetPastPresentationTimingEXT&         args) override { CheckSkiavk(args.device);}
+    void Process_vkInitializePerformanceApiINTEL(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkInitializePerformanceApiInfoINTEL>* pInitializeInfo){ CheckSkiavk(device);}
+        args::InitializePerformanceApiINTEL&        args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkUninitializePerformanceApiINTEL(
+    void Process_vkUninitializePerformanceApiINTEL(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device){ CheckSkiavk(device);}
+        args::UninitializePerformanceApiINTEL&      args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCmdSetPerformanceMarkerINTEL(
+    void Process_vkCmdSetPerformanceMarkerINTEL(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkPerformanceMarkerInfoINTEL>* pMarkerInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdSetPerformanceMarkerINTEL&         args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetPerformanceStreamMarkerINTEL(
+    void Process_vkCmdSetPerformanceStreamMarkerINTEL(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkPerformanceStreamMarkerInfoINTEL>* pMarkerInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdSetPerformanceStreamMarkerINTEL&   args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetPerformanceOverrideINTEL(
+    void Process_vkCmdSetPerformanceOverrideINTEL(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkPerformanceOverrideInfoINTEL>* pOverrideInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdSetPerformanceOverrideINTEL&       args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkAcquirePerformanceConfigurationINTEL(
+    void Process_vkAcquirePerformanceConfigurationINTEL(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkPerformanceConfigurationAcquireInfoINTEL>* pAcquireInfo,
-        HandlePointerDecoder<VkPerformanceConfigurationINTEL>* pConfiguration){ CheckSkiavk(device);}
+        args::AcquirePerformanceConfigurationINTEL& args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkReleasePerformanceConfigurationINTEL(
+    void Process_vkReleasePerformanceConfigurationINTEL(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            configuration){ CheckSkiavk(device);}
+        args::ReleasePerformanceConfigurationINTEL& args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkQueueSetPerformanceConfigurationINTEL(
+    void Process_vkQueueSetPerformanceConfigurationINTEL(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            queue,
-        format::HandleId                            configuration){ CheckSkiavk(queue);}
+        args::QueueSetPerformanceConfigurationINTEL& args) override { CheckSkiavk(args.queue);}
 
-    virtual void Process_vkGetPerformanceParameterINTEL(
+    void Process_vkGetPerformanceParameterINTEL(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        VkPerformanceParameterTypeINTEL             parameter,
-        StructPointerDecoder<Decoded_VkPerformanceValueINTEL>* pValue){ CheckSkiavk(device);}
-    virtual void Process_vkSetLocalDimmingAMD(
+        args::GetPerformanceParameterINTEL&         args) override { CheckSkiavk(args.device);}
+    void Process_vkSetLocalDimmingAMD(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            swapChain,
-        VkBool32                                    localDimmingEnable){ CheckSkiavk(device);}
-    virtual void Process_vkCreateImagePipeSurfaceFUCHSIA(
+        args::SetLocalDimmingAMD&                   args) override { CheckSkiavk(args.device);}
+    void Process_vkCreateImagePipeSurfaceFUCHSIA(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            instance,
-        StructPointerDecoder<Decoded_VkImagePipeSurfaceCreateInfoFUCHSIA>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkSurfaceKHR>*         pSurface){ CheckSkiavk(instance);}
-    virtual void Process_vkCreateMetalSurfaceEXT(
+        args::CreateImagePipeSurfaceFUCHSIA&        args) override { CheckSkiavk(args.instance);}
+    void Process_vkCreateMetalSurfaceEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            instance,
-        StructPointerDecoder<Decoded_VkMetalSurfaceCreateInfoEXT>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkSurfaceKHR>*         pSurface){ CheckSkiavk(instance);}
-    virtual void Process_vkGetBufferDeviceAddressEXT(
+        args::CreateMetalSurfaceEXT&                args) override { CheckSkiavk(args.instance);}
+    void Process_vkGetBufferDeviceAddressEXT(
         const ApiCallInfo&                          call_info,
-        VkDeviceAddress                             returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkBufferDeviceAddressInfo>* pInfo){ CheckSkiavk(device);}
-    virtual void Process_vkGetPhysicalDeviceToolPropertiesEXT(
+        args::GetBufferDeviceAddressEXT&            args) override { CheckSkiavk(args.device);}
+    void Process_vkGetPhysicalDeviceToolPropertiesEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        PointerDecoder<uint32_t>*                   pToolCount,
-        StructPointerDecoder<Decoded_VkPhysicalDeviceToolProperties>* pToolProperties){ CheckSkiavk(physicalDevice);}
-    virtual void Process_vkGetPhysicalDeviceCooperativeMatrixPropertiesNV(
+        args::GetPhysicalDeviceToolPropertiesEXT&   args) override { CheckSkiavk(args.physicalDevice);}
+    void Process_vkGetPhysicalDeviceCooperativeMatrixPropertiesNV(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        PointerDecoder<uint32_t>*                   pPropertyCount,
-        StructPointerDecoder<Decoded_VkCooperativeMatrixPropertiesNV>* pProperties){ CheckSkiavk(physicalDevice);}
-    virtual void Process_vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(
+        args::GetPhysicalDeviceCooperativeMatrixPropertiesNV& args) override { CheckSkiavk(args.physicalDevice);}
+    void Process_vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        PointerDecoder<uint32_t>*                   pCombinationCount,
-        StructPointerDecoder<Decoded_VkFramebufferMixedSamplesCombinationNV>* pCombinations){ CheckSkiavk(physicalDevice);}
-    virtual void Process_vkGetPhysicalDeviceSurfacePresentModes2EXT(
+        args::GetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV& args) override { CheckSkiavk(args.physicalDevice);}
+    void Process_vkGetPhysicalDeviceSurfacePresentModes2EXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        StructPointerDecoder<Decoded_VkPhysicalDeviceSurfaceInfo2KHR>* pSurfaceInfo,
-        PointerDecoder<uint32_t>*                   pPresentModeCount,
-        PointerDecoder<VkPresentModeKHR>*           pPresentModes){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceSurfacePresentModes2EXT& args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkAcquireFullScreenExclusiveModeEXT(
+    void Process_vkAcquireFullScreenExclusiveModeEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            swapchain){ CheckSkiavk(device);}
+        args::AcquireFullScreenExclusiveModeEXT&    args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkReleaseFullScreenExclusiveModeEXT(
+    void Process_vkReleaseFullScreenExclusiveModeEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            swapchain){ CheckSkiavk(device);}
+        args::ReleaseFullScreenExclusiveModeEXT&    args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetDeviceGroupSurfacePresentModes2EXT(
+    void Process_vkGetDeviceGroupSurfacePresentModes2EXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkPhysicalDeviceSurfaceInfo2KHR>* pSurfaceInfo,
-        PointerDecoder<VkDeviceGroupPresentModeFlagsKHR>* pModes){ CheckSkiavk(device);}
-    virtual void Process_vkCreateHeadlessSurfaceEXT(
+        args::GetDeviceGroupSurfacePresentModes2EXT& args) override { CheckSkiavk(args.device);}
+    void Process_vkCreateHeadlessSurfaceEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            instance,
-        StructPointerDecoder<Decoded_VkHeadlessSurfaceCreateInfoEXT>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkSurfaceKHR>*         pSurface){ CheckSkiavk(instance);}
-    virtual void Process_vkCmdSetLineStippleEXT(
+        args::CreateHeadlessSurfaceEXT&             args) override { CheckSkiavk(args.instance);}
+    void Process_vkCmdSetLineStippleEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    lineStippleFactor,
-        uint16_t                                    lineStipplePattern){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkResetQueryPoolEXT(
+        args::CmdSetLineStippleEXT&                 args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkResetQueryPoolEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            queryPool,
-        uint32_t                                    firstQuery,
-        uint32_t                                    queryCount){ CheckSkiavk(device);}
-    virtual void Process_vkCmdSetCullModeEXT(
+        args::ResetQueryPoolEXT&                    args) override { CheckSkiavk(args.device);}
+    void Process_vkCmdSetCullModeEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkCullModeFlags                             cullMode){ CheckSkiavk(commandBuffer);}
+        args::CmdSetCullModeEXT&                    args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetFrontFaceEXT(
+    void Process_vkCmdSetFrontFaceEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkFrontFace                                 frontFace){ CheckSkiavk(commandBuffer);}
+        args::CmdSetFrontFaceEXT&                   args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetPrimitiveTopologyEXT(
+    void Process_vkCmdSetPrimitiveTopologyEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkPrimitiveTopology                         primitiveTopology){ CheckSkiavk(commandBuffer);}
+        args::CmdSetPrimitiveTopologyEXT&           args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetViewportWithCountEXT(
+    void Process_vkCmdSetViewportWithCountEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    viewportCount,
-        StructPointerDecoder<Decoded_VkViewport>*   pViewports){ CheckSkiavk(commandBuffer);}
+        args::CmdSetViewportWithCountEXT&           args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetScissorWithCountEXT(
+    void Process_vkCmdSetScissorWithCountEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    scissorCount,
-        StructPointerDecoder<Decoded_VkRect2D>*     pScissors){ CheckSkiavk(commandBuffer);}
+        args::CmdSetScissorWithCountEXT&            args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdBindVertexBuffers2EXT(
+    void Process_vkCmdBindVertexBuffers2EXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    firstBinding,
-        uint32_t                                    bindingCount,
-        HandlePointerDecoder<VkBuffer>*             pBuffers,
-        PointerDecoder<VkDeviceSize>*               pOffsets,
-        PointerDecoder<VkDeviceSize>*               pSizes,
-        PointerDecoder<VkDeviceSize>*               pStrides){ CheckSkiavk(commandBuffer);}
+        args::CmdBindVertexBuffers2EXT&             args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetDepthTestEnableEXT(
+    void Process_vkCmdSetDepthTestEnableEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkBool32                                    depthTestEnable){ CheckSkiavk(commandBuffer);}
+        args::CmdSetDepthTestEnableEXT&             args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetDepthWriteEnableEXT(
+    void Process_vkCmdSetDepthWriteEnableEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkBool32                                    depthWriteEnable){ CheckSkiavk(commandBuffer);}
+        args::CmdSetDepthWriteEnableEXT&            args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetDepthCompareOpEXT(
+    void Process_vkCmdSetDepthCompareOpEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkCompareOp                                 depthCompareOp){ CheckSkiavk(commandBuffer);}
+        args::CmdSetDepthCompareOpEXT&              args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetDepthBoundsTestEnableEXT(
+    void Process_vkCmdSetDepthBoundsTestEnableEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkBool32                                    depthBoundsTestEnable){ CheckSkiavk(commandBuffer);}
+        args::CmdSetDepthBoundsTestEnableEXT&       args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetStencilTestEnableEXT(
+    void Process_vkCmdSetStencilTestEnableEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkBool32                                    stencilTestEnable){ CheckSkiavk(commandBuffer);}
+        args::CmdSetStencilTestEnableEXT&           args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetStencilOpEXT(
+    void Process_vkCmdSetStencilOpEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkStencilFaceFlags                          faceMask,
-        VkStencilOp                                 failOp,
-        VkStencilOp                                 passOp,
-        VkStencilOp                                 depthFailOp,
-        VkCompareOp                                 compareOp){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkCopyMemoryToImageEXT(
+        args::CmdSetStencilOpEXT&                   args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkCopyMemoryToImageEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkCopyMemoryToImageInfo>* pCopyMemoryToImageInfo){ CheckSkiavk(device);}
+        args::CopyMemoryToImageEXT&                 args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCopyImageToMemoryEXT(
+    void Process_vkCopyImageToMemoryEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkCopyImageToMemoryInfo>* pCopyImageToMemoryInfo){ CheckSkiavk(device);}
+        args::CopyImageToMemoryEXT&                 args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCopyImageToImageEXT(
+    void Process_vkCopyImageToImageEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkCopyImageToImageInfo>* pCopyImageToImageInfo){ CheckSkiavk(device);}
+        args::CopyImageToImageEXT&                  args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkTransitionImageLayoutEXT(
+    void Process_vkTransitionImageLayoutEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        uint32_t                                    transitionCount,
-        StructPointerDecoder<Decoded_VkHostImageLayoutTransitionInfo>* pTransitions){ CheckSkiavk(device);}
+        args::TransitionImageLayoutEXT&             args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetImageSubresourceLayout2EXT(
+    void Process_vkGetImageSubresourceLayout2EXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            image,
-        StructPointerDecoder<Decoded_VkImageSubresource2>* pSubresource,
-        StructPointerDecoder<Decoded_VkSubresourceLayout2>* pLayout){ CheckSkiavk(device);}
-    virtual void Process_vkReleaseSwapchainImagesEXT(
+        args::GetImageSubresourceLayout2EXT&        args) override { CheckSkiavk(args.device);}
+    void Process_vkReleaseSwapchainImagesEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkReleaseSwapchainImagesInfoKHR>* pReleaseInfo){ CheckSkiavk(device);}
-    virtual void Process_vkGetGeneratedCommandsMemoryRequirementsNV(
+        args::ReleaseSwapchainImagesEXT&            args) override { CheckSkiavk(args.device);}
+    void Process_vkGetGeneratedCommandsMemoryRequirementsNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkGeneratedCommandsMemoryRequirementsInfoNV>* pInfo,
-        StructPointerDecoder<Decoded_VkMemoryRequirements2>* pMemoryRequirements){ CheckSkiavk(device);}
+        args::GetGeneratedCommandsMemoryRequirementsNV& args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCmdPreprocessGeneratedCommandsNV(
+    void Process_vkCmdPreprocessGeneratedCommandsNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkGeneratedCommandsInfoNV>* pGeneratedCommandsInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdPreprocessGeneratedCommandsNV&     args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdExecuteGeneratedCommandsNV(
+    void Process_vkCmdExecuteGeneratedCommandsNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkBool32                                    isPreprocessed,
-        StructPointerDecoder<Decoded_VkGeneratedCommandsInfoNV>* pGeneratedCommandsInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdExecuteGeneratedCommandsNV&        args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdBindPipelineShaderGroupNV(
+    void Process_vkCmdBindPipelineShaderGroupNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkPipelineBindPoint                         pipelineBindPoint,
-        format::HandleId                            pipeline,
-        uint32_t                                    groupIndex){ CheckSkiavk(commandBuffer);}
+        args::CmdBindPipelineShaderGroupNV&         args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCreateIndirectCommandsLayoutNV(
+    void Process_vkCreateIndirectCommandsLayoutNV(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkIndirectCommandsLayoutCreateInfoNV>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkIndirectCommandsLayoutNV>* pIndirectCommandsLayout){ CheckSkiavk(device);}
+        args::CreateIndirectCommandsLayoutNV&       args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDestroyIndirectCommandsLayoutNV(
+    void Process_vkDestroyIndirectCommandsLayoutNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            indirectCommandsLayout,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
-    virtual void Process_vkCmdSetDepthBias2EXT(
+        args::DestroyIndirectCommandsLayoutNV&      args) override { CheckSkiavk(args.device);}
+    void Process_vkCmdSetDepthBias2EXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkDepthBiasInfoEXT>* pDepthBiasInfo){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkAcquireDrmDisplayEXT(
+        args::CmdSetDepthBias2EXT&                  args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkAcquireDrmDisplayEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        int32_t                                     drmFd,
-        format::HandleId                            display){ CheckSkiavk(physicalDevice);}
+        args::AcquireDrmDisplayEXT&                 args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkGetDrmDisplayEXT(
+    void Process_vkGetDrmDisplayEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        int32_t                                     drmFd,
-        uint32_t                                    connectorId,
-        HandlePointerDecoder<VkDisplayKHR>*         display){ CheckSkiavk(physicalDevice);}
-    virtual void Process_vkCreatePrivateDataSlotEXT(
+        args::GetDrmDisplayEXT&                     args) override { CheckSkiavk(args.physicalDevice);}
+    void Process_vkCreatePrivateDataSlotEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkPrivateDataSlotCreateInfo>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkPrivateDataSlot>*    pPrivateDataSlot){ CheckSkiavk(device);}
+        args::CreatePrivateDataSlotEXT&             args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDestroyPrivateDataSlotEXT(
+    void Process_vkDestroyPrivateDataSlotEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            privateDataSlot,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
+        args::DestroyPrivateDataSlotEXT&            args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkSetPrivateDataEXT(
+    void Process_vkSetPrivateDataEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        VkObjectType                                objectType,
-        uint64_t                                    objectHandle,
-        format::HandleId                            privateDataSlot,
-        uint64_t                                    data){ CheckSkiavk(device);}
+        args::SetPrivateDataEXT&                    args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetPrivateDataEXT(
+    void Process_vkGetPrivateDataEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        VkObjectType                                objectType,
-        uint64_t                                    objectHandle,
-        format::HandleId                            privateDataSlot,
-        PointerDecoder<uint64_t>*                   pData){ CheckSkiavk(device);}
-    virtual void Process_vkQueueSetPerfHintQCOM(
+        args::GetPrivateDataEXT&                    args) override { CheckSkiavk(args.device);}
+    void Process_vkQueueSetPerfHintQCOM(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            queue,
-        StructPointerDecoder<Decoded_VkPerfHintInfoQCOM>* pPerfHintInfo){ CheckSkiavk(queue);}
-    virtual void Process_vkCmdDispatchTileQCOM(
+        args::QueueSetPerfHintQCOM&                 args) override { CheckSkiavk(args.queue);}
+    void Process_vkCmdDispatchTileQCOM(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkDispatchTileInfoQCOM>* pDispatchTileInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdDispatchTileQCOM&                  args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdBeginPerTileExecutionQCOM(
+    void Process_vkCmdBeginPerTileExecutionQCOM(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkPerTileBeginInfoQCOM>* pPerTileBeginInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdBeginPerTileExecutionQCOM&         args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdEndPerTileExecutionQCOM(
+    void Process_vkCmdEndPerTileExecutionQCOM(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkPerTileEndInfoQCOM>* pPerTileEndInfo){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkGetDescriptorSetLayoutSizeEXT(
+        args::CmdEndPerTileExecutionQCOM&           args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkGetDescriptorSetLayoutSizeEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            layout,
-        PointerDecoder<VkDeviceSize>*               pLayoutSizeInBytes){ CheckSkiavk(device);}
+        args::GetDescriptorSetLayoutSizeEXT&        args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetDescriptorSetLayoutBindingOffsetEXT(
+    void Process_vkGetDescriptorSetLayoutBindingOffsetEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            layout,
-        uint32_t                                    binding,
-        PointerDecoder<VkDeviceSize>*               pOffset){ CheckSkiavk(device);}
+        args::GetDescriptorSetLayoutBindingOffsetEXT& args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetDescriptorEXT(
+    void Process_vkGetDescriptorEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkDescriptorGetInfoEXT>* pDescriptorInfo,
-        size_t                                      dataSize,
-        PointerDecoder<uint8_t>*                    pDescriptor){ CheckSkiavk(device);}
+        args::GetDescriptorEXT&                     args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCmdBindDescriptorBuffersEXT(
+    void Process_vkCmdBindDescriptorBuffersEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    bufferCount,
-        StructPointerDecoder<Decoded_VkDescriptorBufferBindingInfoEXT>* pBindingInfos){ CheckSkiavk(commandBuffer);}
+        args::CmdBindDescriptorBuffersEXT&          args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetDescriptorBufferOffsetsEXT(
+    void Process_vkCmdSetDescriptorBufferOffsetsEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkPipelineBindPoint                         pipelineBindPoint,
-        format::HandleId                            layout,
-        uint32_t                                    firstSet,
-        uint32_t                                    setCount,
-        PointerDecoder<uint32_t>*                   pBufferIndices,
-        PointerDecoder<VkDeviceSize>*               pOffsets){ CheckSkiavk(commandBuffer);}
+        args::CmdSetDescriptorBufferOffsetsEXT&     args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdBindDescriptorBufferEmbeddedSamplersEXT(
+    void Process_vkCmdBindDescriptorBufferEmbeddedSamplersEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkPipelineBindPoint                         pipelineBindPoint,
-        format::HandleId                            layout,
-        uint32_t                                    set){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkCmdSetFragmentShadingRateEnumNV(
+        args::CmdBindDescriptorBufferEmbeddedSamplersEXT& args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkCmdSetFragmentShadingRateEnumNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkFragmentShadingRateNV                     shadingRate,
-        PointerDecoder<VkFragmentShadingRateCombinerOpKHR>* combinerOps){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkGetDeviceFaultInfoEXT(
+        args::CmdSetFragmentShadingRateEnumNV&      args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkGetDeviceFaultInfoEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkDeviceFaultCountsEXT>* pFaultCounts,
-        StructPointerDecoder<Decoded_VkDeviceFaultInfoEXT>* pFaultInfo){ CheckSkiavk(device);}
-    virtual void Process_vkAcquireWinrtDisplayNV(
+        args::GetDeviceFaultInfoEXT&                args) override { CheckSkiavk(args.device);}
+    void Process_vkAcquireWinrtDisplayNV(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        format::HandleId                            display){ CheckSkiavk(physicalDevice);}
+        args::AcquireWinrtDisplayNV&                args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkGetWinrtDisplayNV(
+    void Process_vkGetWinrtDisplayNV(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        uint32_t                                    deviceRelativeId,
-        HandlePointerDecoder<VkDisplayKHR>*         pDisplay){ CheckSkiavk(physicalDevice);}
-    virtual void Process_vkCreateDirectFBSurfaceEXT(
+        args::GetWinrtDisplayNV&                    args) override { CheckSkiavk(args.physicalDevice);}
+    void Process_vkCreateDirectFBSurfaceEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            instance,
-        StructPointerDecoder<Decoded_VkDirectFBSurfaceCreateInfoEXT>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkSurfaceKHR>*         pSurface){ CheckSkiavk(instance);}
+        args::CreateDirectFBSurfaceEXT&             args) override { CheckSkiavk(args.instance);}
 
-    virtual void Process_vkGetPhysicalDeviceDirectFBPresentationSupportEXT(
+    void Process_vkGetPhysicalDeviceDirectFBPresentationSupportEXT(
         const ApiCallInfo&                          call_info,
-        VkBool32                                    returnValue,
-        format::HandleId                            physicalDevice,
-        uint32_t                                    queueFamilyIndex,
-        uint64_t                                    dfb){ CheckSkiavk(physicalDevice);}
-    virtual void Process_vkCmdSetVertexInputEXT(
+        args::GetPhysicalDeviceDirectFBPresentationSupportEXT& args) override { CheckSkiavk(args.physicalDevice);}
+    void Process_vkCmdSetVertexInputEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    vertexBindingDescriptionCount,
-        StructPointerDecoder<Decoded_VkVertexInputBindingDescription2EXT>* pVertexBindingDescriptions,
-        uint32_t                                    vertexAttributeDescriptionCount,
-        StructPointerDecoder<Decoded_VkVertexInputAttributeDescription2EXT>* pVertexAttributeDescriptions){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkGetMemoryZirconHandleFUCHSIA(
+        args::CmdSetVertexInputEXT&                 args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkGetMemoryZirconHandleFUCHSIA(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkMemoryGetZirconHandleInfoFUCHSIA>* pGetZirconHandleInfo,
-        PointerDecoder<uint32_t>*                   pZirconHandle){ CheckSkiavk(device);}
+        args::GetMemoryZirconHandleFUCHSIA&         args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetMemoryZirconHandlePropertiesFUCHSIA(
+    void Process_vkGetMemoryZirconHandlePropertiesFUCHSIA(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        VkExternalMemoryHandleTypeFlagBits          handleType,
-        uint32_t                                    zirconHandle,
-        StructPointerDecoder<Decoded_VkMemoryZirconHandlePropertiesFUCHSIA>* pMemoryZirconHandleProperties){ CheckSkiavk(device);}
-    virtual void Process_vkImportSemaphoreZirconHandleFUCHSIA(
+        args::GetMemoryZirconHandlePropertiesFUCHSIA& args) override { CheckSkiavk(args.device);}
+    void Process_vkImportSemaphoreZirconHandleFUCHSIA(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkImportSemaphoreZirconHandleInfoFUCHSIA>* pImportSemaphoreZirconHandleInfo){ CheckSkiavk(device);}
+        args::ImportSemaphoreZirconHandleFUCHSIA&   args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetSemaphoreZirconHandleFUCHSIA(
+    void Process_vkGetSemaphoreZirconHandleFUCHSIA(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkSemaphoreGetZirconHandleInfoFUCHSIA>* pGetZirconHandleInfo,
-        PointerDecoder<uint32_t>*                   pZirconHandle){ CheckSkiavk(device);}
-    virtual void Process_vkCmdBindInvocationMaskHUAWEI(
+        args::GetSemaphoreZirconHandleFUCHSIA&      args) override { CheckSkiavk(args.device);}
+    void Process_vkCmdBindInvocationMaskHUAWEI(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            imageView,
-        VkImageLayout                               imageLayout){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkGetMemoryRemoteAddressNV(
+        args::CmdBindInvocationMaskHUAWEI&          args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkGetMemoryRemoteAddressNV(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkMemoryGetRemoteAddressInfoNV>* pMemoryGetRemoteAddressInfo,
-        PointerDecoder<uint64_t, void*>*            pAddress){ CheckSkiavk(device);}
-    virtual void Process_vkCmdSetPatchControlPointsEXT(
+        args::GetMemoryRemoteAddressNV&             args) override { CheckSkiavk(args.device);}
+    void Process_vkCmdSetPatchControlPointsEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    patchControlPoints){ CheckSkiavk(commandBuffer);}
+        args::CmdSetPatchControlPointsEXT&          args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetRasterizerDiscardEnableEXT(
+    void Process_vkCmdSetRasterizerDiscardEnableEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkBool32                                    rasterizerDiscardEnable){ CheckSkiavk(commandBuffer);}
+        args::CmdSetRasterizerDiscardEnableEXT&     args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetDepthBiasEnableEXT(
+    void Process_vkCmdSetDepthBiasEnableEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkBool32                                    depthBiasEnable){ CheckSkiavk(commandBuffer);}
+        args::CmdSetDepthBiasEnableEXT&             args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetLogicOpEXT(
+    void Process_vkCmdSetLogicOpEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkLogicOp                                   logicOp){ CheckSkiavk(commandBuffer);}
+        args::CmdSetLogicOpEXT&                     args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetPrimitiveRestartEnableEXT(
+    void Process_vkCmdSetPrimitiveRestartEnableEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkBool32                                    primitiveRestartEnable){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkCreateScreenSurfaceQNX(
+        args::CmdSetPrimitiveRestartEnableEXT&      args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkCreateScreenSurfaceQNX(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            instance,
-        StructPointerDecoder<Decoded_VkScreenSurfaceCreateInfoQNX>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkSurfaceKHR>*         pSurface){ CheckSkiavk(instance);}
+        args::CreateScreenSurfaceQNX&               args) override { CheckSkiavk(args.instance);}
 
-    virtual void Process_vkGetPhysicalDeviceScreenPresentationSupportQNX(
+    void Process_vkGetPhysicalDeviceScreenPresentationSupportQNX(
         const ApiCallInfo&                          call_info,
-        VkBool32                                    returnValue,
-        format::HandleId                            physicalDevice,
-        uint32_t                                    queueFamilyIndex,
-        uint64_t                                    window){ CheckSkiavk(physicalDevice);}
-    virtual void Process_vkCmdSetColorWriteEnableEXT(
+        args::GetPhysicalDeviceScreenPresentationSupportQNX& args) override { CheckSkiavk(args.physicalDevice);}
+    void Process_vkCmdSetColorWriteEnableEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    attachmentCount,
-        PointerDecoder<VkBool32>*                   pColorWriteEnables){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkCmdDrawMultiEXT(
+        args::CmdSetColorWriteEnableEXT&            args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkCmdDrawMultiEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    drawCount,
-        StructPointerDecoder<Decoded_VkMultiDrawInfoEXT>* pVertexInfo,
-        uint32_t                                    instanceCount,
-        uint32_t                                    firstInstance,
-        uint32_t                                    stride){ CheckSkiavk(commandBuffer);}
+        args::CmdDrawMultiEXT&                      args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdDrawMultiIndexedEXT(
+    void Process_vkCmdDrawMultiIndexedEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    drawCount,
-        StructPointerDecoder<Decoded_VkMultiDrawIndexedInfoEXT>* pIndexInfo,
-        uint32_t                                    instanceCount,
-        uint32_t                                    firstInstance,
-        uint32_t                                    stride,
-        PointerDecoder<int32_t>*                    pVertexOffset){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkCreateMicromapEXT(
+        args::CmdDrawMultiIndexedEXT&               args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkCreateMicromapEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkMicromapCreateInfoEXT>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkMicromapEXT>*        pMicromap){ CheckSkiavk(device);}
+        args::CreateMicromapEXT&                    args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDestroyMicromapEXT(
+    void Process_vkDestroyMicromapEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            micromap,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
+        args::DestroyMicromapEXT&                   args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCmdBuildMicromapsEXT(
+    void Process_vkCmdBuildMicromapsEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    infoCount,
-        StructPointerDecoder<Decoded_VkMicromapBuildInfoEXT>* pInfos){ CheckSkiavk(commandBuffer);}
+        args::CmdBuildMicromapsEXT&                 args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkBuildMicromapsEXT(
+    void Process_vkBuildMicromapsEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            deferredOperation,
-        uint32_t                                    infoCount,
-        StructPointerDecoder<Decoded_VkMicromapBuildInfoEXT>* pInfos){ CheckSkiavk(device);}
+        args::BuildMicromapsEXT&                    args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCopyMicromapEXT(
+    void Process_vkCopyMicromapEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            deferredOperation,
-        StructPointerDecoder<Decoded_VkCopyMicromapInfoEXT>* pInfo){ CheckSkiavk(device);}
+        args::CopyMicromapEXT&                      args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCopyMicromapToMemoryEXT(
+    void Process_vkCopyMicromapToMemoryEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            deferredOperation,
-        StructPointerDecoder<Decoded_VkCopyMicromapToMemoryInfoEXT>* pInfo){ CheckSkiavk(device);}
+        args::CopyMicromapToMemoryEXT&              args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCopyMemoryToMicromapEXT(
+    void Process_vkCopyMemoryToMicromapEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            deferredOperation,
-        StructPointerDecoder<Decoded_VkCopyMemoryToMicromapInfoEXT>* pInfo){ CheckSkiavk(device);}
+        args::CopyMemoryToMicromapEXT&              args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkWriteMicromapsPropertiesEXT(
+    void Process_vkWriteMicromapsPropertiesEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        uint32_t                                    micromapCount,
-        HandlePointerDecoder<VkMicromapEXT>*        pMicromaps,
-        VkQueryType                                 queryType,
-        size_t                                      dataSize,
-        PointerDecoder<uint8_t>*                    pData,
-        size_t                                      stride){ CheckSkiavk(device);}
+        args::WriteMicromapsPropertiesEXT&          args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCmdCopyMicromapEXT(
+    void Process_vkCmdCopyMicromapEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkCopyMicromapInfoEXT>* pInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdCopyMicromapEXT&                   args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdCopyMicromapToMemoryEXT(
+    void Process_vkCmdCopyMicromapToMemoryEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkCopyMicromapToMemoryInfoEXT>* pInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdCopyMicromapToMemoryEXT&           args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdCopyMemoryToMicromapEXT(
+    void Process_vkCmdCopyMemoryToMicromapEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkCopyMemoryToMicromapInfoEXT>* pInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdCopyMemoryToMicromapEXT&           args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdWriteMicromapsPropertiesEXT(
+    void Process_vkCmdWriteMicromapsPropertiesEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    micromapCount,
-        HandlePointerDecoder<VkMicromapEXT>*        pMicromaps,
-        VkQueryType                                 queryType,
-        format::HandleId                            queryPool,
-        uint32_t                                    firstQuery){ CheckSkiavk(commandBuffer);}
+        args::CmdWriteMicromapsPropertiesEXT&       args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkGetDeviceMicromapCompatibilityEXT(
+    void Process_vkGetDeviceMicromapCompatibilityEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkMicromapVersionInfoEXT>* pVersionInfo,
-        PointerDecoder<VkAccelerationStructureCompatibilityKHR>* pCompatibility){ CheckSkiavk(device);}
+        args::GetDeviceMicromapCompatibilityEXT&    args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetMicromapBuildSizesEXT(
+    void Process_vkGetMicromapBuildSizesEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        VkAccelerationStructureBuildTypeKHR         buildType,
-        StructPointerDecoder<Decoded_VkMicromapBuildInfoEXT>* pBuildInfo,
-        StructPointerDecoder<Decoded_VkMicromapBuildSizesInfoEXT>* pSizeInfo){ CheckSkiavk(device);}
-    virtual void Process_vkCmdDrawClusterHUAWEI(
+        args::GetMicromapBuildSizesEXT&             args) override { CheckSkiavk(args.device);}
+    void Process_vkCmdDrawClusterHUAWEI(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    groupCountX,
-        uint32_t                                    groupCountY,
-        uint32_t                                    groupCountZ){ CheckSkiavk(commandBuffer);}
+        args::CmdDrawClusterHUAWEI&                 args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdDrawClusterIndirectHUAWEI(
+    void Process_vkCmdDrawClusterIndirectHUAWEI(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            buffer,
-        VkDeviceSize                                offset){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkSetDeviceMemoryPriorityEXT(
+        args::CmdDrawClusterIndirectHUAWEI&         args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkSetDeviceMemoryPriorityEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            memory,
-        float                                       priority){ CheckSkiavk(device);}
-    virtual void Process_vkCmdSetDispatchParametersARM(
+        args::SetDeviceMemoryPriorityEXT&           args) override { CheckSkiavk(args.device);}
+    void Process_vkCmdSetDispatchParametersARM(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkDispatchParametersARM>* pDispatchParameters){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkGetDescriptorSetLayoutHostMappingInfoVALVE(
+        args::CmdSetDispatchParametersARM&          args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkGetDescriptorSetLayoutHostMappingInfoVALVE(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkDescriptorSetBindingReferenceVALVE>* pBindingReference,
-        StructPointerDecoder<Decoded_VkDescriptorSetLayoutHostMappingInfoVALVE>* pHostMapping){ CheckSkiavk(device);}
+        args::GetDescriptorSetLayoutHostMappingInfoVALVE& args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetDescriptorSetHostMappingVALVE(
+    void Process_vkGetDescriptorSetHostMappingVALVE(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            descriptorSet,
-        PointerDecoder<uint64_t, void*>*            ppData){ CheckSkiavk(device);}
-    virtual void Process_vkGetPipelineIndirectMemoryRequirementsNV(
+        args::GetDescriptorSetHostMappingVALVE&     args) override { CheckSkiavk(args.device);}
+    void Process_vkGetPipelineIndirectMemoryRequirementsNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkComputePipelineCreateInfo>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkMemoryRequirements2>* pMemoryRequirements){ CheckSkiavk(device);}
+        args::GetPipelineIndirectMemoryRequirementsNV& args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCmdUpdatePipelineIndirectBufferNV(
+    void Process_vkCmdUpdatePipelineIndirectBufferNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkPipelineBindPoint                         pipelineBindPoint,
-        format::HandleId                            pipeline){ CheckSkiavk(commandBuffer);}
+        args::CmdUpdatePipelineIndirectBufferNV&    args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkGetPipelineIndirectDeviceAddressNV(
+    void Process_vkGetPipelineIndirectDeviceAddressNV(
         const ApiCallInfo&                          call_info,
-        VkDeviceAddress                             returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkPipelineIndirectDeviceAddressInfoNV>* pInfo){ CheckSkiavk(device);}
-    virtual void Process_vkCmdSetDepthClampEnableEXT(
+        args::GetPipelineIndirectDeviceAddressNV&   args) override { CheckSkiavk(args.device);}
+    void Process_vkCmdSetDepthClampEnableEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkBool32                                    depthClampEnable){ CheckSkiavk(commandBuffer);}
+        args::CmdSetDepthClampEnableEXT&            args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetPolygonModeEXT(
+    void Process_vkCmdSetPolygonModeEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkPolygonMode                               polygonMode){ CheckSkiavk(commandBuffer);}
+        args::CmdSetPolygonModeEXT&                 args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetRasterizationSamplesEXT(
+    void Process_vkCmdSetRasterizationSamplesEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkSampleCountFlagBits                       rasterizationSamples){ CheckSkiavk(commandBuffer);}
+        args::CmdSetRasterizationSamplesEXT&        args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetSampleMaskEXT(
+    void Process_vkCmdSetSampleMaskEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkSampleCountFlagBits                       samples,
-        PointerDecoder<VkSampleMask>*               pSampleMask){ CheckSkiavk(commandBuffer);}
+        args::CmdSetSampleMaskEXT&                  args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetAlphaToCoverageEnableEXT(
+    void Process_vkCmdSetAlphaToCoverageEnableEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkBool32                                    alphaToCoverageEnable){ CheckSkiavk(commandBuffer);}
+        args::CmdSetAlphaToCoverageEnableEXT&       args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetAlphaToOneEnableEXT(
+    void Process_vkCmdSetAlphaToOneEnableEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkBool32                                    alphaToOneEnable){ CheckSkiavk(commandBuffer);}
+        args::CmdSetAlphaToOneEnableEXT&            args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetLogicOpEnableEXT(
+    void Process_vkCmdSetLogicOpEnableEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkBool32                                    logicOpEnable){ CheckSkiavk(commandBuffer);}
+        args::CmdSetLogicOpEnableEXT&               args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetColorBlendEnableEXT(
+    void Process_vkCmdSetColorBlendEnableEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    firstAttachment,
-        uint32_t                                    attachmentCount,
-        PointerDecoder<VkBool32>*                   pColorBlendEnables){ CheckSkiavk(commandBuffer);}
+        args::CmdSetColorBlendEnableEXT&            args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetColorBlendEquationEXT(
+    void Process_vkCmdSetColorBlendEquationEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    firstAttachment,
-        uint32_t                                    attachmentCount,
-        StructPointerDecoder<Decoded_VkColorBlendEquationEXT>* pColorBlendEquations){ CheckSkiavk(commandBuffer);}
+        args::CmdSetColorBlendEquationEXT&          args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetColorWriteMaskEXT(
+    void Process_vkCmdSetColorWriteMaskEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    firstAttachment,
-        uint32_t                                    attachmentCount,
-        PointerDecoder<VkColorComponentFlags>*      pColorWriteMasks){ CheckSkiavk(commandBuffer);}
+        args::CmdSetColorWriteMaskEXT&              args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetTessellationDomainOriginEXT(
+    void Process_vkCmdSetTessellationDomainOriginEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkTessellationDomainOrigin                  domainOrigin){ CheckSkiavk(commandBuffer);}
+        args::CmdSetTessellationDomainOriginEXT&    args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetRasterizationStreamEXT(
+    void Process_vkCmdSetRasterizationStreamEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    rasterizationStream){ CheckSkiavk(commandBuffer);}
+        args::CmdSetRasterizationStreamEXT&         args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetConservativeRasterizationModeEXT(
+    void Process_vkCmdSetConservativeRasterizationModeEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkConservativeRasterizationModeEXT          conservativeRasterizationMode){ CheckSkiavk(commandBuffer);}
+        args::CmdSetConservativeRasterizationModeEXT& args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetExtraPrimitiveOverestimationSizeEXT(
+    void Process_vkCmdSetExtraPrimitiveOverestimationSizeEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        float                                       extraPrimitiveOverestimationSize){ CheckSkiavk(commandBuffer);}
+        args::CmdSetExtraPrimitiveOverestimationSizeEXT& args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetDepthClipEnableEXT(
+    void Process_vkCmdSetDepthClipEnableEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkBool32                                    depthClipEnable){ CheckSkiavk(commandBuffer);}
+        args::CmdSetDepthClipEnableEXT&             args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetSampleLocationsEnableEXT(
+    void Process_vkCmdSetSampleLocationsEnableEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkBool32                                    sampleLocationsEnable){ CheckSkiavk(commandBuffer);}
+        args::CmdSetSampleLocationsEnableEXT&       args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetColorBlendAdvancedEXT(
+    void Process_vkCmdSetColorBlendAdvancedEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    firstAttachment,
-        uint32_t                                    attachmentCount,
-        StructPointerDecoder<Decoded_VkColorBlendAdvancedEXT>* pColorBlendAdvanced){ CheckSkiavk(commandBuffer);}
+        args::CmdSetColorBlendAdvancedEXT&          args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetProvokingVertexModeEXT(
+    void Process_vkCmdSetProvokingVertexModeEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkProvokingVertexModeEXT                    provokingVertexMode){ CheckSkiavk(commandBuffer);}
+        args::CmdSetProvokingVertexModeEXT&         args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetLineRasterizationModeEXT(
+    void Process_vkCmdSetLineRasterizationModeEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkLineRasterizationModeEXT                  lineRasterizationMode){ CheckSkiavk(commandBuffer);}
+        args::CmdSetLineRasterizationModeEXT&       args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetLineStippleEnableEXT(
+    void Process_vkCmdSetLineStippleEnableEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkBool32                                    stippledLineEnable){ CheckSkiavk(commandBuffer);}
+        args::CmdSetLineStippleEnableEXT&           args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetDepthClipNegativeOneToOneEXT(
+    void Process_vkCmdSetDepthClipNegativeOneToOneEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkBool32                                    negativeOneToOne){ CheckSkiavk(commandBuffer);}
+        args::CmdSetDepthClipNegativeOneToOneEXT&   args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetViewportWScalingEnableNV(
+    void Process_vkCmdSetViewportWScalingEnableNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkBool32                                    viewportWScalingEnable){ CheckSkiavk(commandBuffer);}
+        args::CmdSetViewportWScalingEnableNV&       args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetViewportSwizzleNV(
+    void Process_vkCmdSetViewportSwizzleNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    firstViewport,
-        uint32_t                                    viewportCount,
-        StructPointerDecoder<Decoded_VkViewportSwizzleNV>* pViewportSwizzles){ CheckSkiavk(commandBuffer);}
+        args::CmdSetViewportSwizzleNV&              args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetCoverageToColorEnableNV(
+    void Process_vkCmdSetCoverageToColorEnableNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkBool32                                    coverageToColorEnable){ CheckSkiavk(commandBuffer);}
+        args::CmdSetCoverageToColorEnableNV&        args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetCoverageToColorLocationNV(
+    void Process_vkCmdSetCoverageToColorLocationNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    coverageToColorLocation){ CheckSkiavk(commandBuffer);}
+        args::CmdSetCoverageToColorLocationNV&      args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetCoverageModulationModeNV(
+    void Process_vkCmdSetCoverageModulationModeNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkCoverageModulationModeNV                  coverageModulationMode){ CheckSkiavk(commandBuffer);}
+        args::CmdSetCoverageModulationModeNV&       args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetCoverageModulationTableEnableNV(
+    void Process_vkCmdSetCoverageModulationTableEnableNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkBool32                                    coverageModulationTableEnable){ CheckSkiavk(commandBuffer);}
+        args::CmdSetCoverageModulationTableEnableNV& args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetCoverageModulationTableNV(
+    void Process_vkCmdSetCoverageModulationTableNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    coverageModulationTableCount,
-        PointerDecoder<float>*                      pCoverageModulationTable){ CheckSkiavk(commandBuffer);}
+        args::CmdSetCoverageModulationTableNV&      args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetShadingRateImageEnableNV(
+    void Process_vkCmdSetShadingRateImageEnableNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkBool32                                    shadingRateImageEnable){ CheckSkiavk(commandBuffer);}
+        args::CmdSetShadingRateImageEnableNV&       args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetRepresentativeFragmentTestEnableNV(
+    void Process_vkCmdSetRepresentativeFragmentTestEnableNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkBool32                                    representativeFragmentTestEnable){ CheckSkiavk(commandBuffer);}
+        args::CmdSetRepresentativeFragmentTestEnableNV& args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetCoverageReductionModeNV(
+    void Process_vkCmdSetCoverageReductionModeNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkCoverageReductionModeNV                   coverageReductionMode){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkCreateTensorARM(
+        args::CmdSetCoverageReductionModeNV&        args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkCreateTensorARM(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkTensorCreateInfoARM>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkTensorARM>*          pTensor){ CheckSkiavk(device);}
+        args::CreateTensorARM&                      args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDestroyTensorARM(
+    void Process_vkDestroyTensorARM(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            tensor,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
+        args::DestroyTensorARM&                     args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCreateTensorViewARM(
+    void Process_vkCreateTensorViewARM(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkTensorViewCreateInfoARM>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkTensorViewARM>*      pView){ CheckSkiavk(device);}
+        args::CreateTensorViewARM&                  args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDestroyTensorViewARM(
+    void Process_vkDestroyTensorViewARM(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            tensorView,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
+        args::DestroyTensorViewARM&                 args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetTensorMemoryRequirementsARM(
+    void Process_vkGetTensorMemoryRequirementsARM(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkTensorMemoryRequirementsInfoARM>* pInfo,
-        StructPointerDecoder<Decoded_VkMemoryRequirements2>* pMemoryRequirements){ CheckSkiavk(device);}
+        args::GetTensorMemoryRequirementsARM&       args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkBindTensorMemoryARM(
+    void Process_vkBindTensorMemoryARM(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        uint32_t                                    bindInfoCount,
-        StructPointerDecoder<Decoded_VkBindTensorMemoryInfoARM>* pBindInfos){ CheckSkiavk(device);}
+        args::BindTensorMemoryARM&                  args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetDeviceTensorMemoryRequirementsARM(
+    void Process_vkGetDeviceTensorMemoryRequirementsARM(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkDeviceTensorMemoryRequirementsARM>* pInfo,
-        StructPointerDecoder<Decoded_VkMemoryRequirements2>* pMemoryRequirements){ CheckSkiavk(device);}
+        args::GetDeviceTensorMemoryRequirementsARM& args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCmdCopyTensorARM(
+    void Process_vkCmdCopyTensorARM(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkCopyTensorInfoARM>* pCopyTensorInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdCopyTensorARM&                     args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkGetPhysicalDeviceExternalTensorPropertiesARM(
+    void Process_vkGetPhysicalDeviceExternalTensorPropertiesARM(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            physicalDevice,
-        StructPointerDecoder<Decoded_VkPhysicalDeviceExternalTensorInfoARM>* pExternalTensorInfo,
-        StructPointerDecoder<Decoded_VkExternalTensorPropertiesARM>* pExternalTensorProperties){ CheckSkiavk(physicalDevice);}
-    virtual void Process_vkGetShaderModuleIdentifierEXT(
+        args::GetPhysicalDeviceExternalTensorPropertiesARM& args) override { CheckSkiavk(args.physicalDevice);}
+    void Process_vkGetShaderModuleIdentifierEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            shaderModule,
-        StructPointerDecoder<Decoded_VkShaderModuleIdentifierEXT>* pIdentifier){ CheckSkiavk(device);}
+        args::GetShaderModuleIdentifierEXT&         args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetShaderModuleCreateInfoIdentifierEXT(
+    void Process_vkGetShaderModuleCreateInfoIdentifierEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkShaderModuleCreateInfo>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkShaderModuleIdentifierEXT>* pIdentifier){ CheckSkiavk(device);}
-    virtual void Process_vkGetPhysicalDeviceOpticalFlowImageFormatsNV(
+        args::GetShaderModuleCreateInfoIdentifierEXT& args) override { CheckSkiavk(args.device);}
+    void Process_vkGetPhysicalDeviceOpticalFlowImageFormatsNV(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        StructPointerDecoder<Decoded_VkOpticalFlowImageFormatInfoNV>* pOpticalFlowImageFormatInfo,
-        PointerDecoder<uint32_t>*                   pFormatCount,
-        StructPointerDecoder<Decoded_VkOpticalFlowImageFormatPropertiesNV>* pImageFormatProperties){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceOpticalFlowImageFormatsNV& args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkCreateOpticalFlowSessionNV(
+    void Process_vkCreateOpticalFlowSessionNV(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkOpticalFlowSessionCreateInfoNV>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkOpticalFlowSessionNV>* pSession){ CheckSkiavk(device);}
+        args::CreateOpticalFlowSessionNV&           args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDestroyOpticalFlowSessionNV(
+    void Process_vkDestroyOpticalFlowSessionNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            session,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
+        args::DestroyOpticalFlowSessionNV&          args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkBindOpticalFlowSessionImageNV(
+    void Process_vkBindOpticalFlowSessionImageNV(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            session,
-        VkOpticalFlowSessionBindingPointNV          bindingPoint,
-        format::HandleId                            view,
-        VkImageLayout                               layout){ CheckSkiavk(device);}
+        args::BindOpticalFlowSessionImageNV&        args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCmdOpticalFlowExecuteNV(
+    void Process_vkCmdOpticalFlowExecuteNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            session,
-        StructPointerDecoder<Decoded_VkOpticalFlowExecuteInfoNV>* pExecuteInfo){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkAntiLagUpdateAMD(
+        args::CmdOpticalFlowExecuteNV&              args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkAntiLagUpdateAMD(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkAntiLagDataAMD>* pData){ CheckSkiavk(device);}
-    virtual void Process_vkCreateShadersEXT(
+        args::AntiLagUpdateAMD&                     args) override { CheckSkiavk(args.device);}
+    void Process_vkCreateShadersEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        uint32_t                                    createInfoCount,
-        StructPointerDecoder<Decoded_VkShaderCreateInfoEXT>* pCreateInfos,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkShaderEXT>*          pShaders){ CheckSkiavk(device);}
+        args::CreateShadersEXT&                     args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDestroyShaderEXT(
+    void Process_vkDestroyShaderEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            shader,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
+        args::DestroyShaderEXT&                     args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetShaderBinaryDataEXT(
+    void Process_vkGetShaderBinaryDataEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            shader,
-        PointerDecoder<size_t>*                     pDataSize,
-        PointerDecoder<uint8_t>*                    pData){ CheckSkiavk(device);}
+        args::GetShaderBinaryDataEXT&               args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCmdBindShadersEXT(
+    void Process_vkCmdBindShadersEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    stageCount,
-        PointerDecoder<VkShaderStageFlagBits>*      pStages,
-        HandlePointerDecoder<VkShaderEXT>*          pShaders){ CheckSkiavk(commandBuffer);}
+        args::CmdBindShadersEXT&                    args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdSetDepthClampRangeEXT(
+    void Process_vkCmdSetDepthClampRangeEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkDepthClampModeEXT                         depthClampMode,
-        StructPointerDecoder<Decoded_VkDepthClampRangeEXT>* pDepthClampRange){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkGetFramebufferTilePropertiesQCOM(
+        args::CmdSetDepthClampRangeEXT&             args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkGetFramebufferTilePropertiesQCOM(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            framebuffer,
-        PointerDecoder<uint32_t>*                   pPropertiesCount,
-        StructPointerDecoder<Decoded_VkTilePropertiesQCOM>* pProperties){ CheckSkiavk(device);}
+        args::GetFramebufferTilePropertiesQCOM&     args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetDynamicRenderingTilePropertiesQCOM(
+    void Process_vkGetDynamicRenderingTilePropertiesQCOM(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkRenderingInfo>* pRenderingInfo,
-        StructPointerDecoder<Decoded_VkTilePropertiesQCOM>* pProperties){ CheckSkiavk(device);}
-    virtual void Process_vkGetPhysicalDeviceCooperativeVectorPropertiesNV(
+        args::GetDynamicRenderingTilePropertiesQCOM& args) override { CheckSkiavk(args.device);}
+    void Process_vkGetPhysicalDeviceCooperativeVectorPropertiesNV(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        PointerDecoder<uint32_t>*                   pPropertyCount,
-        StructPointerDecoder<Decoded_VkCooperativeVectorPropertiesNV>* pProperties){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceCooperativeVectorPropertiesNV& args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkConvertCooperativeVectorMatrixNV(
+    void Process_vkConvertCooperativeVectorMatrixNV(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkConvertCooperativeVectorMatrixInfoNV>* pInfo){ CheckSkiavk(device);}
+        args::ConvertCooperativeVectorMatrixNV&     args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCmdConvertCooperativeVectorMatrixNV(
+    void Process_vkCmdConvertCooperativeVectorMatrixNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    infoCount,
-        StructPointerDecoder<Decoded_VkConvertCooperativeVectorMatrixInfoNV>* pInfos){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkSetLatencySleepModeNV(
+        args::CmdConvertCooperativeVectorMatrixNV&  args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkSetLatencySleepModeNV(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            swapchain,
-        StructPointerDecoder<Decoded_VkLatencySleepModeInfoNV>* pSleepModeInfo){ CheckSkiavk(device);}
+        args::SetLatencySleepModeNV&                args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkLatencySleepNV(
+    void Process_vkLatencySleepNV(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            swapchain,
-        StructPointerDecoder<Decoded_VkLatencySleepInfoNV>* pSleepInfo){ CheckSkiavk(device);}
+        args::LatencySleepNV&                       args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkSetLatencyMarkerNV(
+    void Process_vkSetLatencyMarkerNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            swapchain,
-        StructPointerDecoder<Decoded_VkSetLatencyMarkerInfoNV>* pLatencyMarkerInfo){ CheckSkiavk(device);}
+        args::SetLatencyMarkerNV&                   args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetLatencyTimingsNV(
+    void Process_vkGetLatencyTimingsNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            swapchain,
-        StructPointerDecoder<Decoded_VkGetLatencyMarkerInfoNV>* pLatencyMarkerInfo){ CheckSkiavk(device);}
+        args::GetLatencyTimingsNV&                  args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkQueueNotifyOutOfBandNV(
+    void Process_vkQueueNotifyOutOfBandNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            queue,
-        StructPointerDecoder<Decoded_VkOutOfBandQueueTypeInfoNV>* pQueueTypeInfo){ CheckSkiavk(queue);}
-    virtual void Process_vkCreateDataGraphPipelinesARM(
+        args::QueueNotifyOutOfBandNV&               args) override { CheckSkiavk(args.queue);}
+    void Process_vkCreateDataGraphPipelinesARM(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            deferredOperation,
-        format::HandleId                            pipelineCache,
-        uint32_t                                    createInfoCount,
-        StructPointerDecoder<Decoded_VkDataGraphPipelineCreateInfoARM>* pCreateInfos,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkPipeline>*           pPipelines){ CheckSkiavk(device);}
+        args::CreateDataGraphPipelinesARM&          args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCreateDataGraphPipelineSessionARM(
+    void Process_vkCreateDataGraphPipelineSessionARM(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkDataGraphPipelineSessionCreateInfoARM>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkDataGraphPipelineSessionARM>* pSession){ CheckSkiavk(device);}
+        args::CreateDataGraphPipelineSessionARM&    args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetDataGraphPipelineSessionBindPointRequirementsARM(
+    void Process_vkGetDataGraphPipelineSessionBindPointRequirementsARM(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkDataGraphPipelineSessionBindPointRequirementsInfoARM>* pInfo,
-        PointerDecoder<uint32_t>*                   pBindPointRequirementCount,
-        StructPointerDecoder<Decoded_VkDataGraphPipelineSessionBindPointRequirementARM>* pBindPointRequirements){ CheckSkiavk(device);}
+        args::GetDataGraphPipelineSessionBindPointRequirementsARM& args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetDataGraphPipelineSessionMemoryRequirementsARM(
+    void Process_vkGetDataGraphPipelineSessionMemoryRequirementsARM(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkDataGraphPipelineSessionMemoryRequirementsInfoARM>* pInfo,
-        StructPointerDecoder<Decoded_VkMemoryRequirements2>* pMemoryRequirements){ CheckSkiavk(device);}
+        args::GetDataGraphPipelineSessionMemoryRequirementsARM& args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkBindDataGraphPipelineSessionMemoryARM(
+    void Process_vkBindDataGraphPipelineSessionMemoryARM(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        uint32_t                                    bindInfoCount,
-        StructPointerDecoder<Decoded_VkBindDataGraphPipelineSessionMemoryInfoARM>* pBindInfos){ CheckSkiavk(device);}
+        args::BindDataGraphPipelineSessionMemoryARM& args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDestroyDataGraphPipelineSessionARM(
+    void Process_vkDestroyDataGraphPipelineSessionARM(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            session,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
+        args::DestroyDataGraphPipelineSessionARM&   args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCmdDispatchDataGraphARM(
+    void Process_vkCmdDispatchDataGraphARM(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            session,
-        StructPointerDecoder<Decoded_VkDataGraphPipelineDispatchInfoARM>* pInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdDispatchDataGraphARM&              args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkGetDataGraphPipelineAvailablePropertiesARM(
+    void Process_vkGetDataGraphPipelineAvailablePropertiesARM(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkDataGraphPipelineInfoARM>* pPipelineInfo,
-        PointerDecoder<uint32_t>*                   pPropertiesCount,
-        PointerDecoder<VkDataGraphPipelinePropertyARM>* pProperties){ CheckSkiavk(device);}
+        args::GetDataGraphPipelineAvailablePropertiesARM& args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetDataGraphPipelinePropertiesARM(
+    void Process_vkGetDataGraphPipelinePropertiesARM(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkDataGraphPipelineInfoARM>* pPipelineInfo,
-        uint32_t                                    propertiesCount,
-        StructPointerDecoder<Decoded_VkDataGraphPipelinePropertyQueryResultARM>* pProperties){ CheckSkiavk(device);}
+        args::GetDataGraphPipelinePropertiesARM&    args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(
+    void Process_vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        uint32_t                                    queueFamilyIndex,
-        PointerDecoder<uint32_t>*                   pQueueFamilyDataGraphPropertyCount,
-        StructPointerDecoder<Decoded_VkQueueFamilyDataGraphPropertiesARM>* pQueueFamilyDataGraphProperties){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM& args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM(
+    void Process_vkGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            physicalDevice,
-        StructPointerDecoder<Decoded_VkPhysicalDeviceQueueFamilyDataGraphProcessingEngineInfoARM>* pQueueFamilyDataGraphProcessingEngineInfo,
-        StructPointerDecoder<Decoded_VkQueueFamilyDataGraphProcessingEnginePropertiesARM>* pQueueFamilyDataGraphProcessingEngineProperties){ CheckSkiavk(physicalDevice);}
-    virtual void Process_vkCmdSetAttachmentFeedbackLoopEnableEXT(
+        args::GetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM& args) override { CheckSkiavk(args.physicalDevice);}
+    void Process_vkCmdSetAttachmentFeedbackLoopEnableEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkImageAspectFlags                          aspectMask){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkCmdBindTileMemoryQCOM(
+        args::CmdSetAttachmentFeedbackLoopEnableEXT& args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkCmdBindTileMemoryQCOM(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkTileMemoryBindInfoQCOM>* pTileMemoryBindInfo){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkCmdDecompressMemoryEXT(
+        args::CmdBindTileMemoryQCOM&                args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkCmdDecompressMemoryEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkDecompressMemoryInfoEXT>* pDecompressMemoryInfoEXT){ CheckSkiavk(commandBuffer);}
+        args::CmdDecompressMemoryEXT&               args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdDecompressMemoryIndirectCountEXT(
+    void Process_vkCmdDecompressMemoryIndirectCountEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkMemoryDecompressionMethodFlagsEXT         decompressionMethod,
-        VkDeviceAddress                             indirectCommandsAddress,
-        VkDeviceAddress                             indirectCommandsCountAddress,
-        uint32_t                                    maxDecompressionCount,
-        uint32_t                                    stride){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkGetPartitionedAccelerationStructuresBuildSizesNV(
+        args::CmdDecompressMemoryIndirectCountEXT&  args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkGetPartitionedAccelerationStructuresBuildSizesNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkPartitionedAccelerationStructureInstancesInputNV>* pInfo,
-        StructPointerDecoder<Decoded_VkAccelerationStructureBuildSizesInfoKHR>* pSizeInfo){ CheckSkiavk(device);}
+        args::GetPartitionedAccelerationStructuresBuildSizesNV& args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCmdBuildPartitionedAccelerationStructuresNV(
+    void Process_vkCmdBuildPartitionedAccelerationStructuresNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkBuildPartitionedAccelerationStructureInfoNV>* pBuildInfo){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkGetGeneratedCommandsMemoryRequirementsEXT(
+        args::CmdBuildPartitionedAccelerationStructuresNV& args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkGetGeneratedCommandsMemoryRequirementsEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkGeneratedCommandsMemoryRequirementsInfoEXT>* pInfo,
-        StructPointerDecoder<Decoded_VkMemoryRequirements2>* pMemoryRequirements){ CheckSkiavk(device);}
+        args::GetGeneratedCommandsMemoryRequirementsEXT& args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCmdPreprocessGeneratedCommandsEXT(
+    void Process_vkCmdPreprocessGeneratedCommandsEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkGeneratedCommandsInfoEXT>* pGeneratedCommandsInfo,
-        format::HandleId                            stateCommandBuffer){ CheckSkiavk(commandBuffer);}
+        args::CmdPreprocessGeneratedCommandsEXT&    args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdExecuteGeneratedCommandsEXT(
+    void Process_vkCmdExecuteGeneratedCommandsEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        VkBool32                                    isPreprocessed,
-        StructPointerDecoder<Decoded_VkGeneratedCommandsInfoEXT>* pGeneratedCommandsInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdExecuteGeneratedCommandsEXT&       args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCreateIndirectCommandsLayoutEXT(
+    void Process_vkCreateIndirectCommandsLayoutEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkIndirectCommandsLayoutCreateInfoEXT>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkIndirectCommandsLayoutEXT>* pIndirectCommandsLayout){ CheckSkiavk(device);}
+        args::CreateIndirectCommandsLayoutEXT&      args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDestroyIndirectCommandsLayoutEXT(
+    void Process_vkDestroyIndirectCommandsLayoutEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            indirectCommandsLayout,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
+        args::DestroyIndirectCommandsLayoutEXT&     args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCreateIndirectExecutionSetEXT(
+    void Process_vkCreateIndirectExecutionSetEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkIndirectExecutionSetCreateInfoEXT>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkIndirectExecutionSetEXT>* pIndirectExecutionSet){ CheckSkiavk(device);}
+        args::CreateIndirectExecutionSetEXT&        args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDestroyIndirectExecutionSetEXT(
+    void Process_vkDestroyIndirectExecutionSetEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            indirectExecutionSet,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
+        args::DestroyIndirectExecutionSetEXT&       args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkUpdateIndirectExecutionSetPipelineEXT(
+    void Process_vkUpdateIndirectExecutionSetPipelineEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            indirectExecutionSet,
-        uint32_t                                    executionSetWriteCount,
-        StructPointerDecoder<Decoded_VkWriteIndirectExecutionSetPipelineEXT>* pExecutionSetWrites){ CheckSkiavk(device);}
+        args::UpdateIndirectExecutionSetPipelineEXT& args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkUpdateIndirectExecutionSetShaderEXT(
+    void Process_vkUpdateIndirectExecutionSetShaderEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            indirectExecutionSet,
-        uint32_t                                    executionSetWriteCount,
-        StructPointerDecoder<Decoded_VkWriteIndirectExecutionSetShaderEXT>* pExecutionSetWrites){ CheckSkiavk(device);}
-    virtual void Process_vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
+        args::UpdateIndirectExecutionSetShaderEXT&  args) override { CheckSkiavk(args.device);}
+    void Process_vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        PointerDecoder<uint32_t>*                   pPropertyCount,
-        StructPointerDecoder<Decoded_VkCooperativeMatrixFlexibleDimensionsPropertiesNV>* pProperties){ CheckSkiavk(physicalDevice);}
-    virtual void Process_vkGetMemoryMetalHandleEXT(
+        args::GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV& args) override { CheckSkiavk(args.physicalDevice);}
+    void Process_vkGetMemoryMetalHandleEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkMemoryGetMetalHandleInfoEXT>* pGetMetalHandleInfo,
-        PointerDecoder<uint64_t, void*>*            pHandle){ CheckSkiavk(device);}
+        args::GetMemoryMetalHandleEXT&              args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetMemoryMetalHandlePropertiesEXT(
+    void Process_vkGetMemoryMetalHandlePropertiesEXT(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        VkExternalMemoryHandleTypeFlagBits          handleType,
-        uint64_t                                    pHandle,
-        StructPointerDecoder<Decoded_VkMemoryMetalHandlePropertiesEXT>* pMemoryMetalHandleProperties){ CheckSkiavk(device);}
-    virtual void Process_vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM(
+        args::GetMemoryMetalHandlePropertiesEXT&    args) override { CheckSkiavk(args.device);}
+    void Process_vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        uint32_t                                    queueFamilyIndex,
-        PointerDecoder<uint32_t>*                   pCounterCount,
-        StructPointerDecoder<Decoded_VkPerformanceCounterARM>* pCounters,
-        StructPointerDecoder<Decoded_VkPerformanceCounterDescriptionARM>* pCounterDescriptions){ CheckSkiavk(physicalDevice);}
-    virtual void Process_vkCmdEndRendering2EXT(
+        args::EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM& args) override { CheckSkiavk(args.physicalDevice);}
+    void Process_vkCmdEndRendering2EXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkRenderingEndInfoKHR>* pRenderingEndInfo){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkCmdBeginCustomResolveEXT(
+        args::CmdEndRendering2EXT&                  args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkCmdBeginCustomResolveEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkBeginCustomResolveInfoEXT>* pBeginCustomResolveInfo){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM(
+        args::CmdBeginCustomResolveEXT&             args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        uint32_t                                    queueFamilyIndex,
-        StructPointerDecoder<Decoded_VkQueueFamilyDataGraphPropertiesARM>* pQueueFamilyDataGraphProperties,
-        StructPointerDecoder<Decoded_VkDataGraphOpticalFlowImageFormatInfoARM>* pOpticalFlowImageFormatInfo,
-        PointerDecoder<uint32_t>*                   pFormatCount,
-        StructPointerDecoder<Decoded_VkDataGraphOpticalFlowImageFormatPropertiesARM>* pImageFormatProperties){ CheckSkiavk(physicalDevice);}
+        args::GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM& args) override { CheckSkiavk(args.physicalDevice);}
 
-    virtual void Process_vkGetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM(
+    void Process_vkGetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            physicalDevice,
-        uint32_t                                    queueFamilyIndex,
-        StructPointerDecoder<Decoded_VkQueueFamilyDataGraphPropertiesARM>* pQueueFamilyDataGraphProperties,
-        StructPointerDecoder<Decoded_VkBaseOutStructure>* pProperties){ CheckSkiavk(physicalDevice);}
-    virtual void Process_vkCmdSetComputeOccupancyPriorityNV(
+        args::GetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM& args) override { CheckSkiavk(args.physicalDevice);}
+    void Process_vkCmdSetComputeOccupancyPriorityNV(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkComputeOccupancyPriorityParametersNV>* pParameters){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkCmdSetPrimitiveRestartIndexEXT(
+        args::CmdSetComputeOccupancyPriorityNV&     args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkCmdSetPrimitiveRestartIndexEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    primitiveRestartIndex){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkCmdUpdateBuffer2ARM(
+        args::CmdSetPrimitiveRestartIndexEXT&       args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkCmdUpdateBuffer2ARM(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkUpdateBufferInfoARM>* pInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdUpdateBuffer2ARM&                  args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdUpdateMemory2ARM(
+    void Process_vkCmdUpdateMemory2ARM(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkUpdateMemoryInfoARM>* pInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdUpdateMemory2ARM&                  args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkAssertBufferARM(
+    void Process_vkAssertBufferARM(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkUpdateBufferInfoARM>* pInfo,
-        PointerDecoder<uint32_t>*                   checksum,
-        StringDecoder*                              comment){ CheckSkiavk(device);}
+        args::AssertBufferARM&                      args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkAssertMemoryARM(
+    void Process_vkAssertMemoryARM(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkUpdateMemoryInfoARM>* pInfo,
-        PointerDecoder<uint32_t>*                   checksum,
-        StringDecoder*                              comment){ CheckSkiavk(device);}
-    virtual void Process_vkCreateAccelerationStructureKHR(
+        args::AssertMemoryARM&                      args) override { CheckSkiavk(args.device);}
+    void Process_vkCreateAccelerationStructureKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkAccelerationStructureCreateInfoKHR>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-        HandlePointerDecoder<VkAccelerationStructureKHR>* pAccelerationStructure){ CheckSkiavk(device);}
+        args::CreateAccelerationStructureKHR&       args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkDestroyAccelerationStructureKHR(
+    void Process_vkDestroyAccelerationStructureKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        format::HandleId                            accelerationStructure,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator){ CheckSkiavk(device);}
+        args::DestroyAccelerationStructureKHR&      args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCmdBuildAccelerationStructuresKHR(
+    void Process_vkCmdBuildAccelerationStructuresKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    infoCount,
-        StructPointerDecoder<Decoded_VkAccelerationStructureBuildGeometryInfoKHR>* pInfos,
-        StructPointerDecoder<Decoded_VkAccelerationStructureBuildRangeInfoKHR*>* ppBuildRangeInfos){ CheckSkiavk(commandBuffer);}
+        args::CmdBuildAccelerationStructuresKHR&    args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdBuildAccelerationStructuresIndirectKHR(
+    void Process_vkCmdBuildAccelerationStructuresIndirectKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    infoCount,
-        StructPointerDecoder<Decoded_VkAccelerationStructureBuildGeometryInfoKHR>* pInfos,
-        PointerDecoder<VkDeviceAddress>*            pIndirectDeviceAddresses,
-        PointerDecoder<uint32_t>*                   pIndirectStrides,
-        PointerDecoder<uint32_t*>*                  ppMaxPrimitiveCounts){ CheckSkiavk(commandBuffer);}
+        args::CmdBuildAccelerationStructuresIndirectKHR& args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCopyAccelerationStructureToMemoryKHR(
+    void Process_vkCopyAccelerationStructureToMemoryKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            deferredOperation,
-        StructPointerDecoder<Decoded_VkCopyAccelerationStructureToMemoryInfoKHR>* pInfo){ CheckSkiavk(device);}
+        args::CopyAccelerationStructureToMemoryKHR& args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCopyMemoryToAccelerationStructureKHR(
+    void Process_vkCopyMemoryToAccelerationStructureKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            deferredOperation,
-        StructPointerDecoder<Decoded_VkCopyMemoryToAccelerationStructureInfoKHR>* pInfo){ CheckSkiavk(device);}
+        args::CopyMemoryToAccelerationStructureKHR& args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkWriteAccelerationStructuresPropertiesKHR(
+    void Process_vkWriteAccelerationStructuresPropertiesKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        uint32_t                                    accelerationStructureCount,
-        HandlePointerDecoder<VkAccelerationStructureKHR>* pAccelerationStructures,
-        VkQueryType                                 queryType,
-        size_t                                      dataSize,
-        PointerDecoder<uint8_t>*                    pData,
-        size_t                                      stride){ CheckSkiavk(device);}
+        args::WriteAccelerationStructuresPropertiesKHR& args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCmdCopyAccelerationStructureKHR(
+    void Process_vkCmdCopyAccelerationStructureKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkCopyAccelerationStructureInfoKHR>* pInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdCopyAccelerationStructureKHR&      args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdCopyAccelerationStructureToMemoryKHR(
+    void Process_vkCmdCopyAccelerationStructureToMemoryKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkCopyAccelerationStructureToMemoryInfoKHR>* pInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdCopyAccelerationStructureToMemoryKHR& args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdCopyMemoryToAccelerationStructureKHR(
+    void Process_vkCmdCopyMemoryToAccelerationStructureKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkCopyMemoryToAccelerationStructureInfoKHR>* pInfo){ CheckSkiavk(commandBuffer);}
+        args::CmdCopyMemoryToAccelerationStructureKHR& args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkGetAccelerationStructureDeviceAddressKHR(
+    void Process_vkGetAccelerationStructureDeviceAddressKHR(
         const ApiCallInfo&                          call_info,
-        VkDeviceAddress                             returnValue,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkAccelerationStructureDeviceAddressInfoKHR>* pInfo){ CheckSkiavk(device);}
+        args::GetAccelerationStructureDeviceAddressKHR& args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCmdWriteAccelerationStructuresPropertiesKHR(
+    void Process_vkCmdWriteAccelerationStructuresPropertiesKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    accelerationStructureCount,
-        HandlePointerDecoder<VkAccelerationStructureKHR>* pAccelerationStructures,
-        VkQueryType                                 queryType,
-        format::HandleId                            queryPool,
-        uint32_t                                    firstQuery){ CheckSkiavk(commandBuffer);}
+        args::CmdWriteAccelerationStructuresPropertiesKHR& args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkGetDeviceAccelerationStructureCompatibilityKHR(
+    void Process_vkGetDeviceAccelerationStructureCompatibilityKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        StructPointerDecoder<Decoded_VkAccelerationStructureVersionInfoKHR>* pVersionInfo,
-        PointerDecoder<VkAccelerationStructureCompatibilityKHR>* pCompatibility){ CheckSkiavk(device);}
+        args::GetDeviceAccelerationStructureCompatibilityKHR& args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkGetAccelerationStructureBuildSizesKHR(
+    void Process_vkGetAccelerationStructureBuildSizesKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            device,
-        VkAccelerationStructureBuildTypeKHR         buildType,
-        StructPointerDecoder<Decoded_VkAccelerationStructureBuildGeometryInfoKHR>* pBuildInfo,
-        PointerDecoder<uint32_t>*                   pMaxPrimitiveCounts,
-        StructPointerDecoder<Decoded_VkAccelerationStructureBuildSizesInfoKHR>* pSizeInfo){ CheckSkiavk(device);}
-    virtual void Process_vkCmdTraceRaysKHR(
+        args::GetAccelerationStructureBuildSizesKHR& args) override { CheckSkiavk(args.device);}
+    void Process_vkCmdTraceRaysKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkStridedDeviceAddressRegionKHR>* pRaygenShaderBindingTable,
-        StructPointerDecoder<Decoded_VkStridedDeviceAddressRegionKHR>* pMissShaderBindingTable,
-        StructPointerDecoder<Decoded_VkStridedDeviceAddressRegionKHR>* pHitShaderBindingTable,
-        StructPointerDecoder<Decoded_VkStridedDeviceAddressRegionKHR>* pCallableShaderBindingTable,
-        uint32_t                                    width,
-        uint32_t                                    height,
-        uint32_t                                    depth){ CheckSkiavk(commandBuffer);}
+        args::CmdTraceRaysKHR&                      args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR(
+    void Process_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR(
         const ApiCallInfo&                          call_info,
-        VkResult                                    returnValue,
-        format::HandleId                            device,
-        format::HandleId                            pipeline,
-        uint32_t                                    firstGroup,
-        uint32_t                                    groupCount,
-        size_t                                      dataSize,
-        PointerDecoder<uint8_t>*                    pData){ CheckSkiavk(device);}
+        args::GetRayTracingCaptureReplayShaderGroupHandlesKHR& args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCmdTraceRaysIndirectKHR(
+    void Process_vkCmdTraceRaysIndirectKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        StructPointerDecoder<Decoded_VkStridedDeviceAddressRegionKHR>* pRaygenShaderBindingTable,
-        StructPointerDecoder<Decoded_VkStridedDeviceAddressRegionKHR>* pMissShaderBindingTable,
-        StructPointerDecoder<Decoded_VkStridedDeviceAddressRegionKHR>* pHitShaderBindingTable,
-        StructPointerDecoder<Decoded_VkStridedDeviceAddressRegionKHR>* pCallableShaderBindingTable,
-        VkDeviceAddress                             indirectDeviceAddress){ CheckSkiavk(commandBuffer);}
+        args::CmdTraceRaysIndirectKHR&              args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkGetRayTracingShaderGroupStackSizeKHR(
+    void Process_vkGetRayTracingShaderGroupStackSizeKHR(
         const ApiCallInfo&                          call_info,
-        VkDeviceSize                                returnValue,
-        format::HandleId                            device,
-        format::HandleId                            pipeline,
-        uint32_t                                    group,
-        VkShaderGroupShaderKHR                      groupShader){ CheckSkiavk(device);}
+        args::GetRayTracingShaderGroupStackSizeKHR& args) override { CheckSkiavk(args.device);}
 
-    virtual void Process_vkCmdSetRayTracingPipelineStackSizeKHR(
+    void Process_vkCmdSetRayTracingPipelineStackSizeKHR(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    pipelineStackSize){ CheckSkiavk(commandBuffer);}
-    virtual void Process_vkCmdDrawMeshTasksEXT(
+        args::CmdSetRayTracingPipelineStackSizeKHR& args) override { CheckSkiavk(args.commandBuffer);}
+    void Process_vkCmdDrawMeshTasksEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        uint32_t                                    groupCountX,
-        uint32_t                                    groupCountY,
-        uint32_t                                    groupCountZ){ CheckSkiavk(commandBuffer);}
+        args::CmdDrawMeshTasksEXT&                  args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdDrawMeshTasksIndirectEXT(
+    void Process_vkCmdDrawMeshTasksIndirectEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            buffer,
-        VkDeviceSize                                offset,
-        uint32_t                                    drawCount,
-        uint32_t                                    stride){ CheckSkiavk(commandBuffer);}
+        args::CmdDrawMeshTasksIndirectEXT&          args) override { CheckSkiavk(args.commandBuffer);}
 
-    virtual void Process_vkCmdDrawMeshTasksIndirectCountEXT(
+    void Process_vkCmdDrawMeshTasksIndirectCountEXT(
         const ApiCallInfo&                          call_info,
-        format::HandleId                            commandBuffer,
-        format::HandleId                            buffer,
-        VkDeviceSize                                offset,
-        format::HandleId                            countBuffer,
-        VkDeviceSize                                countBufferOffset,
-        uint32_t                                    maxDrawCount,
-        uint32_t                                    stride){ CheckSkiavk(commandBuffer);}
+        args::CmdDrawMeshTasksIndirectCountEXT&     args) override { CheckSkiavk(args.commandBuffer);}
 
   public: // meta data function
     virtual void ProcessFillMemoryCommand(uint64_t memory_id, uint64_t offset, uint64_t size, const uint8_t* data) override;

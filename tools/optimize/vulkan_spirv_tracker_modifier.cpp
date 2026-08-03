@@ -337,121 +337,95 @@ void VulkanSpirvTrackModifier::ProcessFillMemoryCommand(uint64_t       memory_id
     }
 }
 
-void VulkanSpirvTrackModifier::Process_vkCreateBuffer(const ApiCallInfo&                                   call_info,
-                                                      VkResult                                             returnValue,
-                                                      format::HandleId                                     device,
-                                                      StructPointerDecoder<Decoded_VkBufferCreateInfo>*    pCreateInfo,
-                                                      StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-                                                      HandlePointerDecoder<VkBuffer>*                      pBuffer)
+void VulkanSpirvTrackModifier::Process_vkCreateBuffer(const ApiCallInfo& call_info, args::CreateBuffer& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    format::HandleId handle                   = *pBuffer->GetPointer();
+    format::HandleId handle                   = *args.pBuffer.GetPointer();
     buffer_entries_[handle].handle            = handle;
-    buffer_entries_[handle].size              = pCreateInfo->GetPointer()->size;
-    buffer_entries_[handle].usage             = pCreateInfo->GetPointer()->usage;
-    buffer_entries_[handle].flags             = pCreateInfo->GetPointer()->flags;
+    buffer_entries_[handle].size              = args.pCreateInfo.GetPointer()->size;
+    buffer_entries_[handle].usage             = args.pCreateInfo.GetPointer()->usage;
+    buffer_entries_[handle].flags             = args.pCreateInfo.GetPointer()->flags;
     buffer_entries_[handle].creation_index    = call_info.index;
     buffer_entries_[handle].destruction_index = UINT64_MAX;
     buffer_entries_[handle].data.resize(buffer_entries_[handle].size);
 }
 
-void VulkanSpirvTrackModifier::Process_vkDestroyBuffer(const ApiCallInfo&                                   call_info,
-                                                       format::HandleId                                     device,
-                                                       format::HandleId                                     buffer,
-                                                       StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator)
+void VulkanSpirvTrackModifier::Process_vkDestroyBuffer(const ApiCallInfo& call_info, args::DestroyBuffer& args)
 {
     if (IsModificationPass())
     {
         return;
     }
-    if (buffer_entries_.find(buffer) != buffer_entries_.end())
+    if (buffer_entries_.find(args.buffer) != buffer_entries_.end())
     {
-        buffer_entries_[buffer].destruction_index = call_info.index;
+        buffer_entries_[args.buffer].destruction_index = call_info.index;
     }
 }
 
-void VulkanSpirvTrackModifier::Process_vkAllocateMemory(
-    const ApiCallInfo&                                   call_info,
-    VkResult                                             returnValue,
-    format::HandleId                                     device,
-    StructPointerDecoder<Decoded_VkMemoryAllocateInfo>*  pAllocateInfo,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-    HandlePointerDecoder<VkDeviceMemory>*                pMemory)
+void VulkanSpirvTrackModifier::Process_vkAllocateMemory(const ApiCallInfo& call_info, args::AllocateMemory& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    format::HandleId handle                           = *pMemory->GetPointer();
+    format::HandleId handle                           = *args.pMemory.GetPointer();
     memory_binding_entries_[handle].handle            = handle;
-    memory_binding_entries_[handle].size              = pAllocateInfo->GetPointer()->allocationSize;
-    memory_binding_entries_[handle].type_index        = pAllocateInfo->GetPointer()->memoryTypeIndex;
+    memory_binding_entries_[handle].size              = args.pAllocateInfo.GetPointer()->allocationSize;
+    memory_binding_entries_[handle].type_index        = args.pAllocateInfo.GetPointer()->memoryTypeIndex;
     memory_binding_entries_[handle].creation_index    = call_info.index;
     memory_binding_entries_[handle].destruction_index = UINT64_MAX;
 
     const auto* meta_flags_info =
-        GetPNextMetaStruct<Decoded_VkMemoryAllocateFlagsInfo>(pAllocateInfo->GetMetaStructPointer()->pNext);
+        GetPNextMetaStruct<Decoded_VkMemoryAllocateFlagsInfo>(args.pAllocateInfo.GetMetaStructPointer()->pNext);
     if (meta_flags_info)
     {
         memory_binding_entries_[handle].flags = meta_flags_info->decoded_value->flags;
     }
 }
 
-void VulkanSpirvTrackModifier::Process_vkFreeMemory(const ApiCallInfo&                                   call_info,
-                                                    format::HandleId                                     device,
-                                                    format::HandleId                                     memory,
-                                                    StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator)
+void VulkanSpirvTrackModifier::Process_vkFreeMemory(const ApiCallInfo& call_info, args::FreeMemory& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    if (memory_binding_entries_.find(memory) != memory_binding_entries_.end())
+    if (memory_binding_entries_.find(args.memory) != memory_binding_entries_.end())
     {
-        memory_binding_entries_[memory].destruction_index = call_info.index;
+        memory_binding_entries_[args.memory].destruction_index = call_info.index;
     }
 }
 
-void VulkanSpirvTrackModifier::Process_vkBindBufferMemory(const ApiCallInfo& call_info,
-                                                          VkResult           returnValue,
-                                                          format::HandleId   device,
-                                                          format::HandleId   buffer,
-                                                          format::HandleId   memory,
-                                                          VkDeviceSize       memory_offset)
+void VulkanSpirvTrackModifier::Process_vkBindBufferMemory(const ApiCallInfo& call_info, args::BindBufferMemory& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    if (memory_binding_entries_.find(memory) != memory_binding_entries_.end())
+    if (memory_binding_entries_.find(args.memory) != memory_binding_entries_.end())
     {
-        memory_binding_entries_[memory].memory_binding_records_.push_back({ buffer, true, memory_offset });
+        memory_binding_entries_[args.memory].memory_binding_records_.push_back(
+            { args.buffer, true, args.memoryOffset });
     }
 }
 
-void VulkanSpirvTrackModifier::Process_vkBindBufferMemory2(
-    const ApiCallInfo&                                    call_info,
-    VkResult                                              returnValue,
-    format::HandleId                                      device,
-    uint32_t                                              bindInfoCount,
-    StructPointerDecoder<Decoded_VkBindBufferMemoryInfo>* pBindInfos)
+void VulkanSpirvTrackModifier::Process_vkBindBufferMemory2(const ApiCallInfo& call_info, args::BindBufferMemory2& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    const auto* bind_infos      = pBindInfos->GetPointer();
-    const auto* meta_bind_infos = pBindInfos->GetMetaStructPointer();
+    const auto* bind_infos      = args.pBindInfos.GetPointer();
+    const auto* meta_bind_infos = args.pBindInfos.GetMetaStructPointer();
 
-    for (uint32_t i = 0; i < bindInfoCount; ++i)
+    for (uint32_t i = 0; i < args.bindInfoCount; ++i)
     {
         if (memory_binding_entries_.find(meta_bind_infos[i].memory) != memory_binding_entries_.end())
         {
@@ -461,48 +435,37 @@ void VulkanSpirvTrackModifier::Process_vkBindBufferMemory2(
     }
 }
 
-void VulkanSpirvTrackModifier::Process_vkMapMemory(const ApiCallInfo&               call_info,
-                                                   VkResult                         returnValue,
-                                                   format::HandleId                 device,
-                                                   format::HandleId                 memory,
-                                                   VkDeviceSize                     offset,
-                                                   VkDeviceSize                     size,
-                                                   VkMemoryMapFlags                 flags,
-                                                   PointerDecoder<uint64_t, void*>* ppData)
+void VulkanSpirvTrackModifier::Process_vkMapMemory(const ApiCallInfo& call_info, args::MapMemory& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    if (memory_binding_entries_.find(memory) != memory_binding_entries_.end())
+    if (memory_binding_entries_.find(args.memory) != memory_binding_entries_.end())
     {
-        if (size == VK_WHOLE_SIZE)
+        if (args.size == VK_WHOLE_SIZE)
         {
-            GFXRECON_ASSERT(offset <= memory_binding_entries_[memory].size);
-            size = memory_binding_entries_[memory].size - offset;
+            GFXRECON_ASSERT(args.offset <= memory_binding_entries_[args.memory].size);
+            args.size = memory_binding_entries_[args.memory].size - args.offset;
         }
 
-        memory_binding_entries_[memory].mapping.offset        = offset;
-        memory_binding_entries_[memory].mapping.size          = size;
-        memory_binding_entries_[memory].mapping.map_memory    = *ppData->GetPointer();
-        memory_binding_entries_[memory].mapping.shadow_memory = 0;
+        memory_binding_entries_[args.memory].mapping.offset        = args.offset;
+        memory_binding_entries_[args.memory].mapping.size          = args.size;
+        memory_binding_entries_[args.memory].mapping.map_memory    = *args.ppData.GetPointer();
+        memory_binding_entries_[args.memory].mapping.shadow_memory = 0;
     }
 }
 
-void VulkanSpirvTrackModifier::Process_vkMapMemory2(const ApiCallInfo&                             call_info,
-                                                    VkResult                                       returnValue,
-                                                    format::HandleId                               device,
-                                                    StructPointerDecoder<Decoded_VkMemoryMapInfo>* pMemoryMapInfo,
-                                                    PointerDecoder<uint64_t, void*>*               ppData)
+void VulkanSpirvTrackModifier::Process_vkMapMemory2(const ApiCallInfo& call_info, args::MapMemory2& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    const auto* map_info      = pMemoryMapInfo->GetPointer();
-    const auto* meta_map_info = pMemoryMapInfo->GetMetaStructPointer();
+    const auto* map_info      = args.pMemoryMapInfo.GetPointer();
+    const auto* meta_map_info = args.pMemoryMapInfo.GetMetaStructPointer();
 
     format::HandleId memory = meta_map_info->memory;
     if (memory_binding_entries_.find(memory) != memory_binding_entries_.end())
@@ -516,40 +479,35 @@ void VulkanSpirvTrackModifier::Process_vkMapMemory2(const ApiCallInfo&          
 
         memory_binding_entries_[memory].mapping.offset        = map_info->offset;
         memory_binding_entries_[memory].mapping.size          = in_size;
-        memory_binding_entries_[memory].mapping.map_memory    = *ppData->GetPointer();
+        memory_binding_entries_[memory].mapping.map_memory    = *args.ppData.GetPointer();
         memory_binding_entries_[memory].mapping.shadow_memory = 0;
     }
 }
 
-void VulkanSpirvTrackModifier::Process_vkUnmapMemory(const ApiCallInfo& call_info,
-                                                     format::HandleId   device,
-                                                     format::HandleId   memory)
+void VulkanSpirvTrackModifier::Process_vkUnmapMemory(const ApiCallInfo& call_info, args::UnmapMemory& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    if (memory_binding_entries_.find(memory) != memory_binding_entries_.end())
+    if (memory_binding_entries_.find(args.memory) != memory_binding_entries_.end())
     {
-        memory_binding_entries_[memory].mapping.offset        = 0;
-        memory_binding_entries_[memory].mapping.size          = 0;
-        memory_binding_entries_[memory].mapping.map_memory    = 0;
-        memory_binding_entries_[memory].mapping.shadow_memory = 0;
+        memory_binding_entries_[args.memory].mapping.offset        = 0;
+        memory_binding_entries_[args.memory].mapping.size          = 0;
+        memory_binding_entries_[args.memory].mapping.map_memory    = 0;
+        memory_binding_entries_[args.memory].mapping.shadow_memory = 0;
     }
 }
 
-void VulkanSpirvTrackModifier::Process_vkUnmapMemory2(const ApiCallInfo&                               call_info,
-                                                      VkResult                                         returnValue,
-                                                      format::HandleId                                 device,
-                                                      StructPointerDecoder<Decoded_VkMemoryUnmapInfo>* pMemoryUnmapInfo)
+void VulkanSpirvTrackModifier::Process_vkUnmapMemory2(const ApiCallInfo& call_info, args::UnmapMemory2& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    const auto* meta_unmap_info = pMemoryUnmapInfo->GetMetaStructPointer();
+    const auto* meta_unmap_info = args.pMemoryUnmapInfo.GetMetaStructPointer();
 
     format::HandleId memory = meta_unmap_info->memory;
     if (memory_binding_entries_.find(memory) != memory_binding_entries_.end())
@@ -561,69 +519,57 @@ void VulkanSpirvTrackModifier::Process_vkUnmapMemory2(const ApiCallInfo&        
     }
 }
 
-void VulkanSpirvTrackModifier::Process_vkCreateAccelerationStructureKHR(
-    const ApiCallInfo&                                                  call_info,
-    VkResult                                                            returnValue,
-    format::HandleId                                                    device,
-    StructPointerDecoder<Decoded_VkAccelerationStructureCreateInfoKHR>* pCreateInfo,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>*                pAllocator,
-    HandlePointerDecoder<VkAccelerationStructureKHR>*                   pAccelerationStructure)
+void VulkanSpirvTrackModifier::Process_vkCreateAccelerationStructureKHR(const ApiCallInfo&                    call_info,
+                                                                        args::CreateAccelerationStructureKHR& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    format::HandleId handle = *pAccelerationStructure->GetPointer();
+    format::HandleId handle = *args.pAccelerationStructure.GetPointer();
 
     acceleration_structure_entries_[handle].handle            = handle;
-    acceleration_structure_entries_[handle].buf_handle        = pCreateInfo->GetMetaStructPointer()->buffer;
-    acceleration_structure_entries_[handle].size              = pCreateInfo->GetPointer()->size;
-    acceleration_structure_entries_[handle].offset            = pCreateInfo->GetPointer()->offset;
-    acceleration_structure_entries_[handle].type              = pCreateInfo->GetPointer()->type;
+    acceleration_structure_entries_[handle].buf_handle        = args.pCreateInfo.GetMetaStructPointer()->buffer;
+    acceleration_structure_entries_[handle].size              = args.pCreateInfo.GetPointer()->size;
+    acceleration_structure_entries_[handle].offset            = args.pCreateInfo.GetPointer()->offset;
+    acceleration_structure_entries_[handle].type              = args.pCreateInfo.GetPointer()->type;
     acceleration_structure_entries_[handle].creation_index    = call_info.index;
     acceleration_structure_entries_[handle].destruction_index = UINT64_MAX;
 
-    VkDeviceAddress back_buffer_address = buffer_entries_[pCreateInfo->GetMetaStructPointer()->buffer].device_address;
+    VkDeviceAddress back_buffer_address =
+        buffer_entries_[args.pCreateInfo.GetMetaStructPointer()->buffer].device_address;
     if (back_buffer_address != 0)
     {
-        VkDeviceAddress address = back_buffer_address + pCreateInfo->GetPointer()->offset;
+        VkDeviceAddress address = back_buffer_address + args.pCreateInfo.GetPointer()->offset;
         acceleration_structure_entries_[handle].device_address = address;
         acceleration_structure_device_addresses_[address].insert(handle);
     }
 }
 
-void VulkanSpirvTrackModifier::Process_vkDestroyAccelerationStructureKHR(
-    const ApiCallInfo&                                   call_info,
-    format::HandleId                                     device,
-    format::HandleId                                     accelerationStructure,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator)
+void VulkanSpirvTrackModifier::Process_vkDestroyAccelerationStructureKHR(const ApiCallInfo& call_info,
+                                                                         args::DestroyAccelerationStructureKHR& args)
 {
     if (IsModificationPass())
     {
         return;
     }
-    if (acceleration_structure_entries_.find(accelerationStructure) != acceleration_structure_entries_.end())
+    if (acceleration_structure_entries_.find(args.accelerationStructure) != acceleration_structure_entries_.end())
     {
-        acceleration_structure_entries_[accelerationStructure].destruction_index = call_info.index;
+        acceleration_structure_entries_[args.accelerationStructure].destruction_index = call_info.index;
     }
 }
 
-void VulkanSpirvTrackModifier::Process_vkCreateShaderModule(
-    const ApiCallInfo&                                      call_info,
-    VkResult                                                returnValue,
-    format::HandleId                                        device,
-    StructPointerDecoder<Decoded_VkShaderModuleCreateInfo>* pCreateInfo,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>*    pAllocator,
-    HandlePointerDecoder<VkShaderModule>*                   pShaderModule)
+void VulkanSpirvTrackModifier::Process_vkCreateShaderModule(const ApiCallInfo&        call_info,
+                                                            args::CreateShaderModule& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    format::HandleId                handleId = *pShaderModule->GetPointer();
-    const VkShaderModuleCreateInfo* info     = pCreateInfo->GetPointer();
+    format::HandleId                handleId = *args.pShaderModule.GetPointer();
+    const VkShaderModuleCreateInfo* info     = args.pCreateInfo.GetPointer();
 
     shader_module_entries_[handleId].handle            = handleId;
     shader_module_entries_[handleId].creation_index    = call_info.index;
@@ -632,26 +578,21 @@ void VulkanSpirvTrackModifier::Process_vkCreateShaderModule(
     shader_module_entries_[handleId].pCode             = { info->pCode, info->pCode + info->codeSize / 4 };
 }
 
-void VulkanSpirvTrackModifier::Process_vkCreateDescriptorSetLayout(
-    const ApiCallInfo&                                             call_info,
-    VkResult                                                       returnValue,
-    format::HandleId                                               device,
-    StructPointerDecoder<Decoded_VkDescriptorSetLayoutCreateInfo>* pCreateInfo,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>*           pAllocator,
-    HandlePointerDecoder<VkDescriptorSetLayout>*                   pSetLayout)
+void VulkanSpirvTrackModifier::Process_vkCreateDescriptorSetLayout(const ApiCallInfo&               call_info,
+                                                                   args::CreateDescriptorSetLayout& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    format::HandleId                       handle = *pSetLayout->GetPointer();
-    const VkDescriptorSetLayoutCreateInfo* info   = pCreateInfo->GetPointer();
+    format::HandleId                       handle = *args.pSetLayout.GetPointer();
+    const VkDescriptorSetLayoutCreateInfo* info   = args.pCreateInfo.GetPointer();
 
     const auto* meta_flag_info = GetPNextMetaStruct<Decoded_VkDescriptorSetLayoutBindingFlagsCreateInfo>(
-        pCreateInfo->GetMetaStructPointer()->pNext);
-    const auto* meta_mutable_type_info =
-        GetPNextMetaStruct<Decoded_VkMutableDescriptorTypeCreateInfoEXT>(pCreateInfo->GetMetaStructPointer()->pNext);
+        args.pCreateInfo.GetMetaStructPointer()->pNext);
+    const auto* meta_mutable_type_info = GetPNextMetaStruct<Decoded_VkMutableDescriptorTypeCreateInfoEXT>(
+        args.pCreateInfo.GetMetaStructPointer()->pNext);
 
     set_layout_entries_[handle].handle            = handle;
     set_layout_entries_[handle].creation_index    = call_info.index;
@@ -687,103 +628,83 @@ void VulkanSpirvTrackModifier::Process_vkCreateDescriptorSetLayout(
     }
 }
 
-void VulkanSpirvTrackModifier::Process_vkDestroyDescriptorSetLayout(
-    const ApiCallInfo&                                   call_info,
-    format::HandleId                                     device,
-    format::HandleId                                     descriptorSetLayout,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator)
+void VulkanSpirvTrackModifier::Process_vkDestroyDescriptorSetLayout(const ApiCallInfo&                call_info,
+                                                                    args::DestroyDescriptorSetLayout& args)
 {
     if (IsModificationPass())
     {
         return;
     }
-    if (set_layout_entries_.find(descriptorSetLayout) != set_layout_entries_.end())
+    if (set_layout_entries_.find(args.descriptorSetLayout) != set_layout_entries_.end())
     {
-        set_layout_entries_[descriptorSetLayout].destruction_index = call_info.index;
+        set_layout_entries_[args.descriptorSetLayout].destruction_index = call_info.index;
     }
 }
 
-void VulkanSpirvTrackModifier::Process_vkGetDescriptorSetLayoutSizeEXT(const ApiCallInfo&            call_info,
-                                                                       format::HandleId              device,
-                                                                       format::HandleId              layout,
-                                                                       PointerDecoder<VkDeviceSize>* pLayoutSizeInBytes)
+void VulkanSpirvTrackModifier::Process_vkGetDescriptorSetLayoutSizeEXT(const ApiCallInfo&                   call_info,
+                                                                       args::GetDescriptorSetLayoutSizeEXT& args)
 {
-    if (set_layout_entries_.find(layout) != set_layout_entries_.end())
+    if (set_layout_entries_.find(args.layout) != set_layout_entries_.end())
     {
-        set_layout_entries_[layout].size = *pLayoutSizeInBytes->GetPointer();
+        set_layout_entries_[args.layout].size = *args.pLayoutSizeInBytes.GetPointer();
     }
 }
 
-void VulkanSpirvTrackModifier::Process_vkGetDescriptorSetLayoutBindingOffsetEXT(const ApiCallInfo&            call_info,
-                                                                                format::HandleId              device,
-                                                                                format::HandleId              layout,
-                                                                                uint32_t                      binding,
-                                                                                PointerDecoder<VkDeviceSize>* pOffset)
+void VulkanSpirvTrackModifier::Process_vkGetDescriptorSetLayoutBindingOffsetEXT(
+    const ApiCallInfo& call_info, args::GetDescriptorSetLayoutBindingOffsetEXT& args)
 {
-    if (set_layout_entries_.find(layout) != set_layout_entries_.end())
+    if (set_layout_entries_.find(args.layout) != set_layout_entries_.end())
     {
-        set_layout_entries_[layout].bindings[binding].offset = *pOffset->GetPointer();
+        set_layout_entries_[args.layout].bindings[args.binding].offset = *args.pOffset.GetPointer();
     }
 }
 
-void VulkanSpirvTrackModifier::Process_vkCreateDescriptorPool(
-    const ApiCallInfo&                                        call_info,
-    VkResult                                                  returnValue,
-    format::HandleId                                          device,
-    StructPointerDecoder<Decoded_VkDescriptorPoolCreateInfo>* pCreateInfo,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>*      pAllocator,
-    HandlePointerDecoder<VkDescriptorPool>*                   pDescriptorPool)
+void VulkanSpirvTrackModifier::Process_vkCreateDescriptorPool(const ApiCallInfo&          call_info,
+                                                              args::CreateDescriptorPool& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    format::HandleId handle = *pDescriptorPool->GetPointer();
+    format::HandleId handle = *args.pDescriptorPool.GetPointer();
 
     descriptor_pool_entries_[handle].handle            = handle;
     descriptor_pool_entries_[handle].creation_index    = call_info.index;
     descriptor_pool_entries_[handle].destruction_index = UINT64_MAX;
 }
 
-void VulkanSpirvTrackModifier::Process_vkDestroyDescriptorPool(
-    const ApiCallInfo&                                   call_info,
-    format::HandleId                                     device,
-    format::HandleId                                     descriptorPool,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator)
+void VulkanSpirvTrackModifier::Process_vkDestroyDescriptorPool(const ApiCallInfo&           call_info,
+                                                               args::DestroyDescriptorPool& args)
 {
     if (IsModificationPass())
     {
         return;
     }
-    if (descriptor_pool_entries_.find(descriptorPool) != descriptor_pool_entries_.end())
+    if (descriptor_pool_entries_.find(args.descriptorPool) != descriptor_pool_entries_.end())
     {
-        descriptor_pool_entries_[descriptorPool].destruction_index = call_info.index;
+        descriptor_pool_entries_[args.descriptorPool].destruction_index = call_info.index;
     }
-    for (auto id : descriptor_pool_entries_[descriptorPool].descriptorSets)
+    for (auto id : descriptor_pool_entries_[args.descriptorPool].descriptorSets)
     {
         descriptor_set_entries_.at(id).destruction_index = call_info.index;
     }
 }
 
-void VulkanSpirvTrackModifier::Process_vkAllocateDescriptorSets(
-    const ApiCallInfo&                                         call_info,
-    VkResult                                                   returnValue,
-    format::HandleId                                           device,
-    StructPointerDecoder<Decoded_VkDescriptorSetAllocateInfo>* pAllocateInfo,
-    HandlePointerDecoder<VkDescriptorSet>*                     pDescriptorSets)
+void VulkanSpirvTrackModifier::Process_vkAllocateDescriptorSets(const ApiCallInfo&            call_info,
+                                                                args::AllocateDescriptorSets& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    if (returnValue != VK_SUCCESS)
+    if (args.result != VK_SUCCESS)
     {
         return;
     }
 
-    const Decoded_VkDescriptorSetAllocateInfo* alloc_info = pAllocateInfo->GetMetaStructPointer();
+    const Decoded_VkDescriptorSetAllocateInfo* alloc_info = args.pAllocateInfo.GetMetaStructPointer();
 
     const auto* meta_count_info =
         GetPNextMetaStruct<Decoded_VkDescriptorSetVariableDescriptorCountAllocateInfoEXT>(alloc_info->pNext);
@@ -791,7 +712,7 @@ void VulkanSpirvTrackModifier::Process_vkAllocateDescriptorSets(
     for (uint32_t i = 0; i < alloc_info->decoded_value->descriptorSetCount; i++)
     {
         format::HandleId setLayout      = alloc_info->pSetLayouts.GetPointer()[i];
-        format::HandleId descriptorSet  = pDescriptorSets->GetPointer()[i];
+        format::HandleId descriptorSet  = args.pDescriptorSets.GetPointer()[i];
         format::HandleId descriptorPool = alloc_info->descriptorPool;
 
         if (descriptorSet == 0)
@@ -846,13 +767,8 @@ void VulkanSpirvTrackModifier::Process_vkAllocateDescriptorSets(
     }
 }
 
-void VulkanSpirvTrackModifier::Process_vkUpdateDescriptorSets(
-    const ApiCallInfo&                                  call_info,
-    format::HandleId                                    device,
-    uint32_t                                            descriptorWriteCount,
-    StructPointerDecoder<Decoded_VkWriteDescriptorSet>* pDescriptorWrites,
-    uint32_t                                            descriptorCopyCount,
-    StructPointerDecoder<Decoded_VkCopyDescriptorSet>*  pDescriptorCopies)
+void VulkanSpirvTrackModifier::Process_vkUpdateDescriptorSets(const ApiCallInfo&          call_info,
+                                                              args::UpdateDescriptorSets& args)
 {
     if (IsModificationPass())
     {
@@ -878,10 +794,10 @@ void VulkanSpirvTrackModifier::Process_vkUpdateDescriptorSets(
         return false;
     };
 
-    for (uint32_t i = 0; i < descriptorWriteCount; i++)
+    for (uint32_t i = 0; i < args.descriptorWriteCount; i++)
     {
-        const auto& write      = pDescriptorWrites->GetPointer()[i];
-        const auto& meta_write = pDescriptorWrites->GetMetaStructPointer()[i];
+        const auto& write      = args.pDescriptorWrites.GetPointer()[i];
+        const auto& meta_write = args.pDescriptorWrites.GetMetaStructPointer()[i];
 
         auto descriptor_set_iter = descriptor_set_entries_.find(meta_write.dstSet);
         GFXRECON_ASSERT(descriptor_set_iter != descriptor_set_entries_.end());
@@ -980,21 +896,16 @@ void VulkanSpirvTrackModifier::Process_vkUpdateDescriptorSets(
     }
 }
 
-void VulkanSpirvTrackModifier::Process_vkCreatePipelineLayout(
-    const ApiCallInfo&                                        call_info,
-    VkResult                                                  returnValue,
-    format::HandleId                                          device,
-    StructPointerDecoder<Decoded_VkPipelineLayoutCreateInfo>* pCreateInfo,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>*      pAllocator,
-    HandlePointerDecoder<VkPipelineLayout>*                   pPipelineLayout)
+void VulkanSpirvTrackModifier::Process_vkCreatePipelineLayout(const ApiCallInfo&          call_info,
+                                                              args::CreatePipelineLayout& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    format::HandleId handle      = *pPipelineLayout->GetPointer();
-    const auto*      create_info = pCreateInfo->GetMetaStructPointer();
+    format::HandleId handle      = *args.pPipelineLayout.GetPointer();
+    const auto*      create_info = args.pCreateInfo.GetMetaStructPointer();
 
     GFXRECON_ASSERT(pipeline_layout_entries_.find(handle) == pipeline_layout_entries_.end());
 
@@ -1057,42 +968,32 @@ void VulkanSpirvTrackModifier::Process_vkCreatePipelineLayout(
     }
 }
 
-void VulkanSpirvTrackModifier::Process_vkDestroyPipelineLayout(
-    const ApiCallInfo&                                   call_info,
-    format::HandleId                                     device,
-    format::HandleId                                     pipelineLayout,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator)
+void VulkanSpirvTrackModifier::Process_vkDestroyPipelineLayout(const ApiCallInfo&           call_info,
+                                                               args::DestroyPipelineLayout& args)
 {
     if (IsModificationPass())
     {
         return;
     }
-    if (pipeline_layout_entries_.find(pipelineLayout) != pipeline_layout_entries_.end())
+    if (pipeline_layout_entries_.find(args.pipelineLayout) != pipeline_layout_entries_.end())
     {
-        pipeline_layout_entries_[pipelineLayout].destruction_index = call_info.index;
+        pipeline_layout_entries_[args.pipelineLayout].destruction_index = call_info.index;
     }
 }
 
-void VulkanSpirvTrackModifier::Process_vkCreateComputePipelines(
-    const ApiCallInfo&                                         call_info,
-    VkResult                                                   returnValue,
-    format::HandleId                                           device,
-    format::HandleId                                           pipelineCache,
-    uint32_t                                                   createInfoCount,
-    StructPointerDecoder<Decoded_VkComputePipelineCreateInfo>* pCreateInfos,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>*       pAllocator,
-    HandlePointerDecoder<VkPipeline>*                          pPipelines)
+void VulkanSpirvTrackModifier::Process_vkCreateComputePipelines(const ApiCallInfo&            call_info,
+                                                                args::CreateComputePipelines& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    const auto* create_info = pCreateInfos->GetMetaStructPointer();
+    const auto* create_info = args.pCreateInfos.GetMetaStructPointer();
 
-    for (uint32_t idx = 0; idx < createInfoCount; idx++)
+    for (uint32_t idx = 0; idx < args.createInfoCount; idx++)
     {
-        format::HandleId handle                     = pPipelines->GetPointer()[idx];
+        format::HandleId handle                     = args.pPipelines.GetPointer()[idx];
         pipeline_entries_[handle].handle            = handle;
         pipeline_entries_[handle].creation_index    = call_info.index;
         pipeline_entries_[handle].destruction_index = UINT64_MAX;
@@ -1128,26 +1029,19 @@ void VulkanSpirvTrackModifier::Process_vkCreateComputePipelines(
     }
 }
 
-void VulkanSpirvTrackModifier::Process_vkCreateGraphicsPipelines(
-    const ApiCallInfo&                                          call_info,
-    VkResult                                                    returnValue,
-    format::HandleId                                            device,
-    format::HandleId                                            pipelineCache,
-    uint32_t                                                    createInfoCount,
-    StructPointerDecoder<Decoded_VkGraphicsPipelineCreateInfo>* pCreateInfos,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>*        pAllocator,
-    HandlePointerDecoder<VkPipeline>*                           pPipelines)
+void VulkanSpirvTrackModifier::Process_vkCreateGraphicsPipelines(const ApiCallInfo&             call_info,
+                                                                 args::CreateGraphicsPipelines& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    const auto* create_info = pCreateInfos->GetMetaStructPointer();
+    const auto* create_info = args.pCreateInfos.GetMetaStructPointer();
 
-    for (uint32_t idx = 0; idx < createInfoCount; idx++)
+    for (uint32_t idx = 0; idx < args.createInfoCount; idx++)
     {
-        format::HandleId handle                     = pPipelines->GetPointer()[idx];
+        format::HandleId handle                     = args.pPipelines.GetPointer()[idx];
         pipeline_entries_[handle].handle            = handle;
         pipeline_entries_[handle].creation_index    = call_info.index;
         pipeline_entries_[handle].destruction_index = UINT64_MAX;
@@ -1187,63 +1081,52 @@ void VulkanSpirvTrackModifier::Process_vkCreateGraphicsPipelines(
     }
 }
 
-void VulkanSpirvTrackModifier::Process_vkDestroyPipeline(
-    const ApiCallInfo&                                   call_info,
-    format::HandleId                                     device,
-    format::HandleId                                     pipeline,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator)
+void VulkanSpirvTrackModifier::Process_vkDestroyPipeline(const ApiCallInfo& call_info, args::DestroyPipeline& args)
 {
     if (IsModificationPass())
     {
         return;
     }
-    if (pipeline_entries_.find(pipeline) != pipeline_entries_.end())
+    if (pipeline_entries_.find(args.pipeline) != pipeline_entries_.end())
     {
-        pipeline_entries_[pipeline].destruction_index = call_info.index;
+        pipeline_entries_[args.pipeline].destruction_index = call_info.index;
     }
 }
 
-void VulkanSpirvTrackModifier::Process_vkAllocateCommandBuffers(
-    const ApiCallInfo&                                         call_info,
-    VkResult                                                   returnValue,
-    format::HandleId                                           device,
-    StructPointerDecoder<Decoded_VkCommandBufferAllocateInfo>* pAllocateInfo,
-    HandlePointerDecoder<VkCommandBuffer>*                     pCommandBuffers)
+void VulkanSpirvTrackModifier::Process_vkAllocateCommandBuffers(const ApiCallInfo&            call_info,
+                                                                args::AllocateCommandBuffers& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    const VkCommandBufferAllocateInfo* alloc_info = pAllocateInfo->GetPointer();
+    const VkCommandBufferAllocateInfo* alloc_info = args.pAllocateInfo.GetPointer();
 
     for (uint32_t i = 0; i < alloc_info->commandBufferCount; i++)
     {
-        format::HandleId handle = pCommandBuffers->GetPointer()[i];
+        format::HandleId handle = args.pCommandBuffers.GetPointer()[i];
         GFXRECON_ASSERT(command_buffer_entries_.find(handle) == command_buffer_entries_.end());
 
         command_buffer_entries_[handle].handle            = handle;
-        command_buffer_entries_[handle].device_id         = device;
+        command_buffer_entries_[handle].device_id         = args.device;
         command_buffer_entries_[handle].creation_index    = call_info.index;
         command_buffer_entries_[handle].destruction_index = UINT64_MAX;
         command_buffer_entries_[handle].state             = CommandBufferLifeCycle::Inital;
     }
 }
 
-void VulkanSpirvTrackModifier::Process_vkFreeCommandBuffers(const ApiCallInfo&                     call_info,
-                                                            format::HandleId                       device,
-                                                            format::HandleId                       commandPool,
-                                                            uint32_t                               commandBufferCount,
-                                                            HandlePointerDecoder<VkCommandBuffer>* pCommandBuffers)
+void VulkanSpirvTrackModifier::Process_vkFreeCommandBuffers(const ApiCallInfo&        call_info,
+                                                            args::FreeCommandBuffers& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    for (uint32_t i = 0; i < commandBufferCount; i++)
+    for (uint32_t i = 0; i < args.commandBufferCount; i++)
     {
-        format::HandleId handle = pCommandBuffers->GetPointer()[i];
+        format::HandleId handle = args.pCommandBuffers.GetPointer()[i];
         auto             entry  = command_buffer_entries_.find(handle);
         if (entry != command_buffer_entries_.end())
         {
@@ -1259,170 +1142,148 @@ void VulkanSpirvTrackModifier::Process_vkFreeCommandBuffers(const ApiCallInfo&  
 }
 
 void VulkanSpirvTrackModifier::Process_vkResetCommandBuffer(const ApiCallInfo&        call_info,
-                                                            VkResult                  returnValue,
-                                                            format::HandleId          commandBuffer,
-                                                            VkCommandBufferResetFlags flags)
+                                                            args::ResetCommandBuffer& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    if (command_buffer_entries_.find(commandBuffer) == command_buffer_entries_.end() ||
-        command_buffer_entries_[commandBuffer].state == CommandBufferLifeCycle::Invalid)
+    if (command_buffer_entries_.find(args.commandBuffer) == command_buffer_entries_.end() ||
+        command_buffer_entries_[args.commandBuffer].state == CommandBufferLifeCycle::Invalid)
     {
         return;
     }
 
-    if (command_buffer_recording.find(commandBuffer) != command_buffer_recording.end() &&
-        command_buffer_entries_[commandBuffer].state == CommandBufferLifeCycle::Pending)
+    if (command_buffer_recording.find(args.commandBuffer) != command_buffer_recording.end() &&
+        command_buffer_entries_[args.commandBuffer].state == CommandBufferLifeCycle::Pending)
     {
-        GFXRECON_LOG_DEBUG("command buffer %llu is in pending state. Return from reset.", commandBuffer);
+        GFXRECON_LOG_DEBUG("command buffer %llu is in pending state. Return from reset.", args.commandBuffer);
         return;
     }
 
-    command_buffer_entries_[commandBuffer].state = CommandBufferLifeCycle::Inital;
+    command_buffer_entries_[args.commandBuffer].state = CommandBufferLifeCycle::Inital;
 
-    command_buffer_recording.erase(commandBuffer);
-    command_buffer_submit_recordings.erase(commandBuffer);
-    command_buffer_state.erase(commandBuffer);
-    provenance_tracker_.ErasePushConstantProvenance(commandBuffer);
+    command_buffer_recording.erase(args.commandBuffer);
+    command_buffer_submit_recordings.erase(args.commandBuffer);
+    command_buffer_state.erase(args.commandBuffer);
+    provenance_tracker_.ErasePushConstantProvenance(args.commandBuffer);
 }
 
-void VulkanSpirvTrackModifier::Process_vkBeginCommandBuffer(
-    const ApiCallInfo&                                      call_info,
-    VkResult                                                returnValue,
-    format::HandleId                                        commandBuffer,
-    StructPointerDecoder<Decoded_VkCommandBufferBeginInfo>* pBeginInfo)
+void VulkanSpirvTrackModifier::Process_vkBeginCommandBuffer(const ApiCallInfo&        call_info,
+                                                            args::BeginCommandBuffer& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    if (command_buffer_entries_.find(commandBuffer) == command_buffer_entries_.end() ||
-        command_buffer_entries_[commandBuffer].state == CommandBufferLifeCycle::Invalid)
+    if (command_buffer_entries_.find(args.commandBuffer) == command_buffer_entries_.end() ||
+        command_buffer_entries_[args.commandBuffer].state == CommandBufferLifeCycle::Invalid)
     {
         return;
     }
 
-    if (command_buffer_recording.find(commandBuffer) != command_buffer_recording.end() &&
-        command_buffer_entries_[commandBuffer].state == CommandBufferLifeCycle::Pending)
+    if (command_buffer_recording.find(args.commandBuffer) != command_buffer_recording.end() &&
+        command_buffer_entries_[args.commandBuffer].state == CommandBufferLifeCycle::Pending)
     {
-        GFXRECON_LOG_INFO("command buffer %llu is in pending state. Return from begin.", commandBuffer);
+        GFXRECON_LOG_INFO("command buffer %llu is in pending state. Return from begin.", args.commandBuffer);
         return;
     }
 
-    if (command_buffer_recording.find(commandBuffer) != command_buffer_recording.end() &&
-        (command_buffer_entries_[commandBuffer].state == CommandBufferLifeCycle::Recording ||
-         command_buffer_entries_[commandBuffer].state == CommandBufferLifeCycle::Executable))
+    if (command_buffer_recording.find(args.commandBuffer) != command_buffer_recording.end() &&
+        (command_buffer_entries_[args.commandBuffer].state == CommandBufferLifeCycle::Recording ||
+         command_buffer_entries_[args.commandBuffer].state == CommandBufferLifeCycle::Executable))
     {
         GFXRECON_LOG_INFO("command buffer %llu has been in recording/executable state and will be reset now.",
-                          commandBuffer);
+                          args.commandBuffer);
     }
 
-    command_buffer_entries_[commandBuffer].state = CommandBufferLifeCycle::Recording;
+    command_buffer_entries_[args.commandBuffer].state = CommandBufferLifeCycle::Recording;
 
-    command_buffer_recording.erase(commandBuffer);
-    command_buffer_submit_recordings.erase(commandBuffer);
-    command_buffer_state.erase(commandBuffer);
+    command_buffer_recording.erase(args.commandBuffer);
+    command_buffer_submit_recordings.erase(args.commandBuffer);
+    command_buffer_state.erase(args.commandBuffer);
 
-    command_buffer_recording[commandBuffer].command_buffer = commandBuffer;
-    command_buffer_recording[commandBuffer].bind_point     = VK_PIPELINE_BIND_POINT_MAX_ENUM;
+    command_buffer_recording[args.commandBuffer].command_buffer = args.commandBuffer;
+    command_buffer_recording[args.commandBuffer].bind_point     = VK_PIPELINE_BIND_POINT_MAX_ENUM;
 
-    command_buffer_state[commandBuffer].command_buffer = commandBuffer;
-    command_buffer_state[commandBuffer].push_constant.assign(256, 0); // MAX_PUSHCONSTANT_SIZE
-    provenance_tracker_.ClearPushConstantProvenance(commandBuffer);
+    command_buffer_state[args.commandBuffer].command_buffer = args.commandBuffer;
+    command_buffer_state[args.commandBuffer].push_constant.assign(256, 0); // MAX_PUSHCONSTANT_SIZE
+    provenance_tracker_.ClearPushConstantProvenance(args.commandBuffer);
 }
 
-void VulkanSpirvTrackModifier::Process_vkEndCommandBuffer(const ApiCallInfo& call_info,
-                                                          VkResult           returnValue,
-                                                          format::HandleId   commandBuffer)
+void VulkanSpirvTrackModifier::Process_vkEndCommandBuffer(const ApiCallInfo& call_info, args::EndCommandBuffer& args)
 {
     if (IsModificationPass())
     {
         return;
     }
-    if (command_buffer_entries_.find(commandBuffer) == command_buffer_entries_.end() ||
-        command_buffer_entries_[commandBuffer].state == CommandBufferLifeCycle::Invalid)
+    if (command_buffer_entries_.find(args.commandBuffer) == command_buffer_entries_.end() ||
+        command_buffer_entries_[args.commandBuffer].state == CommandBufferLifeCycle::Invalid)
     {
         return;
     }
-    command_buffer_entries_.at(commandBuffer).state = CommandBufferLifeCycle::Executable;
+    command_buffer_entries_.at(args.commandBuffer).state = CommandBufferLifeCycle::Executable;
 }
 
-void VulkanSpirvTrackModifier::Process_vkGetBufferDeviceAddress(
-    const ApiCallInfo&                                       call_info,
-    VkDeviceAddress                                          returnValue,
-    format::HandleId                                         device,
-    StructPointerDecoder<Decoded_VkBufferDeviceAddressInfo>* pInfo)
+void VulkanSpirvTrackModifier::Process_vkGetBufferDeviceAddress(const ApiCallInfo&            call_info,
+                                                                args::GetBufferDeviceAddress& args)
 {
     if (IsModificationPass())
     {
         return;
     }
-    const auto& buffer_id                     = pInfo->GetMetaStructPointer()->buffer;
-    buffer_device_addresses_[returnValue]     = buffer_id;
-    buffer_entries_[buffer_id].device_address = returnValue;
+    const auto& buffer_id                     = args.pInfo.GetMetaStructPointer()->buffer;
+    buffer_device_addresses_[args.result]     = buffer_id;
+    buffer_entries_[buffer_id].device_address = args.result;
 }
 
-void VulkanSpirvTrackModifier::Process_vkGetBufferDeviceAddressKHR(
-    const ApiCallInfo&                                       call_info,
-    VkDeviceAddress                                          returnValue,
-    format::HandleId                                         device,
-    StructPointerDecoder<Decoded_VkBufferDeviceAddressInfo>* pInfo)
+void VulkanSpirvTrackModifier::Process_vkGetBufferDeviceAddressKHR(const ApiCallInfo&               call_info,
+                                                                   args::GetBufferDeviceAddressKHR& args)
 {
     if (IsModificationPass())
     {
         return;
     }
-    const auto& buffer_id                     = pInfo->GetMetaStructPointer()->buffer;
-    buffer_device_addresses_[returnValue]     = buffer_id;
-    buffer_entries_[buffer_id].device_address = returnValue;
+    const auto& buffer_id                     = args.pInfo.GetMetaStructPointer()->buffer;
+    buffer_device_addresses_[args.result]     = buffer_id;
+    buffer_entries_[buffer_id].device_address = args.result;
 }
 
-void VulkanSpirvTrackModifier::Process_vkGetBufferDeviceAddressEXT(
-    const ApiCallInfo&                                       call_info,
-    VkDeviceAddress                                          returnValue,
-    format::HandleId                                         device,
-    StructPointerDecoder<Decoded_VkBufferDeviceAddressInfo>* pInfo)
+void VulkanSpirvTrackModifier::Process_vkGetBufferDeviceAddressEXT(const ApiCallInfo&               call_info,
+                                                                   args::GetBufferDeviceAddressEXT& args)
 {
     if (IsModificationPass())
     {
         return;
     }
-    const auto& buffer_id                     = pInfo->GetMetaStructPointer()->buffer;
-    buffer_device_addresses_[returnValue]     = buffer_id;
-    buffer_entries_[buffer_id].device_address = returnValue;
+    const auto& buffer_id                     = args.pInfo.GetMetaStructPointer()->buffer;
+    buffer_device_addresses_[args.result]     = buffer_id;
+    buffer_entries_[buffer_id].device_address = args.result;
 }
 
 void VulkanSpirvTrackModifier::Process_vkGetAccelerationStructureDeviceAddressKHR(
-    const ApiCallInfo&                                                         call_info,
-    VkDeviceAddress                                                            returnValue,
-    format::HandleId                                                           device,
-    StructPointerDecoder<Decoded_VkAccelerationStructureDeviceAddressInfoKHR>* pInfo)
+    const ApiCallInfo& call_info, args::GetAccelerationStructureDeviceAddressKHR& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    const auto& as_id = pInfo->GetMetaStructPointer()->accelerationStructure;
-    acceleration_structure_device_addresses_[returnValue].insert(as_id);
+    const auto& as_id = args.pInfo.GetMetaStructPointer()->accelerationStructure;
+    acceleration_structure_device_addresses_[args.result].insert(as_id);
     if (acceleration_structure_entries_.find(as_id) != acceleration_structure_entries_.end())
     {
-        acceleration_structure_entries_[as_id].device_address = returnValue;
-        if (buffer_device_addresses_.find(returnValue) != buffer_device_addresses_.end())
+        acceleration_structure_entries_[as_id].device_address = args.result;
+        if (buffer_device_addresses_.find(args.result) != buffer_device_addresses_.end())
         {
-            buffer_device_addresses_.erase(returnValue);
+            buffer_device_addresses_.erase(args.result);
         }
     }
 }
 
-void VulkanSpirvTrackModifier::Process_vkCmdBindPipeline(const ApiCallInfo&  call_info,
-                                                         format::HandleId    commandBuffer,
-                                                         VkPipelineBindPoint pipelineBindPoint,
-                                                         format::HandleId    pipeline)
+void VulkanSpirvTrackModifier::Process_vkCmdBindPipeline(const ApiCallInfo& call_info, args::CmdBindPipeline& args)
 {
     if (IsModificationPass())
     {
@@ -1430,67 +1291,60 @@ void VulkanSpirvTrackModifier::Process_vkCmdBindPipeline(const ApiCallInfo&  cal
     }
 
     // As long as in Recording state, the command_buffer_recording contains the commandBuffer value.
-    if (command_buffer_entries_.find(commandBuffer) == command_buffer_entries_.end() ||
-        command_buffer_entries_[commandBuffer].state != CommandBufferLifeCycle::Recording)
+    if (command_buffer_entries_.find(args.commandBuffer) == command_buffer_entries_.end() ||
+        command_buffer_entries_[args.commandBuffer].state != CommandBufferLifeCycle::Recording)
     {
         return;
     }
 
-    command_buffer_recording[commandBuffer].pipelines[pipelineBindPoint] = pipeline;
+    command_buffer_recording[args.commandBuffer].pipelines[args.pipelineBindPoint] = args.pipeline;
 }
 
-void VulkanSpirvTrackModifier::Process_vkCmdBindDescriptorSets(const ApiCallInfo&  call_info,
-                                                               format::HandleId    commandBuffer,
-                                                               VkPipelineBindPoint pipelineBindPoint,
-                                                               format::HandleId    layout,
-                                                               uint32_t            firstSet,
-                                                               uint32_t            descriptorSetCount,
-                                                               HandlePointerDecoder<VkDescriptorSet>* pDescriptorSets,
-                                                               uint32_t                  dynamicOffsetCount,
-                                                               PointerDecoder<uint32_t>* pDynamicOffsets)
+void VulkanSpirvTrackModifier::Process_vkCmdBindDescriptorSets(const ApiCallInfo&           call_info,
+                                                               args::CmdBindDescriptorSets& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    if (command_buffer_entries_.find(commandBuffer) == command_buffer_entries_.end() ||
-        command_buffer_entries_[commandBuffer].state != CommandBufferLifeCycle::Recording)
+    if (command_buffer_entries_.find(args.commandBuffer) == command_buffer_entries_.end() ||
+        command_buffer_entries_[args.commandBuffer].state != CommandBufferLifeCycle::Recording)
     {
         return;
     }
 
     DescriptorStateCommand command;
     command.type       = DescriptorStateCommand::Type::BindDescriptorSets;
-    command.bind_point = pipelineBindPoint;
+    command.bind_point = args.pipelineBindPoint;
 
-    for (uint32_t i = 0; i < descriptorSetCount; i++)
+    for (uint32_t i = 0; i < args.descriptorSetCount; i++)
     {
-        format::HandleId descriptor_set = pDescriptorSets->GetPointer()[i];
-        command.descriptor_sets.push_back({ firstSet + i, descriptor_set, layout });
+        format::HandleId descriptor_set = args.pDescriptorSets.GetPointer()[i];
+        command.descriptor_sets.push_back({ args.firstSet + i, descriptor_set, args.layout });
     }
 
-    if (dynamicOffsetCount > 0 && pDynamicOffsets != nullptr)
+    if (args.dynamicOffsetCount > 0)
     {
         uint32_t   consumed_index = 0;
         uint32_t   consumed_count = 0;
-        uint32_t   remained_count = dynamicOffsetCount;
-        const auto layout_iter    = pipeline_layout_entries_.find(layout);
-        for (uint32_t i = 0; i < descriptorSetCount; i++)
+        uint32_t   remained_count = args.dynamicOffsetCount;
+        const auto layout_iter    = pipeline_layout_entries_.find(args.layout);
+        for (uint32_t i = 0; i < args.descriptorSetCount; i++)
         {
-            const auto ref_iter = layout_iter->second.dynamicBindingRef.find(firstSet + i);
+            const auto ref_iter = layout_iter->second.dynamicBindingRef.find(args.firstSet + i);
             if (ref_iter != layout_iter->second.dynamicBindingRef.end())
             {
                 if (remained_count == 0)
                 {
                     GFXRECON_LOG_INFO("call %llu vkCmdBindDescriptorSets: Dynamic offset mismatch on set[%u].",
                                       call_info.index,
-                                      firstSet + i);
+                                      args.firstSet + i);
                     break;
                 }
 
                 DynamicBindingOffsetMap elem;
-                elem.set = firstSet + i;
+                elem.set = args.firstSet + i;
                 for (const DynamicBindingRef& ref : ref_iter->second)
                 {
                     if (remained_count >= ref.elementCount)
@@ -1503,7 +1357,7 @@ void VulkanSpirvTrackModifier::Process_vkCmdBindDescriptorSets(const ApiCallInfo
                         GFXRECON_LOG_INFO(
                             "call %llu vkCmdBindDescriptorSets: Dynamic offset mismatch on set[%u] binding[%u].",
                             call_info.index,
-                            firstSet + i,
+                            args.firstSet + i,
                             ref.binding);
                         break;
                     }
@@ -1514,11 +1368,11 @@ void VulkanSpirvTrackModifier::Process_vkCmdBindDescriptorSets(const ApiCallInfo
                         GFXRECON_LOG_INFO(
                             "call %llu vkCmdBindDescriptorSets: Dynamic offset mismatch on set[%u] binding[%u].",
                             call_info.index,
-                            firstSet + i,
+                            args.firstSet + i,
                             ref.binding);
                     }
-                    elem.binding_offsets[ref.binding] = { pDynamicOffsets->GetPointer() + consumed_index,
-                                                          pDynamicOffsets->GetPointer() + consumed_index +
+                    elem.binding_offsets[ref.binding] = { args.pDynamicOffsets.GetPointer() + consumed_index,
+                                                          args.pDynamicOffsets.GetPointer() + consumed_index +
                                                               consumed_count };
                     consumed_index += consumed_count;
                 }
@@ -1529,23 +1383,20 @@ void VulkanSpirvTrackModifier::Process_vkCmdBindDescriptorSets(const ApiCallInfo
 
     if (!command.descriptor_sets.empty())
     {
-        command_buffer_recording[commandBuffer].descriptor_state_commands.push_back(std::move(command));
+        command_buffer_recording[args.commandBuffer].descriptor_state_commands.push_back(std::move(command));
     }
 }
 
-void VulkanSpirvTrackModifier::Process_vkCmdBindDescriptorBuffersEXT(
-    const ApiCallInfo&                                              call_info,
-    format::HandleId                                                commandBuffer,
-    uint32_t                                                        bufferCount,
-    StructPointerDecoder<Decoded_VkDescriptorBufferBindingInfoEXT>* pBindingInfos)
+void VulkanSpirvTrackModifier::Process_vkCmdBindDescriptorBuffersEXT(const ApiCallInfo&                 call_info,
+                                                                     args::CmdBindDescriptorBuffersEXT& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    if (command_buffer_entries_.find(commandBuffer) == command_buffer_entries_.end() ||
-        command_buffer_entries_[commandBuffer].state != CommandBufferLifeCycle::Recording)
+    if (command_buffer_entries_.find(args.commandBuffer) == command_buffer_entries_.end() ||
+        command_buffer_entries_[args.commandBuffer].state != CommandBufferLifeCycle::Recording)
     {
         return;
     }
@@ -1553,9 +1404,9 @@ void VulkanSpirvTrackModifier::Process_vkCmdBindDescriptorBuffersEXT(
     DescriptorStateCommand command;
     command.type = DescriptorStateCommand::Type::BindDescriptorBuffers;
 
-    const auto* binding_info      = pBindingInfos->GetPointer();
-    const auto* meta_binding_info = pBindingInfos->GetMetaStructPointer();
-    for (uint32_t i = 0; i < bufferCount; i++)
+    const auto* binding_info      = args.pBindingInfos.GetPointer();
+    const auto* meta_binding_info = args.pBindingInfos.GetMetaStructPointer();
+    for (uint32_t i = 0; i < args.bufferCount; i++)
     {
         format::HandleId    handle       = 0;
         VkDeviceAddress     base_address = 0;
@@ -1603,54 +1454,42 @@ void VulkanSpirvTrackModifier::Process_vkCmdBindDescriptorBuffersEXT(
             { handle, base_address, binding_info[i].address, binding_info[i].usage, usage2, resolved });
     }
 
-    command_buffer_recording[commandBuffer].descriptor_state_commands.push_back(std::move(command));
+    command_buffer_recording[args.commandBuffer].descriptor_state_commands.push_back(std::move(command));
 }
 
-void VulkanSpirvTrackModifier::Process_vkCmdSetDescriptorBufferOffsetsEXT(const ApiCallInfo&        call_info,
-                                                                          format::HandleId          commandBuffer,
-                                                                          VkPipelineBindPoint       pipelineBindPoint,
-                                                                          format::HandleId          layout,
-                                                                          uint32_t                  firstSet,
-                                                                          uint32_t                  setCount,
-                                                                          PointerDecoder<uint32_t>* pBufferIndices,
-                                                                          PointerDecoder<VkDeviceSize>* pOffsets)
+void VulkanSpirvTrackModifier::Process_vkCmdSetDescriptorBufferOffsetsEXT(const ApiCallInfo& call_info,
+                                                                          args::CmdSetDescriptorBufferOffsetsEXT& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    if (command_buffer_entries_.find(commandBuffer) == command_buffer_entries_.end() ||
-        command_buffer_entries_[commandBuffer].state != CommandBufferLifeCycle::Recording)
+    if (command_buffer_entries_.find(args.commandBuffer) == command_buffer_entries_.end() ||
+        command_buffer_entries_[args.commandBuffer].state != CommandBufferLifeCycle::Recording)
     {
         return;
     }
 
     DescriptorStateCommand command;
     command.type       = DescriptorStateCommand::Type::SetDescriptorBufferOffsets;
-    command.bind_point = pipelineBindPoint;
+    command.bind_point = args.pipelineBindPoint;
 
-    for (uint32_t i = 0; i < setCount; i++)
+    for (uint32_t i = 0; i < args.setCount; i++)
     {
-        uint32_t     buffer_index = pBufferIndices->GetPointer()[i];
-        VkDeviceSize offset       = pOffsets->GetPointer()[i];
+        uint32_t     buffer_index = args.pBufferIndices.GetPointer()[i];
+        VkDeviceSize offset       = args.pOffsets.GetPointer()[i];
 
-        command.descriptor_buffer_offsets.emplace_back(firstSet + i, buffer_index, offset, layout);
+        command.descriptor_buffer_offsets.emplace_back(args.firstSet + i, buffer_index, offset, args.layout);
     }
 
     if (!command.descriptor_buffer_offsets.empty())
     {
-        command_buffer_recording[commandBuffer].descriptor_state_commands.push_back(std::move(command));
+        command_buffer_recording[args.commandBuffer].descriptor_state_commands.push_back(std::move(command));
     }
 }
 
-void VulkanSpirvTrackModifier::Process_vkCmdPushConstants(const ApiCallInfo&       call_info,
-                                                          format::HandleId         commandBuffer,
-                                                          format::HandleId         layout,
-                                                          VkShaderStageFlags       stageFlags,
-                                                          uint32_t                 offset,
-                                                          uint32_t                 size,
-                                                          PointerDecoder<uint8_t>* pValues)
+void VulkanSpirvTrackModifier::Process_vkCmdPushConstants(const ApiCallInfo& call_info, args::CmdPushConstants& args)
 {
     if (IsModificationPass())
     {
@@ -1658,7 +1497,7 @@ void VulkanSpirvTrackModifier::Process_vkCmdPushConstants(const ApiCallInfo&    
             fixup_location_builder_.GetFixupLocations(ProvenanceRootType::PushConstants, call_info.index);
         if ((fixups != nullptr) && !fixups->address_locations.empty())
         {
-            const auto command_buffer_iter = command_buffer_entries_.find(commandBuffer);
+            const auto command_buffer_iter = command_buffer_entries_.find(args.commandBuffer);
             GFXRECON_ASSERT(command_buffer_iter != command_buffer_entries_.end());
             if (command_buffer_iter != command_buffer_entries_.end())
             {
@@ -1669,54 +1508,44 @@ void VulkanSpirvTrackModifier::Process_vkCmdPushConstants(const ApiCallInfo&    
         return;
     }
 
-    if (command_buffer_entries_.find(commandBuffer) == command_buffer_entries_.end() ||
-        command_buffer_entries_[commandBuffer].state != CommandBufferLifeCycle::Recording)
+    if (command_buffer_entries_.find(args.commandBuffer) == command_buffer_entries_.end() ||
+        command_buffer_entries_[args.commandBuffer].state != CommandBufferLifeCycle::Recording)
     {
         return;
     }
 
-    std::vector<uint8_t> values(size);
-    std::memcpy(values.data(), pValues->GetPointer(), size);
+    std::vector<uint8_t> values(args.size);
+    std::memcpy(values.data(), args.pValues.GetPointer(), args.size);
 
-    command_buffer_recording[commandBuffer].push_constants.push_back(
-        { offset, size, stageFlags, layout, std::move(values), call_info.index });
+    command_buffer_recording[args.commandBuffer].push_constants.push_back(
+        { args.offset, args.size, args.stageFlags, args.layout, std::move(values), call_info.index });
 }
 
-void VulkanSpirvTrackModifier::Process_vkCmdFillBuffer(const ApiCallInfo& call_info,
-                                                       format::HandleId   commandBuffer,
-                                                       format::HandleId   dstBuffer,
-                                                       VkDeviceSize       dstOffset,
-                                                       VkDeviceSize       size,
-                                                       uint32_t           data)
+void VulkanSpirvTrackModifier::Process_vkCmdFillBuffer(const ApiCallInfo& call_info, args::CmdFillBuffer& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    if (command_buffer_entries_.find(commandBuffer) == command_buffer_entries_.end() ||
-        command_buffer_entries_[commandBuffer].state != CommandBufferLifeCycle::Recording)
+    if (command_buffer_entries_.find(args.commandBuffer) == command_buffer_entries_.end() ||
+        command_buffer_entries_[args.commandBuffer].state != CommandBufferLifeCycle::Recording)
     {
         return;
     }
 
-    CommandBufferRecording& recording = command_buffer_recording[commandBuffer];
+    CommandBufferRecording& recording = command_buffer_recording[args.commandBuffer];
 
-    uint8_t*         data_ptr = reinterpret_cast<uint8_t*>(&data);
-    BufferWriteEvent event(SourceType::Fill, dstBuffer);
+    uint8_t*         data_ptr = reinterpret_cast<uint8_t*>(&args.data);
+    BufferWriteEvent event(SourceType::Fill, args.dstBuffer);
     event.srcPointer = { data_ptr, data_ptr + sizeof(uint32_t) };
-    event.regions.emplace_back(0, dstOffset, size);
+    event.regions.emplace_back(0, args.dstOffset, args.size);
 
     recording.action_command_list.emplace_back(std::move(event));
     recording.in_operation = true;
 }
 
-void VulkanSpirvTrackModifier::Process_vkCmdUpdateBuffer(const ApiCallInfo&       call_info,
-                                                         format::HandleId         commandBuffer,
-                                                         format::HandleId         dstBuffer,
-                                                         VkDeviceSize             dstOffset,
-                                                         VkDeviceSize             dataSize,
-                                                         PointerDecoder<uint8_t>* pData)
+void VulkanSpirvTrackModifier::Process_vkCmdUpdateBuffer(const ApiCallInfo& call_info, args::CmdUpdateBuffer& args)
 {
     if (IsModificationPass())
     {
@@ -1724,7 +1553,7 @@ void VulkanSpirvTrackModifier::Process_vkCmdUpdateBuffer(const ApiCallInfo&     
             fixup_location_builder_.GetFixupLocations(ProvenanceRootType::UpdateBuffer, call_info.index);
         if ((fixups != nullptr) && !fixups->address_locations.empty())
         {
-            const auto command_buffer_iter = command_buffer_entries_.find(commandBuffer);
+            const auto command_buffer_iter = command_buffer_entries_.find(args.commandBuffer);
             GFXRECON_ASSERT(command_buffer_iter != command_buffer_entries_.end());
             if (command_buffer_iter != command_buffer_entries_.end())
             {
@@ -1735,46 +1564,41 @@ void VulkanSpirvTrackModifier::Process_vkCmdUpdateBuffer(const ApiCallInfo&     
         return;
     }
 
-    if (command_buffer_entries_.find(commandBuffer) == command_buffer_entries_.end() ||
-        command_buffer_entries_[commandBuffer].state != CommandBufferLifeCycle::Recording)
+    if (command_buffer_entries_.find(args.commandBuffer) == command_buffer_entries_.end() ||
+        command_buffer_entries_[args.commandBuffer].state != CommandBufferLifeCycle::Recording)
     {
         return;
     }
 
-    CommandBufferRecording& recording = command_buffer_recording[commandBuffer];
+    CommandBufferRecording& recording = command_buffer_recording[args.commandBuffer];
 
-    BufferWriteEvent event(SourceType::Update, dstBuffer);
-    event.srcPointer = { pData->GetPointer(), pData->GetPointer() + dataSize };
-    event.regions.emplace_back(0, dstOffset, dataSize);
+    BufferWriteEvent event(SourceType::Update, args.dstBuffer);
+    event.srcPointer = { args.pData.GetPointer(), args.pData.GetPointer() + args.dataSize };
+    event.regions.emplace_back(0, args.dstOffset, args.dataSize);
     event.call_index = call_info.index;
 
     recording.action_command_list.emplace_back(std::move(event));
     recording.in_operation = true;
 }
 
-void VulkanSpirvTrackModifier::Process_vkCmdCopyBuffer(const ApiCallInfo&                          call_info,
-                                                       format::HandleId                            commandBuffer,
-                                                       format::HandleId                            srcBuffer,
-                                                       format::HandleId                            dstBuffer,
-                                                       uint32_t                                    regionCount,
-                                                       StructPointerDecoder<Decoded_VkBufferCopy>* pRegions)
+void VulkanSpirvTrackModifier::Process_vkCmdCopyBuffer(const ApiCallInfo& call_info, args::CmdCopyBuffer& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    if (command_buffer_entries_.find(commandBuffer) == command_buffer_entries_.end() ||
-        command_buffer_entries_[commandBuffer].state != CommandBufferLifeCycle::Recording)
+    if (command_buffer_entries_.find(args.commandBuffer) == command_buffer_entries_.end() ||
+        command_buffer_entries_[args.commandBuffer].state != CommandBufferLifeCycle::Recording)
     {
         return;
     }
 
-    CommandBufferRecording& recording = command_buffer_recording[commandBuffer];
-    const VkBufferCopy*     regions   = pRegions->GetPointer();
+    CommandBufferRecording& recording = command_buffer_recording[args.commandBuffer];
+    const VkBufferCopy*     regions   = args.pRegions.GetPointer();
 
-    BufferWriteEvent event(SourceType::CopyBuffer, dstBuffer, srcBuffer);
-    for (uint32_t i = 0; i < regionCount; i++)
+    BufferWriteEvent event(SourceType::CopyBuffer, args.dstBuffer, args.srcBuffer);
+    for (uint32_t i = 0; i < args.regionCount; i++)
     {
         event.regions.emplace_back(regions[i]);
     }
@@ -1783,24 +1607,21 @@ void VulkanSpirvTrackModifier::Process_vkCmdCopyBuffer(const ApiCallInfo&       
     recording.in_operation = true;
 }
 
-void VulkanSpirvTrackModifier::Process_vkCmdCopyBuffer2(
-    const ApiCallInfo&                               call_info,
-    format::HandleId                                 commandBuffer,
-    StructPointerDecoder<Decoded_VkCopyBufferInfo2>* pCopyBufferInfo)
+void VulkanSpirvTrackModifier::Process_vkCmdCopyBuffer2(const ApiCallInfo& call_info, args::CmdCopyBuffer2& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    if (command_buffer_entries_.find(commandBuffer) == command_buffer_entries_.end() ||
-        command_buffer_entries_[commandBuffer].state != CommandBufferLifeCycle::Recording)
+    if (command_buffer_entries_.find(args.commandBuffer) == command_buffer_entries_.end() ||
+        command_buffer_entries_[args.commandBuffer].state != CommandBufferLifeCycle::Recording)
     {
         return;
     }
 
-    CommandBufferRecording& recording      = command_buffer_recording[commandBuffer];
-    const auto*             meta_copy_info = pCopyBufferInfo->GetMetaStructPointer();
+    CommandBufferRecording& recording      = command_buffer_recording[args.commandBuffer];
+    const auto*             meta_copy_info = args.pCopyBufferInfo.GetMetaStructPointer();
     const auto*             copy2          = meta_copy_info->pRegions->GetPointer();
 
     BufferWriteEvent event(SourceType::CopyBuffer, meta_copy_info->dstBuffer, meta_copy_info->srcBuffer);
@@ -1813,24 +1634,21 @@ void VulkanSpirvTrackModifier::Process_vkCmdCopyBuffer2(
     recording.in_operation = true;
 }
 
-void VulkanSpirvTrackModifier::Process_vkCmdCopyBuffer2KHR(
-    const ApiCallInfo&                               call_info,
-    format::HandleId                                 commandBuffer,
-    StructPointerDecoder<Decoded_VkCopyBufferInfo2>* pCopyBufferInfo)
+void VulkanSpirvTrackModifier::Process_vkCmdCopyBuffer2KHR(const ApiCallInfo& call_info, args::CmdCopyBuffer2KHR& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    if (command_buffer_entries_.find(commandBuffer) == command_buffer_entries_.end() ||
-        command_buffer_entries_[commandBuffer].state != CommandBufferLifeCycle::Recording)
+    if (command_buffer_entries_.find(args.commandBuffer) == command_buffer_entries_.end() ||
+        command_buffer_entries_[args.commandBuffer].state != CommandBufferLifeCycle::Recording)
     {
         return;
     }
 
-    CommandBufferRecording& recording      = command_buffer_recording[commandBuffer];
-    const auto*             meta_copy_info = pCopyBufferInfo->GetMetaStructPointer();
+    CommandBufferRecording& recording      = command_buffer_recording[args.commandBuffer];
+    const auto*             meta_copy_info = args.pCopyBufferInfo.GetMetaStructPointer();
     const auto*             copy2          = meta_copy_info->pRegions->GetPointer();
 
     BufferWriteEvent event(SourceType::CopyBuffer, meta_copy_info->dstBuffer, meta_copy_info->srcBuffer);
@@ -1844,29 +1662,25 @@ void VulkanSpirvTrackModifier::Process_vkCmdCopyBuffer2KHR(
 }
 
 void VulkanSpirvTrackModifier::Process_vkCmdBuildAccelerationStructuresKHR(
-    const ApiCallInfo&                                                         call_info,
-    format::HandleId                                                           commandBuffer,
-    uint32_t                                                                   infoCount,
-    StructPointerDecoder<Decoded_VkAccelerationStructureBuildGeometryInfoKHR>* pInfos,
-    StructPointerDecoder<Decoded_VkAccelerationStructureBuildRangeInfoKHR*>*   ppBuildRangeInfos)
+    const ApiCallInfo& call_info, args::CmdBuildAccelerationStructuresKHR& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    if (command_buffer_entries_.find(commandBuffer) == command_buffer_entries_.end() ||
-        command_buffer_entries_[commandBuffer].state != CommandBufferLifeCycle::Recording)
+    if (command_buffer_entries_.find(args.commandBuffer) == command_buffer_entries_.end() ||
+        command_buffer_entries_[args.commandBuffer].state != CommandBufferLifeCycle::Recording)
     {
         return;
     }
-    CommandBufferRecording& recording = command_buffer_recording.at(commandBuffer);
+    CommandBufferRecording& recording = command_buffer_recording.at(args.commandBuffer);
 
-    for (uint32_t info_index = 0; info_index < infoCount; info_index++)
+    for (uint32_t info_index = 0; info_index < args.infoCount; info_index++)
     {
-        const auto* build_range_info         = ppBuildRangeInfos->GetPointer()[info_index];
-        const auto& build_geometry_meta_info = pInfos->GetMetaStructPointer()[info_index];
-        const auto& build_geometry_info      = pInfos->GetPointer()[info_index];
+        const auto* build_range_info         = args.ppBuildRangeInfos.GetPointer()[info_index];
+        const auto& build_geometry_meta_info = args.pInfos.GetMetaStructPointer()[info_index];
+        const auto& build_geometry_info      = args.pInfos.GetPointer()[info_index];
 
         BuildAccelerationStructureAction build_action = {
             call_info.index, info_index, build_geometry_meta_info.dstAccelerationStructure, {}
@@ -1945,139 +1759,113 @@ void VulkanSpirvTrackModifier::Process_vkCmdBuildAccelerationStructuresKHR(
     recording.in_operation = true;
 }
 
-void VulkanSpirvTrackModifier::Process_vkCmdDispatch(const ApiCallInfo& call_info,
-                                                     format::HandleId   commandBuffer,
-                                                     uint32_t           groupCountX,
-                                                     uint32_t           groupCountY,
-                                                     uint32_t           groupCountZ)
+void VulkanSpirvTrackModifier::Process_vkCmdDispatch(const ApiCallInfo& call_info, args::CmdDispatch& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    if (command_buffer_entries_.find(commandBuffer) == command_buffer_entries_.end() ||
-        command_buffer_entries_[commandBuffer].state != CommandBufferLifeCycle::Recording)
+    if (command_buffer_entries_.find(args.commandBuffer) == command_buffer_entries_.end() ||
+        command_buffer_entries_[args.commandBuffer].state != CommandBufferLifeCycle::Recording)
     {
         return;
     }
-    command_buffer_recording[commandBuffer].bind_point = VK_PIPELINE_BIND_POINT_COMPUTE;
-    command_buffer_submit_recordings[commandBuffer].emplace_back(command_buffer_recording[commandBuffer]);
-    resetRecording(commandBuffer);
+    command_buffer_recording[args.commandBuffer].bind_point = VK_PIPELINE_BIND_POINT_COMPUTE;
+    command_buffer_submit_recordings[args.commandBuffer].emplace_back(command_buffer_recording[args.commandBuffer]);
+    resetRecording(args.commandBuffer);
 }
 
-void VulkanSpirvTrackModifier::Process_vkCmdDispatchIndirect(const ApiCallInfo& call_info,
-                                                             format::HandleId   commandBuffer,
-                                                             format::HandleId   buffer,
-                                                             VkDeviceSize       offset)
+void VulkanSpirvTrackModifier::Process_vkCmdDispatchIndirect(const ApiCallInfo&         call_info,
+                                                             args::CmdDispatchIndirect& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    if (command_buffer_entries_.find(commandBuffer) == command_buffer_entries_.end() ||
-        command_buffer_entries_[commandBuffer].state != CommandBufferLifeCycle::Recording)
+    if (command_buffer_entries_.find(args.commandBuffer) == command_buffer_entries_.end() ||
+        command_buffer_entries_[args.commandBuffer].state != CommandBufferLifeCycle::Recording)
     {
         return;
     }
 
-    command_buffer_recording[commandBuffer].bind_point = VK_PIPELINE_BIND_POINT_COMPUTE;
-    command_buffer_submit_recordings[commandBuffer].emplace_back(command_buffer_recording[commandBuffer]);
-    resetRecording(commandBuffer);
+    command_buffer_recording[args.commandBuffer].bind_point = VK_PIPELINE_BIND_POINT_COMPUTE;
+    command_buffer_submit_recordings[args.commandBuffer].emplace_back(command_buffer_recording[args.commandBuffer]);
+    resetRecording(args.commandBuffer);
 }
 
-void VulkanSpirvTrackModifier::Process_vkCmdDraw(const ApiCallInfo& call_info,
-                                                 format::HandleId   commandBuffer,
-                                                 uint32_t           vertexCount,
-                                                 uint32_t           instanceCount,
-                                                 uint32_t           firstVertex,
-                                                 uint32_t           firstInstance)
+void VulkanSpirvTrackModifier::Process_vkCmdDraw(const ApiCallInfo& call_info, args::CmdDraw& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    if (command_buffer_entries_.find(commandBuffer) == command_buffer_entries_.end() ||
-        command_buffer_entries_[commandBuffer].state != CommandBufferLifeCycle::Recording)
+    if (command_buffer_entries_.find(args.commandBuffer) == command_buffer_entries_.end() ||
+        command_buffer_entries_[args.commandBuffer].state != CommandBufferLifeCycle::Recording)
     {
         return;
     }
 
-    command_buffer_recording[commandBuffer].bind_point = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    command_buffer_submit_recordings[commandBuffer].emplace_back(command_buffer_recording[commandBuffer]);
-    resetRecording(commandBuffer);
+    command_buffer_recording[args.commandBuffer].bind_point = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    command_buffer_submit_recordings[args.commandBuffer].emplace_back(command_buffer_recording[args.commandBuffer]);
+    resetRecording(args.commandBuffer);
 }
 
-void VulkanSpirvTrackModifier::Process_vkCmdDrawIndexed(const ApiCallInfo& call_info,
-                                                        format::HandleId   commandBuffer,
-                                                        uint32_t           indexCount,
-                                                        uint32_t           instanceCount,
-                                                        uint32_t           firstIndex,
-                                                        int32_t            vertexOffset,
-                                                        uint32_t           firstInstance)
+void VulkanSpirvTrackModifier::Process_vkCmdDrawIndexed(const ApiCallInfo& call_info, args::CmdDrawIndexed& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    if (command_buffer_entries_.find(commandBuffer) == command_buffer_entries_.end() ||
-        command_buffer_entries_[commandBuffer].state != CommandBufferLifeCycle::Recording)
+    if (command_buffer_entries_.find(args.commandBuffer) == command_buffer_entries_.end() ||
+        command_buffer_entries_[args.commandBuffer].state != CommandBufferLifeCycle::Recording)
     {
         return;
     }
 
-    command_buffer_recording[commandBuffer].bind_point = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    command_buffer_submit_recordings[commandBuffer].emplace_back(command_buffer_recording[commandBuffer]);
-    resetRecording(commandBuffer);
+    command_buffer_recording[args.commandBuffer].bind_point = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    command_buffer_submit_recordings[args.commandBuffer].emplace_back(command_buffer_recording[args.commandBuffer]);
+    resetRecording(args.commandBuffer);
 }
 
-void VulkanSpirvTrackModifier::Process_vkCmdDrawIndirect(const ApiCallInfo& call_info,
-                                                         format::HandleId   commandBuffer,
-                                                         format::HandleId   buffer,
-                                                         VkDeviceSize       offset,
-                                                         uint32_t           drawCount,
-                                                         uint32_t           stride)
+void VulkanSpirvTrackModifier::Process_vkCmdDrawIndirect(const ApiCallInfo& call_info, args::CmdDrawIndirect& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    if (command_buffer_entries_.find(commandBuffer) == command_buffer_entries_.end() ||
-        command_buffer_entries_[commandBuffer].state != CommandBufferLifeCycle::Recording)
+    if (command_buffer_entries_.find(args.commandBuffer) == command_buffer_entries_.end() ||
+        command_buffer_entries_[args.commandBuffer].state != CommandBufferLifeCycle::Recording)
     {
         return;
     }
 
-    command_buffer_recording[commandBuffer].bind_point = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    command_buffer_submit_recordings[commandBuffer].emplace_back(command_buffer_recording[commandBuffer]);
-    resetRecording(commandBuffer);
+    command_buffer_recording[args.commandBuffer].bind_point = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    command_buffer_submit_recordings[args.commandBuffer].emplace_back(command_buffer_recording[args.commandBuffer]);
+    resetRecording(args.commandBuffer);
 }
 
-void VulkanSpirvTrackModifier::Process_vkCmdDrawIndexedIndirect(const ApiCallInfo& call_info,
-                                                                format::HandleId   commandBuffer,
-                                                                format::HandleId   buffer,
-                                                                VkDeviceSize       offset,
-                                                                uint32_t           drawCount,
-                                                                uint32_t           stride)
+void VulkanSpirvTrackModifier::Process_vkCmdDrawIndexedIndirect(const ApiCallInfo&            call_info,
+                                                                args::CmdDrawIndexedIndirect& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    if (command_buffer_entries_.find(commandBuffer) == command_buffer_entries_.end() ||
-        command_buffer_entries_[commandBuffer].state != CommandBufferLifeCycle::Recording)
+    if (command_buffer_entries_.find(args.commandBuffer) == command_buffer_entries_.end() ||
+        command_buffer_entries_[args.commandBuffer].state != CommandBufferLifeCycle::Recording)
     {
         return;
     }
 
-    command_buffer_recording[commandBuffer].bind_point = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    command_buffer_submit_recordings[commandBuffer].emplace_back(command_buffer_recording[commandBuffer]);
-    resetRecording(commandBuffer);
+    command_buffer_recording[args.commandBuffer].bind_point = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    command_buffer_submit_recordings[args.commandBuffer].emplace_back(command_buffer_recording[args.commandBuffer]);
+    resetRecording(args.commandBuffer);
 }
 
 void VulkanSpirvTrackModifier::process_SubmitInfo(uint64_t                             submitIndex,
@@ -2226,23 +2014,18 @@ void VulkanSpirvTrackModifier::signalSemaphoresFrom(uint64_t submitIndex)
     }
 }
 
-void VulkanSpirvTrackModifier::Process_vkQueueSubmit(const ApiCallInfo&                          call_info,
-                                                     VkResult                                    returnValue,
-                                                     format::HandleId                            queue,
-                                                     uint32_t                                    submitCount,
-                                                     StructPointerDecoder<Decoded_VkSubmitInfo>* pSubmits,
-                                                     format::HandleId                            fence)
+void VulkanSpirvTrackModifier::Process_vkQueueSubmit(const ApiCallInfo& call_info, args::QueueSubmit& args)
 {
     if (IsModificationPass())
     {
         return;
     }
 
-    const auto* meta_submit_infos = pSubmits->GetMetaStructPointer();
-    const auto* submit_infos      = pSubmits->GetPointer();
+    const auto* meta_submit_infos = args.pSubmits.GetMetaStructPointer();
+    const auto* submit_infos      = args.pSubmits.GetPointer();
 
     std::vector<format::HandleId> command_buffer;
-    for (uint32_t submit_index = 0; submit_index < submitCount; submit_index++)
+    for (uint32_t submit_index = 0; submit_index < args.submitCount; submit_index++)
     {
         for (uint32_t cmdBuffer_index = 0; cmdBuffer_index < submit_infos[submit_index].commandBufferCount;
              cmdBuffer_index++)
@@ -2286,12 +2069,7 @@ void VulkanSpirvTrackModifier::Process_vkQueueSubmit(const ApiCallInfo&         
     }
 }
 
-void VulkanSpirvTrackModifier::Process_vkQueueSubmit2(const ApiCallInfo&                           call_info,
-                                                      VkResult                                     returnValue,
-                                                      format::HandleId                             queue,
-                                                      uint32_t                                     submitCount,
-                                                      StructPointerDecoder<Decoded_VkSubmitInfo2>* pSubmits,
-                                                      format::HandleId                             fence)
+void VulkanSpirvTrackModifier::Process_vkQueueSubmit2(const ApiCallInfo& call_info, args::QueueSubmit2& args)
 {
     if (IsModificationPass())
     {
@@ -2299,13 +2077,13 @@ void VulkanSpirvTrackModifier::Process_vkQueueSubmit2(const ApiCallInfo&        
     }
 }
 
-void VulkanSpirvTrackModifier::Process_vkQueueSubmit2KHR(const ApiCallInfo&                           call_info,
-                                                         VkResult                                     returnValue,
-                                                         format::HandleId                             queue,
-                                                         uint32_t                                     submitCount,
-                                                         StructPointerDecoder<Decoded_VkSubmitInfo2>* pSubmits,
-                                                         format::HandleId                             fence)
-{}
+void VulkanSpirvTrackModifier::Process_vkQueueSubmit2KHR(const ApiCallInfo& call_info, args::QueueSubmit2KHR& args)
+{
+    if (IsModificationPass())
+    {
+        return;
+    }
+}
 
 void VulkanSpirvTrackModifier::resetRecording(format::HandleId commandBuffer)
 {
