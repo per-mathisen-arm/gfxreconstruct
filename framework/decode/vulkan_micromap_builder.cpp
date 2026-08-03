@@ -370,7 +370,7 @@ void VulkanMicromapBuilder::OnCmdCopyQueryPoolResults(const VulkanCommandBufferI
                                                pre_processed.parents.size(),
                                                pre_processed.buffer_info_wrapper->info_.handle,
                                                0,
-                                               8,
+                                               sizeof(uint64_t),
                                                VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
 
         VkBufferMemoryBarrier buffer_memory_barrier{};
@@ -380,7 +380,7 @@ void VulkanMicromapBuilder::OnCmdCopyQueryPoolResults(const VulkanCommandBufferI
         buffer_memory_barrier.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
         buffer_memory_barrier.buffer        = pre_processed.buffer_info_wrapper->info_.handle;
         buffer_memory_barrier.offset        = 0;
-        buffer_memory_barrier.size          = pre_processed.parents.size();
+        buffer_memory_barrier.size          = pre_processed.parents.size() * sizeof(uint64_t);
 
         functions_.cmd_pipeline_barrier(command_buffer_info->handle,
                                         VK_PIPELINE_STAGE_TRANSFER_BIT,

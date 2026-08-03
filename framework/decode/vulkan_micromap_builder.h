@@ -49,6 +49,8 @@ GFXRECON_BEGIN_NAMESPACE(decode)
 
 class VulkanMicromapBuilder
 {
+    friend class VulkanMicromapBuilderTestAccess;
+
   public:
     VulkanMicromapBuilder(const graphics::VulkanDeviceTable*      device_table,
                           const VulkanPhysicalDeviceInfo*         physical_device_info,

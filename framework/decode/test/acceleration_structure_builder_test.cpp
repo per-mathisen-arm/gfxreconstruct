@@ -29,6 +29,8 @@
 #include "decode/vulkan_object_info.h"
 #include "vulkan_resource_allocator_mock.h"
 
+#include <memory>
+#include <utility>
 #include <vector>
 
 using namespace gfxrecon;
@@ -179,3 +181,149 @@ SCENARIO_METHOD(TestFixture, "Create single AS object with valid sizes")
 // Test build process
 // Test compression
 // Test meta-commands
+
+GFXRECON_BEGIN_NAMESPACE(gfxrecon)
+GFXRECON_BEGIN_NAMESPACE(decode)
+
+class VulkanAccelerationStructureBuilderTestAccess
+{
+  public:
+    static void AddPendingCompaction(VulkanAccelerationStructureBuilder& builder,
+                                     VkQueryPool                         query_pool,
+                                     uint32_t                            first_query,
+                                     VkBuffer                            buffer,
+                                     size_t                              result_count,
+                                     VulkanResourceAllocator*            allocator)
+    {
+        VulkanBufferInfo buffer_info{};
+        buffer_info.handle = buffer;
+
+        std::vector<VkAccelerationStructureKHR> sources(result_count, VK_NULL_HANDLE);
+        builder.compacted_sizes_unprocessed_[query_pool].push_back(
+            { first_query,
+              std::make_unique<VulkanInternalBufferManager::BufferInfoWrapper>(
+                  buffer_info, VulkanDeviceMemoryInfo{}, allocator, nullptr),
+              std::move(sources) });
+    }
+};
+
+struct AccelerationStructureQueryCopyCapture
+{
+    VkCommandBuffer       command_buffer{ VK_NULL_HANDLE };
+    VkCommandBuffer       barrier_command_buffer{ VK_NULL_HANDLE };
+    VkQueryPool           query_pool{ VK_NULL_HANDLE };
+    uint32_t              first_query{ 0 };
+    uint32_t              query_count{ 0 };
+    VkBuffer              buffer{ VK_NULL_HANDLE };
+    VkDeviceSize          offset{ 0 };
+    VkDeviceSize          stride{ 0 };
+    VkQueryResultFlags    flags{ 0 };
+    VkPipelineStageFlags  src_stage_mask{ 0 };
+    VkPipelineStageFlags  dst_stage_mask{ 0 };
+    uint32_t              buffer_barrier_count{ 0 };
+    VkBufferMemoryBarrier buffer_barrier{};
+};
+
+thread_local AccelerationStructureQueryCopyCapture acceleration_structure_query_copy_capture;
+
+VKAPI_ATTR void VKAPI_CALL CaptureAccelerationStructureQueryCopy(VkCommandBuffer    command_buffer,
+                                                                 VkQueryPool        query_pool,
+                                                                 uint32_t           first_query,
+                                                                 uint32_t           query_count,
+                                                                 VkBuffer           buffer,
+                                                                 VkDeviceSize       offset,
+                                                                 VkDeviceSize       stride,
+                                                                 VkQueryResultFlags flags)
+{
+    acceleration_structure_query_copy_capture.command_buffer = command_buffer;
+    acceleration_structure_query_copy_capture.query_pool     = query_pool;
+    acceleration_structure_query_copy_capture.first_query    = first_query;
+    acceleration_structure_query_copy_capture.query_count    = query_count;
+    acceleration_structure_query_copy_capture.buffer         = buffer;
+    acceleration_structure_query_copy_capture.offset         = offset;
+    acceleration_structure_query_copy_capture.stride         = stride;
+    acceleration_structure_query_copy_capture.flags          = flags;
+}
+
+VKAPI_ATTR void VKAPI_CALL CaptureAccelerationStructureQueryBarrier(VkCommandBuffer      command_buffer,
+                                                                    VkPipelineStageFlags src_stage_mask,
+                                                                    VkPipelineStageFlags dst_stage_mask,
+                                                                    VkDependencyFlags,
+                                                                    uint32_t,
+                                                                    const VkMemoryBarrier*,
+                                                                    uint32_t                     buffer_barrier_count,
+                                                                    const VkBufferMemoryBarrier* buffer_barriers,
+                                                                    uint32_t,
+                                                                    const VkImageMemoryBarrier*)
+{
+    acceleration_structure_query_copy_capture.barrier_command_buffer = command_buffer;
+    acceleration_structure_query_copy_capture.src_stage_mask         = src_stage_mask;
+    acceleration_structure_query_copy_capture.dst_stage_mask         = dst_stage_mask;
+    acceleration_structure_query_copy_capture.buffer_barrier_count   = buffer_barrier_count;
+    if ((buffer_barrier_count > 0) && (buffer_barriers != nullptr))
+    {
+        acceleration_structure_query_copy_capture.buffer_barrier = buffer_barriers[0];
+    }
+}
+
+template <typename T>
+T MakeQueryBarrierHandle(format::HandleId id)
+{
+    return format::FromHandleId<T>(id);
+}
+
+TEST_CASE("Acceleration structure compacted-size query barrier covers every result byte",
+          "[decode][acceleration-structure][query]")
+{
+    const size_t result_count                 = GENERATE(size_t{ 1 }, size_t{ 3 });
+    acceleration_structure_query_copy_capture = {};
+
+    graphics::VulkanDeviceTable      device_table{};
+    VulkanResourceAllocatorMock      allocator{};
+    VulkanObjectInfoTable            object_info_table{};
+    VulkanDeviceAddressTracker       device_address_tracker{ object_info_table };
+    VkPhysicalDeviceMemoryProperties memory_properties{};
+
+    device_table.CmdCopyQueryPoolResults = CaptureAccelerationStructureQueryCopy;
+    device_table.CmdPipelineBarrier      = CaptureAccelerationStructureQueryBarrier;
+
+    const VkDevice        device         = MakeQueryBarrierHandle<VkDevice>(1001);
+    const VkCommandBuffer command_buffer = MakeQueryBarrierHandle<VkCommandBuffer>(1002);
+    const VkQueryPool     query_pool     = MakeQueryBarrierHandle<VkQueryPool>(1003);
+    const VkBuffer        buffer         = MakeQueryBarrierHandle<VkBuffer>(1004);
+    constexpr uint32_t    kFirstQuery    = 5;
+
+    VulkanAccelerationStructureBuilder builder(
+        &device_table, nullptr, device, &allocator, memory_properties, device_address_tracker);
+    VulkanAccelerationStructureBuilderTestAccess::AddPendingCompaction(
+        builder, query_pool, kFirstQuery, buffer, result_count, &allocator);
+
+    VulkanCommandBufferInfo command_buffer_info{};
+    command_buffer_info.handle = command_buffer;
+    VulkanQueryPoolInfo query_pool_info{};
+    query_pool_info.handle = query_pool;
+
+    builder.OnCmdCopyQueryPoolResults(&command_buffer_info, &query_pool_info);
+
+    REQUIRE(acceleration_structure_query_copy_capture.command_buffer == command_buffer);
+    REQUIRE(acceleration_structure_query_copy_capture.barrier_command_buffer == command_buffer);
+    REQUIRE(acceleration_structure_query_copy_capture.query_pool == query_pool);
+    REQUIRE(acceleration_structure_query_copy_capture.first_query == kFirstQuery);
+    REQUIRE(acceleration_structure_query_copy_capture.query_count == result_count);
+    REQUIRE(acceleration_structure_query_copy_capture.buffer == buffer);
+    REQUIRE(acceleration_structure_query_copy_capture.offset == 0);
+    REQUIRE(acceleration_structure_query_copy_capture.stride == sizeof(uint64_t));
+    REQUIRE(acceleration_structure_query_copy_capture.flags == (VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT));
+    REQUIRE(acceleration_structure_query_copy_capture.src_stage_mask == VK_PIPELINE_STAGE_TRANSFER_BIT);
+    REQUIRE(acceleration_structure_query_copy_capture.dst_stage_mask == VK_PIPELINE_STAGE_HOST_BIT);
+    REQUIRE(acceleration_structure_query_copy_capture.buffer_barrier_count == 1);
+    REQUIRE(acceleration_structure_query_copy_capture.buffer_barrier.sType == VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER);
+    REQUIRE(acceleration_structure_query_copy_capture.buffer_barrier.srcAccessMask == VK_ACCESS_TRANSFER_WRITE_BIT);
+    REQUIRE(acceleration_structure_query_copy_capture.buffer_barrier.dstAccessMask == VK_ACCESS_HOST_READ_BIT);
+    REQUIRE(acceleration_structure_query_copy_capture.buffer_barrier.buffer == buffer);
+    REQUIRE(acceleration_structure_query_copy_capture.buffer_barrier.offset == 0);
+    REQUIRE(acceleration_structure_query_copy_capture.buffer_barrier.size == result_count * sizeof(uint64_t));
+}
+
+GFXRECON_END_NAMESPACE(decode)
+GFXRECON_END_NAMESPACE(gfxrecon)

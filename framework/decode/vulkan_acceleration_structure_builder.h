@@ -42,6 +42,8 @@ GFXRECON_BEGIN_NAMESPACE(decode)
 // TODO: Consider support of CmdPushDescriptorSet/CmdPushDescriptorSetWithTemplate
 class VulkanAccelerationStructureBuilder
 {
+    friend class VulkanAccelerationStructureBuilderTestAccess;
+
   public:
     VulkanAccelerationStructureBuilder(const graphics::VulkanDeviceTable*      device_table,
                                        const VulkanPhysicalDeviceInfo*         physical_device_info,
