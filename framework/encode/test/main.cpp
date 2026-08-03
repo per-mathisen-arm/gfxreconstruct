@@ -30,6 +30,7 @@
 #include "encode/vulkan_capture_layer_settings.h"
 #include "encode/vulkan_handle_wrapper_util.h"
 #include "encode/vulkan_handle_wrappers.h"
+#include "encode/vulkan_state_tracker.h"
 #include "format/format.h"
 #include "format/format_util.h"
 
@@ -827,3 +828,119 @@ TEST_CASE("VkLayerSettingsCreateInfoEXT is parsed correctly", "[capture_layer_se
 
     gfxrecon::util::Log::Release();
 }
+
+GFXRECON_BEGIN_NAMESPACE(gfxrecon)
+GFXRECON_BEGIN_NAMESPACE(encode)
+
+format::HandleId GetQueueFamilyStateTrackerTestHandleId()
+{
+    static format::HandleId next_handle_id = 0x10000;
+    return next_handle_id++;
+}
+
+class QueueFamilyStateTrackerTestFixture
+{
+  public:
+    QueueFamilyStateTrackerTestFixture()
+    {
+        instance_        = reinterpret_cast<VkInstance>(instance_dispatch_storage_);
+        physical_device_ = reinterpret_cast<VkPhysicalDevice>(physical_device_dispatch_storage_);
+
+        vulkan_wrappers::CreateWrappedHandle<vulkan_wrappers::NoParentWrapper,
+                                             vulkan_wrappers::NoParentWrapper,
+                                             vulkan_wrappers::InstanceWrapper>(
+            vulkan_wrappers::NoParentWrapper::kHandleValue,
+            vulkan_wrappers::NoParentWrapper::kHandleValue,
+            &instance_,
+            GetQueueFamilyStateTrackerTestHandleId);
+        vulkan_wrappers::CreateWrappedHandle<vulkan_wrappers::InstanceWrapper,
+                                             vulkan_wrappers::NoParentWrapper,
+                                             vulkan_wrappers::PhysicalDeviceWrapper>(
+            instance_,
+            vulkan_wrappers::NoParentWrapper::kHandleValue,
+            &physical_device_,
+            GetQueueFamilyStateTrackerTestHandleId);
+    }
+
+    ~QueueFamilyStateTrackerTestFixture()
+    {
+        vulkan_wrappers::DestroyWrappedHandle<vulkan_wrappers::InstanceWrapper>(instance_);
+    }
+
+    vulkan_wrappers::PhysicalDeviceWrapper* GetPhysicalDeviceWrapper()
+    {
+        return vulkan_wrappers::GetWrapper<vulkan_wrappers::PhysicalDeviceWrapper>(physical_device_);
+    }
+
+    VkPhysicalDevice   physical_device_{ VK_NULL_HANDLE };
+    VulkanStateTracker state_tracker_{};
+
+  private:
+    void*      instance_dispatch_storage_[1]{ reinterpret_cast<void*>(1) };
+    void*      physical_device_dispatch_storage_[1]{ reinterpret_cast<void*>(2) };
+    VkInstance instance_{ VK_NULL_HANDLE };
+};
+
+void CheckQueueFamilyProperties(const VkQueueFamilyProperties& actual, const VkQueueFamilyProperties& expected)
+{
+    REQUIRE(actual.queueFlags == expected.queueFlags);
+    REQUIRE(actual.queueCount == expected.queueCount);
+    REQUIRE(actual.timestampValidBits == expected.timestampValidBits);
+    REQUIRE(actual.minImageTransferGranularity.width == expected.minImageTransferGranularity.width);
+    REQUIRE(actual.minImageTransferGranularity.height == expected.minImageTransferGranularity.height);
+    REQUIRE(actual.minImageTransferGranularity.depth == expected.minImageTransferGranularity.depth);
+}
+
+TEST_CASE_METHOD(QueueFamilyStateTrackerTestFixture,
+                 "Queue family properties are copied as complete structures",
+                 "[state_tracker][queue_family]")
+{
+    const VkQueueFamilyProperties properties[] = {
+        { VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_TRANSFER_BIT, 2, 37, { 1, 2, 3 } },
+        { VK_QUEUE_COMPUTE_BIT | VK_QUEUE_SPARSE_BINDING_BIT, 5, 59, { 4, 5, 6 } }
+    };
+
+    state_tracker_.TrackPhysicalDeviceQueueFamilyProperties(physical_device_, 2, properties);
+
+    const auto* wrapper = GetPhysicalDeviceWrapper();
+    REQUIRE(wrapper != nullptr);
+    REQUIRE(wrapper->queue_family_properties_call_id ==
+            format::ApiCallId::ApiCall_vkGetPhysicalDeviceQueueFamilyProperties);
+    REQUIRE(wrapper->queue_family_properties_count == 2);
+    REQUIRE(wrapper->queue_family_properties != nullptr);
+    CheckQueueFamilyProperties(wrapper->queue_family_properties[0], properties[0]);
+    CheckQueueFamilyProperties(wrapper->queue_family_properties[1], properties[1]);
+}
+
+TEST_CASE_METHOD(QueueFamilyStateTrackerTestFixture,
+                 "Queue family properties2 are copied as complete structures",
+                 "[state_tracker][queue_family]")
+{
+    const VkQueueFamilyProperties2 properties[] = {
+        { VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2,
+          nullptr,
+          { VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_PROTECTED_BIT, 3, 41, { 7, 8, 9 } } },
+        { VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2,
+          nullptr,
+          { VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT, 6, 61, { 10, 11, 12 } } }
+    };
+    constexpr auto kCallId = format::ApiCallId::ApiCall_vkGetPhysicalDeviceQueueFamilyProperties2;
+
+    state_tracker_.TrackPhysicalDeviceQueueFamilyProperties2(kCallId, physical_device_, 2, properties);
+
+    const auto* wrapper = GetPhysicalDeviceWrapper();
+    REQUIRE(wrapper != nullptr);
+    REQUIRE(wrapper->queue_family_properties_call_id == kCallId);
+    REQUIRE(wrapper->queue_family_properties_count == 2);
+    REQUIRE(wrapper->queue_family_properties2 != nullptr);
+    for (uint32_t i = 0; i < 2; ++i)
+    {
+        REQUIRE(wrapper->queue_family_properties2[i].sType == properties[i].sType);
+        REQUIRE(wrapper->queue_family_properties2[i].pNext == nullptr);
+        CheckQueueFamilyProperties(wrapper->queue_family_properties2[i].queueFamilyProperties,
+                                   properties[i].queueFamilyProperties);
+    }
+}
+
+GFXRECON_END_NAMESPACE(encode)
+GFXRECON_END_NAMESPACE(gfxrecon)
