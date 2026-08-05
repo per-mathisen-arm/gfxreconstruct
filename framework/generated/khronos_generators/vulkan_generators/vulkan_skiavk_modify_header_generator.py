@@ -333,23 +333,18 @@ class VulkanSkiavkModifierHeaderGenerator(VulkanBaseGenerator):
             )
 
             cmddef = '' if first else '\n'
-            if self.genOpts.is_override:
+            if cmd in api_exclusions:
                 cmddef += self.indent(
-                    'virtual ' + decl + ' override;', self.INDENT_SIZE
+                    decl + ' override;', self.INDENT_SIZE
                 )
             else:
-                if cmd in api_exclusions:
-                    cmddef += self.indent(
-                        'virtual ' + decl + ';', self.INDENT_SIZE
-                    )
-                else:
-                    for value in values:
-                        param_type = self.make_decoded_param_type(value)
-                        if param_type == 'format::HandleId':
-                            break
-                    cmddef += self.indent(
-                        'virtual ' + decl + '{ CheckSkiavk(%s);}' % value.name, self.INDENT_SIZE
-                    )
+                for value in values:
+                    param_type = self.make_decoded_param_type(value)
+                    if param_type == 'format::HandleId':
+                        break
+                cmddef += self.indent(
+                    decl + ' override { CheckSkiavk(args.%s);}' % value.name, self.INDENT_SIZE
+                )
 
             write(cmddef, file=self.outFile)
             first = False

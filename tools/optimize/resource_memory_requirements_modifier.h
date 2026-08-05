@@ -46,97 +46,35 @@ class ResourceMemoryRequirementsModifier : public util::VulkanModifierBase
     ResourceMemoryRequirementsModifier()           = default;
     ~ResourceMemoryRequirementsModifier() override = default;
 
-    virtual bool CanOptimize() override;
+    bool CanOptimize() override;
 
-    virtual void Process_vkCreateDevice(const ApiCallInfo&                                   call_info,
-                                        VkResult                                             returnValue,
-                                        format::HandleId                                     physicalDevice,
-                                        StructPointerDecoder<Decoded_VkDeviceCreateInfo>*    pCreateInfo,
-                                        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-                                        HandlePointerDecoder<VkDevice>*                      pDevice) override;
+    void Process_vkCreateDevice(const ApiCallInfo& call_info, args::CreateDevice& args) override;
 
-    virtual void Process_vkCreateBuffer(const ApiCallInfo&                                   call_info,
-                                        VkResult                                             returnValue,
-                                        format::HandleId                                     device,
-                                        StructPointerDecoder<Decoded_VkBufferCreateInfo>*    pCreateInfo,
-                                        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-                                        HandlePointerDecoder<VkBuffer>*                      pBuffer) override;
+    void Process_vkCreateBuffer(const ApiCallInfo& call_info, args::CreateBuffer& args) override;
 
-    virtual void Process_vkDestroyBuffer(const ApiCallInfo&                                   call_info,
-                                         format::HandleId                                     device,
-                                         format::HandleId                                     buffer,
-                                         StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator) override;
+    void Process_vkDestroyBuffer(const ApiCallInfo& call_info, args::DestroyBuffer& args) override;
 
-    virtual void Process_vkCreateImage(const ApiCallInfo&                                   call_info,
-                                       VkResult                                             returnValue,
-                                       format::HandleId                                     device,
-                                       StructPointerDecoder<Decoded_VkImageCreateInfo>*     pCreateInfo,
-                                       StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-                                       HandlePointerDecoder<VkImage>*                       pImage) override;
+    void Process_vkCreateImage(const ApiCallInfo& call_info, args::CreateImage& args) override;
 
-    virtual void Process_vkDestroyImage(const ApiCallInfo&                                   call_info,
-                                        format::HandleId                                     device,
-                                        format::HandleId                                     image,
-                                        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator) override;
+    void Process_vkDestroyImage(const ApiCallInfo& call_info, args::DestroyImage& args) override;
 
-    virtual void Process_vkCreateTensorARM(const ApiCallInfo&                                   call_info,
-                                           VkResult                                             returnValue,
-                                           format::HandleId                                     device,
-                                           StructPointerDecoder<Decoded_VkTensorCreateInfoARM>* pCreateInfo,
-                                           StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-                                           HandlePointerDecoder<VkTensorARM>*                   pTensor) override;
+    void Process_vkCreateTensorARM(const ApiCallInfo& call_info, args::CreateTensorARM& args) override;
 
-    virtual void Process_vkDestroyTensorARM(const ApiCallInfo&                                   call_info,
-                                            format::HandleId                                     device,
-                                            format::HandleId                                     tensor,
-                                            StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator) override;
+    void Process_vkDestroyTensorARM(const ApiCallInfo& call_info, args::DestroyTensorARM& args) override;
 
-    virtual void Process_vkBindBufferMemory(const ApiCallInfo& call_info,
-                                            VkResult           returnValue,
-                                            format::HandleId   device,
-                                            format::HandleId   buffer,
-                                            format::HandleId   memory,
-                                            VkDeviceSize       memory_offset) override;
+    void Process_vkBindBufferMemory(const ApiCallInfo& call_info, args::BindBufferMemory& args) override;
 
-    virtual void Process_vkBindImageMemory(const ApiCallInfo& call_info,
-                                           VkResult           returnValue,
-                                           format::HandleId   device,
-                                           format::HandleId   image,
-                                           format::HandleId   memory,
-                                           VkDeviceSize       memory_offset) override;
+    void Process_vkBindBufferMemory2(const ApiCallInfo& call_info, args::BindBufferMemory2& args) override;
 
-    virtual void Process_vkBindBufferMemory2(const ApiCallInfo&                                    call_info,
-                                             VkResult                                              returnValue,
-                                             format::HandleId                                      device,
-                                             uint32_t                                              bindInfoCount,
-                                             StructPointerDecoder<Decoded_VkBindBufferMemoryInfo>* pBindInfos) override;
+    void Process_vkBindBufferMemory2KHR(const ApiCallInfo& call_info, args::BindBufferMemory2KHR& args) override;
 
-    virtual void
-    Process_vkBindBufferMemory2KHR(const ApiCallInfo&                                    call_info,
-                                   VkResult                                              returnValue,
-                                   format::HandleId                                      device,
-                                   uint32_t                                              bindInfoCount,
-                                   StructPointerDecoder<Decoded_VkBindBufferMemoryInfo>* pBindInfos) override;
+    void Process_vkBindImageMemory(const ApiCallInfo& call_info, args::BindImageMemory& args) override;
 
-    virtual void Process_vkBindImageMemory2(const ApiCallInfo&                                   call_info,
-                                            VkResult                                             returnValue,
-                                            format::HandleId                                     device,
-                                            uint32_t                                             bindInfoCount,
-                                            StructPointerDecoder<Decoded_VkBindImageMemoryInfo>* pBindInfos) override;
+    void Process_vkBindImageMemory2(const ApiCallInfo& call_info, args::BindImageMemory2& args) override;
 
-    virtual void
-    Process_vkBindImageMemory2KHR(const ApiCallInfo&                                   call_info,
-                                  VkResult                                             returnValue,
-                                  format::HandleId                                     device,
-                                  uint32_t                                             bindInfoCount,
-                                  StructPointerDecoder<Decoded_VkBindImageMemoryInfo>* pBindInfos) override;
+    void Process_vkBindImageMemory2KHR(const ApiCallInfo& call_info, args::BindImageMemory2KHR& args) override;
 
-    virtual void
-    Process_vkBindTensorMemoryARM(const ApiCallInfo&                                       call_info,
-                                  VkResult                                                 returnValue,
-                                  format::HandleId                                         device,
-                                  uint32_t                                                 bindInfoCount,
-                                  StructPointerDecoder<Decoded_VkBindTensorMemoryInfoARM>* pBindInfos) override;
+    void Process_vkBindTensorMemoryARM(const ApiCallInfo& call_info, args::BindTensorMemoryARM& args) override;
 
   private:
     struct ResourceMemoryRequirementsInfo

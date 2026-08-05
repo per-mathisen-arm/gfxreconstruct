@@ -48,28 +48,14 @@ class VulkanMicromapModifier : public util::VulkanModifierBase
 
     bool CanOptimize() override;
 
-    virtual void Process_vkCreateMicromapEXT(const ApiCallInfo&                                     call_info,
-                                             VkResult                                               returnValue,
-                                             format::HandleId                                       device,
-                                             StructPointerDecoder<Decoded_VkMicromapCreateInfoEXT>* pCreateInfo,
-                                             StructPointerDecoder<Decoded_VkAllocationCallbacks>*   pAllocator,
-                                             HandlePointerDecoder<VkMicromapEXT>*                   pMicromap) override;
+    void Process_vkCreateMicromapEXT(const ApiCallInfo& call_info, args::CreateMicromapEXT& args) override;
 
-    virtual void Process_vkCmdBuildMicromapsEXT(const ApiCallInfo&                                    call_info,
-                                                format::HandleId                                      commandBuffer,
-                                                uint32_t                                              infoCount,
-                                                StructPointerDecoder<Decoded_VkMicromapBuildInfoEXT>* pInfos) override;
+    void Process_vkCmdBuildMicromapsEXT(const ApiCallInfo& call_info, args::CmdBuildMicromapsEXT& args) override;
 
-    virtual void
-    Process_vkGetMicromapBuildSizesEXT(const ApiCallInfo&                                         call_info,
-                                       format::HandleId                                           device,
-                                       VkAccelerationStructureBuildTypeKHR                        buildType,
-                                       StructPointerDecoder<Decoded_VkMicromapBuildInfoEXT>*      pBuildInfo,
-                                       StructPointerDecoder<Decoded_VkMicromapBuildSizesInfoEXT>* pSizeInfo) override;
+    void Process_vkGetMicromapBuildSizesEXT(const ApiCallInfo&              call_info,
+                                            args::GetMicromapBuildSizesEXT& args) override;
 
-    virtual void Process_vkCmdCopyMicromapEXT(const ApiCallInfo&                                   call_info,
-                                              format::HandleId                                     commandBuffer,
-                                              StructPointerDecoder<Decoded_VkCopyMicromapInfoEXT>* pInfo) override;
+    void Process_vkCmdCopyMicromapEXT(const ApiCallInfo& call_info, args::CmdCopyMicromapEXT& args) override;
 
   private:
     struct BuildInfoMicromaps

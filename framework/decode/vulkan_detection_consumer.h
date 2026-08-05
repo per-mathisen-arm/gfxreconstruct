@@ -42,16 +42,12 @@ class VulkanDetectionConsumer : public VulkanConsumer
     VulkanDetectionConsumer(uint64_t block_limit = kDefaultBlockLimit) :
         block_limit_(block_limit), vulkan_consumer_usage_(false)
     {}
-    bool         WasVulkanAPIDetected() const { return vulkan_consumer_usage_; }
-    virtual void Process_vkCreateInstance(const ApiCallInfo&                                   call_info,
-                                          VkResult                                             returnValue,
-                                          StructPointerDecoder<Decoded_VkInstanceCreateInfo>*  pCreateInfo,
-                                          StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-                                          HandlePointerDecoder<VkInstance>*                    pInstance) override
+    bool WasVulkanAPIDetected() const { return vulkan_consumer_usage_; }
+    void Process_vkCreateInstance(const ApiCallInfo& call_info, args::CreateInstance& args) override
     {
         vulkan_consumer_usage_ = true;
     }
-    virtual bool IsComplete(uint64_t block_index) override
+    bool IsComplete(uint64_t block_index) override
     {
         return ((block_limit_ != kNoBlockLimit) && (block_index > block_limit_)) || WasVulkanAPIDetected();
     }

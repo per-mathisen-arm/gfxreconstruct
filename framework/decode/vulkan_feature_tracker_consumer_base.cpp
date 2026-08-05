@@ -385,14 +385,10 @@ VulkanFeatureTrackerConsumerBase::VulkanFeatureTrackerConsumerBase()
     supported_device_extensions_map_   = { { VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME, false } };
 }
 
-void VulkanFeatureTrackerConsumerBase::Process_vkCreateInstance(
-    const ApiCallInfo&                                   call_info,
-    VkResult                                             returnValue,
-    StructPointerDecoder<Decoded_VkInstanceCreateInfo>*  pCreateInfo,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-    HandlePointerDecoder<VkInstance>*                    pInstance)
+void VulkanFeatureTrackerConsumerBase::Process_vkCreateInstance(const ApiCallInfo&    call_info,
+                                                                args::CreateInstance& args)
 {
-    auto pCreateInfoDec = pCreateInfo->GetMetaStructPointer()->decoded_value;
+    auto pCreateInfoDec = args.pCreateInfo.GetMetaStructPointer()->decoded_value;
 
     if (pCreateInfoDec->enabledExtensionCount)
     {
@@ -419,25 +415,19 @@ void VulkanFeatureTrackerConsumerBase::Process_vkCreateInstance(
             parameter_buffer_->Clear();
 
             gfxrecon::encode::ParameterEncoder encoder(parameter_buffer_);
-            EncodeStructPtr(&encoder, pCreateInfo->GetPointer());
-            EncodeStructPtr(&encoder, pAllocator->GetPointer());
-            encoder.EncodeHandleIdPtr(pInstance->GetPointer());
-            encoder.EncodeEnumValue(returnValue);
+            EncodeStructPtr(&encoder, args.pCreateInfo.GetPointer());
+            EncodeStructPtr(&encoder, args.pAllocator.GetPointer());
+            encoder.EncodeHandleIdPtr(args.pInstance.GetPointer());
+            encoder.EncodeEnumValue(args.result);
 
             output_instance_extensions_vector_.pop_back();
         }
     }
 }
 
-void VulkanFeatureTrackerConsumerBase::Process_vkCreateDevice(
-    const ApiCallInfo&                                   call_info,
-    VkResult                                             returnValue,
-    format::HandleId                                     physicalDevice,
-    StructPointerDecoder<Decoded_VkDeviceCreateInfo>*    pCreateInfo,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-    HandlePointerDecoder<VkDevice>*                      pDevice)
+void VulkanFeatureTrackerConsumerBase::Process_vkCreateDevice(const ApiCallInfo& call_info, args::CreateDevice& args)
 {
-    auto pCreateInfoDec = pCreateInfo->GetMetaStructPointer()->decoded_value;
+    auto pCreateInfoDec = args.pCreateInfo.GetMetaStructPointer()->decoded_value;
 
     auto pEnabledFeatures = pCreateInfoDec->pEnabledFeatures;
 
@@ -562,39 +552,29 @@ void VulkanFeatureTrackerConsumerBase::Process_vkCreateDevice(
         parameter_buffer_->Clear();
 
         gfxrecon::encode::ParameterEncoder encoder(parameter_buffer_);
-        encoder.EncodeHandleIdValue(physicalDevice);
-        EncodeStructPtr(&encoder, pCreateInfo->GetPointer());
-        EncodeStructPtr(&encoder, pAllocator->GetPointer());
-        encoder.EncodeHandleIdPtr(pDevice->GetPointer());
-        encoder.EncodeEnumValue(returnValue);
+        encoder.EncodeHandleIdValue(args.physicalDevice);
+        EncodeStructPtr(&encoder, args.pCreateInfo.GetPointer());
+        EncodeStructPtr(&encoder, args.pAllocator.GetPointer());
+        encoder.EncodeHandleIdPtr(args.pDevice.GetPointer());
+        encoder.EncodeEnumValue(args.result);
     }
 }
 
-void VulkanFeatureTrackerConsumerBase::Process_vkCmdBeginRendering(
-    const ApiCallInfo&                             call_info,
-    format::HandleId                               commandBuffer,
-    StructPointerDecoder<Decoded_VkRenderingInfo>* pRenderingInfo)
+void VulkanFeatureTrackerConsumerBase::Process_vkCmdBeginRendering(const ApiCallInfo&       call_info,
+                                                                   args::CmdBeginRendering& args)
 {
     core13_.dynamicRendering = true;
 }
 
-void VulkanFeatureTrackerConsumerBase::Process_vkCmdBeginRenderingKHR(
-    const ApiCallInfo&                             call_info,
-    format::HandleId                               commandBuffer,
-    StructPointerDecoder<Decoded_VkRenderingInfo>* pRenderingInfo)
+void VulkanFeatureTrackerConsumerBase::Process_vkCmdBeginRenderingKHR(const ApiCallInfo&          call_info,
+                                                                      args::CmdBeginRenderingKHR& args)
 {
     core13_.dynamicRendering = true;
 }
 
-void VulkanFeatureTrackerConsumerBase::Process_vkCreateBuffer(
-    const ApiCallInfo&                                   call_info,
-    VkResult                                             returnValue,
-    format::HandleId                                     device,
-    StructPointerDecoder<Decoded_VkBufferCreateInfo>*    pCreateInfo,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-    HandlePointerDecoder<VkBuffer>*                      pBuffer)
+void VulkanFeatureTrackerConsumerBase::Process_vkCreateBuffer(const ApiCallInfo& call_info, args::CreateBuffer& args)
 {
-    auto pCreateInfoDec = pCreateInfo->GetMetaStructPointer()->decoded_value;
+    auto pCreateInfoDec = args.pCreateInfo.GetMetaStructPointer()->decoded_value;
 
     if (pCreateInfoDec->flags & VK_BUFFER_CREATE_SPARSE_ALIASED_BIT)
     {
@@ -610,15 +590,9 @@ void VulkanFeatureTrackerConsumerBase::Process_vkCreateBuffer(
     }
 }
 
-void VulkanFeatureTrackerConsumerBase::Process_vkCreateImage(
-    const ApiCallInfo&                                   call_info,
-    VkResult                                             returnValue,
-    format::HandleId                                     device,
-    StructPointerDecoder<Decoded_VkImageCreateInfo>*     pCreateInfo,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-    HandlePointerDecoder<VkImage>*                       pImage)
+void VulkanFeatureTrackerConsumerBase::Process_vkCreateImage(const ApiCallInfo& call_info, args::CreateImage& args)
 {
-    auto pCreateInfoDec = pCreateInfo->GetMetaStructPointer()->decoded_value;
+    auto pCreateInfoDec = args.pCreateInfo.GetMetaStructPointer()->decoded_value;
 
     if ((pCreateInfoDec->usage & VK_IMAGE_USAGE_STORAGE_BIT) && (pCreateInfoDec->samples != VK_SAMPLE_COUNT_1_BIT))
     {
@@ -661,34 +635,22 @@ void VulkanFeatureTrackerConsumerBase::Process_vkCreateImage(
     }
 }
 
-void VulkanFeatureTrackerConsumerBase::Process_vkCreateImageView(
-    const ApiCallInfo&                                   call_info,
-    VkResult                                             returnValue,
-    format::HandleId                                     device,
-    StructPointerDecoder<Decoded_VkImageViewCreateInfo>* pCreateInfo,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-    HandlePointerDecoder<VkImageView>*                   pView)
+void VulkanFeatureTrackerConsumerBase::Process_vkCreateImageView(const ApiCallInfo&     call_info,
+                                                                 args::CreateImageView& args)
 {
-    auto pCreateInfoDec = pCreateInfo->GetMetaStructPointer()->decoded_value;
+    auto pCreateInfoDec = args.pCreateInfo.GetMetaStructPointer()->decoded_value;
     if (pCreateInfoDec->viewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY)
     {
         core10_.imageCubeArray = true;
     }
 }
 
-void VulkanFeatureTrackerConsumerBase::Process_vkCreateGraphicsPipelines(
-    const ApiCallInfo&                                          call_info,
-    VkResult                                                    returnValue,
-    format::HandleId                                            device,
-    format::HandleId                                            pipelineCache,
-    uint32_t                                                    createInfoCount,
-    StructPointerDecoder<Decoded_VkGraphicsPipelineCreateInfo>* pCreateInfos,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>*        pAllocator,
-    HandlePointerDecoder<VkPipeline>*                           pPipelines)
+void VulkanFeatureTrackerConsumerBase::Process_vkCreateGraphicsPipelines(const ApiCallInfo&             call_info,
+                                                                         args::CreateGraphicsPipelines& args)
 {
-    VkGraphicsPipelineCreateInfo* pCreateInfosDec = pCreateInfos->GetMetaStructPointer()->decoded_value;
+    VkGraphicsPipelineCreateInfo* pCreateInfosDec = args.pCreateInfos.GetMetaStructPointer()->decoded_value;
 
-    for (uint32_t i = 0; i < createInfoCount; i++)
+    for (uint32_t i = 0; i < args.createInfoCount; i++)
     {
         if (pCreateInfosDec[i].pMultisampleState != nullptr &&
             pCreateInfosDec[i].pMultisampleState->sampleShadingEnable == VK_TRUE)
@@ -720,7 +682,7 @@ void VulkanFeatureTrackerConsumerBase::Process_vkCreateGraphicsPipelines(
         }
     }
 
-    for (uint32_t i = 0; i < createInfoCount; i++)
+    for (uint32_t i = 0; i < args.createInfoCount; i++)
     {
         if (pCreateInfosDec[i].pColorBlendState == nullptr)
         {
@@ -758,7 +720,7 @@ void VulkanFeatureTrackerConsumerBase::Process_vkCreateGraphicsPipelines(
         }
     }
 
-    for (uint32_t i = 0; i < createInfoCount; i++)
+    for (uint32_t i = 0; i < args.createInfoCount; i++)
     {
         if (pCreateInfosDec[i].pColorBlendState != nullptr &&
             pCreateInfosDec[i].pColorBlendState->logicOpEnable == VK_TRUE)
@@ -793,7 +755,7 @@ void VulkanFeatureTrackerConsumerBase::Process_vkCreateGraphicsPipelines(
         }
     }
 
-    for (uint32_t i = 0; i < createInfoCount; i++)
+    for (uint32_t i = 0; i < args.createInfoCount; i++)
     {
         if (pCreateInfosDec[i].pColorBlendState == nullptr)
         {
@@ -843,7 +805,7 @@ void VulkanFeatureTrackerConsumerBase::Process_vkCreateGraphicsPipelines(
         }
     }
 
-    for (uint32_t i = 0; i < createInfoCount; i++)
+    for (uint32_t i = 0; i < args.createInfoCount; i++)
     {
         for (uint32_t stage_index = 0; stage_index < pCreateInfosDec[i].stageCount; stage_index++)
         {
@@ -852,38 +814,23 @@ void VulkanFeatureTrackerConsumerBase::Process_vkCreateGraphicsPipelines(
     }
 }
 
-void VulkanFeatureTrackerConsumerBase::Process_vkCreateComputePipelines(
-    const ApiCallInfo&                                         call_info,
-    VkResult                                                   returnValue,
-    format::HandleId                                           device,
-    format::HandleId                                           pipelineCache,
-    uint32_t                                                   createInfoCount,
-    StructPointerDecoder<Decoded_VkComputePipelineCreateInfo>* pCreateInfos,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>*       pAllocator,
-    HandlePointerDecoder<VkPipeline>*                          pPipelines)
+void VulkanFeatureTrackerConsumerBase::Process_vkCreateComputePipelines(const ApiCallInfo&            call_info,
+                                                                        args::CreateComputePipelines& args)
 {
-    VkComputePipelineCreateInfo* pCreateInfosDec = pCreateInfos->GetMetaStructPointer()->decoded_value;
+    VkComputePipelineCreateInfo* pCreateInfosDec = args.pCreateInfos.GetMetaStructPointer()->decoded_value;
 
-    for (uint32_t i = 0; i < createInfoCount; i++)
+    for (uint32_t i = 0; i < args.createInfoCount; i++)
     {
         Process_VkPipelineShaderStageCreateInfo(&pCreateInfosDec[i].stage);
     }
 }
 
-void VulkanFeatureTrackerConsumerBase::Process_vkCreateRayTracingPipelinesKHR(
-    const ApiCallInfo&                                               call_info,
-    VkResult                                                         returnValue,
-    format::HandleId                                                 device,
-    format::HandleId                                                 deferredOperation,
-    format::HandleId                                                 pipelineCache,
-    uint32_t                                                         createInfoCount,
-    StructPointerDecoder<Decoded_VkRayTracingPipelineCreateInfoKHR>* pCreateInfos,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>*             pAllocator,
-    HandlePointerDecoder<VkPipeline>*                                pPipelines)
+void VulkanFeatureTrackerConsumerBase::Process_vkCreateRayTracingPipelinesKHR(const ApiCallInfo& call_info,
+                                                                              args::CreateRayTracingPipelinesKHR& args)
 {
-    VkRayTracingPipelineCreateInfoKHR* pCreateInfosDec = pCreateInfos->GetMetaStructPointer()->decoded_value;
+    VkRayTracingPipelineCreateInfoKHR* pCreateInfosDec = args.pCreateInfos.GetMetaStructPointer()->decoded_value;
 
-    for (uint32_t i = 0; i < createInfoCount; i++)
+    for (uint32_t i = 0; i < args.createInfoCount; i++)
     {
         for (uint32_t stage_index = 0; stage_index < pCreateInfosDec[i].stageCount; stage_index++)
         {
@@ -927,69 +874,46 @@ void VulkanFeatureTrackerConsumerBase::Process_VkPipelineShaderStageCreateInfo(
     }
 }
 
-void VulkanFeatureTrackerConsumerBase::Process_vkCmdDrawIndirect(const ApiCallInfo& call_info,
-                                                                 format::HandleId   commandBuffer,
-                                                                 format::HandleId   buffer,
-                                                                 VkDeviceSize       offset,
-                                                                 uint32_t           drawCount,
-                                                                 uint32_t           stride)
+void VulkanFeatureTrackerConsumerBase::Process_vkCmdDrawIndirect(const ApiCallInfo&     call_info,
+                                                                 args::CmdDrawIndirect& args)
 {
-    if (drawCount != 0 && drawCount != 1)
+    if (args.drawCount != 0 && args.drawCount != 1)
     {
         core10_.multiDrawIndirect = true;
     }
 }
 
-void VulkanFeatureTrackerConsumerBase::Process_vkCmdDrawIndirectCount(const ApiCallInfo& call_info,
-                                                                      format::HandleId   commandBuffer,
-                                                                      format::HandleId   buffer,
-                                                                      VkDeviceSize       offset,
-                                                                      format::HandleId   countBuffer,
-                                                                      VkDeviceSize       countBufferOffset,
-                                                                      uint32_t           maxDrawCount,
-                                                                      uint32_t           stride)
+void VulkanFeatureTrackerConsumerBase::Process_vkCmdDrawIndirectCount(const ApiCallInfo&          call_info,
+                                                                      args::CmdDrawIndirectCount& args)
 {
     core12_.drawIndirectCount = true;
 }
 
-void VulkanFeatureTrackerConsumerBase::Process_vkCmdDrawIndexedIndirect(const ApiCallInfo& call_info,
-                                                                        format::HandleId   commandBuffer,
-                                                                        format::HandleId   buffer,
-                                                                        VkDeviceSize       offset,
-                                                                        uint32_t           drawCount,
-                                                                        uint32_t           stride)
+void VulkanFeatureTrackerConsumerBase::Process_vkCmdDrawIndexedIndirect(const ApiCallInfo&            call_info,
+                                                                        args::CmdDrawIndexedIndirect& args)
 {
-    if (drawCount != 0 && drawCount != 1)
+    if (args.drawCount != 0 && args.drawCount != 1)
     {
         core10_.multiDrawIndirect = true;
     }
 }
 
 void VulkanFeatureTrackerConsumerBase::Process_vkCmdDrawIndexedIndirectCount(const ApiCallInfo& call_info,
-                                                                             format::HandleId   commandBuffer,
-                                                                             format::HandleId   buffer,
-                                                                             VkDeviceSize       offset,
-                                                                             format::HandleId   countBuffer,
-                                                                             VkDeviceSize       countBufferOffset,
-                                                                             uint32_t           maxDrawCount,
-                                                                             uint32_t           stride)
+                                                                             args::CmdDrawIndexedIndirectCount& args)
 {
     core12_.drawIndirectCount = true;
 }
 
-void VulkanFeatureTrackerConsumerBase::Process_vkBeginCommandBuffer(
-    const ApiCallInfo&                                      call_info,
-    VkResult                                                returnValue,
-    format::HandleId                                        commandBuffer,
-    StructPointerDecoder<Decoded_VkCommandBufferBeginInfo>* pBeginInfo)
+void VulkanFeatureTrackerConsumerBase::Process_vkBeginCommandBuffer(const ApiCallInfo&        call_info,
+                                                                    args::BeginCommandBuffer& args)
 {
-    if (pBeginInfo->GetMetaStructPointer() == nullptr ||
-        pBeginInfo->GetMetaStructPointer()->decoded_value->pInheritanceInfo == nullptr)
+    if (args.pBeginInfo.GetMetaStructPointer() == nullptr ||
+        args.pBeginInfo.GetMetaStructPointer()->decoded_value->pInheritanceInfo == nullptr)
     {
         return;
     }
 
-    auto pInheritanceInfoDec = pBeginInfo->GetMetaStructPointer()->decoded_value->pInheritanceInfo;
+    auto pInheritanceInfoDec = args.pBeginInfo.GetMetaStructPointer()->decoded_value->pInheritanceInfo;
 
     // Potential TODO, bitwise OR new VkQueryControlFlagBits values (currently only VK_QUERY_CONTROL_PRECISE_BIT exists)
     if (pInheritanceInfoDec->occlusionQueryEnable != VK_FALSE ||
@@ -999,59 +923,41 @@ void VulkanFeatureTrackerConsumerBase::Process_vkBeginCommandBuffer(
     }
 }
 
-void VulkanFeatureTrackerConsumerBase::Process_vkCmdSetPolygonModeEXT(const ApiCallInfo& call_info,
-                                                                      format::HandleId   commandBuffer,
-                                                                      VkPolygonMode      polygonMode)
+void VulkanFeatureTrackerConsumerBase::Process_vkCmdSetPolygonModeEXT(const ApiCallInfo&          call_info,
+                                                                      args::CmdSetPolygonModeEXT& args)
 {
-    if (polygonMode == VK_POLYGON_MODE_POINT || polygonMode == VK_POLYGON_MODE_LINE)
+    if (args.polygonMode == VK_POLYGON_MODE_POINT || args.polygonMode == VK_POLYGON_MODE_LINE)
     {
         core10_.fillModeNonSolid = true;
     }
 }
-void VulkanFeatureTrackerConsumerBase::Process_vkCmdSetViewport(const ApiCallInfo&                        call_info,
-                                                                format::HandleId                          commandBuffer,
-                                                                uint32_t                                  firstViewport,
-                                                                uint32_t                                  viewportCount,
-                                                                StructPointerDecoder<Decoded_VkViewport>* pViewports)
+void VulkanFeatureTrackerConsumerBase::Process_vkCmdSetViewport(const ApiCallInfo&    call_info,
+                                                                args::CmdSetViewport& args)
 {
-    if (firstViewport != 0 || viewportCount != 1)
+    if (args.firstViewport != 0 || args.viewportCount != 1)
     {
         core10_.multiViewport = true;
     }
 }
-void VulkanFeatureTrackerConsumerBase::Process_vkCmdSetScissor(const ApiCallInfo&                      call_info,
-                                                               format::HandleId                        commandBuffer,
-                                                               uint32_t                                firstScissor,
-                                                               uint32_t                                scissorCount,
-                                                               StructPointerDecoder<Decoded_VkRect2D>* pScissors)
+void VulkanFeatureTrackerConsumerBase::Process_vkCmdSetScissor(const ApiCallInfo& call_info, args::CmdSetScissor& args)
 {
-    if (firstScissor != 0 || scissorCount != 1)
+    if (args.firstScissor != 0 || args.scissorCount != 1)
     {
         core10_.multiViewport = true;
     }
 }
 
-void VulkanFeatureTrackerConsumerBase::Process_vkCmdSetExclusiveScissorNV(
-    const ApiCallInfo&                      call_info,
-    format::HandleId                        commandBuffer,
-    uint32_t                                firstExclusiveScissor,
-    uint32_t                                exclusiveScissorCount,
-    StructPointerDecoder<Decoded_VkRect2D>* pExclusiveScissors)
+void VulkanFeatureTrackerConsumerBase::Process_vkCmdSetExclusiveScissorNV(const ApiCallInfo&              call_info,
+                                                                          args::CmdSetExclusiveScissorNV& args)
 {
-    if (firstExclusiveScissor != 0 || exclusiveScissorCount != 1)
+    if (args.firstExclusiveScissor != 0 || args.exclusiveScissorCount != 1)
     {
         core10_.multiViewport = true;
     }
 }
-void VulkanFeatureTrackerConsumerBase::Process_vkCreateSampler(
-    const ApiCallInfo&                                   call_info,
-    VkResult                                             returnValue,
-    format::HandleId                                     device,
-    StructPointerDecoder<Decoded_VkSamplerCreateInfo>*   pCreateInfo,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-    HandlePointerDecoder<VkSampler>*                     pSampler)
+void VulkanFeatureTrackerConsumerBase::Process_vkCreateSampler(const ApiCallInfo& call_info, args::CreateSampler& args)
 {
-    auto pCreateInfoDec = pCreateInfo->GetMetaStructPointer()->decoded_value;
+    auto pCreateInfoDec = args.pCreateInfo.GetMetaStructPointer()->decoded_value;
 
     if (pCreateInfoDec->anisotropyEnable == VK_TRUE)
     {
@@ -1067,15 +973,10 @@ void VulkanFeatureTrackerConsumerBase::Process_vkCreateSampler(
     }
 }
 
-void VulkanFeatureTrackerConsumerBase::Process_vkCreateQueryPool(
-    const ApiCallInfo&                                   call_info,
-    VkResult                                             returnValue,
-    format::HandleId                                     device,
-    StructPointerDecoder<Decoded_VkQueryPoolCreateInfo>* pCreateInfo,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-    HandlePointerDecoder<VkQueryPool>*                   pQueryPool)
+void VulkanFeatureTrackerConsumerBase::Process_vkCreateQueryPool(const ApiCallInfo&     call_info,
+                                                                 args::CreateQueryPool& args)
 {
-    auto pCreateInfoDec = pCreateInfo->GetPointer();
+    auto pCreateInfoDec = args.pCreateInfo.GetPointer();
 
     if (pCreateInfoDec->queryType == VK_QUERY_TYPE_PIPELINE_STATISTICS && pCreateInfoDec->pipelineStatistics != 0)
     {
@@ -1083,38 +984,24 @@ void VulkanFeatureTrackerConsumerBase::Process_vkCreateQueryPool(
     }
 }
 
-void VulkanFeatureTrackerConsumerBase::Process_vkResetQueryPool(const ApiCallInfo& call_info,
-                                                                format::HandleId   device,
-                                                                format::HandleId   queryPool,
-                                                                uint32_t           firstQuery,
-                                                                uint32_t           queryCount)
+void VulkanFeatureTrackerConsumerBase::Process_vkResetQueryPool(const ApiCallInfo&    call_info,
+                                                                args::ResetQueryPool& args)
 {
     core12_.hostQueryReset = true;
 }
 
-void VulkanFeatureTrackerConsumerBase::Process_vkCreateSwapchainKHR(
-    const ApiCallInfo&                                      call_info,
-    VkResult                                                returnValue,
-    format::HandleId                                        device,
-    StructPointerDecoder<Decoded_VkSwapchainCreateInfoKHR>* pCreateInfo,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>*    pAllocator,
-    HandlePointerDecoder<VkSwapchainKHR>*                   pSwapchain)
+void VulkanFeatureTrackerConsumerBase::Process_vkCreateSwapchainKHR(const ApiCallInfo&        call_info,
+                                                                    args::CreateSwapchainKHR& args)
 {
-    auto pCreateInfoDec = pCreateInfo->GetMetaStructPointer()->decoded_value;
+    auto pCreateInfoDec = args.pCreateInfo.GetMetaStructPointer()->decoded_value;
     checkSwapchainColorspaceEXT(pCreateInfoDec->imageColorSpace);
 }
 
-void VulkanFeatureTrackerConsumerBase::Process_vkCreateSharedSwapchainsKHR(
-    const ApiCallInfo&                                      call_info,
-    VkResult                                                returnValue,
-    format::HandleId                                        device,
-    uint32_t                                                swapchainCount,
-    StructPointerDecoder<Decoded_VkSwapchainCreateInfoKHR>* pCreateInfos,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>*    pAllocator,
-    HandlePointerDecoder<VkSwapchainKHR>*                   pSwapchains)
+void VulkanFeatureTrackerConsumerBase::Process_vkCreateSharedSwapchainsKHR(const ApiCallInfo&               call_info,
+                                                                           args::CreateSharedSwapchainsKHR& args)
 {
-    auto pCreateInfosDec = pCreateInfos->GetMetaStructPointer()->decoded_value;
-    for (uint32_t i = 0; i < swapchainCount; i++)
+    auto pCreateInfosDec = args.pCreateInfos.GetMetaStructPointer()->decoded_value;
+    for (uint32_t i = 0; i < args.swapchainCount; i++)
     {
         checkSwapchainColorspaceEXT(pCreateInfosDec[i].imageColorSpace);
     }
@@ -1135,107 +1022,85 @@ void VulkanFeatureTrackerConsumerBase::checkSwapchainColorspaceEXT(VkColorSpaceK
     }
 }
 
-void VulkanFeatureTrackerConsumerBase::Process_vkCmdBindIndexBuffer(const ApiCallInfo& call_info,
-                                                                    format::HandleId   commandBuffer,
-                                                                    format::HandleId   buffer,
-                                                                    VkDeviceSize       offset,
-                                                                    VkIndexType        indexType)
+void VulkanFeatureTrackerConsumerBase::Process_vkCmdBindIndexBuffer(const ApiCallInfo&        call_info,
+                                                                    args::CmdBindIndexBuffer& args)
 {
-    if (indexType == VK_INDEX_TYPE_UINT32)
+    if (args.indexType == VK_INDEX_TYPE_UINT32)
     {
         core10_.fullDrawIndexUint32 = true; // defensive assumption
     }
-    if (indexType == VK_INDEX_TYPE_UINT8)
+    if (args.indexType == VK_INDEX_TYPE_UINT8)
     {
         core14_.indexTypeUint8 = true;
     }
 }
 
-void VulkanFeatureTrackerConsumerBase::Process_vkCmdBindIndexBuffer2(const ApiCallInfo& call_info,
-                                                                     format::HandleId   commandBuffer,
-                                                                     format::HandleId   buffer,
-                                                                     VkDeviceSize       offset,
-                                                                     VkDeviceSize       size,
-                                                                     VkIndexType        indexType)
+void VulkanFeatureTrackerConsumerBase::Process_vkCmdBindIndexBuffer2(const ApiCallInfo&         call_info,
+                                                                     args::CmdBindIndexBuffer2& args)
 {
-    if (indexType == VK_INDEX_TYPE_UINT32)
+    if (args.indexType == VK_INDEX_TYPE_UINT32)
     {
         core10_.fullDrawIndexUint32 = true; // defensive assumption
     }
-    if (indexType == VK_INDEX_TYPE_UINT8)
+    if (args.indexType == VK_INDEX_TYPE_UINT8)
     {
         core14_.indexTypeUint8 = true;
     }
 }
 
-void VulkanFeatureTrackerConsumerBase::Process_vkCmdBindIndexBuffer2KHR(const ApiCallInfo& call_info,
-                                                                        format::HandleId   commandBuffer,
-                                                                        format::HandleId   buffer,
-                                                                        VkDeviceSize       offset,
-                                                                        VkDeviceSize       size,
-                                                                        VkIndexType        indexType)
+void VulkanFeatureTrackerConsumerBase::Process_vkCmdBindIndexBuffer2KHR(const ApiCallInfo&            call_info,
+                                                                        args::CmdBindIndexBuffer2KHR& args)
 {
-    Process_vkCmdBindIndexBuffer2({}, commandBuffer, buffer, offset, size, indexType);
+    if (args.indexType == VK_INDEX_TYPE_UINT32)
+    {
+        core10_.fullDrawIndexUint32 = true; // defensive assumption
+    }
+    if (args.indexType == VK_INDEX_TYPE_UINT8)
+    {
+        core14_.indexTypeUint8 = true;
+    }
 }
 
-void VulkanFeatureTrackerConsumerBase::Process_vkCmdSetDepthBias(const ApiCallInfo& call_info,
-                                                                 format::HandleId   commandBuffer,
-                                                                 float              depthBiasConstantFactor,
-                                                                 float              depthBiasClamp,
-                                                                 float              depthBiasSlopeFactor)
+void VulkanFeatureTrackerConsumerBase::Process_vkCmdSetDepthBias(const ApiCallInfo&     call_info,
+                                                                 args::CmdSetDepthBias& args)
 {
-    if (depthBiasClamp != 0.0)
+    if (args.depthBiasClamp != 0.0)
     {
         core10_.depthBiasClamp = true;
     }
 }
-void VulkanFeatureTrackerConsumerBase::Process_vkCmdSetLineWidth(const ApiCallInfo& call_info,
-                                                                 format::HandleId   commandBuffer,
-                                                                 float              lineWidth)
+void VulkanFeatureTrackerConsumerBase::Process_vkCmdSetLineWidth(const ApiCallInfo&     call_info,
+                                                                 args::CmdSetLineWidth& args)
 {
-    if (lineWidth != 1.0)
+    if (args.lineWidth != 1.0)
     {
         core10_.wideLines = true;
     }
 }
 
-void VulkanFeatureTrackerConsumerBase::Process_vkCmdBeginQuery(const ApiCallInfo&  call_info,
-                                                               format::HandleId    commandBuffer,
-                                                               format::HandleId    queryPool,
-                                                               uint32_t            query,
-                                                               VkQueryControlFlags flags)
+void VulkanFeatureTrackerConsumerBase::Process_vkCmdBeginQuery(const ApiCallInfo& call_info, args::CmdBeginQuery& args)
 {
-    if (flags & VK_QUERY_CONTROL_PRECISE_BIT)
+    if (args.flags & VK_QUERY_CONTROL_PRECISE_BIT)
     {
         core10_.occlusionQueryPrecise = true;
     }
 }
 
-void VulkanFeatureTrackerConsumerBase::Process_vkCreateShaderModule(
-    const ApiCallInfo&                                      call_info,
-    VkResult                                                returnValue,
-    format::HandleId                                        device,
-    StructPointerDecoder<Decoded_VkShaderModuleCreateInfo>* pCreateInfo,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>*    pAllocator,
-    HandlePointerDecoder<VkShaderModule>*                   pShaderModule)
+void VulkanFeatureTrackerConsumerBase::Process_vkCreateShaderModule(const ApiCallInfo&        call_info,
+                                                                    args::CreateShaderModule& args)
 {
-    const uint32_t* pCode     = pCreateInfo->GetPointer()->pCode;
-    uint32_t        code_size = pCreateInfo->GetPointer()->codeSize;
+    const uint32_t* pCode     = args.pCreateInfo.GetPointer()->pCode;
+    uint32_t        code_size = args.pCreateInfo.GetPointer()->codeSize;
 
     parse_SPIRV(pCode, code_size);
 }
 
-void VulkanFeatureTrackerConsumerBase::Process_vkCreateSemaphore(
-    const ApiCallInfo&                                   call_info,
-    VkResult                                             returnValue,
-    format::HandleId                                     device,
-    StructPointerDecoder<Decoded_VkSemaphoreCreateInfo>* pCreateInfo,
-    StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-    HandlePointerDecoder<VkSemaphore>*                   pSemaphore)
+void VulkanFeatureTrackerConsumerBase::Process_vkCreateSemaphore(const ApiCallInfo&     call_info,
+                                                                 args::CreateSemaphore& args)
 {
 
     VkSemaphoreTypeCreateInfo* semaphore_type_create_info =
-        graphics::vulkan_struct_get_pnext<VkSemaphoreTypeCreateInfo>((pCreateInfo->GetPointer()));
+        graphics::vulkan_struct_get_pnext<VkSemaphoreTypeCreateInfo>((args.pCreateInfo.GetPointer()));
     if (semaphore_type_create_info != nullptr &&
         (semaphore_type_create_info->semaphoreType == VK_SEMAPHORE_TYPE_TIMELINE))
     {
@@ -1243,38 +1108,26 @@ void VulkanFeatureTrackerConsumerBase::Process_vkCreateSemaphore(
     }
 }
 
-void VulkanFeatureTrackerConsumerBase::Process_vkGetBufferDeviceAddress(
-    const ApiCallInfo&                                       call_info,
-    VkDeviceAddress                                          returnValue,
-    format::HandleId                                         device,
-    StructPointerDecoder<Decoded_VkBufferDeviceAddressInfo>* pInfo)
+void VulkanFeatureTrackerConsumerBase::Process_vkGetBufferDeviceAddress(const ApiCallInfo&            call_info,
+                                                                        args::GetBufferDeviceAddress& args)
 {
     core12_.bufferDeviceAddress = true;
 }
 
-void VulkanFeatureTrackerConsumerBase::Process_vkGetBufferDeviceAddressEXT(
-    const ApiCallInfo&                                       call_info,
-    VkDeviceAddress                                          returnValue,
-    format::HandleId                                         device,
-    StructPointerDecoder<Decoded_VkBufferDeviceAddressInfo>* pInfo)
+void VulkanFeatureTrackerConsumerBase::Process_vkGetBufferDeviceAddressEXT(const ApiCallInfo&               call_info,
+                                                                           args::GetBufferDeviceAddressEXT& args)
 {
-    Process_vkGetBufferDeviceAddress(call_info, returnValue, device, pInfo);
+    core12_.bufferDeviceAddress = true;
 }
 
-void VulkanFeatureTrackerConsumerBase::Process_vkGetBufferDeviceAddressKHR(
-    const ApiCallInfo&                                       call_info,
-    VkDeviceAddress                                          returnValue,
-    format::HandleId                                         device,
-    StructPointerDecoder<Decoded_VkBufferDeviceAddressInfo>* pInfo)
+void VulkanFeatureTrackerConsumerBase::Process_vkGetBufferDeviceAddressKHR(const ApiCallInfo&               call_info,
+                                                                           args::GetBufferDeviceAddressKHR& args)
 {
-    Process_vkGetBufferDeviceAddress(call_info, returnValue, device, pInfo);
+    core12_.bufferDeviceAddress = true;
 }
 
 void VulkanFeatureTrackerConsumerBase::Process_vkGetBufferOpaqueCaptureAddress(
-    const ApiCallInfo&                                       call_info,
-    uint64_t                                                 returnValue,
-    format::HandleId                                         device,
-    StructPointerDecoder<Decoded_VkBufferDeviceAddressInfo>* pInfo)
+    const ApiCallInfo& call_info, args::GetBufferOpaqueCaptureAddress& args)
 {
     core12_.bufferDeviceAddressCaptureReplay = true;
 }

@@ -50,246 +50,84 @@ class VulkanFeatureTrackerConsumerBase : public util::VulkanModifierBase
 
     void PrintAllFeatures();
 
-    virtual void Process_vkCreateInstance(const ApiCallInfo&                                   call_info,
-                                          VkResult                                             returnValue,
-                                          StructPointerDecoder<Decoded_VkInstanceCreateInfo>*  pCreateInfo,
-                                          StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-                                          HandlePointerDecoder<VkInstance>*                    pInstance) override;
+    void Process_vkCreateInstance(const ApiCallInfo& call_info, args::CreateInstance& args) override;
 
-    virtual void Process_vkCreateDevice(const ApiCallInfo&                                   call_info,
-                                        VkResult                                             returnValue,
-                                        format::HandleId                                     physicalDevice,
-                                        StructPointerDecoder<Decoded_VkDeviceCreateInfo>*    pCreateInfo,
-                                        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-                                        HandlePointerDecoder<VkDevice>*                      pDevice) override;
+    void Process_vkCreateDevice(const ApiCallInfo& call_info, args::CreateDevice& args) override;
 
-    virtual void Process_vkCmdBeginRendering(const ApiCallInfo&                             call_info,
-                                             format::HandleId                               commandBuffer,
-                                             StructPointerDecoder<Decoded_VkRenderingInfo>* pRenderingInfo) override;
+    void Process_vkCmdBeginRendering(const ApiCallInfo& call_info, args::CmdBeginRendering& args) override;
 
-    virtual void Process_vkCmdBeginRenderingKHR(const ApiCallInfo&                             call_info,
-                                                format::HandleId                               commandBuffer,
-                                                StructPointerDecoder<Decoded_VkRenderingInfo>* pRenderingInfo) override;
+    void Process_vkCmdBeginRenderingKHR(const ApiCallInfo& call_info, args::CmdBeginRenderingKHR& args) override;
 
-    virtual void Process_vkCreateBuffer(const ApiCallInfo&                                   call_info,
-                                        VkResult                                             returnValue,
-                                        format::HandleId                                     device,
-                                        StructPointerDecoder<Decoded_VkBufferCreateInfo>*    pCreateInfo,
-                                        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-                                        HandlePointerDecoder<VkBuffer>*                      pBuffer) override;
-    virtual void Process_vkCreateImage(const ApiCallInfo&                                   call_info,
-                                       VkResult                                             returnValue,
-                                       format::HandleId                                     device,
-                                       StructPointerDecoder<Decoded_VkImageCreateInfo>*     pCreateInfo,
-                                       StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-                                       HandlePointerDecoder<VkImage>*                       pImage) override;
+    void Process_vkCreateBuffer(const ApiCallInfo& call_info, args::CreateBuffer& args) override;
 
-    virtual void Process_vkCreateImageView(const ApiCallInfo&                                   call_info,
-                                           VkResult                                             returnValue,
-                                           format::HandleId                                     device,
-                                           StructPointerDecoder<Decoded_VkImageViewCreateInfo>* pCreateInfo,
-                                           StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-                                           HandlePointerDecoder<VkImageView>*                   pView) override;
-    virtual void
-    Process_vkCreateGraphicsPipelines(const ApiCallInfo&                                          call_info,
-                                      VkResult                                                    returnValue,
-                                      format::HandleId                                            device,
-                                      format::HandleId                                            pipelineCache,
-                                      uint32_t                                                    createInfoCount,
-                                      StructPointerDecoder<Decoded_VkGraphicsPipelineCreateInfo>* pCreateInfos,
-                                      StructPointerDecoder<Decoded_VkAllocationCallbacks>*        pAllocator,
-                                      HandlePointerDecoder<VkPipeline>*                           pPipelines) override;
+    void Process_vkCreateImage(const ApiCallInfo& call_info, args::CreateImage& args) override;
 
-    virtual void
-    Process_vkCreateComputePipelines(const ApiCallInfo&                                         call_info,
-                                     VkResult                                                   returnValue,
-                                     format::HandleId                                           device,
-                                     format::HandleId                                           pipelineCache,
-                                     uint32_t                                                   createInfoCount,
-                                     StructPointerDecoder<Decoded_VkComputePipelineCreateInfo>* pCreateInfos,
-                                     StructPointerDecoder<Decoded_VkAllocationCallbacks>*       pAllocator,
-                                     HandlePointerDecoder<VkPipeline>*                          pPipelines) override;
+    void Process_vkCreateImageView(const ApiCallInfo& call_info, args::CreateImageView& args) override;
 
-    virtual void Process_vkCreateRayTracingPipelinesKHR(
-        const ApiCallInfo&                                               call_info,
-        VkResult                                                         returnValue,
-        format::HandleId                                                 device,
-        format::HandleId                                                 deferredOperation,
-        format::HandleId                                                 pipelineCache,
-        uint32_t                                                         createInfoCount,
-        StructPointerDecoder<Decoded_VkRayTracingPipelineCreateInfoKHR>* pCreateInfos,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>*             pAllocator,
-        HandlePointerDecoder<VkPipeline>*                                pPipelines) override;
+    void Process_vkCreateGraphicsPipelines(const ApiCallInfo& call_info, args::CreateGraphicsPipelines& args) override;
 
-    virtual void Process_vkCmdDrawIndirect(const ApiCallInfo& call_info,
-                                           format::HandleId   commandBuffer,
-                                           format::HandleId   buffer,
-                                           VkDeviceSize       offset,
-                                           uint32_t           drawCount,
-                                           uint32_t           stride) override;
+    void Process_vkCreateComputePipelines(const ApiCallInfo& call_info, args::CreateComputePipelines& args) override;
 
-    virtual void Process_vkCmdDrawIndirectCount(const ApiCallInfo& call_info,
-                                                format::HandleId   commandBuffer,
-                                                format::HandleId   buffer,
-                                                VkDeviceSize       offset,
-                                                format::HandleId   countBuffer,
-                                                VkDeviceSize       countBufferOffset,
-                                                uint32_t           maxDrawCount,
-                                                uint32_t           stride) override;
+    void Process_vkCreateRayTracingPipelinesKHR(const ApiCallInfo&                  call_info,
+                                                args::CreateRayTracingPipelinesKHR& args) override;
 
-    virtual void Process_vkCmdDrawIndexedIndirect(const ApiCallInfo& call_info,
-                                                  format::HandleId   commandBuffer,
-                                                  format::HandleId   buffer,
-                                                  VkDeviceSize       offset,
-                                                  uint32_t           drawCount,
-                                                  uint32_t           stride) override;
+    void Process_vkCmdDrawIndirect(const ApiCallInfo& call_info, args::CmdDrawIndirect& args) override;
 
-    virtual void Process_vkCmdDrawIndexedIndirectCount(const ApiCallInfo& call_info,
-                                                       format::HandleId   commandBuffer,
-                                                       format::HandleId   buffer,
-                                                       VkDeviceSize       offset,
-                                                       format::HandleId   countBuffer,
-                                                       VkDeviceSize       countBufferOffset,
-                                                       uint32_t           maxDrawCount,
-                                                       uint32_t           stride) override;
+    void Process_vkCmdDrawIndirectCount(const ApiCallInfo& call_info, args::CmdDrawIndirectCount& args) override;
 
-    virtual void
-    Process_vkBeginCommandBuffer(const ApiCallInfo&                                      call_info,
-                                 VkResult                                                returnValue,
-                                 format::HandleId                                        commandBuffer,
-                                 StructPointerDecoder<Decoded_VkCommandBufferBeginInfo>* pBeginInfo) override;
+    void Process_vkCmdDrawIndexedIndirect(const ApiCallInfo& call_info, args::CmdDrawIndexedIndirect& args) override;
 
-    virtual void Process_vkCmdSetPolygonModeEXT(const ApiCallInfo& call_info,
-                                                format::HandleId   commandBuffer,
-                                                VkPolygonMode      polygonMode) override;
+    void Process_vkCmdDrawIndexedIndirectCount(const ApiCallInfo&                 call_info,
+                                               args::CmdDrawIndexedIndirectCount& args) override;
 
-    virtual void Process_vkCmdSetViewport(const ApiCallInfo&                        call_info,
-                                          format::HandleId                          commandBuffer,
-                                          uint32_t                                  firstViewport,
-                                          uint32_t                                  viewportCount,
-                                          StructPointerDecoder<Decoded_VkViewport>* pViewports) override;
+    void Process_vkBeginCommandBuffer(const ApiCallInfo& call_info, args::BeginCommandBuffer& args) override;
 
-    virtual void Process_vkCmdSetScissor(const ApiCallInfo&                      call_info,
-                                         format::HandleId                        commandBuffer,
-                                         uint32_t                                firstScissor,
-                                         uint32_t                                scissorCount,
-                                         StructPointerDecoder<Decoded_VkRect2D>* pScissors) override;
+    void Process_vkCmdSetPolygonModeEXT(const ApiCallInfo& call_info, args::CmdSetPolygonModeEXT& args) override;
 
-    virtual void
-    Process_vkCmdSetExclusiveScissorNV(const ApiCallInfo&                      call_info,
-                                       format::HandleId                        commandBuffer,
-                                       uint32_t                                firstExclusiveScissor,
-                                       uint32_t                                exclusiveScissorCount,
-                                       StructPointerDecoder<Decoded_VkRect2D>* pExclusiveScissors) override;
+    void Process_vkCmdSetViewport(const ApiCallInfo& call_info, args::CmdSetViewport& args) override;
 
-    virtual void Process_vkCreateSampler(const ApiCallInfo&                                   call_info,
-                                         VkResult                                             returnValue,
-                                         format::HandleId                                     device,
-                                         StructPointerDecoder<Decoded_VkSamplerCreateInfo>*   pCreateInfo,
-                                         StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-                                         HandlePointerDecoder<VkSampler>*                     pSampler) override;
+    void Process_vkCmdSetScissor(const ApiCallInfo& call_info, args::CmdSetScissor& args) override;
 
-    virtual void Process_vkCreateQueryPool(const ApiCallInfo&                                   call_info,
-                                           VkResult                                             returnValue,
-                                           format::HandleId                                     device,
-                                           StructPointerDecoder<Decoded_VkQueryPoolCreateInfo>* pCreateInfo,
-                                           StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-                                           HandlePointerDecoder<VkQueryPool>*                   pQueryPool) override;
+    void Process_vkCmdSetExclusiveScissorNV(const ApiCallInfo&              call_info,
+                                            args::CmdSetExclusiveScissorNV& args) override;
 
-    virtual void Process_vkResetQueryPool(const ApiCallInfo& call_info,
-                                          format::HandleId   device,
-                                          format::HandleId   queryPool,
-                                          uint32_t           firstQuery,
-                                          uint32_t           queryCount) override;
+    void Process_vkCreateSampler(const ApiCallInfo& call_info, args::CreateSampler& args) override;
 
-    virtual void Process_vkCreateSwapchainKHR(const ApiCallInfo&                                      call_info,
-                                              VkResult                                                returnValue,
-                                              format::HandleId                                        device,
-                                              StructPointerDecoder<Decoded_VkSwapchainCreateInfoKHR>* pCreateInfo,
-                                              StructPointerDecoder<Decoded_VkAllocationCallbacks>*    pAllocator,
-                                              HandlePointerDecoder<VkSwapchainKHR>* pSwapchain) override;
+    void Process_vkCreateQueryPool(const ApiCallInfo& call_info, args::CreateQueryPool& args) override;
 
-    virtual void
-    Process_vkCreateSharedSwapchainsKHR(const ApiCallInfo&                                      call_info,
-                                        VkResult                                                returnValue,
-                                        format::HandleId                                        device,
-                                        uint32_t                                                swapchainCount,
-                                        StructPointerDecoder<Decoded_VkSwapchainCreateInfoKHR>* pCreateInfos,
-                                        StructPointerDecoder<Decoded_VkAllocationCallbacks>*    pAllocator,
-                                        HandlePointerDecoder<VkSwapchainKHR>*                   pSwapchains) override;
+    void Process_vkResetQueryPool(const ApiCallInfo& call_info, args::ResetQueryPool& args) override;
 
-    virtual void Process_vkCmdBindIndexBuffer(const ApiCallInfo& call_info,
-                                              format::HandleId   commandBuffer,
-                                              format::HandleId   buffer,
-                                              VkDeviceSize       offset,
-                                              VkIndexType        indexType) override;
+    void Process_vkCreateSwapchainKHR(const ApiCallInfo& call_info, args::CreateSwapchainKHR& args) override;
 
-    virtual void Process_vkCmdBindIndexBuffer2(const ApiCallInfo& call_info,
-                                               format::HandleId   commandBuffer,
-                                               format::HandleId   buffer,
-                                               VkDeviceSize       offset,
-                                               VkDeviceSize       size,
-                                               VkIndexType        indexType) override;
+    void Process_vkCreateSharedSwapchainsKHR(const ApiCallInfo&               call_info,
+                                             args::CreateSharedSwapchainsKHR& args) override;
 
-    virtual void Process_vkCmdBindIndexBuffer2KHR(const ApiCallInfo& call_info,
-                                                  format::HandleId   commandBuffer,
-                                                  format::HandleId   buffer,
-                                                  VkDeviceSize       offset,
-                                                  VkDeviceSize       size,
-                                                  VkIndexType        indexType) override;
+    void Process_vkCmdBindIndexBuffer(const ApiCallInfo& call_info, args::CmdBindIndexBuffer& args) override;
 
-    virtual void Process_vkCmdSetDepthBias(const ApiCallInfo& call_info,
-                                           format::HandleId   commandBuffer,
-                                           float              depthBiasConstantFactor,
-                                           float              depthBiasClamp,
-                                           float              depthBiasSlopeFactor) override;
+    void Process_vkCmdBindIndexBuffer2(const ApiCallInfo& call_info, args::CmdBindIndexBuffer2& args) override;
 
-    virtual void
-    Process_vkCmdSetLineWidth(const ApiCallInfo& call_info, format::HandleId commandBuffer, float lineWidth) override;
+    void Process_vkCmdBindIndexBuffer2KHR(const ApiCallInfo& call_info, args::CmdBindIndexBuffer2KHR& args) override;
 
-    virtual void Process_vkCmdBeginQuery(const ApiCallInfo&  call_info,
-                                         format::HandleId    commandBuffer,
-                                         format::HandleId    queryPool,
-                                         uint32_t            query,
-                                         VkQueryControlFlags flags) override;
+    void Process_vkCmdSetDepthBias(const ApiCallInfo& call_info, args::CmdSetDepthBias& args) override;
 
-    virtual void Process_vkCreateShaderModule(const ApiCallInfo&                                      call_info,
-                                              VkResult                                                returnValue,
-                                              format::HandleId                                        device,
-                                              StructPointerDecoder<Decoded_VkShaderModuleCreateInfo>* pCreateInfo,
-                                              StructPointerDecoder<Decoded_VkAllocationCallbacks>*    pAllocator,
-                                              HandlePointerDecoder<VkShaderModule>* pShaderModule) override;
+    void Process_vkCmdSetLineWidth(const ApiCallInfo& call_info, args::CmdSetLineWidth& args) override;
 
-    virtual void Process_vkCreateSemaphore(const ApiCallInfo&                                   call_info,
-                                           VkResult                                             returnValue,
-                                           format::HandleId                                     device,
-                                           StructPointerDecoder<Decoded_VkSemaphoreCreateInfo>* pCreateInfo,
-                                           StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-                                           HandlePointerDecoder<VkSemaphore>*                   pSemaphore) override;
+    void Process_vkCmdBeginQuery(const ApiCallInfo& call_info, args::CmdBeginQuery& args) override;
 
-    virtual void
-    Process_vkGetBufferDeviceAddress(const ApiCallInfo&                                       call_info,
-                                     VkDeviceAddress                                          returnValue,
-                                     format::HandleId                                         device,
-                                     StructPointerDecoder<Decoded_VkBufferDeviceAddressInfo>* pInfo) override;
+    void Process_vkCreateShaderModule(const ApiCallInfo& call_info, args::CreateShaderModule& args) override;
 
-    virtual void
-    Process_vkGetBufferDeviceAddressEXT(const ApiCallInfo&                                       call_info,
-                                        VkDeviceAddress                                          returnValue,
-                                        format::HandleId                                         device,
-                                        StructPointerDecoder<Decoded_VkBufferDeviceAddressInfo>* pInfo) override;
+    void Process_vkCreateSemaphore(const ApiCallInfo& call_info, args::CreateSemaphore& args) override;
 
-    virtual void
-    Process_vkGetBufferDeviceAddressKHR(const ApiCallInfo&                                       call_info,
-                                        VkDeviceAddress                                          returnValue,
-                                        format::HandleId                                         device,
-                                        StructPointerDecoder<Decoded_VkBufferDeviceAddressInfo>* pInfo) override;
+    void Process_vkGetBufferDeviceAddress(const ApiCallInfo& call_info, args::GetBufferDeviceAddress& args) override;
 
-    virtual void
-    Process_vkGetBufferOpaqueCaptureAddress(const ApiCallInfo&                                       call_info,
-                                            uint64_t                                                 returnValue,
-                                            format::HandleId                                         device,
-                                            StructPointerDecoder<Decoded_VkBufferDeviceAddressInfo>* pInfo) override;
+    void Process_vkGetBufferDeviceAddressEXT(const ApiCallInfo&               call_info,
+                                             args::GetBufferDeviceAddressEXT& args) override;
+
+    void Process_vkGetBufferDeviceAddressKHR(const ApiCallInfo&               call_info,
+                                             args::GetBufferDeviceAddressKHR& args) override;
+
+    void Process_vkGetBufferOpaqueCaptureAddress(const ApiCallInfo&                   call_info,
+                                                 args::GetBufferOpaqueCaptureAddress& args) override;
 
   private:
     void parse_SPIRV(const uint32_t* code, uint32_t code_size);

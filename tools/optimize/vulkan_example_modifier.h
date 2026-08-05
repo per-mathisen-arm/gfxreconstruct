@@ -47,20 +47,16 @@ class VulkanExampleModifier : public util::VulkanModifierBase
   public:
     VulkanExampleModifier(){};
 
-    virtual bool CanOptimize() override { return compacted_copies_.empty(); }
+    bool CanOptimize() override { return compacted_copies_.empty(); }
 
     // Example call modification
     // Add debug utils to list of extensions
-    void Process_vkCreateInstance(const ApiCallInfo&                                   call_info,
-                                  VkResult                                             returnValue,
-                                  StructPointerDecoder<Decoded_VkInstanceCreateInfo>*  pCreateInfo,
-                                  StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-                                  HandlePointerDecoder<VkInstance>*                    pInstance)
+    void Process_vkCreateInstance(const ApiCallInfo& call_info, args::CreateInstance& args) override
     {
         // Just modification pass, nothing to analyze
         if (IsModificationPass())
         {
-            auto create_info     = pCreateInfo->GetMetaStructPointer()->decoded_value;
+            auto create_info     = args.pCreateInfo.GetMetaStructPointer()->decoded_value;
             auto extension_count = create_info->enabledExtensionCount;
             if (extension_count)
             {
@@ -87,10 +83,10 @@ class VulkanExampleModifier : public util::VulkanModifierBase
 
                     parameter_buffer_->Clear();
                     gfxrecon::encode::ParameterEncoder encoder(parameter_buffer_);
-                    EncodeStructPtr(&encoder, pCreateInfo->GetPointer());
-                    EncodeStructPtr(&encoder, pAllocator->GetPointer());
-                    encoder.EncodeHandleIdPtr(pInstance->GetPointer());
-                    encoder.EncodeEnumValue(returnValue);
+                    EncodeStructPtr(&encoder, args.pCreateInfo.GetPointer());
+                    EncodeStructPtr(&encoder, args.pAllocator.GetPointer());
+                    encoder.EncodeHandleIdPtr(args.pInstance.GetPointer());
+                    encoder.EncodeEnumValue(args.result);
                 }
             }
         }
@@ -98,15 +94,12 @@ class VulkanExampleModifier : public util::VulkanModifierBase
 
     // Example call deletion
     // Remove other SetName calls targeting the object we want to name
-    virtual void
-    Process_vkSetDebugUtilsObjectNameEXT(const ApiCallInfo&                                           call_info,
-                                         VkResult                                                     returnValue,
-                                         format::HandleId                                             device,
-                                         StructPointerDecoder<Decoded_VkDebugUtilsObjectNameInfoEXT>* pNameInfo)
+    void Process_vkSetDebugUtilsObjectNameEXT(const ApiCallInfo&                call_info,
+                                              args::SetDebugUtilsObjectNameEXT& args) override
     {
         if (IsModificationPass())
         {
-            const auto compacted_copy = compacted_copies_.find(pNameInfo->GetPointer()->objectHandle);
+            const auto compacted_copy = compacted_copies_.find(args.pNameInfo.GetPointer()->objectHandle);
             if (compacted_copy != compacted_copies_.end())
             {
                 SetDeleteCurrentCall();
@@ -118,15 +111,13 @@ class VulkanExampleModifier : public util::VulkanModifierBase
     // This override does not modify anything, just stores data required for later modifications.
     // In this case, handles of acceleration structures used for compaction purposes are stored in a map
     // along with the handle of the original non-compacted AS.
-    virtual void
-    Process_vkCmdCopyAccelerationStructureKHR(const ApiCallInfo& call_info,
-                                              format::HandleId   commandBuffer,
-                                              StructPointerDecoder<Decoded_VkCopyAccelerationStructureInfoKHR>* pInfo)
+    void Process_vkCmdCopyAccelerationStructureKHR(const ApiCallInfo&                     call_info,
+                                                   args::CmdCopyAccelerationStructureKHR& args) override
     {
         // Keep track of compacted acceleration structures
         if (!IsModificationPass())
         {
-            const auto* info = pInfo->GetMetaStructPointer();
+            const auto* info = args.pInfo.GetMetaStructPointer();
 
             if (info->decoded_value->mode == VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_KHR)
             {
@@ -139,18 +130,13 @@ class VulkanExampleModifier : public util::VulkanModifierBase
     // When vkCreateAccelerationStructureKHR call is processed in the modification pass
     // and there's a record of the created acceleration structure being used later as compacted
     // copy destination, add vkSetDebugUtilsObjectNameEXT after this call.
-    virtual void Process_vkCreateAccelerationStructureKHR(
-        const ApiCallInfo&                                                  call_info,
-        VkResult                                                            returnValue,
-        format::HandleId                                                    device,
-        StructPointerDecoder<Decoded_VkAccelerationStructureCreateInfoKHR>* pCreateInfo,
-        StructPointerDecoder<Decoded_VkAllocationCallbacks>*                pAllocator,
-        HandlePointerDecoder<VkAccelerationStructureKHR>*                   pAccelerationStructure)
+    void Process_vkCreateAccelerationStructureKHR(const ApiCallInfo&                    call_info,
+                                                  args::CreateAccelerationStructureKHR& args) override
     {
         // In modification pass, add SetObjectName command after AS creation
         if (IsModificationPass())
         {
-            const auto compaction_info = compacted_copies_.find(*pAccelerationStructure->GetPointer());
+            const auto compaction_info = compacted_copies_.find(*args.pAccelerationStructure.GetPointer());
 
             if (compaction_info != compacted_copies_.end())
             {
@@ -189,7 +175,7 @@ class VulkanExampleModifier : public util::VulkanModifierBase
                 object_name_info.sType        = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
                 object_name_info.objectType   = VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR;
                 object_name_info.pObjectName  = new_name.c_str();
-                object_name_info.objectHandle = *pAccelerationStructure->GetPointer();
+                object_name_info.objectHandle = *args.pAccelerationStructure.GetPointer();
                 object_name_info.pNext        = NULL;
                 assert(object_name_info.pNext == nullptr);
 

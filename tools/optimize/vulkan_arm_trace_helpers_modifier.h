@@ -40,31 +40,15 @@ class VulkanArmTraceHelpersModifier : public util::VulkanModifierBase
   public:
     VulkanArmTraceHelpersModifier() = default;
 
-    virtual bool CanOptimize() override;
+    bool CanOptimize() override;
 
-    virtual void Process_vkCreateDevice(const ApiCallInfo&                                   call_info,
-                                        VkResult                                             returnValue,
-                                        format::HandleId                                     physicalDevice,
-                                        StructPointerDecoder<Decoded_VkDeviceCreateInfo>*    pCreateInfo,
-                                        StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-                                        HandlePointerDecoder<VkDevice>*                      pDevice) override;
+    void Process_vkCreateDevice(const ApiCallInfo& call_info, args::CreateDevice& args) override;
 
-    virtual void Process_vkAllocateMemory(const ApiCallInfo&                                   call_info,
-                                          VkResult                                             returnValue,
-                                          format::HandleId                                     device,
-                                          StructPointerDecoder<Decoded_VkMemoryAllocateInfo>*  pAllocateInfo,
-                                          StructPointerDecoder<Decoded_VkAllocationCallbacks>* pAllocator,
-                                          HandlePointerDecoder<VkDeviceMemory>*                pMemory) override;
+    void Process_vkAllocateMemory(const ApiCallInfo& call_info, args::AllocateMemory& args) override;
 
-    virtual void
-    Process_vkFlushMappedMemoryRanges(const ApiCallInfo&                                 call_info,
-                                      VkResult                                           returnValue,
-                                      format::HandleId                                   device,
-                                      uint32_t                                           memoryRangeCount,
-                                      StructPointerDecoder<Decoded_VkMappedMemoryRange>* pMemoryRanges) override;
+    void Process_vkFlushMappedMemoryRanges(const ApiCallInfo& call_info, args::FlushMappedMemoryRanges& args) override;
 
-    virtual void
-    ProcessFillMemoryCommand(uint64_t memory_id, uint64_t offset, uint64_t size, const uint8_t* data) override;
+    void ProcessFillMemoryCommand(uint64_t memory_id, uint64_t offset, uint64_t size, const uint8_t* data) override;
 
   private:
     VkDeviceSize GetDataSizeBasedOnHelpersType(const VkMarkingTypeARM&    marking_types,
