@@ -4155,6 +4155,13 @@ void VulkanReplayConsumerBase::ModifyCreateDeviceInfo(
         }
     }
 
+    // Remove VK_EXT_device_memory_report callback structure if set.
+    // The callback cannot be restored anyway, so the easiest is to remove it entirely
+    if (graphics::vulkan_struct_remove_pnext<VkDeviceDeviceMemoryReportCreateInfoEXT>(&modified_create_info))
+    {
+        GFXRECON_LOG_WARNING("VkDeviceDeviceMemoryReportCreateInfoEXT callback was remove at device creation");
+    }
+
     // Sanity checks depending on extension availability
     std::vector<VkExtensionProperties> available_extensions;
     if (graphics::feature_util::GetDeviceExtensions(
