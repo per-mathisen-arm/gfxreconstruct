@@ -262,6 +262,23 @@
                     "default": "page_guard",
                     "settings": [
                         {
+                            "key": "force_host_cached_memory",
+                            "env": "GFXRECON_FORCE_HOST_CACHED_MEMORY",
+                            "label": "Force Host Cached Memory",
+                            "description": "When smart memory tracking is enabled, hide uncached host-visible memory types from the application when a host-cached memory type is available.",
+                            "type": "BOOL",
+                            "default": false,
+                            "dependence": {
+                                "mode": "ALL",
+                                "settings": [
+                                    {
+                                        "key": "memory_tracking_mode",
+                                        "value": "smart"
+                                    }
+                                ]
+                            }
+                        },
+                        {
                             "key": "page_guard_copy_on_map",
                             "env": "GFXRECON_PAGE_GUARD_COPY_ON_MAP",
                             "label": "Page Guard Copy on Map",

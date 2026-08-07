@@ -422,6 +422,10 @@ class CommonCaptureManager
     {
         return memory_tracking_mode_;
     }
+    bool GetForceHostCachedMemory() const
+    {
+        return force_host_cached_memory_;
+    }
     bool GetPageGuardAlignBufferSizes() const
     {
         return page_guard_align_buffer_sizes_;
@@ -663,6 +667,7 @@ class CommonCaptureManager
     bool                                    timestamp_filename_;
     bool                                    force_file_flush_;
     CaptureSettings::MemoryTrackingMode     memory_tracking_mode_;
+    bool                                    force_host_cached_memory_;
     bool                                    page_guard_align_buffer_sizes_;
     bool                                    page_guard_track_ahb_memory_;
     bool                                    page_guard_unblock_sigsegv_;

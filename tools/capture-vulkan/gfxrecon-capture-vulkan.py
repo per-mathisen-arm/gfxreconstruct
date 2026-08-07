@@ -61,6 +61,7 @@ def usage_message():
         '                                 [--log-timestamps]',
         '                                 [--log-file <file>]',
         '                                 [--memory-tracking-mode {page_guard,smart,assisted,unassisted}]',
+        '                                 [--force-host-cached-memory]',
         '                                 [--capture-layer <capture_layer_path>',
     ]
     if sys.platform == 'win32':
@@ -174,6 +175,9 @@ def create_argument_parser():
             '  - unassisted: all mapped memory will be written to the',
             '  - capture file during VkQueueSubmit and VkUnmapMemory']))
     parser.add_argument(
+        '--force-host-cached-memory', dest='force_host_cached_memory', action='store_const', const='true',
+        help='With smart tracking, hide uncached host-visible memory types from the application')
+    parser.add_argument(
         '--capture-layer', dest='capture_layer', metavar='<capture_layer>',
         default=None,
         help='\n'.join([
@@ -208,6 +212,7 @@ def print_args(args):
     print('log-file', args.log_file)
     print('log-debugview', args.log_debug_view)
     print('memory-tracking-mode', args.memory_tracking_mode)
+    print('force-host-cached-memory', args.force_host_cached_memory)
     print('program_and_args', args.program_and_args)
 
 
@@ -233,6 +238,9 @@ def validate_args(args):
     if len(args.program_and_args) == 0:
         print('usage: ' + usage_message())
         print_error_and_exit('<program> must be specified')
+
+    if args.force_host_cached_memory is not None and args.memory_tracking_mode != 'smart':
+        print_error_and_exit('--force-host-cached-memory requires --memory-tracking-mode smart')
 
     # Verify programName exists and is executable.
     programName, programWhich = get_command_path(args)
@@ -289,6 +297,7 @@ def set_env_vars(args):
     set_env_var('GFXRECON_LOG_FILE', args.log_file)
     set_env_var('GFXRECON_LOG_OUTPUT_TO_OS_DEBUG_STRING', args.log_debug_view)
     set_env_var('GFXRECON_MEMORY_TRACKING_MODE', args.memory_tracking_mode)
+    set_env_var('GFXRECON_FORCE_HOST_CACHED_MEMORY', args.force_host_cached_memory)
 
 
 def print_env_var(env_var):
@@ -318,6 +327,7 @@ def PrintLayerEnv():
     print_env_var('GFXRECON_LOG_LEVEL')
     print_env_var('GFXRECON_LOG_OUTPUT_TO_OS_DEBUG_STRING')
     print_env_var('GFXRECON_MEMORY_TRACKING_MODE')
+    print_env_var('GFXRECON_FORCE_HOST_CACHED_MEMORY')
     print_env_var('VK_INSTANCE_LAYERS')
     print_env_var('VK_LAYER_PATH')
 

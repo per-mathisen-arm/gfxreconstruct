@@ -28,6 +28,7 @@
 
 #include "encode/vulkan_entry_base.h"
 #include "encode/vulkan_capture_layer_settings.h"
+#include "encode/vulkan_capture_manager.h"
 #include "encode/vulkan_handle_wrapper_util.h"
 #include "encode/vulkan_handle_wrappers.h"
 #include "encode/vulkan_state_tracker.h"
@@ -75,6 +76,38 @@ TEST_CASE("handles can be wrapped and unwrapped", "[wrapper]")
     gfxrecon::encode::vulkan_wrappers::DestroyWrappedHandle<gfxrecon::encode::vulkan_wrappers::BufferWrapper>(buffer);
 
     gfxrecon::util::Log::Release();
+}
+
+TEST_CASE("Host-cached memory type filtering", "[memory]")
+{
+    VkPhysicalDeviceMemoryProperties properties{};
+    properties.memoryTypeCount              = 4;
+    properties.memoryTypes[0].propertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    properties.memoryTypes[1].propertyFlags =
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    properties.memoryTypes[2].propertyFlags =
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
+    properties.memoryTypes[3].propertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT |
+                                              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                                              VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+    gfxrecon::encode::VulkanCaptureManager::FilterHostCachedMemoryTypes(&properties);
+
+    CHECK(properties.memoryTypes[0].propertyFlags == VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    CHECK(properties.memoryTypes[1].propertyFlags == 0);
+    CHECK(properties.memoryTypes[2].propertyFlags ==
+          (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT |
+           VK_MEMORY_PROPERTY_HOST_CACHED_BIT));
+    CHECK(properties.memoryTypes[3].propertyFlags == VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    properties.memoryTypeCount = 1;
+    properties.memoryTypes[0].propertyFlags =
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+    gfxrecon::encode::VulkanCaptureManager::FilterHostCachedMemoryTypes(&properties);
+
+    CHECK(properties.memoryTypes[0].propertyFlags ==
+          (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
 }
 
 namespace // Support functions and data for TEST_CASE("Unsupported extension screening")

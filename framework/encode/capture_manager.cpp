@@ -122,17 +122,17 @@ void CommonCaptureManager::ClearUniqueIds()
 
 CommonCaptureManager::CommonCaptureManager() :
     force_file_flush_(false), timestamp_filename_(true),
-    memory_tracking_mode_(CaptureSettings::MemoryTrackingMode::kPageGuard), page_guard_align_buffer_sizes_(false),
-    page_guard_track_ahb_memory_(false), page_guard_unblock_sigsegv_(false), page_guard_signal_handler_watcher_(false),
-    page_guard_memory_mode_(kMemoryModeShadowInternal), page_guard_external_memory_(false), trim_enabled_(false),
-    trim_boundary_(CaptureSettings::TrimBoundary::kUnknown), trim_current_range_(0), current_frame_(kFirstFrame),
-    queue_submit_count_(0), capture_mode_(kModeWrite), previous_hotkey_state_(false),
-    previous_runtime_trigger_state_(CaptureSettings::RuntimeTriggerState::kNotUsed), debug_layer_(false),
-    debug_device_lost_(false), screenshot_prefix_(""), screenshots_enabled_(false), disable_dxr_(false),
-    accel_struct_padding_(0), iunknown_wrapping_(false), force_command_serialization_(false), queue_zero_only_(false),
-    allow_pipeline_compile_required_(false), quit_after_frame_ranges_(false), use_asset_file_(false), block_index_(0),
-    write_assets_(false), previous_write_assets_(false), skip_threads_with_invalid_data_(false),
-    original_wave_size_(false)
+    memory_tracking_mode_(CaptureSettings::MemoryTrackingMode::kPageGuard), force_host_cached_memory_(false),
+    page_guard_align_buffer_sizes_(false), page_guard_track_ahb_memory_(false), page_guard_unblock_sigsegv_(false),
+    page_guard_signal_handler_watcher_(false), page_guard_memory_mode_(kMemoryModeShadowInternal),
+    page_guard_external_memory_(false), trim_enabled_(false), trim_boundary_(CaptureSettings::TrimBoundary::kUnknown),
+    trim_current_range_(0), current_frame_(kFirstFrame), queue_submit_count_(0), capture_mode_(kModeWrite),
+    previous_hotkey_state_(false), previous_runtime_trigger_state_(CaptureSettings::RuntimeTriggerState::kNotUsed),
+    debug_layer_(false), debug_device_lost_(false), screenshot_prefix_(""), screenshots_enabled_(false),
+    disable_dxr_(false), accel_struct_padding_(0), iunknown_wrapping_(false), force_command_serialization_(false),
+    queue_zero_only_(false), allow_pipeline_compile_required_(false), quit_after_frame_ranges_(false),
+    use_asset_file_(false), block_index_(0), write_assets_(false), previous_write_assets_(false),
+    skip_threads_with_invalid_data_(false), original_wave_size_(false)
 {}
 
 CommonCaptureManager::~CommonCaptureManager()
@@ -411,7 +411,8 @@ bool CommonCaptureManager::Initialize(format::ApiFamilyId                   api_
     base_filename_          = base_filename;
     file_options_           = trace_settings.capture_file_options;
     timestamp_filename_     = trace_settings.time_stamp_file;
-    memory_tracking_mode_   = trace_settings.memory_tracking_mode;
+    memory_tracking_mode_     = trace_settings.memory_tracking_mode;
+    force_host_cached_memory_ = trace_settings.force_host_cached_memory;
     force_file_flush_       = trace_settings.force_flush;
     debug_layer_            = trace_settings.debug_layer;
     debug_device_lost_      = trace_settings.debug_device_lost;
@@ -1794,6 +1795,11 @@ void CommonCaptureManager::WriteCaptureOptions(nlohmann::ordered_json& operation
     if (force_file_flush_ != default_settings.force_flush)
     {
         capture_options["file-flush"] = force_file_flush_;
+    }
+
+    if (force_host_cached_memory_)
+    {
+        capture_options["force-host-cached-memory"] = true;
     }
 
     if (memory_tracking_mode_ == CaptureSettings::MemoryTrackingMode::kUnassisted)

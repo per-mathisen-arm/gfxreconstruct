@@ -62,6 +62,13 @@ lunarg_gfxreconstruct.capture_compression_type = LZ4
 # assisted, and unassisted.
 lunarg_gfxreconstruct.memory_tracking_mode = page_guard
 
+# Force Host Cached Memory
+# =====================
+# <LayerIdentifier>.force_host_cached_memory
+# When smart memory tracking is enabled, hide uncached host-visible memory
+# types from the application when a host-cached memory type is available.
+lunarg_gfxreconstruct.force_host_cached_memory = false
+
 # Page Guard Copy on Map
 # =====================
 # <LayerIdentifier>.page_guard_copy_on_map

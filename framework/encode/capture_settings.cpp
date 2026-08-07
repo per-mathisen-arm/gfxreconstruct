@@ -76,6 +76,7 @@ const char kLogTimestampsEnvVar[]                            = GFXRECON_OPTION_S
 const char kLogOutputToConsoleEnvVar[]                       = GFXRECON_OPTION_STR(LOG_OUTPUT_TO_CONSOLE);
 const char kLogOutputToOsDebugStringEnvVar[]                 = GFXRECON_OPTION_STR(LOG_OUTPUT_TO_OS_DEBUG_STRING);
 const char kMemoryTrackingModeEnvVar[]                       = GFXRECON_OPTION_STR(MEMORY_TRACKING_MODE);
+const char kForceHostCachedMemoryEnvVar[]                    = GFXRECON_OPTION_STR(FORCE_HOST_CACHED_MEMORY);
 const char kScreenshotDirEnvVar[]                            = GFXRECON_OPTION_STR(SCREENSHOT_DIR);
 const char kScreenshotFormatEnvVar[]                         = GFXRECON_OPTION_STR(SCREENSHOT_FORMAT);
 const char kScreenshotFramesEnvVar[]                         = GFXRECON_OPTION_STR(SCREENSHOT_FRAMES);
@@ -147,6 +148,7 @@ const std::string kOptionKeyLogTimestamps                            = std::stri
 const std::string kOptionKeyLogOutputToConsole                       = std::string(kSettingsFilter) + std::string(LOG_OUTPUT_TO_CONSOLE_LOWER);
 const std::string kOptionKeyLogOutputToOsDebugString                 = std::string(kSettingsFilter) + std::string(LOG_OUTPUT_TO_OS_DEBUG_STRING_LOWER);
 const std::string kOptionKeyMemoryTrackingMode                       = std::string(kSettingsFilter) + std::string(MEMORY_TRACKING_MODE_LOWER);
+const std::string kOptionKeyForceHostCachedMemory                    = std::string(kSettingsFilter) + std::string(FORCE_HOST_CACHED_MEMORY_LOWER);
 const std::string kOptionKeyScreenshotDir                            = std::string(kSettingsFilter) + std::string(SCREENSHOT_DIR_LOWER);
 const std::string kOptionKeyScreenshotFormat                         = std::string(kSettingsFilter) + std::string(SCREENSHOT_FORMAT_LOWER);
 const std::string kOptionKeyScreenshotFrames                         = std::string(kSettingsFilter) + std::string(SCREENSHOT_FRAMES_LOWER);
@@ -317,6 +319,7 @@ void CaptureSettings::LoadOptionsEnvVar(OptionsMap* options, bool load_log_setti
 
     // Memory environment variables
     LoadSingleOptionEnvVar(options, kMemoryTrackingModeEnvVar, kOptionKeyMemoryTrackingMode);
+    LoadSingleOptionEnvVar(options, kForceHostCachedMemoryEnvVar, kOptionKeyForceHostCachedMemory);
 
     // Trimming environment variables
     LoadSingleOptionEnvVar(options, kCaptureFramesEnvVar, kOptionKeyCaptureFrames);
@@ -428,6 +431,8 @@ void CaptureSettings::ProcessOptions(OptionsMap* options, CaptureSettings* setti
     // Memory tracking options
     settings->trace_settings_.memory_tracking_mode = ParseMemoryTrackingModeString(
         FindOption(options, kOptionKeyMemoryTrackingMode), settings->trace_settings_.memory_tracking_mode);
+    settings->trace_settings_.force_host_cached_memory = ParseBoolString(
+        FindOption(options, kOptionKeyForceHostCachedMemory), settings->trace_settings_.force_host_cached_memory);
 
     // Trimming options:
     // Trim frame ranges, trim queue submit ranges, and trim frame hotkey are mutually exclusive.

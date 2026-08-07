@@ -2901,6 +2901,60 @@ VkMemoryPropertyFlags VulkanCaptureManager::GetMemoryProperties(vulkan_wrappers:
     return memory_properties->memoryTypes[memory_type_index].propertyFlags;
 }
 
+void VulkanCaptureManager::FilterHostCachedMemoryTypes(VkPhysicalDeviceMemoryProperties* memory_properties)
+{
+    if (memory_properties == nullptr)
+    {
+        return;
+    }
+
+    const VkMemoryPropertyFlags host_cached = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
+    bool                        has_host_cached_type = false;
+    for (uint32_t i = 0; i < memory_properties->memoryTypeCount; ++i)
+    {
+        if ((memory_properties->memoryTypes[i].propertyFlags & host_cached) == host_cached)
+        {
+            has_host_cached_type = true;
+            break;
+        }
+    }
+
+    if (!has_host_cached_type)
+    {
+        return;
+    }
+
+    for (uint32_t i = 0; i < memory_properties->memoryTypeCount; ++i)
+    {
+        VkMemoryPropertyFlags& flags = memory_properties->memoryTypes[i].propertyFlags;
+        if ((flags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0 && (flags & VK_MEMORY_PROPERTY_HOST_CACHED_BIT) == 0)
+        {
+            flags &= ~(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        }
+    }
+}
+
+void VulkanCaptureManager::PostProcess_vkGetPhysicalDeviceMemoryProperties(
+    VkPhysicalDevice physicalDevice, VkPhysicalDeviceMemoryProperties* pMemoryProperties)
+{
+    GFXRECON_UNREFERENCED_PARAMETER(physicalDevice);
+    if (GetMemoryTrackingMode() == CaptureSettings::MemoryTrackingMode::kSmart && GetForceHostCachedMemory())
+    {
+        FilterHostCachedMemoryTypes(pMemoryProperties);
+    }
+}
+
+void VulkanCaptureManager::PostProcess_vkGetPhysicalDeviceMemoryProperties2(
+    VkPhysicalDevice physicalDevice, VkPhysicalDeviceMemoryProperties2* pMemoryProperties)
+{
+    GFXRECON_UNREFERENCED_PARAMETER(physicalDevice);
+    if (pMemoryProperties != nullptr && GetMemoryTrackingMode() == CaptureSettings::MemoryTrackingMode::kSmart &&
+        GetForceHostCachedMemory())
+    {
+        FilterHostCachedMemoryTypes(&pMemoryProperties->memoryProperties);
+    }
+}
+
 const VkImportAndroidHardwareBufferInfoANDROID*
 VulkanCaptureManager::FindAllocateMemoryExtensions(const VkMemoryAllocateInfo* allocate_info)
 {

@@ -376,6 +376,8 @@ class VulkanCaptureManager : public ApiCaptureManager
                                     const VkAllocationCallbacks* pAllocator,
                                     VkDeviceMemory*              pMemory);
 
+    static void FilterHostCachedMemoryTypes(VkPhysicalDeviceMemoryProperties* memory_properties);
+
     void OverrideGetPhysicalDeviceProperties2(VkPhysicalDevice             physicalDevice,
                                               VkPhysicalDeviceProperties2* pProperties);
 
@@ -488,6 +490,12 @@ class VulkanCaptureManager : public ApiCaptureManager
                                                      VkInstance                       instance,
                                                      uint32_t*                        pPhysicalDeviceGroupCount,
                                                      VkPhysicalDeviceGroupProperties* pPhysicalDeviceGroupProperties);
+
+    void PostProcess_vkGetPhysicalDeviceMemoryProperties(VkPhysicalDevice                  physicalDevice,
+                                                         VkPhysicalDeviceMemoryProperties* pMemoryProperties);
+
+    void PostProcess_vkGetPhysicalDeviceMemoryProperties2(VkPhysicalDevice                   physicalDevice,
+                                                          VkPhysicalDeviceMemoryProperties2* pMemoryProperties);
 
     void PostProcess_vkGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice         physicalDevice,
                                                               uint32_t*                pQueueFamilyPropertyCount,

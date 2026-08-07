@@ -74,6 +74,8 @@ GFXRECON_BEGIN_NAMESPACE(encode)
 #define LOG_OUTPUT_TO_OS_DEBUG_STRING_UPPER                  "LOG_OUTPUT_TO_OS_DEBUG_STRING"
 #define MEMORY_TRACKING_MODE_LOWER                           "memory_tracking_mode"
 #define MEMORY_TRACKING_MODE_UPPER                           "MEMORY_TRACKING_MODE"
+#define FORCE_HOST_CACHED_MEMORY_LOWER                       "force_host_cached_memory"
+#define FORCE_HOST_CACHED_MEMORY_UPPER                       "FORCE_HOST_CACHED_MEMORY"
 #define SCREENSHOT_DIR_LOWER                                 "screenshot_dir"
 #define SCREENSHOT_DIR_UPPER                                 "SCREENSHOT_DIR"
 #define SCREENSHOT_FORMAT_LOWER                              "screenshot_format"
@@ -247,6 +249,7 @@ class CaptureSettings
         bool                         time_stamp_file{ true };
         bool                         force_flush{ false };
         MemoryTrackingMode           memory_tracking_mode{ kPageGuard };
+        bool                         force_host_cached_memory{ false };
         std::string                  screenshot_dir;
         std::vector<util::UintRange> screenshot_ranges;
         uint32_t                     screenshot_interval{ 1 };
